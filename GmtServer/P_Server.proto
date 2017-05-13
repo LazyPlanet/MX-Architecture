@@ -1,0 +1,83 @@
+package Adoter.Asset;
+
+/////////////////////////////////////////////////////
+//
+// 游戏中服务器自己各种存盘、属性、基础数据结构定义
+//
+// 如果客户端使用，请勿在此定义
+//
+/////////////////////////////////////////////////////
+
+//消息类型
+enum MSG_TYPE {
+	MSG_TYPE_BEGIN = 1;
+	MSG_TYPE_AOI_ENTER = 2;
+	MSG_TYPE_AOI_LEAVE = 3;
+	MSG_TYPE_AOI_MOVE = 4;
+}
+//消息队列
+message MsgItem {
+	optional int64 message_id = 1; //消息ID
+	optional int32 type = 2; //消息类型
+	optional int32 priority = 3 [ default = 10 ]; //优先级，值0优先级最大
+	optional int64 sender = 4; //发送者
+	optional int64 receiver = 5; //接收者
+	optional int64 time = 6; //发送时间
+	optional int32 delay = 7; //发送延时(s)
+	optional bytes content = 8; //具体内容
+}
+//消息队列，可以用于存盘
+message MsgItems {
+	repeated MsgItem items = 1;
+}
+
+//日志类型
+enum LOG_TYPE {
+	BEGIN = 1; //开始
+	NORMAL = 2; //通用
+	SYSTEM = 3; //系统
+	RECHARGE = 4; //充值
+	COMMON_LIMIT = 5; //通用限制 
+	COMMON_REWARD = 6; //通用奖励
+	CONSUME_DIAMOND = 7; //消耗钻石
+	INCREASE_DIAMOND = 8; //增加钻石
+	CONSUME_HUANLEDOU = 9; //消耗欢乐豆
+	INCREASE_HUANLEDOU = 10; //增加欢乐豆
+	PLAYER_INFO = 11; //玩家数据
+	PLAYER_LOGIN = 12; //玩家登录
+	SEND_PROTOCOL = 13; //发送协议
+	PLAYER_MATCH = 14; //玩家匹配
+	PAI_PERATION = 15; //玩家牌操作
+	GAME_CARDS = 16; //开局牌
+}
+
+//日志级别
+enum LOG_LEVEL {
+	FATAL = 1; 
+	ERROR = 2; 
+	WARNNING = 3; 
+	TRACE = 4; 
+	ACTION = 5; 
+	INFO = 6; 
+	MAX_LOG_LEVEL = 7; 
+}
+
+
+/////////////////////////////////////////////////////
+//日志信息
+//
+//由于Message不会打印未负值的成员，所以此处可一直添加功能变量
+//
+/////////////////////////////////////////////////////
+message LogMessage {
+	optional int64 player_id = 1; //玩家ID
+	optional int64 server_id = 2; //服务器ID
+	optional bytes server_name = 3; //服务器名称
+	optional LOG_TYPE type = 4; //日志类型：比如消费、购买物品
+	optional LOG_LEVEL level = 5; //日志级别：严重、动作
+	optional string client_ip = 6; //Client地址
+	optional int64 common_limit = 7; //通用限制
+	optional int64 common_reward = 8; //通用奖励
+	repeated int32 cards = 9; //牌值
+	optional string content = 20; //内容
+}
