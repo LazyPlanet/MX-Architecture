@@ -2,7 +2,8 @@ package Asset;
 
 //操作类型
 enum COMMAND_TYPE {
-	COMMAND_TYPE_RECHARGE = 1; //充值
+	COMMAND_TYPE_BEGIN = 1; //起始
+	COMMAND_TYPE_RECHARGE = 2; //充值
 }
 
 enum ERROR_CODE {
