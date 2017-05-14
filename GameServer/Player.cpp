@@ -282,17 +282,15 @@ int32_t Player::CmdPaiOperate(pb::Message* message)
 			const auto& pai = pai_operate->pai(); 
 
 			auto& pais = _cards[pai.card_type()]; //获取该类型的牌
+			
+			DEBUG("%s:line:%d,玩家:%ld打牌，删除手中的牌, 类型:%d, 值:%d\n", __func__, __LINE__, GetID(), pai.card_type(), pai.card_value());
 
 			auto it = std::find(pais.begin(), pais.end(), pai.card_value()); //查找第一个满足条件的牌即可
-			
 			if (it == pais.end()) 
 			{
 				DEBUG_ASSERT(false);
 				return 3; //没有这张牌
 			}
-
-			DEBUG("%s:line:%d,玩家:%ld删除手中的牌, 类型:%d, 值:%d\n", __func__, __LINE__, GetID(), pai.card_type(), pai.card_value());
-
 			pais.erase(it); //打出牌
 		}
 		break;
@@ -340,8 +338,9 @@ int32_t Player::CmdPaiOperate(pb::Message* message)
 
 			auto& pais = _cards[pai.card_type()]; //获取该类型的牌
 
-			auto it = std::find(pais.begin(), pais.end(), pai.card_value()); //查找第一个满足条件的牌即可
+			DEBUG("%s:line:%d,玩家:%ld听牌，删除手中的牌, 类型:%d, 值:%d\n", __func__, __LINE__, GetID(), pai.card_type(), pai.card_value());
 			
+			auto it = std::find(pais.begin(), pais.end(), pai.card_value()); //查找第一个满足条件的牌即可
 			if (it == pais.end()) 
 			{
 				DEBUG_ASSERT(false);
@@ -355,7 +354,6 @@ int32_t Player::CmdPaiOperate(pb::Message* message)
 			}
 
 			pais.erase(it); //删除牌
-			DEBUG("%s:line:%d,玩家:%ld删除手中的牌, 类型:%d, 值:%d\n", __func__, __LINE__, GetID(), pai.card_type(), pai.card_value());
 
 			//设置玩家状态
 			_stuff.mutable_player_prop()->set_has_tinged(true);
