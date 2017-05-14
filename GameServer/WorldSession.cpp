@@ -33,6 +33,8 @@ void WorldSession::InitializeHandler(const boost::system::error_code error, cons
 
 		if (error)
 		{
+			spdlog::get("console")->error("{0} Line:{1} Remote client disconnect, remote_ip:{2}, player_id:{3}", 
+					__func__, __LINE__, _socket.remote_endpoint().address().to_string().c_str(), g_player == nullptr ? 0 : g_player->GetID());
 			Close(); ////断开网络连接
 			return;
 		}
@@ -42,10 +44,6 @@ void WorldSession::InitializeHandler(const boost::system::error_code error, cons
 			bool result = meta.ParseFromArray(_buffer.data(), bytes_transferred);
 
 			if (!result) return;		//非法协议
-			
-			//std::cout << "接收数据：";
-			//meta.PrintDebugString(); //打印出来Message.
-			//std::cout << std::endl;
 			
 			/////////////////////////////////////////////////////////////////////////////打印收到协议提示信息
 		
@@ -190,6 +188,8 @@ void WorldSession::InitializeHandler(const boost::system::error_code error, cons
 	}
 	catch (std::exception& e)
 	{
+		spdlog::get("console")->error("{0} Line:{1} Remote client disconnect, remote_ip:{2}, player_id:{3}", 
+				__func__, __LINE__, _socket.remote_endpoint().address().to_string().c_str(), g_player == nullptr ? 0 : g_player->GetID());
 		Close();
 		return;
 	}
@@ -199,6 +199,8 @@ void WorldSession::InitializeHandler(const boost::system::error_code error, cons
 
 void WorldSession::KillOutPlayer()
 {
+	spdlog::get("console")->error("{0} Line:{1} Remote client disconnect, remote_ip:{2}, player_id:{3}", 
+			__func__, __LINE__, _socket.remote_endpoint().address().to_string().c_str(), g_player == nullptr ? 0 : g_player->GetID());
 	Close();
 }
 
@@ -225,9 +227,6 @@ bool WorldSession::Update()
 
 void WorldSession::OnClose()
 {
-	spdlog::get("console")->error("{0} Line:{1} Remote client disconnect, remote_ip:{2}, player_id:{3}", 
-			__func__, __LINE__, _socket.remote_endpoint().address().to_string().c_str(), g_player == nullptr ? 0 : g_player->GetID());
-
 	if (g_player) //网络断开
 	{
 		g_player->OnLogout(nullptr);
@@ -261,6 +260,8 @@ void WorldSession::SendProtocol(pb::Message& message)
 	//AsyncSend(content);
 
 	EnterQueue(std::move(content));
+
+	//调试
 	const pb::EnumValueDescriptor* enum_value = message.GetReflection()->GetEnum(message, field);
 	if (!enum_value) return;
 	DEBUG("%s:line:%d, protocol_name:%s, content:%s\n", __func__, __LINE__, enum_value->name().c_str(), message.ShortDebugString().c_str());
