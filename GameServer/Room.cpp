@@ -147,6 +147,8 @@ void Room::BroadCast(pb::Message* message, int64_t exclude_player_id)
 
 	for (auto player : _players)
 	{
+		if (!player) continue; //可能已经释放
+
 		if (exclude_player_id == player->GetID()) continue;
 
 		player->SendProtocol(message);
