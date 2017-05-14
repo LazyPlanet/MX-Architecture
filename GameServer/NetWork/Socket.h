@@ -25,13 +25,12 @@ public:
 	S _socket; 
 public:
 	explicit Socket(boost::asio::ip::tcp::socket&& socket) : _socket(std::move(socket)), _closed(false), _closing(false) { }
-	virtual ~Socket() { }
 	
 	virtual bool Update() 
 	{
 		if (_closed) 
 		{
-			spdlog::get("console")->error("{0} Line:{1} client_id:{2} has closed.", __func__, __LINE__, _socket.remote_endpoint().address().to_string().c_str());
+			//spdlog::get("console")->error("{0} Line:{1} client_id:{2} has closed.", __func__, __LINE__, _socket.remote_endpoint().address().to_string().c_str());
 			return false;
 		}
 
@@ -203,8 +202,6 @@ protected:
 	
 	virtual NetworkThread<SOCKET_TYPE>* CreateThreads() const = 0;
 public:
-	virtual ~SocketManager() { }
-
 	virtual bool StartNetwork(boost::asio::io_service& io_service, const std::string& bind_ip, int port, int thread_count)
 	{
 		try

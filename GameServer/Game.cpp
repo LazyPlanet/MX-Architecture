@@ -106,7 +106,7 @@ bool Game::OnOver()
 //
 /////////////////////////////////////////////////////
 	
-bool Game::CanPaiOperate(std::shared_ptr<Player> player, pb::Message* message)
+bool Game::CanPaiOperate(std::shared_ptr<Player> player)
 {
 	if (/*_oper_limit.time_out() < CommonTimerInstance.GetTime() 
 			&& */_oper_limit.player_id() == player->GetID()) 
@@ -129,18 +129,21 @@ void Game::OnPaiOperate(std::shared_ptr<Player> player, pb::Message* message)
 {
 	if (!player || !message || !_room) return;
 	
-	DEBUG("%s:line:%d player_id:%ld, 当前可操作的牌:%s\n", __func__, __LINE__, player->GetID(), _oper_limit.DebugString().c_str());
+	Asset::PaiOperation* pai_operate = dynamic_cast<Asset::PaiOperation*>(message);
+	if (!pai_operate) return; 
+	
+	spdlog::get("console")->debug("{0} Line:{1} player_id:{2} server saved infomation from_player_id:{3} card_type:{4} card_value:{5} oper_type:{6}, \
+			while client sentd to card_type:{7} card_value:{8} oper_type:{9}",
+			__func__, __LINE__, player->GetID(), _oper_limit.from_player_id(), _oper_limit.pai().card_type(), _oper_limit.pai().card_value(), 
+			_oper_limit.oper_type(), pai_operate->pai().card_type(), pai_operate->pai().card_value(), pai_operate->oper_type());
 
-	if (!CanPaiOperate(player, message)) 
+	if (!CanPaiOperate(player)) 
 	{
 		player->AlertMessage(Asset::ERROR_GAME_NO_PERMISSION); //没有权限，没到玩家操作，防止外挂
 		DEBUG_ASSERT(false); 
 	}
 
 	//if (CommonTimerInstance.GetTime() < _oper_limit.time_out()) ClearOperation(); //已经超时，清理缓存以及等待玩家操作的状态
-			
-	Asset::PaiOperation* pai_operate = dynamic_cast<Asset::PaiOperation*>(message);
-	if (!pai_operate) return; 
 
 	//如果不是放弃，才是当前玩家的操作
 	if (Asset::PAI_OPER_TYPE_GIVEUP != pai_operate->oper_type())
