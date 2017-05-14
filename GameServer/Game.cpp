@@ -437,7 +437,7 @@ void Game::OnPaiOperate(std::shared_ptr<Player> player, pb::Message* message)
 		default:
 		{
 			DEBUG("%s:line:%d 服务器接收未能处理的协议，玩家角色:player_id:%ld, 操作类型:%d\n", __func__, __LINE__, player->GetID(), pai_operate->oper_type());
-			DEBUG_ASSERT(false);
+			//DEBUG_ASSERT(false);
 			return; //直接退出
 		}
 		break;
