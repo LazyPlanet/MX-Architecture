@@ -676,6 +676,7 @@ bool Game::SendCheckRtn()
 
 	for (auto rtn : operation.oper_list()) 
 		pai_perator->mutable_oper_list()->Add(rtn); //可操作牌类型
+
 	if (auto player_to = GetPlayer(player_id)) 
 		player_to->SendProtocol(alert); //发给目标玩家
 
@@ -684,7 +685,8 @@ bool Game::SendCheckRtn()
 			});
 	if (it != _oper_list.end()) 
 	{
-		DEBUG("%s:line%d 删除玩家%ld操作.\n", __func__, __LINE__, player_id);
+		spdlog::get("console")->debug("{0} Line:{1} player_id:{2} from_player_id:{3} card_type:{4} card_value:{5} oper_type:{6}",
+				__func__, __LINE__, player_id, _oper_limit.from_player_id(), _oper_limit.pai().card_type(), _oper_limit.pai().card_value(), _oper_limit.oper_type());
 		_oper_list.erase(it);
 	}
 
