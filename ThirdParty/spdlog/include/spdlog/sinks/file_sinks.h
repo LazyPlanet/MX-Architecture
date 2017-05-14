@@ -176,7 +176,7 @@ struct dateonly_daily_file_name_calculator
 /*
  * Rotating file sink based on date. rotates at midnight
  */
-template<class Mutex, class FileNameCalc = default_daily_file_name_calculator>
+template<class Mutex, class FileNameCalc = dateonly_daily_file_name_calculator>
 class daily_file_sink SPDLOG_FINAL :public base_sink < Mutex >
 {
 public:

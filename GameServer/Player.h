@@ -266,7 +266,8 @@ public:
 
 	bool CheckBaoHu(const Asset::PaiElement& pai);
 
-	bool CheckHuPai(const Asset::PaiElement& pai, std::vector<Asset::FAN_TYPE>& fan_list); //胡牌
+	bool CheckHuPai(const Asset::PaiElement& pai, std::vector<Asset::FAN_TYPE>& fan_list); //胡牌且算番数
+	bool CheckHuPai(const Asset::PaiElement& pai); //胡牌
 
 	bool CheckGangPai(const Asset::PaiElement& pai, int64_t from_player_id); //是否可以杠牌
 	bool CheckAllGangPai(std::vector<Asset::PaiElement>& pais); //有玩家一直不杠牌, 每次都要提示, 比如玩家碰了7条,但是手里有7-8-9条,而选择暂时不杠
@@ -281,7 +282,8 @@ public:
 	bool CheckFengGangPai(); //是否可以旋风杠-风杠 
 	bool CheckJianGangPai(); //是否可以旋风杠-箭杠
 	
-	bool CheckTingPai(); //是否可以听牌：能不能听牌，主要是看是否给牌可以胡
+	bool CanTingPai(const Asset::PaiElement& pai);
+	bool CheckTingPai(std::vector<Asset::PaiElement>& pais/*应该打出的牌数据*/); //是否可以听牌：能不能听牌，主要是看是否给牌可以胡
 
 	bool CheckPengPai(const Asset::PaiElement& pai); //是否可以碰牌
 	void OnPengPai(const Asset::PaiElement& pai); //碰牌

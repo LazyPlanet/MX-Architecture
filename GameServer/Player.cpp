@@ -288,7 +288,7 @@ int32_t Player::CmdPaiOperate(pb::Message* message)
 			if (it == pais.end()) 
 			{
 				DEBUG_ASSERT(false);
-				return 6; //没有这张牌
+				return 3; //没有这张牌
 			}
 
 			DEBUG("%s:line:%d,玩家:%ld删除手中的牌, 类型:%d, 值:%d\n", __func__, __LINE__, GetID(), pai.card_type(), pai.card_value());
@@ -305,7 +305,7 @@ int32_t Player::CmdPaiOperate(pb::Message* message)
 				const auto& pais = _cards[pai.card_type()];
 
 				auto it = std::find(pais.begin(), pais.end(), pai.card_value());
-				if (it == pais.end()) return 3; //没有这张牌
+				if (it == pais.end()) return 4; //没有这张牌
 
 				//if (pais[pai.card_index()] != pai.card_value()) return 4; //Server<->Client 不一致 TODO:暂时不做检查
 			}
@@ -317,7 +317,7 @@ int32_t Player::CmdPaiOperate(pb::Message* message)
 			if (_stuff.player_prop().pai_oper_count() >= 2) 
 			{
 				P(Asset::ERROR, "%s:line:%d, player:%ld 检查旋风杠，估计外挂行为.", __func__, __LINE__, GetID());
-				return 4;
+				return 5;
 			}
 			OnGangFengPai();
 		}
@@ -328,7 +328,7 @@ int32_t Player::CmdPaiOperate(pb::Message* message)
 			if (_stuff.player_prop().pai_oper_count() >= 2) 
 			{
 				P(Asset::ERROR, "%s:line:%d, player:%ld 检查旋风杠，估计外挂行为.", __func__, __LINE__, GetID());
-				return 4;
+				return 6;
 			}
 			OnGangJianPai();
 		}
@@ -336,8 +336,28 @@ int32_t Player::CmdPaiOperate(pb::Message* message)
 		
 		case Asset::PAI_OPER_TYPE_TINGPAI: //听牌
 		{
-			if (!CheckTingPai()) return 5;
+			const auto& pai = pai_operate->pai();
 
+			auto& pais = _cards[pai.card_type()]; //获取该类型的牌
+
+			auto it = std::find(pais.begin(), pais.end(), pai.card_value()); //查找第一个满足条件的牌即可
+			
+			if (it == pais.end()) 
+			{
+				DEBUG_ASSERT(false);
+				return 7; //没有这张牌
+			}
+
+			if (!CanTingPai(pai)) 
+			{
+				DEBUG_ASSERT(false);
+				return 8; //不能听牌
+			}
+
+			pais.erase(it); //删除牌
+			DEBUG("%s:line:%d,玩家:%ld删除手中的牌, 类型:%d, 值:%d\n", __func__, __LINE__, GetID(), pai.card_type(), pai.card_value());
+
+			//设置玩家状态
 			_stuff.mutable_player_prop()->set_has_tinged(true);
 			_game->AddTingPlayer(GetID());
 		}
@@ -345,9 +365,9 @@ int32_t Player::CmdPaiOperate(pb::Message* message)
 
 		default:
 		{
+
 		}
 		break;
-
 	}
 
 	_game->OnPaiOperate(shared_from_this(), message);
@@ -952,9 +972,8 @@ std::vector<Asset::PAI_OPER_TYPE> Player::CheckPai(const Asset::PaiElement& pai,
 	PrintPai();
 
 	std::vector<Asset::PAI_OPER_TYPE> rtn_check;
-	std::vector<Asset::FAN_TYPE> fan_list;
 
-	if (CheckHuPai(pai, fan_list)) 
+	if (CheckHuPai(pai)) 
 	{
 		std::cout << "玩家胡牌line:" << __LINE__ << std::endl;
 		rtn_check.push_back(Asset::PAI_OPER_TYPE_HUPAI);
@@ -1090,6 +1109,12 @@ bool Player::CheckBaoHu(const Asset::PaiElement& pai)
 	if (it_baohu == options.extend_type().end()) return false; //不带宝胡
 
 	return true;
+}
+	
+bool Player::CheckHuPai(const Asset::PaiElement& pai)
+{
+	std::vector<Asset::FAN_TYPE> fan_list;
+	return CheckHuPai(pai, fan_list);
 }
 
 bool Player::CheckHuPai(const Asset::PaiElement& pai, std::vector<Asset::FAN_TYPE>& fan_list)
@@ -1730,14 +1755,29 @@ bool Player::CheckJianGangPai()
 
 	return CheckJianGangPai(_cards); 
 }
-	
-bool Player::CheckTingPai()
+
+//玩家能不能听牌的检查
+//
+//玩家打出一张牌后，查看玩家再拿到一张牌后可以胡牌
+
+bool Player::CanTingPai(const Asset::PaiElement& pai)
 {
 	auto options = _locate_room->GetOptions();
 	
 	auto it_baohu = std::find(options.extend_type().begin(), options.extend_type().end(), Asset::ROOM_EXTEND_TYPE_BAOPAI);
 	if (it_baohu == options.extend_type().end()) return false; //不带宝胡，绝对不可能呢听牌
+	
+	auto card_list = _cards; //复制当前牌
 
+	//前置检查
+	if (_cards[pai.card_type()].size() == 0) return false;
+
+	auto find_it = std::find(_cards[pai.card_type()].begin(), _cards[pai.card_type()].end(), pai.card_value());
+	if (find_it == _cards[pai.card_type()].end()) return false; //理论上一定能找到
+				
+	_cards[pai.card_type()].erase(find_it); //删除这张牌
+
+	//能否胡万饼条
 	for (int card_type = Asset::CARD_TYPE_WANZI; card_type <= Asset::CARD_TYPE_TIAOZI; ++card_type)
 	{
 		for (int card_value = 1; card_value <= 9; ++card_value)
@@ -1746,25 +1786,109 @@ bool Player::CheckTingPai()
 			pai.set_card_type((Asset::CARD_TYPE)card_type);
 			pai.set_card_value(card_value);
 
-			std::vector<Asset::FAN_TYPE> fan_list;
-			if (CheckHuPai(pai, fan_list)) return true;
+			if (CheckHuPai(pai)) return true;
 		}
 	}
 	
-	for (int card_type = Asset::CARD_TYPE_FENG; card_type <= Asset::CARD_TYPE_JIAN; ++card_type)
+	//能否胡风牌
+	for (int card_value = 1; card_value <= 4; ++card_value)
 	{
-		for (int card_value = 1; card_value <= 9; ++card_value)
-		{
-			Asset::PaiElement pai;
-			pai.set_card_type((Asset::CARD_TYPE)card_type);
-			pai.set_card_value(card_value);
+		Asset::PaiElement pai;
+		pai.set_card_type(Asset::CARD_TYPE_FENG);
+		pai.set_card_value(card_value);
 
-			std::vector<Asset::FAN_TYPE> fan_list;
-			if (CheckHuPai(pai, fan_list)) return true;
+		if (CheckHuPai(pai)) return true;
+	}
+
+	//能否胡箭牌
+	for (int card_value = 1; card_value <= 3; ++card_value)
+	{
+		Asset::PaiElement pai;
+		pai.set_card_type(Asset::CARD_TYPE_JIAN);
+		pai.set_card_value(card_value);
+
+		if (CheckHuPai(pai)) return true; 
+	}
+	
+	_cards = card_list; //恢复牌
+
+	return false;
+}
+
+
+//玩家能不能听牌的检查
+//
+//玩家打出一张牌后，查看玩家再拿到一张牌后可以胡牌
+//
+//玩家全部牌检查，即玩家抓牌后检查
+	
+bool Player::CheckTingPai(std::vector<Asset::PaiElement>& pais)
+{
+	auto options = _locate_room->GetOptions();
+	
+	auto it_baohu = std::find(options.extend_type().begin(), options.extend_type().end(), Asset::ROOM_EXTEND_TYPE_BAOPAI);
+	if (it_baohu == options.extend_type().end()) return false; //不带宝胡，绝对不可能呢听牌
+
+	auto card_list = _cards; //复制当前牌
+
+	for (auto it = card_list.begin(); it != card_list.end(); ++it)
+	{
+		for (auto value : it->second)
+		{
+			auto find_it = std::find(_cards[it->first].begin(), _cards[it->first].end(), value);
+			if (find_it == _cards[it->first].end()) continue; //理论上一定能找到
+						
+			_cards[it->first].erase(find_it); //删除这张牌
+
+///////////////////////////////////////////////////////玩家能否胡牌////////////////////////////////////////////////////////
+
+			//能否胡万饼条
+			for (int card_type = Asset::CARD_TYPE_WANZI; card_type <= Asset::CARD_TYPE_TIAOZI; ++card_type)
+			{
+				for (int card_value = 1; card_value <= 9; ++card_value)
+				{
+					Asset::PaiElement pai;
+					pai.set_card_type((Asset::CARD_TYPE)card_type);
+					pai.set_card_value(card_value);
+
+					if (!CheckHuPai(pai)) continue;
+				}
+			}
+			
+			//能否胡风牌
+			for (int card_value = 1; card_value <= 4; ++card_value)
+			{
+				Asset::PaiElement pai;
+				pai.set_card_type(Asset::CARD_TYPE_FENG);
+				pai.set_card_value(card_value);
+
+				if (!CheckHuPai(pai)) continue;
+			}
+		
+			//能否胡箭牌
+			for (int card_value = 1; card_value <= 3; ++card_value)
+			{
+				Asset::PaiElement pai;
+				pai.set_card_type(Asset::CARD_TYPE_JIAN);
+				pai.set_card_value(card_value);
+
+				if (!CheckHuPai(pai)) continue; 
+			}
+
+///////////////////////////////////////////////////////玩家能否胡牌////////////////////////////////////////////////////////
+			
+			Asset::PaiElement pai; //即打出这张后，听牌
+			pai.set_card_type((Asset::CARD_TYPE)it->first);
+			pai.set_card_value(value);
+			pais.push_back(pai); //缓存
+
+			_cards = card_list; //恢复牌，尝试删除下一张牌
 		}
 	}
 
-	return false;
+	_cards = card_list; //恢复牌
+
+	return pais.size() > 0;
 }
 
 bool Player::CheckFengGangPai(std::map<int32_t/*麻将牌类型*/, std::vector<int32_t>/*牌值*/>& cards)

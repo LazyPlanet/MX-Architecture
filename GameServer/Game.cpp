@@ -201,14 +201,6 @@ void Game::OnPaiOperate(std::shared_ptr<Player> player, pb::Message* message)
 					fan_list.push_back(Asset::FAN_TYPE_LOU_BAO); //宝胡
 				}
 
-				//听牌检查:TODO 打牌后的一次
-				if (player_next->CheckTingPai())
-				{
-					auto pai_perator = alert.mutable_pais()->Add();
-					pai_perator->mutable_pai()->CopyFrom(card);
-					pai_perator->mutable_oper_list()->Add(Asset::PAI_OPER_TYPE_TINGPAI);
-				}
-
 				//旋风杠检查，只检查第一次发牌之前
 				if (player_next->CheckFengGangPai()) 
 				{
@@ -222,12 +214,24 @@ void Game::OnPaiOperate(std::shared_ptr<Player> player, pb::Message* message)
 				}
 				
 				player_next->OnFaPai(cards); //放入玩家牌里面
+
+				//听牌检查
+				std::vector<Asset::PaiElement> tingpais;
+				if (player_next->CheckTingPai(tingpais))
+				{
+					for (auto pai : tingpais) 
+					{
+						auto pai_perator = alert.mutable_pais()->Add();
+						pai_perator->mutable_pai()->CopyFrom(pai);
+						pai_perator->mutable_oper_list()->Add(Asset::PAI_OPER_TYPE_TINGPAI);
+					}
+				}
 				
 				//杠检查：包括明杠和暗杠
-				std::vector<Asset::PaiElement> pais;
-				if (player_next->CheckAllGangPai(pais)) 
+				std::vector<Asset::PaiElement> gangpais;
+				if (player_next->CheckAllGangPai(gangpais)) 
 				{
-					for (auto pai : pais) 
+					for (auto pai : gangpais) 
 					{
 						auto pai_perator = alert.mutable_pais()->Add();
 						pai_perator->mutable_pai()->CopyFrom(pai);
@@ -368,14 +372,6 @@ void Game::OnPaiOperate(std::shared_ptr<Player> player, pb::Message* message)
 				fan_list.push_back(Asset::FAN_TYPE_LOU_BAO); //宝胡
 			}
 
-			//听牌检查:TODO 打牌后的一次
-			if (player_next->CheckTingPai())
-			{
-				auto pai_perator = alert.mutable_pais()->Add();
-				pai_perator->mutable_pai()->CopyFrom(card);
-				pai_perator->mutable_oper_list()->Add(Asset::PAI_OPER_TYPE_TINGPAI);
-			}
-
 			//旋风杠检查，只检查第一次发牌之前
 			if (player_next->CheckFengGangPai()) 
 			{
@@ -390,15 +386,30 @@ void Game::OnPaiOperate(std::shared_ptr<Player> player, pb::Message* message)
 			
 			player_next->OnFaPai(cards); //放入玩家牌里面
 			
-			//杠检查：包括明杠和暗杠
-			std::vector<Asset::PaiElement> pais;
-			if (player_next->CheckAllGangPai(pais)) 
+			if (_oper_limit.player_id() != player_next->GetID()) 
 			{
-				for (auto pai : pais) 
+				////////听牌检查
+				std::vector<Asset::PaiElement> tingpais;
+				if (player_next->CheckTingPai(tingpais))
 				{
-					auto pai_perator = alert.mutable_pais()->Add();
-					pai_perator->mutable_pai()->CopyFrom(pai);
-					pai_perator->mutable_oper_list()->Add(Asset::PAI_OPER_TYPE_GANGPAI);
+					for (auto pai : tingpais) 
+					{
+						auto pai_perator = alert.mutable_pais()->Add();
+						pai_perator->mutable_pai()->CopyFrom(pai);
+						pai_perator->mutable_oper_list()->Add(Asset::PAI_OPER_TYPE_TINGPAI);
+					}
+				}
+				
+				///////杠检查：包括明杠和暗杠
+				std::vector<Asset::PaiElement> gangpais;
+				if (player_next->CheckAllGangPai(gangpais)) 
+				{
+					for (auto pai : gangpais) 
+					{
+						auto pai_perator = alert.mutable_pais()->Add();
+						pai_perator->mutable_pai()->CopyFrom(pai);
+						pai_perator->mutable_oper_list()->Add(Asset::PAI_OPER_TYPE_GANGPAI);
+					}
 				}
 			}
 
@@ -667,8 +678,7 @@ bool Game::SendCheckRtn()
 	pai_perator->mutable_pai()->CopyFrom(operation.pai());
 
 	for (auto rtn : operation.oper_list()) 
-		pai_perator->mutable_oper_list()->Add(rtn);
-		//alert.mutable_oper_list()->Add(rtn); //可操作牌类型
+		pai_perator->mutable_oper_list()->Add(rtn); //可操作牌类型
 	if (auto player_to = GetPlayer(player_id)) 
 		player_to->SendProtocol(alert); //发给目标玩家
 
@@ -697,7 +707,11 @@ bool Game::CheckPai(const Asset::PaiElement& pai, int64_t from_player_id)
 	_oper_list.clear();
 
 	int32_t player_index = GetPlayerOrder(from_player_id); //当前玩家索引
-	if (player_index == -1) return false; //理论上不会出现
+	if (player_index == -1) 
+	{
+		spdlog::get("player")->error("{0} Line:{1} player_index:{2} from_player_id:{3}", __func__, __LINE__, player_index, from_player_id);
+		return false; //理论上不会出现
+	}
 
 	//assert(_curr_player_index == player_index); //理论上一定相同：错误，如果碰牌的玩家出牌就不一定
 	DEBUG("%s:line:%d _curr_player_index:%d player_index:%d\n", __func__, __LINE__, _curr_player_index, player_index);
@@ -709,7 +723,11 @@ bool Game::CheckPai(const Asset::PaiElement& pai, int64_t from_player_id)
 		auto cur_index = i % MAX_PLAYER_COUNT;
 
 		auto player = GetPlayerByOrder(cur_index);
-		if (!player) return false; //理论上不会出现
+		if (!player) 
+		{
+			spdlog::get("player")->error("{0} Line:{1} cur_index:{2} i:{3}", __func__, __LINE__, cur_index, i);
+			return false; //理论上不会出现
+		}
 
 		if (from_player_id == player->GetID()) continue; //自己不能对自己的牌进行操作
 
