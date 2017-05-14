@@ -348,7 +348,7 @@ void Game::OnPaiOperate(std::shared_ptr<Player> player, pb::Message* message)
 			//如果是其他玩家放弃了操作(比如，对门不碰)，则检查下家还能不能要这张牌，来吃
 			DEBUG("%s:line:%d _oper_limit.player_id:%ld next_player_id:%ld _curr_player_index:%d next_player_index:%d\n", 
 					__func__, __LINE__, _oper_limit.player_id(), player_next->GetID(), _curr_player_index, next_player_index);
-			
+
 			auto cards = FaPai(1); 
 
 			auto card = GameInstance.GetCard(cards[0]); //玩家待抓的牌
@@ -386,30 +386,27 @@ void Game::OnPaiOperate(std::shared_ptr<Player> player, pb::Message* message)
 			
 			player_next->OnFaPai(cards); //放入玩家牌里面
 			
-			if (_oper_limit.player_id() != player_next->GetID()) 
+			////////听牌检查
+			std::vector<Asset::PaiElement> tingpais;
+			if (player_next->CheckTingPai(tingpais))
 			{
-				////////听牌检查
-				std::vector<Asset::PaiElement> tingpais;
-				if (player_next->CheckTingPai(tingpais))
+				for (auto pai : tingpais) 
 				{
-					for (auto pai : tingpais) 
-					{
-						auto pai_perator = alert.mutable_pais()->Add();
-						pai_perator->mutable_pai()->CopyFrom(pai);
-						pai_perator->mutable_oper_list()->Add(Asset::PAI_OPER_TYPE_TINGPAI);
-					}
+					auto pai_perator = alert.mutable_pais()->Add();
+					pai_perator->mutable_pai()->CopyFrom(pai);
+					pai_perator->mutable_oper_list()->Add(Asset::PAI_OPER_TYPE_TINGPAI);
 				}
-				
-				///////杠检查：包括明杠和暗杠
-				std::vector<Asset::PaiElement> gangpais;
-				if (player_next->CheckAllGangPai(gangpais)) 
+			}
+			
+			///////杠检查：包括明杠和暗杠
+			std::vector<Asset::PaiElement> gangpais;
+			if (player_next->CheckAllGangPai(gangpais)) 
+			{
+				for (auto pai : gangpais) 
 				{
-					for (auto pai : gangpais) 
-					{
-						auto pai_perator = alert.mutable_pais()->Add();
-						pai_perator->mutable_pai()->CopyFrom(pai);
-						pai_perator->mutable_oper_list()->Add(Asset::PAI_OPER_TYPE_GANGPAI);
-					}
+					auto pai_perator = alert.mutable_pais()->Add();
+					pai_perator->mutable_pai()->CopyFrom(pai);
+					pai_perator->mutable_oper_list()->Add(Asset::PAI_OPER_TYPE_GANGPAI);
 				}
 			}
 
@@ -654,7 +651,7 @@ bool Game::SendCheckRtn()
 	};
 
 	Asset::PaiOperationList operation;
-	for (int32_t i = Asset::PAI_OPER_TYPE_HUPAI; i <= Asset::PAI_OPER_TYPE_CHIPAI; ++i)
+	for (int32_t i = Asset::PAI_OPER_TYPE_HUPAI; i <= Asset::PAI_OPER_TYPE_COUNT; ++i)
 	{
 		auto result = check((Asset::PAI_OPER_TYPE)i, operation);
 		if (result) break;

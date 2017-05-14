@@ -1851,7 +1851,13 @@ bool Player::CheckTingPai(std::vector<Asset::PaiElement>& pais)
 					pai.set_card_type((Asset::CARD_TYPE)card_type);
 					pai.set_card_value(card_value);
 
-					if (!CheckHuPai(pai)) continue;
+					if (CheckHuPai(pai))
+					{
+						Asset::PaiElement pai; //即打出这张后，听牌
+						pai.set_card_type((Asset::CARD_TYPE)it->first);
+						pai.set_card_value(value);
+						pais.push_back(pai); //缓存
+					}
 				}
 			}
 			
@@ -1862,7 +1868,13 @@ bool Player::CheckTingPai(std::vector<Asset::PaiElement>& pais)
 				pai.set_card_type(Asset::CARD_TYPE_FENG);
 				pai.set_card_value(card_value);
 
-				if (!CheckHuPai(pai)) continue;
+				if (CheckHuPai(pai)) 
+				{
+					Asset::PaiElement pai; //即打出这张后，听牌
+					pai.set_card_type((Asset::CARD_TYPE)it->first);
+					pai.set_card_value(value);
+					pais.push_back(pai); //缓存
+				}
 			}
 		
 			//能否胡箭牌
@@ -1872,16 +1884,17 @@ bool Player::CheckTingPai(std::vector<Asset::PaiElement>& pais)
 				pai.set_card_type(Asset::CARD_TYPE_JIAN);
 				pai.set_card_value(card_value);
 
-				if (!CheckHuPai(pai)) continue; 
+				if (CheckHuPai(pai)) 
+				{
+					Asset::PaiElement pai; //即打出这张后，听牌
+					pai.set_card_type((Asset::CARD_TYPE)it->first);
+					pai.set_card_value(value);
+					pais.push_back(pai); //缓存
+				}
 			}
 
 ///////////////////////////////////////////////////////玩家能否胡牌////////////////////////////////////////////////////////
 			
-			Asset::PaiElement pai; //即打出这张后，听牌
-			pai.set_card_type((Asset::CARD_TYPE)it->first);
-			pai.set_card_value(value);
-			pais.push_back(pai); //缓存
-
 			_cards = card_list; //恢复牌，尝试删除下一张牌
 		}
 	}
