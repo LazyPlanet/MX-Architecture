@@ -285,6 +285,9 @@ int32_t Player::CmdPaiOperate(pb::Message* message)
 			
 			DEBUG("%s:line:%d,玩家:%ld打牌，删除手中的牌, 类型:%d, 值:%d\n", __func__, __LINE__, GetID(), pai.card_type(), pai.card_value());
 
+			DEBUG("%s:line:%d, 玩家:%ld当前拥有的牌数据:\n", __func__, __LINE__);
+			PrintPai();
+
 			auto it = std::find(pais.begin(), pais.end(), pai.card_value()); //查找第一个满足条件的牌即可
 			if (it == pais.end()) 
 			{
@@ -1827,6 +1830,9 @@ bool Player::CheckTingPai(std::vector<Asset::PaiElement>& pais)
 	auto it_baohu = std::find(options.extend_type().begin(), options.extend_type().end(), Asset::ROOM_EXTEND_TYPE_BAOPAI);
 	if (it_baohu == options.extend_type().end()) return false; //不带宝胡，绝对不可能呢听牌
 
+	DEBUG("%s:line:%d, 玩家:%ld当前拥有的牌数据:\n", __func__, __LINE__);
+	PrintPai();
+
 	auto card_list = _cards; //复制当前牌
 
 	for (auto it = card_list.begin(); it != card_list.end(); ++it)
@@ -1898,6 +1904,9 @@ bool Player::CheckTingPai(std::vector<Asset::PaiElement>& pais)
 	}
 
 	_cards = card_list; //恢复牌
+	
+	DEBUG("%s:line:%d, 玩家:%ld当前拥有的牌数据:\n", __func__, __LINE__);
+	PrintPai();
 
 	return pais.size() > 0;
 }

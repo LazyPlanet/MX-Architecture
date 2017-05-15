@@ -18,7 +18,7 @@ namespace Adoter
 using namespace google::protobuf;
 namespace pb = google::protobuf;
 
-class ClientSession : public ClientSocket<ClientSession>
+class ClientSession : public ClientSocket
 {
 public:
 	explicit ClientSession(boost::asio::io_service& io_service, const boost::asio::ip::tcp::endpoint& endpoint);

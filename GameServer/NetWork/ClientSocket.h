@@ -15,17 +15,11 @@
 namespace Adoter 
 {
 
-using boost::asio::ip::tcp;
-using namespace boost::asio;
-
-template<class T, class S = boost::asio::ip::tcp::socket>
-class ClientSocket : public std::enable_shared_from_this<T>
+class ClientSocket : public std::enable_shared_from_this<ClientSocket>
 {
 public:
-	S _socket; 
-public:
-	explicit ClientSocket(boost::asio::io_service& io_service, const boost::asio::ip::tcp::endpoint& endpoint) : 
-		_socket(io_service), _remote_endpoint(endpoint)
+	ClientSocket(boost::asio::io_service& io_service, const boost::asio::ip::tcp::endpoint& endpoint) : 
+		_timer(io_service), _socket(io_service), _remote_endpoint(endpoint)
 	{
 
 	}
@@ -34,12 +28,12 @@ public:
     {
         _status = STATUS_CONNECTING;
 
-        _socket.async_connect(_remote_endpoint, std::bind(&ClientSocket::OnConnect, shared_from_this(), _1));
+        _socket.async_connect(_remote_endpoint, boost::bind(&ClientSocket::OnConnect, shared_from_this(), _1));
 
         if (_connect_timeout > 0) 
         {
             _timer.expires_from_now(boost::posix_time::milliseconds(_connect_timeout));
-            _timer.async_wait(std::bind(&ClientSocket::OnConnectTimeout, shared_from_this(), _1));
+            _timer.async_wait(boost::bind(&ClientSocket::OnConnectTimeout, shared_from_this(), _1));
         }
     }
     
@@ -55,7 +49,7 @@ public:
     void Close(const std::string& reason)
     {
 		boost::system::error_code error;
-		_socket.shutdown(tcp::socket::shutdown_both, error);
+		_socket.shutdown(boost::asio::ip::tcp::socket::shutdown_both, error);
 
 		std::cout << __func__ << " Line:" << __LINE__ << " reason:" << reason << " error:" << error << std::endl;
 
@@ -64,12 +58,12 @@ public:
 
     void AsynyReadSome()
     {
-        _socket.async_read_some(boost::asio::buffer(_buffer), std::bind(&ClientSocket::OnReadSome, shared_from_this(), _1, _2));
+        _socket.async_read_some(boost::asio::buffer(_buffer), boost::bind(&ClientSocket::OnReadSome, shared_from_this(), _1, _2));
     }
 
     void AsyncWriteSome(const char* data, size_t size)
     {
-        _socket.async_write_some(boost::asio::buffer(data, size), std::bind(&ClientSocket::OnWriteSome, shared_from_this(), _1, _2));
+        _socket.async_write_some(boost::asio::buffer(data, size), boost::bind(&ClientSocket::OnWriteSome, shared_from_this(), _1, _2));
     }
 
     virtual bool OnConnected() { return true; }
@@ -80,6 +74,8 @@ public:
 	virtual void OnWriteSome(const boost::system::error_code& error, std::size_t bytes_transferred) { }
 
 protected:
+	boost::asio::deadline_timer _timer;
+	boost::asio::ip::tcp::socket _socket; 
 	boost::asio::ip::tcp::endpoint _local_endpoint;
 	boost::asio::ip::tcp::endpoint _remote_endpoint;
     volatile int64_t _ticks = 0;
@@ -88,7 +84,6 @@ protected:
 	//接收缓存
 	std::array<unsigned char, 4096> _buffer;
     
-	deadline_timer _timer;
     int64_t _connect_timeout = 10;
 
     enum {
