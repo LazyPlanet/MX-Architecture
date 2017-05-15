@@ -18,9 +18,14 @@ namespace Adoter
 using namespace google::protobuf;
 namespace pb = google::protobuf;
 
-class ClientSession : public SocketClient<ClientSession>
+class ClientSession : public ClientSocket<ClientSession>
 {
 public:
+	explicit ClientSession(boost::asio::io_service& io_service, const boost::asio::ip::tcp::endpoint& endpoint);
+
+	ClientSession(ClientSession const& right) = delete;    
+	ClientSession& operator = (ClientSession const& right) = delete;
+
     virtual bool StartReceive()
     {
         return TryStartReceive();
@@ -30,7 +35,7 @@ public:
     {
         if (!IsConnected()) return false;
 
-		AsynyReadSome(_receiving_data, _receiving_size);
+		AsynyReadSome();
 		return true;
     }
     
@@ -100,7 +105,7 @@ public:
 
     virtual void OnWriteSome(const boost::system::error_code& error, std::size_t bytes_transferred)
     {
-        if (!is_connected()) return;
+        if (!IsConnected()) return;
 
         if (error)
         {
@@ -109,12 +114,12 @@ public:
         }
 
 		std::deque<std::string> send_messages;
-		received_messages.swap(_send_data);
+		send_messages.swap(_send_list);
 		
 		if (!IsClosed() && !send_messages.empty())
 		{
             const std::string& message = send_messages.front();
-			AsyncWriteSome(message.c_str(), messag.size());
+			AsyncWriteSome(message.c_str(), message.size());
             send_messages.pop_front();
 		}
 		else
