@@ -132,8 +132,7 @@ void Game::OnPaiOperate(std::shared_ptr<Player> player, pb::Message* message)
 	Asset::PaiOperation* pai_operate = dynamic_cast<Asset::PaiOperation*>(message);
 	if (!pai_operate) return; 
 	
-	spdlog::get("console")->debug("{0} Line:{1} player_id:{2} server saved infomation from_player_id:{3} card_type:{4} card_value:{5} oper_type:{6}, \
-			while client sentd to card_type:{7} card_value:{8} oper_type:{9}",
+	spdlog::get("console")->debug("{0} Line:{1} player_id:{2} server saved infomation from_player_id:{3} card_type:{4} card_value:{5} oper_type:{6}, while client sentd to card_type:{7} card_value:{8} oper_type:{9}",
 			__func__, __LINE__, player->GetID(), _oper_limit.from_player_id(), _oper_limit.pai().card_type(), _oper_limit.pai().card_value(), 
 			_oper_limit.oper_type(), pai_operate->pai().card_type(), pai_operate->pai().card_value(), pai_operate->oper_type());
 

@@ -1830,7 +1830,7 @@ bool Player::CheckTingPai(std::vector<Asset::PaiElement>& pais)
 	auto it_baohu = std::find(options.extend_type().begin(), options.extend_type().end(), Asset::ROOM_EXTEND_TYPE_BAOPAI);
 	if (it_baohu == options.extend_type().end()) return false; //不带宝胡，绝对不可能呢听牌
 
-	DEBUG("%s:line:%d, 玩家:%ld当前拥有的牌数据:\n", __func__, __LINE__);
+	DEBUG("%s:line:%d, 玩家:%ld当前拥有的牌数据:\n", __func__, __LINE__, GetID());
 	PrintPai();
 
 	auto card_list = _cards; //复制当前牌
