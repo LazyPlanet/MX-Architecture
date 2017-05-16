@@ -3,6 +3,7 @@
 #include <memory>
 #include <atomic>
 #include <thread>
+
 #include <boost/asio.hpp>
 #include <boost/asio/deadline_timer.hpp>
 
@@ -115,7 +116,9 @@ public:
 	}
 protected:
 	virtual void SocketAdded(std::shared_ptr<SOCKET_TYPE>) { }    
-	virtual void SocketRemoved(std::shared_ptr<SOCKET_TYPE>) { }
+	virtual void SocketRemoved(std::shared_ptr<SOCKET_TYPE>) { 
+		std::cout << __func__ << " Line:" << __LINE__ << std::endl;
+	}
 private:
 	std::vector<std::shared_ptr<SOCKET_TYPE>> _socket_list; //连接的SOCKET列表
 	std::atomic<int32_t> _connections;    
