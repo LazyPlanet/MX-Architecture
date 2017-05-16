@@ -298,6 +298,24 @@ void Game::OnPaiOperate(std::shared_ptr<Player> player, pb::Message* message)
 			{
 				player->OnGangPai(pai, _oper_limit.from_player_id());
 				_curr_player_index = GetPlayerOrder(player->GetID()); //重置当前玩家索引
+
+				////////听牌检查
+				std::vector<Asset::PaiElement> pais;
+
+				if (player->CheckTingPai(pais))
+				{
+					Asset::PaiOperationAlert alert;
+
+					for (auto pai : pais) 
+					{
+						auto pai_perator = alert.mutable_pais()->Add();
+						pai_perator->mutable_pai()->CopyFrom(pai);
+						pai_perator->mutable_oper_list()->Add(Asset::PAI_OPER_TYPE_TINGPAI);
+					}
+
+					if (alert.pais().size()) player->SendProtocol(alert); //提示Client
+				}
+
 				ClearOperation(); //清理缓存以及等待玩家操作的状态
 			}
 		}
@@ -315,6 +333,24 @@ void Game::OnPaiOperate(std::shared_ptr<Player> player, pb::Message* message)
 			{
 				player->OnPengPai(pai);
 				_curr_player_index = GetPlayerOrder(player->GetID()); //重置当前玩家索引
+
+				////////听牌检查
+				std::vector<Asset::PaiElement> pais;
+
+				if (player->CheckTingPai(pais))
+				{
+					Asset::PaiOperationAlert alert;
+
+					for (auto pai : pais) 
+					{
+						auto pai_perator = alert.mutable_pais()->Add();
+						pai_perator->mutable_pai()->CopyFrom(pai);
+						pai_perator->mutable_oper_list()->Add(Asset::PAI_OPER_TYPE_TINGPAI);
+					}
+
+					if (alert.pais().size()) player->SendProtocol(alert); //提示Client
+				}
+
 				ClearOperation(); //清理缓存以及等待玩家操作的状态
 			}
 		}
@@ -331,6 +367,24 @@ void Game::OnPaiOperate(std::shared_ptr<Player> player, pb::Message* message)
 			else
 			{
 				player->OnChiPai(pai, message);
+
+				////////听牌检查
+				std::vector<Asset::PaiElement> pais;
+
+				if (player->CheckTingPai(pais))
+				{
+					Asset::PaiOperationAlert alert;
+
+					for (auto pai : pais) 
+					{
+						auto pai_perator = alert.mutable_pais()->Add();
+						pai_perator->mutable_pai()->CopyFrom(pai);
+						pai_perator->mutable_oper_list()->Add(Asset::PAI_OPER_TYPE_TINGPAI);
+					}
+
+					if (alert.pais().size()) player->SendProtocol(alert); //提示Client
+				}
+
 				ClearOperation(); //清理缓存以及等待玩家操作的状态
 			}
 		}
