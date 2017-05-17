@@ -37,7 +37,7 @@ void Room::Enter(std::shared_ptr<Player> player)
 
 	std::lock_guard<std::mutex> lock(_mutex);
 
-	DEBUG("%s:line:%d 当前房间人数:%d player_id:%ld\n", __func__, __LINE__, _players.size(), player->GetID());
+	//DEBUG("%s:line:%d 当前房间人数:%d player_id:%ld\n", __func__, __LINE__, _players.size(), player->GetID());
 
 	_players.push_back(player); //进入房间
 
@@ -171,7 +171,7 @@ void Room::SyncRoom()
 	
 	for (auto player : _players)
 	{
-		DEBUG("%s:line:%d 同步房间数据:%d player_id:%ld position:%d\n", __func__, __LINE__, _players.size(), player->GetID(), player->GetPosition());
+		//DEBUG("%s:line:%d 同步房间数据:%d player_id:%ld position:%d\n", __func__, __LINE__, _players.size(), player->GetID(), player->GetPosition());
 		auto p = message.mutable_player_list()->Add();
 		p->set_position(player->GetPosition());
 		p->mutable_common_prop()->CopyFrom(player->CommonProp());

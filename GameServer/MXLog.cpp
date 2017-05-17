@@ -28,6 +28,7 @@ void utf8printf(FILE* out, const char *str, ...)
 	vutf8printf(out, str, &ap);
 }
 
+/*
 void DEBUG(const char *str, ...)
 {
 	va_list ap;
@@ -52,6 +53,7 @@ void P(Asset::LOG_LEVEL level, const char *format, ...)
 
 	MXLog::Instance().Print(log.get());
 }
+*/
 
 void MXLog::Print(Asset::LogMessage* message)
 {

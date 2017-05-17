@@ -7,13 +7,15 @@
 
 #include "spdlog/spdlog.h"
 
+#include "Config.h"
 #include "P_Header.h"
 
 namespace Adoter
 {
 
-void DEBUG(const char *str, ...);
-void P(Asset::LOG_LEVEL level, const char *format, ...);
+#define TRACE(...) spdlog::get("console")->trace("[" __FILE__ " line #" SPDLOG_STR_HELPER(__LINE__) "] " __VA_ARGS__) 
+
+#define DEBUG(...) spdlog::get("console")->debug(__VA_ARGS__)
 
 namespace pb = google::protobuf;
 
@@ -30,7 +32,6 @@ public:
 
 	MXLog();
 	~MXLog() { 
-		DEBUG("%s:line:%d Delete all logs.\n", __func__, __LINE__);
 		spdlog::drop_all(); 
 	}
 

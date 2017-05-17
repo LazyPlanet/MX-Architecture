@@ -51,7 +51,7 @@ bool Game::Start(std::vector<std::shared_ptr<Player>> players)
 	{
 		auto player = _players[i];
 
-		DEBUG("%s:line:%d player_id:%ld player_index:%d\n", __func__, __LINE__, player->GetID(), i);
+		//DEBUG("%s:line:%d player_id:%ld player_index:%d\n", __func__, __LINE__, player->GetID(), i);
 
 		int32_t card_count = 13; //正常开启，普通玩家牌数量
 
@@ -120,8 +120,8 @@ bool Game::CanPaiOperate(std::shared_ptr<Player> player)
 		return true; //轮到该玩家
 	}
 
-	DEBUG("%s:line:%d curr_player_index:%d player_index:%d player_id:%ld oper_limit_player_id:%ld\n", 
-			__func__, __LINE__, _curr_player_index, player_index, player->GetID(), _oper_limit.player_id());
+	//DEBUG("%s:line:%d curr_player_index:%d player_index:%d player_id:%ld oper_limit_player_id:%ld\n", 
+	//		__func__, __LINE__, _curr_player_index, player_index, player->GetID(), _oper_limit.player_id());
 	return false;
 }
 
@@ -177,8 +177,8 @@ void Game::OnPaiOperate(std::shared_ptr<Player> player, pb::Message* message)
 					return; 
 				}
 				
-				DEBUG("%s:line:%d next_player_id:%ld _curr_player_index:%d next_player_index:%d\n", 
-						__func__, __LINE__, player_next->GetID(), _curr_player_index, next_player_index);
+				//DEBUG("%s:line:%d next_player_id:%ld _curr_player_index:%d next_player_index:%d\n", 
+				//		__func__, __LINE__, player_next->GetID(), _curr_player_index, next_player_index);
 
 				auto cards = FaPai(1); 
 
@@ -397,13 +397,13 @@ void Game::OnPaiOperate(std::shared_ptr<Player> player, pb::Message* message)
 			auto next_player_index = (_curr_player_index + 1) % MAX_PLAYER_COUNT; //如果有玩家放弃操作，则继续下个玩家
 
 			auto player_next = GetPlayerByOrder(next_player_index);
-			DEBUG("%s:line:%d _oper_limit.player_id:%ld next_player_id:%ld _curr_player_index:%d next_player_index:%d\n", 
-					__func__, __LINE__, _oper_limit.player_id(), player_next->GetID(), _curr_player_index, next_player_index);
+			//DEBUG("%s:line:%d _oper_limit.player_id:%ld next_player_id:%ld _curr_player_index:%d next_player_index:%d\n", 
+			//		__func__, __LINE__, _oper_limit.player_id(), player_next->GetID(), _curr_player_index, next_player_index);
 			if (!player_next) return; 
 
 			//如果是其他玩家放弃了操作(比如，对门不碰)，则检查下家还能不能要这张牌，来吃
-			DEBUG("%s:line:%d _oper_limit.player_id:%ld next_player_id:%ld _curr_player_index:%d next_player_index:%d\n", 
-					__func__, __LINE__, _oper_limit.player_id(), player_next->GetID(), _curr_player_index, next_player_index);
+			//DEBUG("%s:line:%d _oper_limit.player_id:%ld next_player_id:%ld _curr_player_index:%d next_player_index:%d\n", 
+			//		__func__, __LINE__, _oper_limit.player_id(), player_next->GetID(), _curr_player_index, next_player_index);
 
 			auto cards = FaPai(1); 
 
@@ -489,7 +489,7 @@ void Game::OnPaiOperate(std::shared_ptr<Player> player, pb::Message* message)
 
 		default:
 		{
-			DEBUG("%s:line:%d 服务器接收未能处理的协议，玩家角色:player_id:%ld, 操作类型:%d\n", __func__, __LINE__, player->GetID(), pai_operate->oper_type());
+			//DEBUG("%s:line:%d 服务器接收未能处理的协议，玩家角色:player_id:%ld, 操作类型:%d\n", __func__, __LINE__, player->GetID(), pai_operate->oper_type());
 			//DEBUG_ASSERT(false);
 			return; //直接退出
 		}
@@ -499,7 +499,7 @@ void Game::OnPaiOperate(std::shared_ptr<Player> player, pb::Message* message)
 
 void Game::ClearOperation()
 {
-	DEBUG("%s:line:%d player_id:%ld\n", __func__, __LINE__, _oper_limit.player_id());
+	//DEBUG("%s:line:%d player_id:%ld\n", __func__, __LINE__, _oper_limit.player_id());
 	_oper_limit.Clear(); //清理状态
 }
 	
@@ -623,7 +623,7 @@ void Game::Calculate(int64_t hupai_player_id/*胡牌玩家*/, int64_t dianpao_pl
 		int32_t ming_score = ming_count * 1, an_score = an_count * 2;
 		auto score = ming_score + an_score;
 				
-		DEBUG("%s:line:%d player_id:%ld, ming_count:%d, an_count:%d, score:%d\n", __func__, __LINE__, player->GetID(), ming_count, an_count, score);
+		//DEBUG("%s:line:%d player_id:%ld, ming_count:%d, an_count:%d, score:%d\n", __func__, __LINE__, player->GetID(), ming_count, an_count, score);
 
 		auto record = message.mutable_record()->mutable_list(i);
 		record->set_score((record->score() + score) * (MAX_PLAYER_COUNT - 1)); //增加杠分
@@ -714,7 +714,7 @@ bool Game::SendCheckRtn()
 	}
 	if (operation.oper_list().size() == 0) 
 	{
-		DEBUG("%s:line%d 没有可操作的牌值.\n", __func__, __LINE__);
+		//DEBUG("%s:line%d 没有可操作的牌值.\n", __func__, __LINE__);
 		return false;
 	}
 
@@ -769,7 +769,7 @@ bool Game::CheckPai(const Asset::PaiElement& pai, int64_t from_player_id)
 	}
 
 	//assert(_curr_player_index == player_index); //理论上一定相同：错误，如果碰牌的玩家出牌就不一定
-	DEBUG("%s:line:%d _curr_player_index:%d player_index:%d\n", __func__, __LINE__, _curr_player_index, player_index);
+	//DEBUG("%s:line:%d _curr_player_index:%d player_index:%d\n", __func__, __LINE__, _curr_player_index, player_index);
 
 	int32_t next_player_index = (_curr_player_index + 1) % MAX_PLAYER_COUNT;
 
@@ -789,12 +789,12 @@ bool Game::CheckPai(const Asset::PaiElement& pai, int64_t from_player_id)
 		auto rtn_check = player->CheckPai(pai, from_player_id); //TODO：其他玩家打的宝牌，已经听的玩家可以胡，理论上只有自摸宝牌才能胡
 		if (rtn_check.size() == 0) 
 		{
-			DEBUG("%s:line:%d _curr_player_index:%d player_index:%d\n", __func__, __LINE__, _curr_player_index, player_index);
+			//DEBUG("%s:line:%d _curr_player_index:%d player_index:%d\n", __func__, __LINE__, _curr_player_index, player_index);
 			continue; //不能吃、碰、杠和胡牌
 		}
 
-		for (auto value : rtn_check)
-			DEBUG("玩家可以进行的操作: %s:line:%d cur_index:%d next_player_index:%d player_id:%ld value:%d\n", __func__, __LINE__, cur_index, next_player_index, player->GetID(),value);
+		//for (auto value : rtn_check)
+			//DEBUG("玩家可以进行的操作: %s:line:%d cur_index:%d next_player_index:%d player_id:%ld value:%d\n", __func__, __LINE__, cur_index, next_player_index, player->GetID(),value);
 		
 		auto it_chi = std::find(rtn_check.begin(), rtn_check.end(), Asset::PAI_OPER_TYPE_CHIPAI);
 		if (it_chi != rtn_check.end() && cur_index != next_player_index) rtn_check.erase(it_chi);
@@ -809,7 +809,7 @@ bool Game::CheckPai(const Asset::PaiElement& pai, int64_t from_player_id)
 		for (auto result : rtn_check) 
 		{
 			pai_operation.mutable_oper_list()->Add(result);
-			DEBUG("%s:line:%d 可操作玩家:%ld 可以操作类型:%d\n", __func__, __LINE__, player->GetID(), result);
+			//DEBUG("%s:line:%d 可操作玩家:%ld 可以操作类型:%d\n", __func__, __LINE__, player->GetID(), result);
 		}
 		_oper_list.push_back(pai_operation);
 	}
@@ -843,7 +843,7 @@ std::vector<int32_t> Game::FaPai(size_t card_count)
 
 	if (_cards.size() / 2 <= 12) //可以分牌，不能继续抓牌
 	{
-		DEBUG("%s:line:%d, size:%u\n", __func__, __LINE__, _cards.size());
+		//DEBUG("%s:line:%d, size:%u\n", __func__, __LINE__, _cards.size());
 		return cards;
 	}
 	

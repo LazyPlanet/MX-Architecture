@@ -51,14 +51,14 @@ void WorldSession::InitializeHandler(const boost::system::error_code error, cons
 			const std::string& enum_name = enum_value->name();
 			
 			if (g_player)
-				DEBUG("%s:line:%d, 玩家:%ld 接收客户端发送的协议数据:%s\n", __func__, __LINE__, g_player->GetID(), enum_name.c_str());
+				TRACE("player_id:{0} receive message type:{1}", g_player->GetID(), enum_name.c_str());
 			else
-				DEBUG("%s:line:%d, 接收客户端发送的协议数据:%s\n", __func__, __LINE__, enum_name.c_str());
+				TRACE("player_id:0 receive message type:{0}", enum_name.c_str());
 			
 			pb::Message* msg = ProtocolInstance.GetMessage(meta.type_t());	
 			if (!msg) 
 			{
-				DEBUG("Could not found message of type:%d", meta.type_t());
+				//DEBUG("Could not found message of type:%d", meta.type_t());
 				return;		//非法协议
 			}
 
@@ -91,7 +91,7 @@ void WorldSession::InitializeHandler(const boost::system::error_code error, cons
 					int64_t player_id = redis->CreatePlayer();
 					if (player_id == 0) 
 					{
-						DEBUG("Create player failed.");
+						//DEBUG("Create player failed.");
 						return; //创建失败
 					}
 
@@ -102,7 +102,7 @@ void WorldSession::InitializeHandler(const boost::system::error_code error, cons
 
 					g_player = std::make_shared<Player>(player_id, shared_from_this());
 					std::string player_name = NameInstance.Get();
-					DEBUG("%s:line:%d, player_id:%ld, player_name:%s\n", __func__, __LINE__, player_id, player_name.c_str());
+					//DEBUG("%s:line:%d, player_id:%ld, player_name:%s\n", __func__, __LINE__, player_id, player_name.c_str());
 					g_player->SetName(player_name);
 					g_player->Save(); //存盘，防止数据库无数据
 				}
@@ -157,7 +157,7 @@ void WorldSession::InitializeHandler(const boost::system::error_code error, cons
 				if (_player_list.find(enter_game->player_id()) == _player_list.end())
 				{
 					Close();
-					DEBUG("Player has not found.");
+					//DEBUG("Player has not found.");
 					return; //账号下没有该角色数据
 				}
 
@@ -168,7 +168,7 @@ void WorldSession::InitializeHandler(const boost::system::error_code error, cons
 			{
 				if (!g_player) 
 				{
-					DEBUG("Player has not inited");
+					//DEBUG("Player has not inited");
 					return; //未初始化的Player
 				}
 				//其他协议的调用规则
@@ -254,7 +254,7 @@ void WorldSession::SendProtocol(pb::Message& message)
 	//调试
 	const pb::EnumValueDescriptor* enum_value = message.GetReflection()->GetEnum(message, field);
 	if (!enum_value) return;
-	DEBUG("%s:line:%d, protocol_name:%s, content:%s\n", __func__, __LINE__, enum_value->name().c_str(), message.ShortDebugString().c_str());
+	//DEBUG("%s:line:%d, protocol_name:%s, content:%s\n", __func__, __LINE__, enum_value->name().c_str(), message.ShortDebugString().c_str());
 }
 
 void WorldSessionManager::Add(std::shared_ptr<WorldSession> session)

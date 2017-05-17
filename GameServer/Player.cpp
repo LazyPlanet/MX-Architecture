@@ -283,9 +283,9 @@ int32_t Player::CmdPaiOperate(pb::Message* message)
 
 			auto& pais = _cards[pai.card_type()]; //获取该类型的牌
 			
-			DEBUG("%s:line:%d,玩家:%ld打牌，删除手中的牌, 类型:%d, 值:%d\n", __func__, __LINE__, GetID(), pai.card_type(), pai.card_value());
+			//DEBUG("%s:line:%d,玩家:%ld打牌，删除手中的牌, 类型:%d, 值:%d\n", __func__, __LINE__, GetID(), pai.card_type(), pai.card_value());
 
-			DEBUG("%s:line:%d, 玩家:%ld当前拥有的牌数据:\n", __func__, __LINE__);
+			//DEBUG("%s:line:%d, 玩家:%ld当前拥有的牌数据:\n", __func__, __LINE__);
 			PrintPai();
 
 			auto it = std::find(pais.begin(), pais.end(), pai.card_value()); //查找第一个满足条件的牌即可
@@ -317,7 +317,6 @@ int32_t Player::CmdPaiOperate(pb::Message* message)
 		{
 			if (_stuff.player_prop().pai_oper_count() >= 2) 
 			{
-				P(Asset::ERROR, "%s:line:%d, player:%ld 检查旋风杠，估计外挂行为.", __func__, __LINE__, GetID());
 				return 5;
 			}
 			OnGangFengPai();
@@ -328,7 +327,6 @@ int32_t Player::CmdPaiOperate(pb::Message* message)
 		{
 			if (_stuff.player_prop().pai_oper_count() >= 2) 
 			{
-				P(Asset::ERROR, "%s:line:%d, player:%ld 检查旋风杠，估计外挂行为.", __func__, __LINE__, GetID());
 				return 6;
 			}
 			OnGangJianPai();
@@ -341,7 +339,7 @@ int32_t Player::CmdPaiOperate(pb::Message* message)
 
 			auto& pais = _cards[pai.card_type()]; //获取该类型的牌
 
-			DEBUG("%s:line:%d,玩家:%ld听牌，删除手中的牌, 类型:%d, 值:%d\n", __func__, __LINE__, GetID(), pai.card_type(), pai.card_value());
+			//DEBUG("%s:line:%d,玩家:%ld听牌，删除手中的牌, 类型:%d, 值:%d\n", __func__, __LINE__, GetID(), pai.card_type(), pai.card_value());
 			
 			auto it = std::find(pais.begin(), pais.end(), pai.card_value()); //查找第一个满足条件的牌即可
 			if (it == pais.end()) 
@@ -1042,7 +1040,8 @@ bool CanHuPai(std::vector<Card_t>& cards, bool use_pair = false)
 
 	if (size <= 2) 
 	{
-		if (size == 1)	P(Asset::ERROR, "%s:line:%d, size=1.", __func__, __LINE__);
+		if (size == 1) return true;	
+			//P(Asset::ERROR, "%s:line:%d, size=1.", __func__, __LINE__);
 
 		return size == 0 || cards[0] == cards[1]; 
 	}
@@ -1513,7 +1512,7 @@ void Player::OnChiPai(const Asset::PaiElement& pai, pb::Message* message)
 		return; //理论上不会出现
 	}
 	
-	DEBUG("%s:line:%d,删除牌 类型:%d--值%d", __func__, __LINE__, pai_operate->pais(0).card_type(), pai_operate->pais(0).card_value());
+	TRACE("Dlete pai from player_id:{0}, card_type:{1}, card_value:{2}", pai_operate->pais(0).card_type(), pai_operate->pais(0).card_value());
 	it->second.erase(first); //删除
 
 	auto second = std::find(it->second.begin(), it->second.end(), pai_operate->pais(1).card_value());
@@ -1523,7 +1522,7 @@ void Player::OnChiPai(const Asset::PaiElement& pai, pb::Message* message)
 		return; //理论上不会出现
 	}
 
-	DEBUG("%s:line:%d,删除牌 类型:%d--值%d", __func__, __LINE__, pai_operate->pais(1).card_type(), pai_operate->pais(0).card_value());
+	//DEBUG("%s:line:%d,删除牌 类型:%d--值%d", __func__, __LINE__, pai_operate->pais(1).card_type(), pai_operate->pais(0).card_value());
 	it->second.erase(second); //删除
 	
 	for (auto card : cards)
@@ -1550,7 +1549,7 @@ void Player::OnPengPai(const Asset::PaiElement& pai)
 	if (!CheckPengPai(pai)) 
 	{
 		DEBUG_ASSERT(false);
-		DEBUG("%s:line:%d,玩家无法碰牌 类型:%d--值%d\n", __func__, __LINE__, GetID(), pai.card_type(), pai.card_value());
+		//DEBUG("%s:line:%d,玩家无法碰牌 类型:%d--值%d\n", __func__, __LINE__, GetID(), pai.card_type(), pai.card_value());
 		return;
 	}
 	
@@ -1562,7 +1561,7 @@ void Player::OnPengPai(const Asset::PaiElement& pai)
 		auto iit = std::find(it->second.begin(), it->second.end(), pai.card_value()); //从玩家手里删除
 		if (iit == it->second.end()) return;
 		it->second.erase(iit);
-		DEBUG("%s:line:%d,删除玩家%ld手中牌 类型:%d--值%d\n", __func__, __LINE__, GetID(), pai.card_type(), pai.card_value());
+		//DEBUG("%s:line:%d,删除玩家%ld手中牌 类型:%d--值%d\n", __func__, __LINE__, GetID(), pai.card_type(), pai.card_value());
 	}
 
 	for (int i = 0; i < 3; ++i)
@@ -1584,8 +1583,8 @@ bool Player::CheckGangPai(const Asset::PaiElement& pai, int64_t from_player_id)
 		if (count == 3 /*牌是来自其他玩家*/ || count == 4 /*牌是玩家自己抓的*/) return true;  //玩家手里需要有3|4张牌
 	}
 
-	DEBUG("%s:line:%d,杠牌 玩家%ld墙外牌: 类型:%d 值:%d from_player_id:%ld\n", 
-			__func__, __LINE__, GetID(), pai.card_type(), pai.card_value(), from_player_id);
+	//DEBUG("%s:line:%d,杠牌 玩家%ld墙外牌: 类型:%d 值:%d from_player_id:%ld\n", 
+	//		__func__, __LINE__, GetID(), pai.card_type(), pai.card_value(), from_player_id);
 
 	if (from_player_id == GetID()) //玩家自己抓牌
 	{
@@ -1595,34 +1594,34 @@ bool Player::CheckGangPai(const Asset::PaiElement& pai, int64_t from_player_id)
 
 		if (first_it == it->second.end()) 
 		{
-			DEBUG("%s:line:%d,杠牌 玩家%ld墙外牌: 类型:%d, 值:%d from_player_id:%ld\n", 
-				__func__, __LINE__, GetID(), pai.card_type(), pai.card_value(), from_player_id);
+			//DEBUG("%s:line:%d,杠牌 玩家%ld墙外牌: 类型:%d, 值:%d from_player_id:%ld\n", 
+			//	__func__, __LINE__, GetID(), pai.card_type(), pai.card_value(), from_player_id);
 			return false;
 		}
 
 		auto second_it = ++first_it;
 		if (second_it == it->second.end())
 		{
-			DEBUG("%s:line:%d,杠牌 玩家%ld墙外牌: 类型:%d, 值:%d from_player_id:%ld\n", 
-				__func__, __LINE__, GetID(), pai.card_type(), pai.card_value(), from_player_id);
+			//DEBUG("%s:line:%d,杠牌 玩家%ld墙外牌: 类型:%d, 值:%d from_player_id:%ld\n", 
+			//	__func__, __LINE__, GetID(), pai.card_type(), pai.card_value(), from_player_id);
 			return false;
 		}
 
 		auto third_it = ++second_it;
 		if (third_it == it->second.end())
 		{
-			DEBUG("%s:line:%d,杠牌 玩家%ld墙外牌: 类型:%d, 值:%d from_player_id:%ld\n", 
-				__func__, __LINE__, GetID(), pai.card_type(), pai.card_value(), from_player_id);
+			//DEBUG("%s:line:%d,杠牌 玩家%ld墙外牌: 类型:%d, 值:%d from_player_id:%ld\n", 
+			//	__func__, __LINE__, GetID(), pai.card_type(), pai.card_value(), from_player_id);
 			return false;
 		}
 		
-		DEBUG("%s:line:%d,杠牌 玩家%ld墙外牌: 类型:%d, 值:%d %d %d %d\n", 
-				__func__, __LINE__, GetID(), pai.card_type(), pai.card_value(), *first_it, *second_it, *third_it);
+		//DEBUG("%s:line:%d,杠牌 玩家%ld墙外牌: 类型:%d, 值:%d %d %d %d\n", 
+		//		__func__, __LINE__, GetID(), pai.card_type(), pai.card_value(), *first_it, *second_it, *third_it);
 
 		if ((*first_it == *second_it) && (*second_it == *third_it)) return true;  //玩家牌面有3张牌
 	}
 		
-	DEBUG("%s:line:%d,玩家%ld不能杠牌, 类型:%d, 值:%d\n", __func__, __LINE__, GetID(), pai.card_type(), pai.card_value());
+	//DEBUG("%s:line:%d,玩家%ld不能杠牌, 类型:%d, 值:%d\n", __func__, __LINE__, GetID(), pai.card_type(), pai.card_value());
 
 	return false;
 }
@@ -1728,9 +1727,7 @@ void Player::OnGangPai(const Asset::PaiElement& pai, int64_t from_player_id)
 	}
 	
 	//记录日志
-	P(Asset::ACTION, "%s:line:%d, player:%ld 玩家杠牌, 牌类型:%d, 牌值:%d, 数量:%d.", __func__, __LINE__, GetID(), pai.card_type(), pai.card_value(), count);
-	
-	DEBUG("%s:line:%d, player:%ld 玩家杠牌, 牌类型:%d, 牌值:%d, 数量:%d.", __func__, __LINE__, GetID(), pai.card_type(), pai.card_value(), count);
+	//DEBUG("%s:line:%d, player:%ld 玩家杠牌, 牌类型:%d, 牌值:%d, 数量:%d.", __func__, __LINE__, GetID(), pai.card_type(), pai.card_value(), count);
 	
 	//从后楼给玩家取一张牌
 	auto cards = _game->TailPai(1);
@@ -1830,7 +1827,7 @@ bool Player::CheckTingPai(std::vector<Asset::PaiElement>& pais)
 	auto it_baohu = std::find(options.extend_type().begin(), options.extend_type().end(), Asset::ROOM_EXTEND_TYPE_BAOPAI);
 	if (it_baohu == options.extend_type().end()) return false; //不带宝胡，绝对不可能呢听牌
 
-	DEBUG("%s:line:%d, 玩家:%ld当前拥有的牌数据:\n", __func__, __LINE__, GetID());
+	//DEBUG("%s:line:%d, 玩家:%ld当前拥有的牌数据:\n", __func__, __LINE__, GetID());
 	PrintPai();
 
 	auto card_list = _cards; //复制当前牌
@@ -1905,7 +1902,7 @@ bool Player::CheckTingPai(std::vector<Asset::PaiElement>& pais)
 
 	_cards = card_list; //恢复牌
 	
-	DEBUG("%s:line:%d, 玩家:%ld当前拥有的牌数据:\n", __func__, __LINE__);
+	//DEBUG("%s:line:%d, 玩家:%ld当前拥有的牌数据:\n", __func__, __LINE__, GetID());
 	PrintPai();
 
 	return pais.size() > 0;
@@ -1946,8 +1943,6 @@ void Player::OnGangFengPai()
 
 	++_fenggang;
 	
-	P(Asset::ACTION, "%s:line:%d, player:%ld 旋风杠", __func__, __LINE__, GetID());
-	
 	//从后楼给玩家取一张牌
 	auto cards = _game->TailPai(1);
 	OnFaPai(cards);
@@ -1986,8 +1981,6 @@ void Player::OnGangJianPai()
 	}
 
 	++_jiangang;
-
-	P(Asset::ACTION, "%s:line:%d, player:%ld 旋风杠", __func__, __LINE__, GetID());
 }
 
 int32_t Player::OnFaPai(std::vector<int32_t>& cards)
@@ -2079,7 +2072,7 @@ void Player::SynchronizePai()
 
 		pais->set_card_type((Asset::CARD_TYPE)pai.first); //牌类型
 
-		DEBUG("%s:line:%d, 玩家 %ld手里真正的牌数据，牌类型:%d, 牌值:", __func__, __LINE__, pai.first);
+		//DEBUG("%s:line:%d, 玩家 %ld手里真正的牌数据，牌类型:%d, 牌值:", __func__, __LINE__, pai.first);
 
 		for (auto value : pai.second)
 			std::cout << value << " ";
@@ -2100,17 +2093,17 @@ void Player::PrintPai()
 	
 	for (auto pai : _minggang)
 	{
-		DEBUG("%s:line:%d, 玩家 %ld明杠真正的牌数据，牌类型:%d, 牌值:%d\n", __func__, __LINE__, GetID(), pai.card_type(), pai.card_value());
+		//DEBUG("%s:line:%d, 玩家 %ld明杠真正的牌数据，牌类型:%d, 牌值:%d\n", __func__, __LINE__, GetID(), pai.card_type(), pai.card_value());
 	}
 	
 	for (auto pai : _angang)
 	{
-		DEBUG("%s:line:%d, 玩家 %ld暗杠真正的牌数据，牌类型:%d, 牌值:%d\n", __func__, __LINE__, GetID(), pai.card_type(), pai.card_value());
+		//DEBUG("%s:line:%d, 玩家 %ld暗杠真正的牌数据，牌类型:%d, 牌值:%d\n", __func__, __LINE__, GetID(), pai.card_type(), pai.card_value());
 	}
 	
 	for (auto pai : _cards_outhand)
 	{
-		DEBUG("%s:line:%d, 玩家 %ld牌外真正的牌数据，牌类型:%d, 牌值:", __func__, __LINE__, GetID(), pai.first);
+		//DEBUG("%s:line:%d, 玩家 %ld牌外真正的牌数据，牌类型:%d, 牌值:", __func__, __LINE__, GetID(), pai.first);
 
 		for (auto value : pai.second)
 			std::cout << value << " ";
@@ -2123,7 +2116,7 @@ void Player::PrintPai()
 
 		pais->set_card_type((Asset::CARD_TYPE)pai.first); //牌类型
 		
-		DEBUG("%s:line:%d, 玩家 %ld手里真正的牌数据，牌类型:%d, 牌值:", __func__, __LINE__, GetID(), pai.first);
+		//DEBUG("%s:line:%d, 玩家 %ld手里真正的牌数据，牌类型:%d, 牌值:", __func__, __LINE__, GetID(), pai.first);
 
 		for (auto value : pai.second)
 			std::cout << value << " ";
