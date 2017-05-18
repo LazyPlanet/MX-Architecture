@@ -1738,18 +1738,18 @@ void Player::OnGangPai(const Asset::PaiElement& pai, int64_t from_player_id)
 
 bool Player::CheckFengGangPai() 
 { 
-	if (_stuff.player_prop().check_feng_gang()) return false;
+	//if (_stuff.player_prop().check_feng_gang()) return false;
 
-	_stuff.mutable_player_prop()->set_check_feng_gang(true); //设置已经检查过旋风杠
+	//_stuff.mutable_player_prop()->set_check_feng_gang(true); //设置已经检查过旋风杠
 
 	return CheckFengGangPai(_cards); 
 }
 
 bool Player::CheckJianGangPai() 
 { 
-	if (_stuff.player_prop().check_jian_gang()) return false;
+	//if (_stuff.player_prop().check_jian_gang()) return false;
 
-	_stuff.mutable_player_prop()->set_check_jian_gang(true); //设置已经检查过旋风杠
+	//_stuff.mutable_player_prop()->set_check_jian_gang(true); //设置已经检查过旋风杠
 
 	return CheckJianGangPai(_cards); 
 }
