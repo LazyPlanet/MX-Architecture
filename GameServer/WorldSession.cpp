@@ -13,11 +13,6 @@ namespace Adoter
 
 namespace spd = spdlog;
 
-WorldSession::~WorldSession()
-{
-    KillOutPlayer();
-}
-
 WorldSession::WorldSession(boost::asio::ip::tcp::socket&& socket) : Socket(std::move(socket))
 {
 }
@@ -28,8 +23,8 @@ void WorldSession::InitializeHandler(const boost::system::error_code error, cons
 	{
 		if (error)
 		{
-			//spdlog::get("console")->error("{0} Line:{1} Remote client disconnect, remote_ip:{2}, player_id:{3}", 
-			//		__func__, __LINE__, _socket.remote_endpoint().address().to_string().c_str(), g_player == nullptr ? 0 : g_player->GetID());
+			spdlog::get("console")->error("{0} Line:{1} Remote client disconnect, remote_ip:{2}, player_id:{3}", 
+					__func__, __LINE__, _socket.remote_endpoint().address().to_string().c_str(), g_player == nullptr ? 0 : g_player->GetID());
 			Close(); ////断开网络连接
 			return;
 		}

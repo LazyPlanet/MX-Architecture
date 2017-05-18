@@ -37,10 +37,9 @@ public:
 	std::shared_ptr<Player> g_player = nullptr; //全局玩家定义，唯一的一个Player对象
 	typedef std::function<int32_t(Message*)> CallBack;
 public:
-	~WorldSession();
 	WorldSession(boost::asio::ip::tcp::socket&& socket);
 	WorldSession(WorldSession const& right) = delete;    
-	WorldSession& operator=(WorldSession const& right) = delete;
+	WorldSession& operator = (WorldSession const& right) = delete;
 	
 	virtual void Start() override;
 	virtual bool Update() override; 
