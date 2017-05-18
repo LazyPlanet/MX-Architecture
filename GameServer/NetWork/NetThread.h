@@ -108,7 +108,7 @@ public:
 		{
 			if (_stopped) return;
 
-			_update_timer.expires_from_now(boost::posix_time::milliseconds(10000));
+			_update_timer.expires_from_now(boost::posix_time::milliseconds(10));
 			_update_timer.async_wait(std::bind(&NetworkThread<SOCKET_TYPE>::Update, this));        
 
 			AddSockets(); //删除不连接的SOCKET，同时更新新连接的SOCKET
