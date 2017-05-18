@@ -131,7 +131,7 @@ public:
 	}
 protected:
 	virtual void SocketAdded(std::shared_ptr<SOCKET_TYPE> socket) { 
-		spdlog::get("console")->warn("{0} Line:{1} client_id:{2} has closed.", __func__, __LINE__, socket->GetRemoteAddress());
+		spdlog::get("console")->warn("{0} Line:{1} client_id:{2} has connected.", __func__, __LINE__, socket->GetRemoteAddress());
 	}    
 	virtual void SocketRemoved(std::shared_ptr<SOCKET_TYPE> socket) { 
 		spdlog::get("console")->warn("{0} Line:{1} client_id:{2} has closed.", __func__, __LINE__, socket->GetRemoteAddress());

@@ -26,7 +26,8 @@ void WorldSession::InitializeHandler(const boost::system::error_code error, cons
 		{
 			spdlog::get("console")->error("{0} Line:{1} Remote client disconnect, remote_ip:{2}, player_id:{3}", 
 					__func__, __LINE__, _socket.remote_endpoint().address().to_string().c_str(), g_player == nullptr ? 0 : g_player->GetID());
-			Close(); ////断开网络连接
+			KillOutPlayer();
+			//Close(); ////断开网络连接，不要显示的关闭网络连接
 			return;
 		}
 		else
@@ -189,9 +190,17 @@ void WorldSession::InitializeHandler(const boost::system::error_code error, cons
 
 void WorldSession::KillOutPlayer()
 {
-	spdlog::get("console")->error("{0} Line:{1} Remote client disconnect, remote_ip:{2}, player_id:{3}", 
+	spdlog::get("console")->warn("{0} Line:{1} Remote client disconnect, remote_ip:{2}, player_id:{3}", 
 			__func__, __LINE__, _socket.remote_endpoint().address().to_string().c_str(), g_player == nullptr ? 0 : g_player->GetID());
-	//Close();
+
+	if (g_player) //网络断开
+	{
+		g_player->OnLogout(nullptr);
+
+		g_player.reset();
+
+		g_player = nullptr;
+	}
 }
 
 void WorldSession::Start()
@@ -217,14 +226,7 @@ bool WorldSession::Update()
 
 void WorldSession::OnClose()
 {
-	if (g_player) //网络断开
-	{
-		g_player->OnLogout(nullptr);
-
-		g_player.reset();
-
-		g_player = nullptr;
-	}
+	KillOutPlayer();
 }
 
 void WorldSession::SendProtocol(pb::Message* message)
