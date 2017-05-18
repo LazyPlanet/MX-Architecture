@@ -10,17 +10,17 @@ using boost::asio::ip::tcp;
 class AsyncAcceptor
 {
 public:
-    	typedef void(*AcceptCallback)(tcp::socket&& socket, int32_t thread_index);
+	typedef void(*AcceptCallback)(tcp::socket&& socket, int32_t thread_index);
 
-    	AsyncAcceptor(boost::asio::io_service& io_service, const std::string& bind_ip, int32_t port) :
-		_acceptor(io_service, tcp::endpoint(boost::asio::ip::address::from_string(bind_ip), port)),
-        	_socket(io_service), _closed(false), _socket_factory(std::bind(&AsyncAcceptor::DefeaultSocketFactory, this))
-    	{
-    	}
+	AsyncAcceptor(boost::asio::io_service& io_service, const std::string& bind_ip, int32_t port) :
+	_acceptor(io_service, tcp::endpoint(boost::asio::ip::address::from_string(bind_ip), port)),
+		_socket(io_service), _closed(false), _socket_factory(std::bind(&AsyncAcceptor::DefeaultSocketFactory, this))
+	{
+	}
 
-    	template<class T> void AsyncAccept();
+	template<class T> void AsyncAccept();
 
-    	template<AcceptCallback accept_callback> void AsyncAcceptWithCallback();
+	template<AcceptCallback accept_callback> void AsyncAcceptWithCallback();
 
 	void Close()
 	{
