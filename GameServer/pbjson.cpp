@@ -166,7 +166,7 @@ namespace pbjson
                 break;
             case FieldDescriptor::CPPTYPE_STRING:
             {
-                bool is_binary = field->type() == FieldDescriptor::TYPE_BYTES;
+                //bool is_binary = field->type() == FieldDescriptor::TYPE_BYTES;
                 if (repeated)
                 {
                     for (size_t i = 0; i != array_size; ++i)
