@@ -24,10 +24,17 @@ public:
 
 	void Close()
 	{
-		if (_closed.exchange(true)) return;
+        try
+        {
+			if (_closed.exchange(true)) return;
 
-		boost::system::error_code err;
-		_acceptor.close(err);
+			boost::system::error_code err;
+			_acceptor.close(err);
+		}
+		catch (const boost::system::system_error& err)
+		{
+			spdlog::get("console")->warn("{0} Line:{1} error:{2}", __func__, __LINE__, err.what());
+		}
 	}
 
     void SetSocketFactory(std::function<std::pair<tcp::socket*, int32_t>()> func) { _socket_factory = func; }

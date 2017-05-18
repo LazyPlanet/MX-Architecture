@@ -7,6 +7,8 @@
 #include <boost/asio.hpp>
 #include <boost/asio/deadline_timer.hpp>
 
+#include <spdlog/spdlog.h>
+
 namespace Adoter 
 {
 /*
@@ -89,7 +91,8 @@ public:
 
 	virtual void Run()
 	{
-		std::cout << "Starting network thread..." << std::endl;
+		spdlog::get("console")->debug("{0} Line:{1} Starting network thread.", __func__, __LINE__);
+
 		_update_timer.expires_from_now(boost::posix_time::milliseconds(10));
 		_update_timer.async_wait(std::bind(&NetworkThread<SOCKET_TYPE>::Update, this));        
 		
@@ -101,26 +104,37 @@ public:
 	
 	virtual void Update() //每10毫秒检查一次，删除不活跃的连接
 	{
-		if (_stopped) return;
-		_update_timer.expires_from_now(boost::posix_time::milliseconds(10));
-		_update_timer.async_wait(std::bind(&NetworkThread<SOCKET_TYPE>::Update, this));        
-		//删除不连接的SOCKET，同时更新新连接的SOCKET
-		AddSockets();
-		_socket_list.erase(std::remove_if(_socket_list.begin(), _socket_list.end(), [this] (std::shared_ptr<SOCKET_TYPE> socket) {
-			if (!socket->Update())
-			{
-				if (socket->IsOpen()) socket->Close();
-				this->SocketRemoved(socket);
-				--this->_connections;
-				return true;
-			}
-			return false;
-		}), _socket_list.end()); 
+		try
+		{
+			if (_stopped) return;
+
+			_update_timer.expires_from_now(boost::posix_time::milliseconds(10000));
+			_update_timer.async_wait(std::bind(&NetworkThread<SOCKET_TYPE>::Update, this));        
+
+			AddSockets(); //删除不连接的SOCKET，同时更新新连接的SOCKET
+
+			_socket_list.erase(std::remove_if(_socket_list.begin(), _socket_list.end(), [this] (std::shared_ptr<SOCKET_TYPE> socket) {
+				if (!socket->Update())
+				{
+					if (socket->IsOpen()) socket->Close();
+					this->SocketRemoved(socket);
+					--this->_connections;
+					return true;
+				}
+				return false;
+			}), _socket_list.end()); 
+		}
+		catch (const boost::system::system_error& error)
+		{
+			spdlog::get("console")->error("{0} Line:{1} error:{2}", __func__, __LINE__, error.what());
+		}
 	}
 protected:
-	virtual void SocketAdded(std::shared_ptr<SOCKET_TYPE>) { }    
-	virtual void SocketRemoved(std::shared_ptr<SOCKET_TYPE>) { 
-		std::cout << __func__ << " Line:" << __LINE__ << std::endl;
+	virtual void SocketAdded(std::shared_ptr<SOCKET_TYPE> socket) { 
+		spdlog::get("console")->warn("{0} Line:{1} client_id:{2} has closed.", __func__, __LINE__, socket->GetRemoteAddress());
+	}    
+	virtual void SocketRemoved(std::shared_ptr<SOCKET_TYPE> socket) { 
+		spdlog::get("console")->warn("{0} Line:{1} client_id:{2} has closed.", __func__, __LINE__, socket->GetRemoteAddress());
 	}
 private:
 	std::vector<std::shared_ptr<SOCKET_TYPE>> _socket_list; //连接的SOCKET列表

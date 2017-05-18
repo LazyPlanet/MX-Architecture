@@ -50,10 +50,13 @@ public:
 	void SendProtocol(pb::Message& message);
 	void SendProtocol(pb::Message* message);
 	void KillOutPlayer();
+	boost::asio::ip::tcp::endpoint GetRemotePoint() { return _remote_endpoint; }
+	std::string GetRemoteAddress() {return _remote_endpoint.address().to_string(); }
 
 private:
 	Asset::Account _account;
 	std::unordered_set<int64_t> _player_list;
+	boost::asio::ip::tcp::endpoint _remote_endpoint;
 };
 
 class WorldSessionManager : public SocketManager<WorldSession> 

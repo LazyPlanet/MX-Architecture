@@ -15,6 +15,7 @@ namespace spd = spdlog;
 
 WorldSession::WorldSession(boost::asio::ip::tcp::socket&& socket) : Socket(std::move(socket))
 {
+	_remote_endpoint = _socket.remote_endpoint();
 }
 
 void WorldSession::InitializeHandler(const boost::system::error_code error, const std::size_t bytes_transferred)
@@ -155,7 +156,7 @@ void WorldSession::InitializeHandler(const boost::system::error_code error, cons
 
 				if (_player_list.find(enter_game->player_id()) == _player_list.end())
 				{
-					Close();
+					//Close();
 					//DEBUG("Player has not found.");
 					return; //账号下没有该角色数据
 				}
@@ -179,7 +180,7 @@ void WorldSession::InitializeHandler(const boost::system::error_code error, cons
 	{
 		spdlog::get("console")->error("{0} Line:{1} Remote client disconnect, remote_ip:{2}, error:{3}, player_id:{4}", 
 				__func__, __LINE__, _socket.remote_endpoint().address().to_string().c_str(), e.what(), g_player == nullptr ? 0 : g_player->GetID());
-		Close();
+		//Close();
 		return;
 	}
 	//递归持续接收	
@@ -190,7 +191,7 @@ void WorldSession::KillOutPlayer()
 {
 	spdlog::get("console")->error("{0} Line:{1} Remote client disconnect, remote_ip:{2}, player_id:{3}", 
 			__func__, __LINE__, _socket.remote_endpoint().address().to_string().c_str(), g_player == nullptr ? 0 : g_player->GetID());
-	Close();
+	//Close();
 }
 
 void WorldSession::Start()
