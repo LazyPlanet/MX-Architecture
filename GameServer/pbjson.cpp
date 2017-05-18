@@ -172,10 +172,12 @@ namespace pbjson
                     for (size_t i = 0; i != array_size; ++i)
                     {
                         std::string value = ref->GetRepeatedString(*msg, field, i);
+						/*
                         if (is_binary)
                         {
                             value = b64_encode(value);
                         }
+						*/
                         rapidjson::Value v(value.c_str(), static_cast<rapidjson::SizeType>(value.size()), allocator);
                         json->PushBack(v, allocator);
                     }
@@ -183,10 +185,12 @@ namespace pbjson
                 else
                 {
                     std::string value = ref->GetString(*msg, field);
+					/*
                     if (is_binary)
                     {
                         value = b64_encode(value);
                     }
+					*/
                     json = new rapidjson::Value(value.c_str(), value.size(), allocator);
                 }
                 break;
@@ -399,11 +403,11 @@ namespace pbjson
                 {
                     if (repeated)
                     {
-                        ref->AddString(msg, field, b64_decode(str_value));
+                        ref->AddString(msg, field, /*b64_decode(str_value)*/str_value);
                     }
                     else
                     {
-                        ref->SetString(msg, field, b64_decode(str_value));
+                        ref->SetString(msg, field, /*b64_decode(str_value)*/str_value);
                     }
                 }
                 else
