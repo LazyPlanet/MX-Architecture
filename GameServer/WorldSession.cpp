@@ -51,9 +51,13 @@ void WorldSession::InitializeHandler(const boost::system::error_code error, cons
 			const std::string& enum_name = enum_value->name();
 			
 			if (g_player)
+			{
 				TRACE("player_id:{0} receive message type:{1}", g_player->GetID(), enum_name.c_str());
+			}
 			else
+			{
 				TRACE("player_id:0 receive message type:{0}", enum_name.c_str());
+			}
 			
 			pb::Message* msg = ProtocolInstance.GetMessage(meta.type_t());	
 			if (!msg) 

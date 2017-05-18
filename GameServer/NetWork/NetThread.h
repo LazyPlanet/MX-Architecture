@@ -68,7 +68,9 @@ public:
 	virtual void AddSockets()
 	{
 		std::lock_guard<std::mutex> lock(_fresh_mutex);
+
 		if (_fresh_list.empty()) return;
+
 		for (auto socket : _fresh_list)
 		{
 			if (socket->IsOpen())
@@ -81,6 +83,7 @@ public:
 				SocketRemoved(socket); //目前无用途
 			}
 		}
+
 		_fresh_list.clear();
 	}
 
@@ -96,10 +99,10 @@ public:
 		_fresh_list.clear();
 	}
 	
-	virtual void Update() //每10秒检查一次，删除不活跃的连接
+	virtual void Update() //每10毫秒检查一次，删除不活跃的连接
 	{
 		if (_stopped) return;
-		_update_timer.expires_from_now(boost::posix_time::milliseconds(10000));
+		_update_timer.expires_from_now(boost::posix_time::milliseconds(10));
 		_update_timer.async_wait(std::bind(&NetworkThread<SOCKET_TYPE>::Update, this));        
 		//删除不连接的SOCKET，同时更新新连接的SOCKET
 		AddSockets();

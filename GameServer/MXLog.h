@@ -13,9 +13,19 @@
 namespace Adoter
 {
 
-#define TRACE(...) spdlog::get("console")->trace("[" __FILE__ " line #" SPDLOG_STR_HELPER(__LINE__) "] " __VA_ARGS__) 
+#define DEBUG(...) { \
+	auto debug = ConfigInstance.GetBool("DebugModel", true); \
+	if (debug) { \
+		spdlog::get("console")->trace("[" __FILE__ " line #" SPDLOG_STR_HELPER(__LINE__) "] " __VA_ARGS__); \
+	}\
+}\
 
-#define DEBUG(...) spdlog::get("console")->debug(__VA_ARGS__)
+#define TRACE(...) { \
+	auto debug = ConfigInstance.GetBool("DebugModel", true); \
+	if (debug) { \
+		spdlog::get("console")->debug(__VA_ARGS__); \
+	}\
+}\
 
 namespace pb = google::protobuf;
 

@@ -2,6 +2,7 @@
 
 #include <atomic>
 #include <functional>
+
 #include <boost/asio.hpp>
 
 using boost::asio::ip::tcp;
@@ -51,8 +52,9 @@ void AsyncAcceptor::AsyncAccept()
             		{
                 		std::make_shared<T>(std::move(this->_socket))->Start();
             		}
-            		catch (boost::system::system_error const& err)
+            		catch (const boost::system::system_error& err)
             		{
+						spdlog::get("console")->warn("{0} Line:{1} error:{2}", __func__, __LINE__, err.what());
             		}
         	}
 
@@ -76,8 +78,9 @@ void AsyncAcceptor::AsyncAcceptWithCallback()
 
 				accept_callback(std::move(*socket), thread_index);
 			}
-			catch (boost::system::system_error const& err)
+			catch (const boost::system::system_error& err)
 			{
+				spdlog::get("console")->warn("{0} Line:{1} error:{2}", __func__, __LINE__, err.what());
 			}
 		}
 
