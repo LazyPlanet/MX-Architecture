@@ -1683,6 +1683,8 @@ bool Player::CheckFengGangPai()
 	//if (_stuff.player_prop().check_feng_gang()) return false;
 
 	//_stuff.mutable_player_prop()->set_check_feng_gang(true); //设置已经检查过旋风杠
+	
+	if (_oper_count >= 1) return false;
 
 	return CheckFengGangPai(_cards); 
 }
@@ -1692,6 +1694,8 @@ bool Player::CheckJianGangPai()
 	//if (_stuff.player_prop().check_jian_gang()) return false;
 
 	//_stuff.mutable_player_prop()->set_check_jian_gang(true); //设置已经检查过旋风杠
+	
+	if (_oper_count >= 1) return false;
 
 	return CheckJianGangPai(_cards); 
 }
