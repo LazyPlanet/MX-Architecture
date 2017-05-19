@@ -21,10 +21,7 @@ namespace Adoter
 }\
 
 #define TRACE(...) { \
-	auto debug = ConfigInstance.GetBool("DebugModel", true); \
-	if (debug) { \
-		spdlog::get("console")->debug(__VA_ARGS__); \
-	}\
+		spdlog::get("console")->trace("[" __FILE__ " line #" SPDLOG_STR_HELPER(__LINE__) "] " __VA_ARGS__); \
 }\
 
 namespace pb = google::protobuf;
