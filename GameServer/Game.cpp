@@ -203,18 +203,6 @@ void Game::OnPaiOperate(std::shared_ptr<Player> player, pb::Message* message)
 					fan_list.push_back(Asset::FAN_TYPE_LOU_BAO); //宝胡
 				}
 
-				//旋风杠检查，只检查第一次发牌之前
-				if (player_next->CheckFengGangPai()) 
-				{
-					auto pai_perator = alert.mutable_pais()->Add();
-					pai_perator->mutable_oper_list()->Add(Asset::PAI_OPER_TYPE_XUANFENG_FENG);
-				}
-				if (player_next->CheckJianGangPai()) 
-				{
-					auto pai_perator = alert.mutable_pais()->Add();
-					pai_perator->mutable_oper_list()->Add(Asset::PAI_OPER_TYPE_XUANFENG_JIAN);
-				}
-				
 				player_next->OnFaPai(cards); //放入玩家牌里面
 
 				//听牌检查
@@ -238,6 +226,14 @@ void Game::OnPaiOperate(std::shared_ptr<Player> player, pb::Message* message)
 						auto pai_perator = alert.mutable_pais()->Add();
 						pai_perator->CopyFrom(gang);
 					}
+				}
+				
+				//旋风杠检查
+				auto xf_gang = player_next->CheckXuanFeng();
+				if (xf_gang)
+				{
+					auto pai_perator = alert.mutable_pais()->Add();
+					pai_perator->mutable_oper_list()->Add((Asset::PAI_OPER_TYPE)xf_gang);
 				}
 
 				if (alert.pais().size()) 
@@ -427,6 +423,7 @@ void Game::OnPaiOperate(std::shared_ptr<Player> player, pb::Message* message)
 				fan_list.push_back(Asset::FAN_TYPE_LOU_BAO); //宝胡
 			}
 
+			/*
 			//旋风杠检查，只检查第一次发牌之前
 			if (player_next->CheckFengGangPai()) 
 			{
@@ -438,6 +435,7 @@ void Game::OnPaiOperate(std::shared_ptr<Player> player, pb::Message* message)
 				auto pai_perator = alert.mutable_pais()->Add();
 				pai_perator->mutable_oper_list()->Add(Asset::PAI_OPER_TYPE_XUANFENG_JIAN);
 			}
+			*/
 			
 			player_next->OnFaPai(cards); //放入玩家牌里面
 			
@@ -466,9 +464,19 @@ void Game::OnPaiOperate(std::shared_ptr<Player> player, pb::Message* message)
 
 			if (_oper_limit.player_id() == player_next->GetID()) 
 			{
-				ClearOperation(); //清理缓存以及等待玩家操作的状态
-
-				_curr_player_index = next_player_index;
+				//旋风杠检查
+				auto xf_gang = player->CheckXuanFeng();
+				if (xf_gang)
+				{
+					auto pai_perator = alert.mutable_pais()->Add();
+					pai_perator->mutable_oper_list()->Add((Asset::PAI_OPER_TYPE)xf_gang);
+					player->SendProtocol(alert); //提示Client
+				}
+				else
+				{
+					_curr_player_index = next_player_index;
+					ClearOperation(); //清理缓存以及等待玩家操作的状态
+				}
 			}
 			else if (alert.pais().size()) 
 			{

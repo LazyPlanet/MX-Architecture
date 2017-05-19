@@ -31,6 +31,10 @@ private:
 
 	CallBack _method;
 	std::shared_ptr<WorldSession> _session = nullptr;	//网络连接
+
+//////游戏逻辑定义
+	std::queue<int32_t> _xf_gang; //旋风杠所有操作
+	int32_t _oper_count = 0;
 public:
 	Player();
 	Player(int64_t player_id, std::shared_ptr<WorldSession> session);
@@ -277,11 +281,13 @@ public:
 	
 	bool CheckFengGangPai(std::map<int32_t/*麻将牌类型*/, std::vector<int32_t>/*牌值*/>& cards); //是否有旋风杠
 	bool CheckJianGangPai(std::map<int32_t/*麻将牌类型*/, std::vector<int32_t>/*牌值*/>& cards); //是否有箭杠
-	void OnGangFengPai(); //旋风杠
-	void OnGangJianPai(); //箭杠
+	void OnGangFengPai(); //旋风杠-风杠
+	void OnGangJianPai(); //旋风杠-箭杠
 
 	bool CheckFengGangPai(); //是否可以旋风杠-风杠 
 	bool CheckJianGangPai(); //是否可以旋风杠-箭杠
+
+	int32_t CheckXuanFeng(); //检查旋风杠
 	
 	bool CanTingPai(const Asset::PaiElement& pai);
 	bool CheckTingPai(std::vector<Asset::PaiElement>& pais/*应该打出的牌数据*/); //是否可以听牌：能不能听牌，主要是看是否给牌可以胡
