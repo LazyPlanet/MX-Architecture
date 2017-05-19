@@ -230,14 +230,13 @@ void Game::OnPaiOperate(std::shared_ptr<Player> player, pb::Message* message)
 				}
 				
 				//杠检查：包括明杠和暗杠
-				std::vector<Asset::PaiElement> gangpais;
-				if (player_next->CheckAllGangPai(gangpais)) 
+				::google::protobuf::RepeatedField<Asset::PaiOperationAlert_AlertElement> gang_list;
+				if (player_next->CheckAllGangPai(gang_list)) 
 				{
-					for (auto pai : gangpais) 
+					for (auto gang : gang_list) 
 					{
 						auto pai_perator = alert.mutable_pais()->Add();
-						pai_perator->mutable_pai()->CopyFrom(pai);
-						pai_perator->mutable_oper_list()->Add(Asset::PAI_OPER_TYPE_ANGANGPAI);
+						pai_perator->CopyFrom(gang);
 					}
 				}
 
@@ -455,14 +454,13 @@ void Game::OnPaiOperate(std::shared_ptr<Player> player, pb::Message* message)
 			}
 			
 			///////杠检查：包括明杠和暗杠
-			std::vector<Asset::PaiElement> gangpais;
-			if (player_next->CheckAllGangPai(gangpais)) 
+			::google::protobuf::RepeatedField<Asset::PaiOperationAlert_AlertElement> gang_list;
+			if (player_next->CheckAllGangPai(gang_list)) 
 			{
-				for (auto pai : gangpais) 
+				for (auto gang : gang_list) 
 				{
 					auto pai_perator = alert.mutable_pais()->Add();
-					pai_perator->mutable_pai()->CopyFrom(pai);
-					pai_perator->mutable_oper_list()->Add(Asset::PAI_OPER_TYPE_GANGPAI);
+					pai_perator->CopyFrom(gang);
 				}
 			}
 

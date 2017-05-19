@@ -1626,7 +1626,7 @@ bool Player::CheckGangPai(const Asset::PaiElement& pai, int64_t from_player_id)
 	return false;
 }
 
-bool Player::CheckAllGangPai(std::vector<Asset::PaiElement>& pais)
+bool Player::CheckAllGangPai(::google::protobuf::RepeatedField<Asset::PaiOperationAlert_AlertElement>& gang_list)
 {
 	/////手里有4张牌，即暗杠检查
 	for (auto cards : _cards)
@@ -1642,10 +1642,16 @@ bool Player::CheckAllGangPai(std::vector<Asset::PaiElement>& pais)
 				pai.set_card_type((Asset::CARD_TYPE)card_type);
 				pai.set_card_value(card_value);
 
-				auto it = std::find_if(pais.begin(), pais.end(), [card_type, card_value](const Asset::PaiElement& pai){
-							return card_type == pai.card_type() && card_value == pai.card_value();
-						});
-				if (it == pais.end()) pais.push_back(pai); //暗杠
+				auto it = std::find_if(gang_list.begin(), gang_list.end(), [card_type, card_value](const Asset::PaiOperationAlert_AlertElement& element){
+					return card_type == element.pai().card_type() && card_value == element.pai().card_value();
+				});
+
+				if (it == gang_list.end()) //暗杠
+				{
+					auto gang = gang_list.Add();
+					gang->mutable_pai()->CopyFrom(pai); 
+					gang->mutable_oper_list()->Add(Asset::PAI_OPER_TYPE_GANGPAI);
+				}
 			}
 		}
 	}
@@ -1674,12 +1680,15 @@ bool Player::CheckAllGangPai(std::vector<Asset::PaiElement>& pais)
 			Asset::PaiElement pai;
 			pai.set_card_type((Asset::CARD_TYPE)card_type);
 			pai.set_card_value(card_value);
-
-			pais.push_back(pai); //明杠
+			
+			//明杠
+			auto gang = gang_list.Add();
+			gang->mutable_pai()->CopyFrom(pai); 
+			gang->mutable_oper_list()->Add(Asset::PAI_OPER_TYPE_GANGPAI);
 		}
 	}
 
-	return pais.size() > 0;
+	return gang_list.size() > 0;
 }
 	
 void Player::OnGangPai(const Asset::PaiElement& pai, int64_t from_player_id)

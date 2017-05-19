@@ -270,7 +270,8 @@ public:
 	bool CheckHuPai(const Asset::PaiElement& pai); //胡牌
 
 	bool CheckGangPai(const Asset::PaiElement& pai, int64_t from_player_id); //是否可以杠牌
-	bool CheckAllGangPai(std::vector<Asset::PaiElement>& pais); //有玩家一直不杠牌, 每次都要提示, 比如玩家碰了7条,但是手里有7-8-9条,而选择暂时不杠
+	//有玩家一直不杠牌, 每次都要提示, 比如玩家碰了7条,但是手里有7-8-9条,而选择暂时不杠
+	bool CheckAllGangPai(::google::protobuf::RepeatedField<Asset::PaiOperationAlert_AlertElement>& gang_list); 
 
 	void OnGangPai(const Asset::PaiElement& pai, int64_t from_player_id); //杠牌
 	
