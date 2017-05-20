@@ -37,9 +37,9 @@ void Room::Enter(std::shared_ptr<Player> player)
 
 	std::lock_guard<std::mutex> lock(_mutex);
 
-	//DEBUG("%s:line:%d 当前房间人数:%d player_id:%ld\n", __func__, __LINE__, _players.size(), player->GetID());
-
 	_players.push_back(player); //进入房间
+	
+	DEBUG("当前房间玩家数量:{} 当前进入房间玩家角色:{}", _players.size(), player->GetID());
 
 	player->SetPosition((Asset::POSITION_TYPE)_players.size()); //设置位置
 
@@ -171,7 +171,7 @@ void Room::SyncRoom()
 	
 	for (auto player : _players)
 	{
-		//DEBUG("%s:line:%d 同步房间数据:%d player_id:%ld position:%d\n", __func__, __LINE__, _players.size(), player->GetID(), player->GetPosition());
+		DEBUG("同步房间数据:%d player_id:%ld position:%d\n", _players.size(), player->GetID(), player->GetPosition());
 		auto p = message.mutable_player_list()->Add();
 		p->set_position(player->GetPosition());
 		p->mutable_common_prop()->CopyFrom(player->CommonProp());
@@ -187,7 +187,7 @@ void Room::OnCreated()
 	
 bool Room::CanStarGame()
 {
-	if (_players.size() != 4) return false;
+	if (_players.size() != MAX_PLAYER_COUNT) return false;
 
 	for (auto player : _players)
 	{
