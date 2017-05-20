@@ -150,7 +150,7 @@ void Room::BroadCast(pb::Message* message, int64_t exclude_player_id)
 	{
 		if (!player) 
 		{
-			DEBUG_ASSERT(false);
+			//DEBUG_ASSERT(false);
 			continue; //可能已经释放
 		}
 
