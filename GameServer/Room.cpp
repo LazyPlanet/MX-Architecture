@@ -171,7 +171,7 @@ void Room::SyncRoom()
 	
 	for (auto player : _players)
 	{
-		DEBUG("同步房间数据:%d player_id:%ld position:%d\n", _players.size(), player->GetID(), player->GetPosition());
+		DEBUG("同步房间数据:{} player_id:{} position:{}", _players.size(), player->GetID(), player->GetPosition());
 		auto p = message.mutable_player_list()->Add();
 		p->set_position(player->GetPosition());
 		p->mutable_common_prop()->CopyFrom(player->CommonProp());
