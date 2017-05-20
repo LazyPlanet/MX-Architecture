@@ -775,12 +775,12 @@ bool Game::CheckPai(const Asset::PaiElement& pai, int64_t from_player_id)
 	int32_t player_index = GetPlayerOrder(from_player_id); //当前玩家索引
 	if (player_index == -1) 
 	{
-		spdlog::get("player")->error("{0} Line:{1} player_index:{2} from_player_id:{3}", __func__, __LINE__, player_index, from_player_id);
+		DEBUG_ASSERT(false);
 		return false; //理论上不会出现
 	}
 
 	//assert(_curr_player_index == player_index); //理论上一定相同：错误，如果碰牌的玩家出牌就不一定
-	//DEBUG("%s:line:%d _curr_player_index:%d player_index:%d\n", __func__, __LINE__, _curr_player_index, player_index);
+	TRACE("_curr_player_index:{} player_index:{}", _curr_player_index, player_index);
 
 	int32_t next_player_index = (_curr_player_index + 1) % MAX_PLAYER_COUNT;
 
@@ -791,21 +791,17 @@ bool Game::CheckPai(const Asset::PaiElement& pai, int64_t from_player_id)
 		auto player = GetPlayerByOrder(cur_index);
 		if (!player) 
 		{
-			spdlog::get("player")->error("{0} Line:{1} cur_index:{2} i:{3}", __func__, __LINE__, cur_index, i);
+			DEBUG_ASSERT(false);
 			return false; //理论上不会出现
 		}
 
 		if (from_player_id == player->GetID()) continue; //自己不能对自己的牌进行操作
 
-		auto rtn_check = player->CheckPai(pai, from_player_id); //TODO：其他玩家打的宝牌，已经听的玩家可以胡，理论上只有自摸宝牌才能胡
-		if (rtn_check.size() == 0) 
-		{
-			//DEBUG("%s:line:%d _curr_player_index:%d player_index:%d\n", __func__, __LINE__, _curr_player_index, player_index);
-			continue; //不能吃、碰、杠和胡牌
-		}
+		auto rtn_check = player->CheckPai(pai, from_player_id);
+		if (rtn_check.size() == 0) continue; //不能吃、碰、杠和胡牌
 
-		//for (auto value : rtn_check)
-			//DEBUG("玩家可以进行的操作: %s:line:%d cur_index:%d next_player_index:%d player_id:%ld value:%d\n", __func__, __LINE__, cur_index, next_player_index, player->GetID(),value);
+		for (auto value : rtn_check)
+			TRACE("operation player can do: cur_player_index:{} next_player_index:%d player_id:%ld value:%d\n", cur_index, next_player_index, player->GetID(),value);
 		
 		auto it_chi = std::find(rtn_check.begin(), rtn_check.end(), Asset::PAI_OPER_TYPE_CHIPAI);
 		if (it_chi != rtn_check.end() && cur_index != next_player_index) rtn_check.erase(it_chi);
@@ -817,11 +813,9 @@ bool Game::CheckPai(const Asset::PaiElement& pai, int64_t from_player_id)
 		pai_operation.set_player_id(player->GetID());
 		pai_operation.set_from_player_id(from_player_id);
 		pai_operation.mutable_pai()->CopyFrom(pai);
+
 		for (auto result : rtn_check) 
-		{
 			pai_operation.mutable_oper_list()->Add(result);
-			//DEBUG("%s:line:%d 可操作玩家:%ld 可以操作类型:%d\n", __func__, __LINE__, player->GetID(), result);
-		}
 		_oper_list.push_back(pai_operation);
 	}
 

@@ -55,10 +55,10 @@ int32_t Player::Load()
 	//加载数据库
 	std::shared_ptr<Redis> redis = std::make_shared<Redis>();
 	std::string stuff = redis->GetPlayer(GetID()); //不能用引用
-	if (stuff == "")
+	if (stuff.empty())
 	{
-		std::cout << __func__ << " error, not found player_id:" << GetID() << std::endl;
-		return 0;
+		DEBUG_ASSERT(false);
+		return 1;
 	}
 	//初始化结构数据
 	this->_stuff.ParseFromString(stuff);
@@ -529,11 +529,7 @@ void Player::SendProtocol(pb::Message* message)
 
 void Player::SendProtocol(pb::Message& message)
 {
-	if (!IsConnect()) 
-	{
-		spdlog::get("player")->error("{0}:Line:{1} player_id:{2} has been offline.", __func__, __LINE__, GetID());
-		DEBUG_ASSERT(false);
-	}
+	if (!Connected()) DEBUG_ASSERT(false);
 
 	GetSession()->SendProtocol(message);
 }
@@ -654,6 +650,7 @@ void Player::AlertMessage(Asset::ERROR_CODE error_code, Asset::ERROR_TYPE error_
 	message.set_error_type(error_type);
 	message.set_error_show_type(error_show_type);
 	message.set_error_code(error_code);
+
 	SendProtocol(message);
 }
 

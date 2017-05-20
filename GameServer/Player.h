@@ -144,7 +144,7 @@ public:
 		return _session;
 	}
 
-	bool IsConnect()
+	bool Connected()
 	{
 		if (!_session) return false;
 			
