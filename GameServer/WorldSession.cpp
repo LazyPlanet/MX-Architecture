@@ -39,6 +39,7 @@ void WorldSession::InitializeHandler(const boost::system::error_code error, cons
 			
 			/////////////////////////////////////////////////////////////////////////////打印收到协议提示信息
 		
+			/*
 			const pb::FieldDescriptor* type_field = meta.GetDescriptor()->FindFieldByName("type_t");
 			if (!type_field) return;
 
@@ -55,7 +56,8 @@ void WorldSession::InitializeHandler(const boost::system::error_code error, cons
 			{
 				TRACE("player_id:0 receive message type:{0}", enum_name.c_str());
 			}
-			
+			*/
+
 			pb::Message* msg = ProtocolInstance.GetMessage(meta.type_t());	
 			if (!msg) 
 			{
@@ -65,9 +67,12 @@ void WorldSession::InitializeHandler(const boost::system::error_code error, cons
 
 			auto message = msg->New();
 			
-			//result = message->ParseFromString(meta.stuff());
 			result = message->ParseFromArray(meta.stuff().c_str(), meta.stuff().size());
-			if (!result) return;		//非法协议
+			if (!result) 
+			{
+				DEBUG_ASSERT(false);
+				return;		//非法协议
+			}
 		
 			/////////////////////////////////////////////////////////////////////////////游戏逻辑处理流程
 			

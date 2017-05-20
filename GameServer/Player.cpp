@@ -277,6 +277,8 @@ int32_t Player::CmdPaiOperate(pb::Message* message)
 	if (!_locate_room || !_game) return 2; //还没加入房间或者还没开始游戏
 
 	if (!pai_operate->position()) pai_operate->set_position(GetPosition()); //设置玩家座位
+	
+	TRACE("Receive from player_id:{} operation: {}.", _player_id, pai_operate->DebugString());
 
 	//进行操作
 	switch (pai_operate->oper_type())
@@ -933,6 +935,8 @@ int32_t Player::CmdSaizi(pb::Message* message)
 /////////////////////////////////////////////////////
 std::vector<Asset::PAI_OPER_TYPE> Player::CheckPai(const Asset::PaiElement& pai, int64_t from_player_id)
 {
+	DEBUG("player_id:{} from_player_id:{} card_type:{} card_value:{}", _player_id, from_player_id, pai.card_type(), pai.card_value());
+
 	std::vector<Asset::PAI_OPER_TYPE> rtn_check;
 
 	if (CheckHuPai(pai)) 

@@ -747,13 +747,14 @@ bool Game::SendCheckRtn()
 	if (auto player_to = GetPlayer(player_id)) 
 		player_to->SendProtocol(alert); //发给目标玩家
 
-	auto it = std::find_if(_oper_list.begin(), _oper_list.end(), [player_id](const Asset::PaiOperationList& operation){
-				return player_id == operation.player_id();
-			});
+	auto it = std::find_if(_oper_list.begin(), _oper_list.end(), [player_id](const Asset::PaiOperationList& operation) {
+		return player_id == operation.player_id();
+	});
+
 	if (it != _oper_list.end()) 
 	{
-		spdlog::get("console")->debug("{0} Line:{1} player_id:{2} from_player_id:{3} card_type:{4} card_value:{5} oper_type:{6}",
-				__func__, __LINE__, player_id, _oper_limit.from_player_id(), _oper_limit.pai().card_type(), _oper_limit.pai().card_value(), _oper_limit.oper_type());
+		DEBUG("player_id:{} from_player_id:{} card_type:{} card_value:{} oper_type:{}",
+				player_id, _oper_limit.from_player_id(), _oper_limit.pai().card_type(), _oper_limit.pai().card_value(), _oper_limit.oper_type());
 		_oper_list.erase(it);
 	}
 
@@ -780,7 +781,7 @@ bool Game::CheckPai(const Asset::PaiElement& pai, int64_t from_player_id)
 	}
 
 	//assert(_curr_player_index == player_index); //理论上一定相同：错误，如果碰牌的玩家出牌就不一定
-	TRACE("_curr_player_index:{} player_index:{}", _curr_player_index, player_index);
+	DEBUG("_curr_player_index:{} player_index:{}", _curr_player_index, player_index);
 
 	int32_t next_player_index = (_curr_player_index + 1) % MAX_PLAYER_COUNT;
 
@@ -801,7 +802,7 @@ bool Game::CheckPai(const Asset::PaiElement& pai, int64_t from_player_id)
 		if (rtn_check.size() == 0) continue; //不能吃、碰、杠和胡牌
 
 		for (auto value : rtn_check)
-			TRACE("operation player can do: cur_player_index:{} next_player_index:{} player_id:{} value:{}", cur_index, next_player_index, player->GetID(), value);
+			DEBUG("operation player can do: cur_player_index:{} next_player_index:{} player_id:{} value:{}", cur_index, next_player_index, player->GetID(), value);
 		
 		auto it_chi = std::find(rtn_check.begin(), rtn_check.end(), Asset::PAI_OPER_TYPE_CHIPAI);
 		if (it_chi != rtn_check.end() && cur_index != next_player_index) rtn_check.erase(it_chi);
