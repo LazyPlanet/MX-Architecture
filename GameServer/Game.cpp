@@ -108,20 +108,20 @@ bool Game::OnOver()
 	
 bool Game::CanPaiOperate(std::shared_ptr<Player> player)
 {
-	if (/*_oper_limit.time_out() < CommonTimerInstance.GetTime() 
-			&& */_oper_limit.player_id() == player->GetID()) 
+	if (/*_oper_limit.time_out() < CommonTimerInstance.GetTime() && 超时检查*/_oper_limit.player_id() == player->GetID()) 
 	{
 		return true; //玩家操作：碰、杠、胡牌
 	}
 
 	auto player_index = GetPlayerOrder(player->GetID());
+
 	if (_curr_player_index == player_index) 
 	{
 		return true; //轮到该玩家
 	}
 
-	//DEBUG("%s:line:%d curr_player_index:%d player_index:%d player_id:%ld oper_limit_player_id:%ld\n", 
-	//		__func__, __LINE__, _curr_player_index, player_index, player->GetID(), _oper_limit.player_id());
+	CRITICAL("curr_player_index:{} player_index:{} player_id:{} oper_limit_player_id:{}", _curr_player_index, player_index, 
+			player->GetID(), _oper_limit.player_id());
 	return false;
 }
 
@@ -132,9 +132,7 @@ void Game::OnPaiOperate(std::shared_ptr<Player> player, pb::Message* message)
 	Asset::PaiOperation* pai_operate = dynamic_cast<Asset::PaiOperation*>(message);
 	if (!pai_operate) return; 
 	
-	spdlog::get("console")->debug("{0} Line:{1} player_id:{2} server saved infomation from_player_id:{3} card_type:{4} card_value:{5} oper_type:{6}, while client sentd to card_type:{7} card_value:{8} oper_type:{9}",
-			__func__, __LINE__, player->GetID(), _oper_limit.from_player_id(), _oper_limit.pai().card_type(), _oper_limit.pai().card_value(), 
-			_oper_limit.oper_type(), pai_operate->pai().card_type(), pai_operate->pai().card_value(), pai_operate->oper_type());
+	DEBUG("player_id:{} server saved infomation from_player_id:{} card_type:{} card_value:{} oper_type:{}, while client sentd to card_type:{} card_value:{} oper_type:{}", player->GetID(), _oper_limit.from_player_id(), _oper_limit.pai().card_type(), _oper_limit.pai().card_value(), _oper_limit.oper_type(), pai_operate->pai().card_type(), pai_operate->pai().card_value(), pai_operate->oper_type());
 
 	if (!CanPaiOperate(player)) 
 	{
@@ -159,7 +157,6 @@ void Game::OnPaiOperate(std::shared_ptr<Player> player, pb::Message* message)
 	{
 		case Asset::PAI_OPER_TYPE_DAPAI: //打牌
 		{
-			//const auto& pai = pai_operate->pai(); //玩家发上来的牌
 			//检查各个玩家手里的牌是否满足胡、杠、碰、吃
 			if (CheckPai(pai, player->GetID())) //有满足要求的玩家
 			{
@@ -680,13 +677,21 @@ void Game::Calculate(int64_t hupai_player_id/*胡牌玩家*/, int64_t dianpao_pl
 	
 void Game::BroadCast(pb::Message* message, int64_t exclude_player_id)
 {
-	if (!_room) return;
+	if (!_room) 
+	{
+		DEBUG_ASSERT(false);
+		return;
+	}
 	_room->BroadCast(message, exclude_player_id);
 }
 
 void Game::BroadCast(pb::Message& message, int64_t exclude_player_id)
 {
-	if (!_room) return;
+	if (!_room) 
+	{
+		DEBUG_ASSERT(false);
+		return;
+	}
 	_room->BroadCast(message, exclude_player_id);
 }
 
