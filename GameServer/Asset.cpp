@@ -1,4 +1,5 @@
 #include "Asset.h"
+#include "MXLog.h"
 
 #include <fstream>
 
@@ -23,7 +24,7 @@ bool AssetManager::Load()
 	const pb::EnumDescriptor* asset_type = _file_descriptor->FindEnumTypeByName("ASSET_TYPE");	
 	if (!asset_type) 
 	{
-		WARN(":could not found typename:ASSET_TYPE");
+		WARN("could not found typename:ASSET_TYPE");
 	}
 
 	//加载所有资源结构
