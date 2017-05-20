@@ -278,6 +278,8 @@ int32_t Player::CmdPaiOperate(pb::Message* message)
 
 	if (!pai_operate->position()) pai_operate->set_position(GetPosition()); //设置玩家座位
 
+	std::lock_guard<std::mutex> lock(_card_lock); //多线程操作
+
 	//进行操作
 	switch (pai_operate->oper_type())
 	{
@@ -1396,6 +1398,8 @@ void Player::OnChiPai(const Asset::PaiElement& pai, pb::Message* message)
 		return; 
 	}
 	
+	std::lock_guard<std::mutex> lock(_card_lock); //多线程操作
+	
 	auto it = _cards.find(pai.card_type());
 	if (it == _cards.end()) return;
 		
@@ -1443,6 +1447,8 @@ void Player::OnChiPai(const Asset::PaiElement& pai, pb::Message* message)
 
 bool Player::CheckPengPai(const Asset::PaiElement& pai)
 {
+	std::lock_guard<std::mutex> lock(_card_lock); //多线程操作
+
 	auto it = _cards.find(pai.card_type());
 	if (it == _cards.end()) return false;
 
@@ -1461,6 +1467,8 @@ void Player::OnPengPai(const Asset::PaiElement& pai)
 		DEBUG_ASSERT(false);
 		return;
 	}
+	
+	std::lock_guard<std::mutex> lock(_card_lock); //多线程操作
 	
 	auto it = _cards.find(pai.card_type());
 	if (it == _cards.end()) return; //理论上不会如此
@@ -1488,6 +1496,8 @@ void Player::OnPengPai(const Asset::PaiElement& pai)
 
 bool Player::CheckGangPai(const Asset::PaiElement& pai, int64_t from_player_id)
 {
+	std::lock_guard<std::mutex> lock(_card_lock); //多线程操作
+
 	auto it = _cards.find(pai.card_type());
 	int32_t card_value = pai.card_value();
 
@@ -1519,6 +1529,8 @@ bool Player::CheckGangPai(const Asset::PaiElement& pai, int64_t from_player_id)
 
 bool Player::CheckAllGangPai(::google::protobuf::RepeatedField<Asset::PaiOperationAlert_AlertElement>& gang_list)
 {
+	std::lock_guard<std::mutex> lock(_card_lock); //多线程操作
+
 	/////手里有4张牌，即暗杠检查
 	for (auto cards : _cards)
 	{
@@ -1593,7 +1605,10 @@ void Player::OnGangPai(const Asset::PaiElement& pai, int64_t from_player_id)
 	int32_t card_type = pai.card_type();
 	int32_t card_value = pai.card_value();
 
+	std::lock_guard<std::mutex> lock(_card_lock); //多线程操作
+
 	/////////////////////////////////////////////////////////////////////////////手里满足杠牌
+
 	auto it = _cards.find(card_type);
 	if (it == _cards.end()) 
 	{
@@ -1679,6 +1694,8 @@ bool Player::CanTingPai(const Asset::PaiElement& pai)
 	
 	auto it_baohu = std::find(options.extend_type().begin(), options.extend_type().end(), Asset::ROOM_EXTEND_TYPE_BAOPAI);
 	if (it_baohu == options.extend_type().end()) return false; //不带宝胡，绝对不可能呢听牌
+
+	std::lock_guard<std::mutex> lock(_card_lock); //多线程操作
 	
 	auto card_list = _cards; //复制当前牌
 
@@ -1741,6 +1758,8 @@ bool Player::CheckTingPai(std::vector<Asset::PaiElement>& pais)
 	
 	auto it_baohu = std::find(options.extend_type().begin(), options.extend_type().end(), Asset::ROOM_EXTEND_TYPE_BAOPAI);
 	if (it_baohu == options.extend_type().end()) return false; //不带宝胡，绝对不可能呢听牌
+	
+	std::lock_guard<std::mutex> lock(_card_lock); //多线程操作
 
 	auto card_list = _cards; //复制当前牌
 
@@ -1840,6 +1859,8 @@ bool Player::CheckFengGangPai(std::map<int32_t/*麻将牌类型*/, std::vector<i
 void Player::OnGangFengPai()
 {
 	if (!CheckFengGangPai(_cards)) return;
+	
+	std::lock_guard<std::mutex> lock(_card_lock); //多线程操作
 
 	auto it = _cards.find(Asset::CARD_TYPE_FENG);
 	if (it == _cards.end()) return;
@@ -1890,6 +1911,8 @@ bool Player::CheckJianGangPai(std::map<int32_t/*麻将牌类型*/, std::vector<i
 void Player::OnGangJianPai()
 {
 	if (!CheckJianGangPai(_cards)) return;
+	
+	std::lock_guard<std::mutex> lock(_card_lock); //多线程操作
 
 	auto it = _cards.find(Asset::CARD_TYPE_JIAN);
 	for (auto card_value = 1; card_value <= 3; ++card_value) //中发白
@@ -1918,6 +1941,8 @@ void Player::PreCheckOnFaPai()
 
 int32_t Player::OnFaPai(std::vector<int32_t>& cards)
 {
+	std::lock_guard<std::mutex> lock(_card_lock); //多线程操作
+
 	PreCheckOnFaPai(); //发牌前置检查
 
 	//发牌到玩家手里
@@ -2097,14 +2122,18 @@ void Player::PrintPai()
 
 void Player::ClearCards() 
 {
-	_cards.clear();	
-	_cards_outhand.clear();
+	std::lock_guard<std::mutex> lock(_card_lock); //多线程操作
 
-	_minggang.clear();
-	_angang.clear();
+	_cards.clear();	//清理手里牌
+	_cards_outhand.clear(); //清理墙外牌
+ 
+ 	_minggang.clear(); //清理杠牌
+	_angang.clear(); //清理杠牌
 
-	_jiangang = 0;
-	_fenggang = 0;
+	_jiangang = 0; //清理旋风杠
+	_fenggang = 0; //清理旋风杠
+
+	_oper_count = 0; //清理操作数
 }
 /////////////////////////////////////////////////////
 //玩家通用管理类

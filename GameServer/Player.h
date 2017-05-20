@@ -239,6 +239,7 @@ public:
 	void SyncCommonReward(int64_t common_reward_id);
 ///////游戏逻辑定义
 private:
+	std::mutex _card_lock;
 	std::shared_ptr<Room> _locate_room = nullptr; //实体所在房间
 	std::shared_ptr<Game> _game = nullptr; //当前游戏
 	std::map<int32_t/*麻将牌类型*/, std::vector<int32_t>/*牌值*/> _cards; //玩家手里的牌
