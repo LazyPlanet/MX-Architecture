@@ -251,6 +251,12 @@ void WorldSession::SendProtocol(pb::Message& message)
 	std::string content = meta.SerializeAsString();
 	//AsyncSend(content);
 
+	if (content.empty()) 
+	{
+		ERROR("player_id:{} send nothing.", _player_id);
+		return;
+	}
+
 	EnterQueue(std::move(content));
 }
 
