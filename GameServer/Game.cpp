@@ -766,7 +766,6 @@ bool Game::CheckPai(const Asset::PaiElement& pai, int64_t from_player_id)
 	}
 
 	//assert(_curr_player_index == player_index); //理论上一定相同：错误，如果碰牌的玩家出牌就不一定
-	DEBUG("_curr_player_index:{} player_index:{}", _curr_player_index, player_index);
 
 	int32_t next_player_index = (_curr_player_index + 1) % MAX_PLAYER_COUNT;
 

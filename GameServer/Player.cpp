@@ -1098,9 +1098,20 @@ bool Player::CheckHuPai(const Asset::PaiElement& pai)
 
 bool Player::CheckHuPai(const Asset::PaiElement& pai, std::vector<Asset::FAN_TYPE>& fan_list)
 {
-	DEBUG("player_id:{} card_type:{} card_value:{}", _player_id, pai.card_type(), pai.card_value());
+	std::map<int32_t/*麻将牌类型*/, std::vector<int32_t>/*牌值*/> cards;
 
-	auto cards = _cards; //复制当前牌
+	try {
+		std::unique_lock<std::mutex> lock(_card_lock, std::defer_lock);
+
+		if (lock.try_lock()) 
+		{
+			cards = _cards; //复制当前牌
+		}
+	}
+	catch(const std::system_error& error)
+	{
+		ERROR("Copy cards from player_id:{} error:{}.", _player_id, error.what());
+	}
 
 	for (auto crds : _cards_outhand) //复制牌外牌
 		cards[crds.first].insert(cards[crds.first].end(), crds.second.begin(), crds.second.end());
@@ -1328,7 +1339,6 @@ bool Player::CheckHuPai(const Asset::PaiElement& pai, std::vector<Asset::FAN_TYP
 	////////////////////////////////////////////////////////////////////////////积分计算
 	
 	//base_score = 1; //基础分
-
 
 	if (zhanlihu)
 	{
@@ -1844,7 +1854,6 @@ bool Player::CheckTingPai(std::vector<Asset::PaiElement>& pais)
 	if (it_baohu == options.extend_type().end()) return false; //不带宝胡，绝对不可能呢听牌
 	
 	try {
-
 		std::unique_lock<std::mutex> lock(_card_lock, std::defer_lock);
 
 		if (lock.try_lock()) {
