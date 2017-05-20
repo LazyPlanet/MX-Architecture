@@ -21,7 +21,10 @@ bool AssetManager::Load()
 	if (!this->_file_descriptor) return false;
 
 	const pb::EnumDescriptor* asset_type = _file_descriptor->FindEnumTypeByName("ASSET_TYPE");	
-	if (!asset_type) std::cout << __func__ << ":could not found typename:ASSET_TYPE" << std::endl;
+	if (!asset_type) 
+	{
+		WARN(":could not found typename:ASSET_TYPE");
+	}
 
 	//加载所有资源结构
 	for (int i = 0; i < _file_descriptor->message_type_count(); ++i)
@@ -41,14 +44,14 @@ bool AssetManager::Load()
 		}
 		else
 		{
-		       std::cout << "Load asset error, reduplicate message name：" << msg->GetTypeName() << std::endl;
+		       WARN("Load asset error, reduplicate message name:{}", msg->GetTypeName());
 		}
 	}
 	//加载所有资源数据
 	fs::path full_path(_asset_path);
 	if (!LoadAssets(full_path)) return false;
 
-	std::cout << __func__ << ":Load asset data success，asset total：" << _assets.size() << ", types total:" << _assets_bytypes.size() << std::endl;
+	DEBUG("Load asset data success，asset_total:{} type_total:{}", _assets.size(), _assets_bytypes.size());
 
 	this->_parse_sucess = true;
 	return true;
