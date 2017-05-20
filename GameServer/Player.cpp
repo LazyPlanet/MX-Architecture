@@ -908,11 +908,6 @@ int32_t Player::CmdSaizi(pb::Message* message)
 /////////////////////////////////////////////////////
 std::vector<Asset::PAI_OPER_TYPE> Player::CheckPai(const Asset::PaiElement& pai, int64_t from_player_id)
 {
-	//spdlog::get("console")->debug("{0} Line:{1} player_id:{2} card_type:{3} card_value:{4}", 
-	//		__func__, __LINE__, GetID(), pai.card_type(), pai.card_value());
-
-	//PrintPai();
-
 	std::vector<Asset::PAI_OPER_TYPE> rtn_check;
 
 	if (CheckHuPai(pai)) 
@@ -1062,7 +1057,7 @@ bool Player::CheckHuPai(const Asset::PaiElement& pai)
 
 bool Player::CheckHuPai(const Asset::PaiElement& pai, std::vector<Asset::FAN_TYPE>& fan_list)
 {
-	DEBUG("player_id:{2} card_type:{3} card_value:{4}", _player_id, pai.card_type(), pai.card_value());
+	DEBUG("player_id:{} card_type:{} card_value:{}", _player_id, pai.card_type(), pai.card_value());
 
 	auto cards = _cards; //复制当前牌
 
@@ -1248,8 +1243,7 @@ bool Player::CheckHuPai(const Asset::PaiElement& pai, std::vector<Asset::FAN_TYP
 	
 	if (!has_ke) 
 	{
-		spdlog::get("console")->debug("{0} Line:{1} player_id:{2} card_type:{3} card_value:{4} reason:没有刻.", 
-				__func__, __LINE__, _player_id, pai.card_type(), pai.card_value());
+		DEBUG("player_id:{} card_type:{} card_value:{} reason:没有刻.", _player_id, pai.card_type(), pai.card_value());
 		return false;
 	}
 
@@ -1439,7 +1433,6 @@ void Player::OnChiPai(const Asset::PaiElement& pai, pb::Message* message)
 		return; //理论上不会出现
 	}
 
-	//DEBUG("%s:line:%d,删除牌 类型:%d--值%d", __func__, __LINE__, pai_operate->pais(1).card_type(), pai_operate->pais(0).card_value());
 	it->second.erase(second); //删除
 	
 	for (auto card : cards)
@@ -1749,9 +1742,6 @@ bool Player::CheckTingPai(std::vector<Asset::PaiElement>& pais)
 	auto it_baohu = std::find(options.extend_type().begin(), options.extend_type().end(), Asset::ROOM_EXTEND_TYPE_BAOPAI);
 	if (it_baohu == options.extend_type().end()) return false; //不带宝胡，绝对不可能呢听牌
 
-	//DEBUG("%s:line:%d, 玩家:%ld当前拥有的牌数据:\n", __func__, __LINE__, GetID());
-	PrintPai();
-
 	auto card_list = _cards; //复制当前牌
 
 	for (auto it = card_list.begin(); it != card_list.end(); ++it)
@@ -1824,9 +1814,6 @@ bool Player::CheckTingPai(std::vector<Asset::PaiElement>& pais)
 
 	_cards = card_list; //恢复牌
 	
-	//DEBUG("%s:line:%d, 玩家:%ld当前拥有的牌数据:\n", __func__, __LINE__, GetID());
-	PrintPai();
-
 	return pais.size() > 0;
 }
 
@@ -2049,8 +2036,6 @@ void Player::SynchronizePai()
 		auto pais = notify.mutable_pais()->Add();
 
 		pais->set_card_type((Asset::CARD_TYPE)pai.first); //牌类型
-
-		//DEBUG("%s:line:%d, 玩家 %ld手里真正的牌数据，牌类型:%d, 牌值:", __func__, __LINE__, pai.first);
 
 		for (auto value : pai.second)
 			std::cout << value << " ";
