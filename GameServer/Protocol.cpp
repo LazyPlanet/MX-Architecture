@@ -17,7 +17,10 @@ bool ProtocolManager::Load()
 	if (!_file_descriptor) return false;
 
 	const pb::EnumDescriptor* meta_type = _file_descriptor->FindEnumTypeByName("META_TYPE");	
-	if (!meta_type) std::cout << __func__ << ":could not found typename:META_TYPE" << std::endl;
+	if (!meta_type) 
+	{
+		WARN("could not found typename:ASSET_TYPE");
+	}
 
 	for (int i = 0; i < _file_descriptor->message_type_count(); ++i)
 	{
@@ -37,7 +40,7 @@ bool ProtocolManager::Load()
 		_messages.emplace(field->default_value_enum()->number(), message);	//合法协议，如果已经存在则忽略，即只加载第一个协议
 	}
 
-	std::cout << __func__ << ":Load protocol success，total：" << _messages.size() << std::endl;
+	DEBUG("Load protocol data success，protocol_total:{}", _messages.size());
 	_parse_sucess = true;
 	return true;
 }

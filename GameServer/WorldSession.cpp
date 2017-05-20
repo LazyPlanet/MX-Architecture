@@ -69,8 +69,6 @@ void WorldSession::InitializeHandler(const boost::system::error_code error, cons
 			result = message->ParseFromArray(meta.stuff().c_str(), meta.stuff().size());
 			if (!result) return;		//非法协议
 		
-			message->PrintDebugString(); //打印出来Message.
-
 			/////////////////////////////////////////////////////////////////////////////游戏逻辑处理流程
 			
 			if (Asset::META_TYPE_C2S_LOGIN == meta.type_t()) //账号登陆

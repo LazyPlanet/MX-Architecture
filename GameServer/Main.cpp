@@ -57,7 +57,6 @@ void WorldUpdateLoop()
 		{            
 			prev_sleep_time = const_world_sleep + prev_sleep_time - diff;            
 			std::this_thread::sleep_for(std::chrono::milliseconds(prev_sleep_time));        
-			//std::cout << __func__ << ":" << prev_sleep_time << std::endl;
 		}        
 		else    
 		{	
@@ -87,7 +86,7 @@ int main(int argc, const char* argv[])
 		bool re = item->CanUse();
 		Item* item_potion = new Item_Potion(message);	
 		*/
-	std::cout << "Service starting..." << std::endl;
+	DEBUG("Service starting.");
 
 	if (argc != 2) return 2; //参数不对
 
@@ -98,7 +97,7 @@ int main(int argc, const char* argv[])
 		//系统配置读取
 		if (!ConfigInstance.LoadInitial(argv[1]))
 		{
-			printf("Load %s error, please check the file.", argv[1]); //控制台的日志可以直接用该函数
+			CRITICAL("Load {} error, please check the file.", argv[1]); //控制台的日志可以直接用该函数
 			return 3;
 		}
 	
@@ -144,15 +143,15 @@ int main(int argc, const char* argv[])
 		//世界循环
 		WorldUpdateLoop();
 	
-		std::cout << "Service stop..." << std::endl;
+		DEBUG("Service stop.");
 
 		ShutdownThreadPool(_threads);
 	}
-	catch (std::exception& e)
+	catch (const std::exception& e)
 	{
-		std::cerr << __func__ << ":Exception: " << e.what() << std::endl;
+		ERROR("Exception:{}", e.what());
 	}
 	
-	std::cout << "Service stoped." << std::endl;
+	DEBUG("Service stopped.");
 	return 0;
 }
