@@ -544,7 +544,7 @@ void Player::SendProtocol(pb::Message& message)
 	const pb::EnumValueDescriptor* enum_value = message.GetReflection()->GetEnum(message, field);
 	if (!enum_value) return;
 
-	TRACE("send protocol to player_id:{} protocol_name:{}, content:{}", _player_id, enum_value->name().c_str(), message.ShortDebugString().c_str());
+	TRACE("send protocol to player_id:{} protocol_name:{} content:{}", _player_id, enum_value->name().c_str(), message.ShortDebugString().c_str());
 }
 
 /*
@@ -1074,7 +1074,7 @@ bool Player::CheckHuPai(const Asset::PaiElement& pai, std::vector<Asset::FAN_TYP
 	for (auto& card : cards)
 		std::sort(card.second.begin(), card.second.end(), [](int x, int y){ return x < y; }); //由小到大，排序
 
-	bool zhanlihu = false, jiahu = false, xuanfenggang = false, baopai = false, duanmen = false, yise = false, piao = false, baohu = false; //积分
+	bool zhanlihu = false, jiahu = false, xuanfenggang = false, duanmen = false, yise = false, piao = false, baohu = false; //积分
 
 	////////////////////////////////////////////////////////////////////////////是否可以胡牌的前置检查
 	auto options = _locate_room->GetOptions();
@@ -1114,8 +1114,7 @@ bool Player::CheckHuPai(const Asset::PaiElement& pai, std::vector<Asset::FAN_TYP
 				{
 					if (has_count == 2) //有两门显然不是清一色
 					{
-						spdlog::get("console")->debug("{0} Line:{1} player_id:{2} card_type:{3} card_value:{4} reason:缺门也不是清一色.", 
-								__func__, __LINE__, _player_id, pai.card_type(), pai.card_value());
+						DEBUG("player_id:{} card_type:{} card_value:{} reason:缺门也不是清一色.", _player_id, pai.card_type(), pai.card_value());
 						return false; //不可缺门
 					}
 					else // <= 1
@@ -1125,8 +1124,7 @@ bool Player::CheckHuPai(const Asset::PaiElement& pai, std::vector<Asset::FAN_TYP
 				}
 				else //断门还不可以清一色
 				{
-					spdlog::get("console")->debug("{0} Line:{1} player_id:{2} card_type:{3} card_value:{4} reason:缺门.", 
-							__func__, __LINE__, _player_id, pai.card_type(), pai.card_value());
+					DEBUG("player_id:{} card_type:{} card_value:{} reason:缺门.", _player_id, pai.card_type(), pai.card_value());
 					return false;
 				}
 			}
@@ -1154,8 +1152,7 @@ bool Player::CheckHuPai(const Asset::PaiElement& pai, std::vector<Asset::FAN_TYP
 		{
 			if (_cards_outhand.size() == 0 && _minggang.size() == 0) 
 			{
-				spdlog::get("console")->debug("{0} Line:{1} player_id:{2} card_type:{3} card_value:{4} reason:没开门.", 
-						__func__, __LINE__, _player_id, pai.card_type(), pai.card_value());
+				DEBUG("player_id:{} card_type:{} card_value:{} reason:没开门.", _player_id, pai.card_type(), pai.card_value());
 				return false; //没开门
 			}
 		}
@@ -1209,21 +1206,11 @@ bool Player::CheckHuPai(const Asset::PaiElement& pai, std::vector<Asset::FAN_TYP
 
 	if (!has_yao) 
 	{
-		spdlog::get("console")->debug("{0} Line:{1} player_id:{2} card_type:{3} card_value:{4} reason:没幺九.", 
-				__func__, __LINE__, _player_id, pai.card_type(), pai.card_value());
+		DEBUG("player_id:{} card_type:{} card_value:{} reason:没幺九.", _player_id, pai.card_type(), pai.card_value());
 		return false;
 	}
 
-	////////是否可以宝胡
-	/*
-	{
-		auto it_baohu = std::find(options.extend_type().begin(), options.extend_type().end(), Asset::ROOM_EXTEND_TYPE_BAOPAI);
-		if (it_baohu != options.extend_type().end()) //可以宝胡
-		{
-			baohu = CheckBaoHu(pai);
-		}
-	}
-	*/
+	////////是否可以宝胡:单独处理
 
 	////////////////////////////////////////////////////////////////////////////是否可以满足胡牌的要求
 	
@@ -1236,19 +1223,10 @@ bool Player::CheckHuPai(const Asset::PaiElement& pai, std::vector<Asset::FAN_TYP
 			card_list.push_back(Card_t(crds.first, value));
 	}
 
-	/*
-	std::cout << "转换后的玩家手里的牌:" << std::endl;
-	for (auto card : card_list)
-	{
-		std::cout << card.card_type << " " << card.card_value << std::endl;
-	}
-	*/
-
 	bool can_hu = CanHuPai(card_list);	
-	if (!can_hu && !baohu) 
+	if (!can_hu) 
 	{
-		spdlog::get("console")->debug("{0} Line:{1} player_id:{2} card_type:{3} card_value:{4} reason:自己牌内无法满足胡牌条件.", 
-				__func__, __LINE__, _player_id, pai.card_type(), pai.card_value());
+		DEBUG("player_id:{} card_type:{} card_value:{} reason:自己牌内无法满足胡牌条件.", _player_id, pai.card_type(), pai.card_value());
 		return false;
 	}
 	
@@ -1331,11 +1309,6 @@ bool Player::CheckHuPai(const Asset::PaiElement& pai, std::vector<Asset::FAN_TYP
 	{
 		fan_list.push_back(Asset::FAN_TYPE_QING_YI_SE);
 		//base_score *= 2; //是否清一色
-	}
-	if (baopai) 
-	{
-		fan_list.push_back(Asset::FAN_TYPE_LOU_BAO);
-		//base_score *= 2; //是否宝牌
 	}
 	if (piao) 
 	{
@@ -1456,7 +1429,7 @@ void Player::OnChiPai(const Asset::PaiElement& pai, pb::Message* message)
 		return; //理论上不会出现
 	}
 	
-	TRACE("Dlete pai from player_id:{0}, card_type:{1}, card_value:{2}", pai_operate->pais(0).card_type(), pai_operate->pais(0).card_value());
+	TRACE("delete pai from player_id:{0}, card_type:{1}, card_value:{2}", pai_operate->pais(0).card_type(), pai_operate->pais(0).card_value());
 	it->second.erase(first); //删除
 
 	auto second = std::find(it->second.begin(), it->second.end(), pai_operate->pais(1).card_value());
@@ -1661,7 +1634,7 @@ void Player::OnGangPai(const Asset::PaiElement& pai, int64_t from_player_id)
 	}
 	
 	//记录日志
-	//DEBUG("%s:line:%d, player:%ld 玩家杠牌, 牌类型:%d, 牌值:%d, 数量:%d.", __func__, __LINE__, GetID(), pai.card_type(), pai.card_value(), count);
+	TRACE("player_id:{} crad_type:{} card_value:{} card_count:{}", _player_id, pai.card_type(), pai.card_value(), count);
 	
 	//从后楼给玩家取一张牌
 	auto cards = _game->TailPai(1);
