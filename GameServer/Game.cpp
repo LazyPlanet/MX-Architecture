@@ -185,14 +185,14 @@ void Game::OnPaiOperate(std::shared_ptr<Player> player, pb::Message* message)
 
 				//胡牌检查
 				std::vector<Asset::FAN_TYPE> fan_list;
-				if (player_next->CheckHuPai(card, fan_list)) 
+				if (player_next->CheckHuPai(card, fan_list)) //自摸
 				{
 					auto pai_perator = alert.mutable_pais()->Add();
 					pai_perator->mutable_pai()->CopyFrom(card);
 					pai_perator->mutable_oper_list()->Add(Asset::PAI_OPER_TYPE_HUPAI);
 					if (player_next->IsTingPai()) pai_perator->mutable_oper_list()->Add(Asset::FAN_TYPE_SHANG_TING);  //听牌玩家胡牌翻番
 				}
-				else if (player_next->CheckBaoHu(pai))
+				else if (player_next->CheckBaoHu(pai)) //自摸
 				{
 					auto pai_perator = alert.mutable_pais()->Add();
 					pai_perator->mutable_pai()->CopyFrom(card);
@@ -405,14 +405,14 @@ void Game::OnPaiOperate(std::shared_ptr<Player> player, pb::Message* message)
 
 			//胡牌检查
 			std::vector<Asset::FAN_TYPE> fan_list;
-			if (player_next->CheckHuPai(card, fan_list)) 
+			if (player_next->CheckHuPai(card, fan_list)) //自摸
 			{
 				auto pai_perator = alert.mutable_pais()->Add();
 				pai_perator->mutable_pai()->CopyFrom(card);
 				pai_perator->mutable_oper_list()->Add(Asset::PAI_OPER_TYPE_HUPAI);
 				if (player_next->IsTingPai()) pai_perator->mutable_oper_list()->Add(Asset::FAN_TYPE_SHANG_TING);  //听牌玩家胡牌翻番
 			}
-			else if (player_next->CheckBaoHu(pai))
+			else if (player_next->CheckBaoHu(pai)) //自摸
 			{
 				auto pai_perator = alert.mutable_pais()->Add();
 				pai_perator->mutable_pai()->CopyFrom(card);

@@ -16,7 +16,7 @@ namespace Adoter
 #define DEBUG(...) { \
 	auto debug = ConfigInstance.GetBool("DebugModel", true); \
 	if (debug) { \
-		spdlog::get("console")->trace("[" __FILE__ " line #" SPDLOG_STR_HELPER(__LINE__) "] " __VA_ARGS__); \
+		spdlog::get("console")->debug("[" __FILE__ " line #" SPDLOG_STR_HELPER(__LINE__) "] " __VA_ARGS__); \
 	}\
 }\
 
@@ -29,7 +29,7 @@ namespace Adoter
 }\
 
 #define WARN(...) { \
-		spdlog::get("console")->error("[" __FILE__ " line #" SPDLOG_STR_HELPER(__LINE__) "] " __VA_ARGS__); \
+		spdlog::get("console")->warn("[" __FILE__ " line #" SPDLOG_STR_HELPER(__LINE__) "] " __VA_ARGS__); \
 }\
 
 #define CRITICAL(...) { \
