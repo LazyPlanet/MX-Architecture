@@ -31,10 +31,6 @@ private:
 
 	CallBack _method;
 	std::shared_ptr<WorldSession> _session = nullptr;	//网络连接
-
-//////游戏逻辑定义
-	std::queue<int32_t> _xf_gang; //旋风杠所有操作
-	int32_t _oper_count = 0;
 public:
 	Player();
 	Player(int64_t player_id, std::shared_ptr<WorldSession> session);
@@ -245,8 +241,12 @@ private:
 	std::map<int32_t/*麻将牌类型*/, std::vector<int32_t>/*牌值*/> _cards_outhand; //玩家墙外牌
 	std::vector<Asset::PaiElement> _minggang; //明杠
 	std::vector<Asset::PaiElement> _angang; //暗杠
+
 	int32_t _jiangang = 0; //旋风杠，本质是明杠
 	int32_t _fenggang = 0; //旋风杠，本质是暗杠
+	int32_t _oper_count = 0;
+
+	std::queue<int32_t> _xf_gang; //旋风杠所有操作
 public:
 	//玩家操作
 	virtual int32_t CmdGameOperate(pb::Message* message); //游戏操作
@@ -307,23 +307,17 @@ public:
 		 _stuff.mutable_player_prop()->set_oper_count_tingpai(GetCountAfterTingOperation() + 1);
 	}
 
-	//明杠数量
-	int32_t GetMingGangCount() {
-		return _jiangang + _minggang.size();
-	}
-	//暗杠数量
-	int32_t GetAnGangCount() {
-		return _fenggang + _angang.size();
-	}
-	//是否已经在准备状态 
-	bool IsReady() { return _stuff.player_prop().game_oper_state() == Asset::GAME_OPER_TYPE_START; }
+	int32_t GetMingGangCount() { return _jiangang + _minggang.size(); } //明杠数量
+	int32_t GetAnGangCount() { return _fenggang + _angang.size(); } //暗杠数量
+	bool IsReady() { return _stuff.player_prop().game_oper_state() == Asset::GAME_OPER_TYPE_START; } //是否已经在准备状态 
 	//获取玩家座次
 	Asset::POSITION_TYPE GetPosition() { return _stuff.player_prop().position(); }
 	void SetPosition(Asset::POSITION_TYPE position) { _stuff.mutable_player_prop()->set_position(position); }
 
-	void PrintPai();
+	void PrintPai(); //打印牌玩家当前牌
 	void ClearCards(); //清理玩家手中牌
-	void SynchronizePai();
+	void SynchronizePai(); //同步牌
+	void PreCheckOnFaPai(); //发牌前置检查
 };
 
 /////////////////////////////////////////////////////

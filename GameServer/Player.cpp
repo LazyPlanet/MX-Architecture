@@ -1958,11 +1958,17 @@ void Player::OnGangJianPai()
 		SendProtocol(alert); //提示Client
 	}
 }
+	
+void Player::PreCheckOnFaPai()
+{
+
+}
 
 int32_t Player::OnFaPai(std::vector<int32_t>& cards)
 {
-	auto cards_inhand = _cards;
+	PreCheckOnFaPai(); //发牌前置检查
 
+	//发牌到玩家手里
 	for (auto card_index : cards)
 	{
 		auto card = GameInstance.GetCard(card_index);
