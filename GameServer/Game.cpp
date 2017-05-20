@@ -174,11 +174,10 @@ void Game::OnPaiOperate(std::shared_ptr<Player> player, pb::Message* message)
 					return; 
 				}
 				
-				//DEBUG("%s:line:%d next_player_id:%ld _curr_player_index:%d next_player_index:%d\n", 
-				//		__func__, __LINE__, player_next->GetID(), _curr_player_index, next_player_index);
+				DEBUG("player_id:{} next_player_id:{} _curr_player_index:{} next_player_index:{}", 
+						player->GetID(), player_next->GetID(), _curr_player_index, next_player_index);
 
 				auto cards = FaPai(1); 
-
 				auto card = GameInstance.GetCard(cards[0]); //玩家待抓的牌
 
 				Asset::PaiOperationAlert alert;
@@ -389,16 +388,16 @@ void Game::OnPaiOperate(std::shared_ptr<Player> player, pb::Message* message)
 			auto next_player_index = (_curr_player_index + 1) % MAX_PLAYER_COUNT; //如果有玩家放弃操作，则继续下个玩家
 
 			auto player_next = GetPlayerByOrder(next_player_index);
-			//DEBUG("%s:line:%d _oper_limit.player_id:%ld next_player_id:%ld _curr_player_index:%d next_player_index:%d\n", 
-			//		__func__, __LINE__, _oper_limit.player_id(), player_next->GetID(), _curr_player_index, next_player_index);
-			if (!player_next) return; 
-
-			//如果是其他玩家放弃了操作(比如，对门不碰)，则检查下家还能不能要这张牌，来吃
-			//DEBUG("%s:line:%d _oper_limit.player_id:%ld next_player_id:%ld _curr_player_index:%d next_player_index:%d\n", 
-			//		__func__, __LINE__, _oper_limit.player_id(), player_next->GetID(), _curr_player_index, next_player_index);
+			if (!player_next) 
+			{
+				DEBUG_ASSERT(false);
+				return; 
+			}
+			
+			TRACE("oper_limit.player_id:{} player_id:{} next_player_id:{} _curr_player_index:{} next_player_index:{}",
+				_oper_limit.player_id(), player->GetID(), player_next->GetID(), _curr_player_index, next_player_index);
 
 			auto cards = FaPai(1); 
-
 			auto card = GameInstance.GetCard(cards[0]); //玩家待抓的牌
 
 			Asset::PaiOperationAlert alert;
@@ -420,20 +419,6 @@ void Game::OnPaiOperate(std::shared_ptr<Player> player, pb::Message* message)
 				fan_list.push_back(Asset::FAN_TYPE_LOU_BAO); //宝胡
 			}
 
-			/*
-			//旋风杠检查，只检查第一次发牌之前
-			if (player_next->CheckFengGangPai()) 
-			{
-				auto pai_perator = alert.mutable_pais()->Add();
-				pai_perator->mutable_oper_list()->Add(Asset::PAI_OPER_TYPE_XUANFENG_FENG);
-			}
-			if (player_next->CheckJianGangPai()) 
-			{
-				auto pai_perator = alert.mutable_pais()->Add();
-				pai_perator->mutable_oper_list()->Add(Asset::PAI_OPER_TYPE_XUANFENG_JIAN);
-			}
-			*/
-			
 			player_next->OnFaPai(cards); //放入玩家牌里面
 			
 			////////听牌检查
