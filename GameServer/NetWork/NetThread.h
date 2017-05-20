@@ -32,6 +32,8 @@ public:
 			Wait();            
 			_thread.reset();        
 		}
+
+		spdlog::get("console")->warn("{0} Line:{1} thread has stopped.", __func__, __LINE__);
 	}
 
 	virtual void Stop() { 
