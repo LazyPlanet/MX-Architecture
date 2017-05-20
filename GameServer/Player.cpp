@@ -54,7 +54,7 @@ int32_t Player::Load()
 {
 	//加载数据库
 	std::shared_ptr<Redis> redis = std::make_shared<Redis>();
-	std::string stuff = redis->GetPlayer(GetID()); //不能用引用
+	std::string stuff = redis->GetPlayer(_player_id); //不能用引用
 	if (stuff.empty())
 	{
 		DEBUG_ASSERT(false);
@@ -88,7 +88,7 @@ int32_t Player::Save()
 
 	auto redis = make_unique<Redis>();
 
-	redis->SavePlayer(GetID(), stuff);
+	redis->SavePlayer(_player_id, stuff);
 
 	return 0;
 }
@@ -123,7 +123,7 @@ int32_t Player::OnLogout(pb::Message* message)
 	if (_locate_room) 
 	{
 		Asset::GameOperation game_operate;
-		game_operate.set_source_player_id(GetID()); //设置当前操作玩家
+		game_operate.set_source_player_id(_player_id); //设置当前操作玩家
 		game_operate.set_oper_type(Asset::GAME_OPER_TYPE_LEAVE); //离开游戏，退出房间
 		_locate_room->OnPlayerOperate(shared_from_this(), &game_operate); //广播给其他玩家
 	}
@@ -136,7 +136,7 @@ int32_t Player::OnLogout(pb::Message* message)
 	Save();	
 	//日志
 	auto log = make_unique<Asset::LogMessage>();
-	log->set_player_id(GetID());
+	log->set_player_id(_player_id);
 	log->set_type(Asset::PLAYER_INFO);
 	log->set_content(GetString());
 
@@ -229,9 +229,13 @@ int32_t Player::CmdGameOperate(pb::Message* message)
 	auto game_operate = dynamic_cast<Asset::GameOperation*>(message);
 	if (!game_operate) return 1;
 	
-	if (!_locate_room) return 2; //如果玩家不在房间，也不存在后面的逻辑
+	if (!_locate_room) 
+	{
+		DEBUG_ASSERT(false);
+		return 2; //如果玩家不在房间，也不存在后面的逻辑
+	}
 
-	game_operate->set_source_player_id(GetID()); //设置当前操作玩家
+	game_operate->set_source_player_id(_player_id); //设置当前操作玩家
 
 	switch(game_operate->oper_type())
 	{
@@ -244,7 +248,7 @@ int32_t Player::CmdGameOperate(pb::Message* message)
 
 		case Asset::GAME_OPER_TYPE_KICKOUT: //踢人
 		{
-			if (!_locate_room->IsHoster(GetID())) //不是房主，不能踢人
+			if (!_locate_room->IsHoster(_player_id)) //不是房主，不能踢人
 			{
 				AlertMessage(Asset::ERROR_ROOM_NO_PERMISSION); //没有权限
 				return 3;
@@ -358,7 +362,7 @@ int32_t Player::CmdPaiOperate(pb::Message* message)
 
 			//设置玩家状态
 			_stuff.mutable_player_prop()->set_has_tinged(true);
-			_game->AddTingPlayer(GetID());
+			_game->AddTingPlayer(_player_id);
 		}
 		break;
 
@@ -532,6 +536,15 @@ void Player::SendProtocol(pb::Message& message)
 	if (!Connected()) { DEBUG_ASSERT(false); }
 
 	GetSession()->SendProtocol(message);
+
+	//调试
+	const pb::FieldDescriptor* field = message.GetDescriptor()->FindFieldByName("type_t");
+	if (!field) return;
+
+	const pb::EnumValueDescriptor* enum_value = message.GetReflection()->GetEnum(message, field);
+	if (!enum_value) return;
+
+	TRACE("send protocol to player_id:{} protocol_name:{}, content:{}", _player_id, enum_value->name().c_str(), message.ShortDebugString().c_str());
 }
 
 /*
@@ -552,7 +565,7 @@ bool Player::Update()
 
 	if (_heart_count % 6000 == 0) //1min
 	{
-		spdlog::get("console")->debug("{0} Line:{1} heart_count:{2} player_id:{3}", __func__, __LINE__, _heart_count, GetID());
+		TRACE("heart_count:{} player_id:{}", _heart_count, _player_id);
 	}
 	return true;
 }
@@ -623,7 +636,7 @@ void Player::BroadCastCommonProp(Asset::MSG_TYPE type)
 {
 	Asset::MsgItem item; //消息数据
 	item.set_type(type);
-	item.set_sender(GetID());
+	item.set_sender(_player_id);
 	this->BroadCast(item); //通知给房间玩家
 }
 
@@ -777,7 +790,7 @@ void Player::SyncCommonProperty()
 {
 	Asset::CommonProperty common_prop;
 	common_prop.set_reason_type(Asset::CommonProperty_SYNC_REASON_TYPE_SYNC_REASON_TYPE_SELF);
-	common_prop.set_player_id(GetID());
+	common_prop.set_player_id(_player_id);
 	common_prop.mutable_common_prop()->CopyFrom(GetCommonProp());
 }
 
@@ -1049,8 +1062,7 @@ bool Player::CheckHuPai(const Asset::PaiElement& pai)
 
 bool Player::CheckHuPai(const Asset::PaiElement& pai, std::vector<Asset::FAN_TYPE>& fan_list)
 {
-	spdlog::get("console")->debug("{0} Line:{1} player_id:{2} card_type:{3} card_value:{4}", 
-			__func__, __LINE__, GetID(), pai.card_type(), pai.card_value());
+	DEBUG("player_id:{2} card_type:{3} card_value:{4}", _player_id, pai.card_type(), pai.card_value());
 
 	auto cards = _cards; //复制当前牌
 
@@ -1103,7 +1115,7 @@ bool Player::CheckHuPai(const Asset::PaiElement& pai, std::vector<Asset::FAN_TYP
 					if (has_count == 2) //有两门显然不是清一色
 					{
 						spdlog::get("console")->debug("{0} Line:{1} player_id:{2} card_type:{3} card_value:{4} reason:缺门也不是清一色.", 
-								__func__, __LINE__, GetID(), pai.card_type(), pai.card_value());
+								__func__, __LINE__, _player_id, pai.card_type(), pai.card_value());
 						return false; //不可缺门
 					}
 					else // <= 1
@@ -1114,7 +1126,7 @@ bool Player::CheckHuPai(const Asset::PaiElement& pai, std::vector<Asset::FAN_TYP
 				else //断门还不可以清一色
 				{
 					spdlog::get("console")->debug("{0} Line:{1} player_id:{2} card_type:{3} card_value:{4} reason:缺门.", 
-							__func__, __LINE__, GetID(), pai.card_type(), pai.card_value());
+							__func__, __LINE__, _player_id, pai.card_type(), pai.card_value());
 					return false;
 				}
 			}
@@ -1143,7 +1155,7 @@ bool Player::CheckHuPai(const Asset::PaiElement& pai, std::vector<Asset::FAN_TYP
 			if (_cards_outhand.size() == 0 && _minggang.size() == 0) 
 			{
 				spdlog::get("console")->debug("{0} Line:{1} player_id:{2} card_type:{3} card_value:{4} reason:没开门.", 
-						__func__, __LINE__, GetID(), pai.card_type(), pai.card_value());
+						__func__, __LINE__, _player_id, pai.card_type(), pai.card_value());
 				return false; //没开门
 			}
 		}
@@ -1198,7 +1210,7 @@ bool Player::CheckHuPai(const Asset::PaiElement& pai, std::vector<Asset::FAN_TYP
 	if (!has_yao) 
 	{
 		spdlog::get("console")->debug("{0} Line:{1} player_id:{2} card_type:{3} card_value:{4} reason:没幺九.", 
-				__func__, __LINE__, GetID(), pai.card_type(), pai.card_value());
+				__func__, __LINE__, _player_id, pai.card_type(), pai.card_value());
 		return false;
 	}
 
@@ -1236,7 +1248,7 @@ bool Player::CheckHuPai(const Asset::PaiElement& pai, std::vector<Asset::FAN_TYP
 	if (!can_hu && !baohu) 
 	{
 		spdlog::get("console")->debug("{0} Line:{1} player_id:{2} card_type:{3} card_value:{4} reason:自己牌内无法满足胡牌条件.", 
-				__func__, __LINE__, GetID(), pai.card_type(), pai.card_value());
+				__func__, __LINE__, _player_id, pai.card_type(), pai.card_value());
 		return false;
 	}
 	
@@ -1259,7 +1271,7 @@ bool Player::CheckHuPai(const Asset::PaiElement& pai, std::vector<Asset::FAN_TYP
 	if (!has_ke) 
 	{
 		spdlog::get("console")->debug("{0} Line:{1} player_id:{2} card_type:{3} card_value:{4} reason:没有刻.", 
-				__func__, __LINE__, GetID(), pai.card_type(), pai.card_value());
+				__func__, __LINE__, _player_id, pai.card_type(), pai.card_value());
 		return false;
 	}
 
@@ -1481,7 +1493,6 @@ void Player::OnPengPai(const Asset::PaiElement& pai)
 	if (!CheckPengPai(pai)) 
 	{
 		DEBUG_ASSERT(false);
-		//DEBUG("%s:line:%d,玩家无法碰牌 类型:%d--值%d\n", __func__, __LINE__, GetID(), pai.card_type(), pai.card_value());
 		return;
 	}
 	
@@ -1491,9 +1502,14 @@ void Player::OnPengPai(const Asset::PaiElement& pai)
 	for (int i = 0; i < 2; ++i)
 	{
 		auto iit = std::find(it->second.begin(), it->second.end(), pai.card_value()); //从玩家手里删除
-		if (iit == it->second.end()) return;
+		if (iit == it->second.end()) 
+		{
+			DEBUG_ASSERT(false); //理论上不会如此
+			return;
+		}
+
 		it->second.erase(iit);
-		//DEBUG("%s:line:%d,删除玩家%ld手中牌 类型:%d--值%d\n", __func__, __LINE__, GetID(), pai.card_type(), pai.card_value());
+		DEBUG("delete card from player_id:{} card_type:{} card_vale:{}", _player_id, pai.card_type(), pai.card_value());
 	}
 
 	for (int i = 0; i < 3; ++i)
@@ -1515,46 +1531,23 @@ bool Player::CheckGangPai(const Asset::PaiElement& pai, int64_t from_player_id)
 		if (count == 3 /*牌是来自其他玩家*/ || count == 4 /*牌是玩家自己抓的*/) return true;  //玩家手里需要有3|4张牌
 	}
 
-	//DEBUG("%s:line:%d,杠牌 玩家%ld墙外牌: 类型:%d 值:%d from_player_id:%ld\n", 
-	//		__func__, __LINE__, GetID(), pai.card_type(), pai.card_value(), from_player_id);
-
-	if (from_player_id == GetID()) //玩家自己抓牌
+	if (from_player_id == _player_id) //玩家自己抓牌
 	{
 		auto it = _cards_outhand.find(pai.card_type()); //牌面的牌不做排序,顺序必须3张
 
 		auto first_it = std::find(it->second.begin(), it->second.end(), card_value);
 
-		if (first_it == it->second.end()) 
-		{
-			//DEBUG("%s:line:%d,杠牌 玩家%ld墙外牌: 类型:%d, 值:%d from_player_id:%ld\n", 
-			//	__func__, __LINE__, GetID(), pai.card_type(), pai.card_value(), from_player_id);
-			return false;
-		}
+		if (first_it == it->second.end()) return false;
 
 		auto second_it = ++first_it;
-		if (second_it == it->second.end())
-		{
-			//DEBUG("%s:line:%d,杠牌 玩家%ld墙外牌: 类型:%d, 值:%d from_player_id:%ld\n", 
-			//	__func__, __LINE__, GetID(), pai.card_type(), pai.card_value(), from_player_id);
-			return false;
-		}
+		if (second_it == it->second.end()) return false;
 
 		auto third_it = ++second_it;
-		if (third_it == it->second.end())
-		{
-			//DEBUG("%s:line:%d,杠牌 玩家%ld墙外牌: 类型:%d, 值:%d from_player_id:%ld\n", 
-			//	__func__, __LINE__, GetID(), pai.card_type(), pai.card_value(), from_player_id);
-			return false;
-		}
+		if (third_it == it->second.end()) return false;
 		
-		//DEBUG("%s:line:%d,杠牌 玩家%ld墙外牌: 类型:%d, 值:%d %d %d %d\n", 
-		//		__func__, __LINE__, GetID(), pai.card_type(), pai.card_value(), *first_it, *second_it, *third_it);
-
 		if ((*first_it == *second_it) && (*second_it == *third_it)) return true;  //玩家牌面有3张牌
 	}
 		
-	//DEBUG("%s:line:%d,玩家%ld不能杠牌, 类型:%d, 值:%d\n", __func__, __LINE__, GetID(), pai.card_type(), pai.card_value());
-
 	return false;
 }
 

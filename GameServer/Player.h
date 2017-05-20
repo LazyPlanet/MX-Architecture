@@ -27,6 +27,7 @@ class Player : public std::enable_shared_from_this<Player>
 private:
 	Asset::Player _stuff; //玩家数据
 	int64_t _heart_count = 0; //心跳次数
+	int64_t _player_id = 0; //玩家ID
 	bool _dirty = false;
 
 	CallBack _method;
@@ -62,7 +63,10 @@ public:
 	void SyncCommonProperty();
 	//获取ID
 	virtual int64_t GetID() { return _stuff.common_prop().player_id(); }
-	virtual void SetID(int64_t player_id) { _stuff.mutable_common_prop()->set_player_id(player_id); } 
+	virtual void SetID(int64_t player_id) { 
+		_player_id = player_id; //缓存
+		_stuff.mutable_common_prop()->set_player_id(player_id); 
+	} 
 	//获取名字
 	virtual std::string GetName() { return _stuff.common_prop().name(); }
 	virtual void SetName(std::string name) { _stuff.mutable_common_prop()->set_name(name); } 
