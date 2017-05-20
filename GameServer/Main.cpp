@@ -86,8 +86,6 @@ int main(int argc, const char* argv[])
 		bool re = item->CanUse();
 		Item* item_potion = new Item_Potion(message);	
 		*/
-	std::cout << "Service starting." << std::endl;
-
 	if (argc != 2) return 2; //参数不对
 
 	try 
