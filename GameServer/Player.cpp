@@ -1398,8 +1398,6 @@ void Player::OnChiPai(const Asset::PaiElement& pai, pb::Message* message)
 		return; 
 	}
 	
-	std::lock_guard<std::mutex> lock(_card_lock); //多线程操作
-	
 	auto it = _cards.find(pai.card_type());
 	if (it == _cards.end()) return;
 		
@@ -1467,8 +1465,6 @@ void Player::OnPengPai(const Asset::PaiElement& pai)
 		DEBUG_ASSERT(false);
 		return;
 	}
-	
-	std::lock_guard<std::mutex> lock(_card_lock); //多线程操作
 	
 	auto it = _cards.find(pai.card_type());
 	if (it == _cards.end()) return; //理论上不会如此
@@ -1604,8 +1600,6 @@ void Player::OnGangPai(const Asset::PaiElement& pai, int64_t from_player_id)
 	
 	int32_t card_type = pai.card_type();
 	int32_t card_value = pai.card_value();
-
-	std::lock_guard<std::mutex> lock(_card_lock); //多线程操作
 
 	/////////////////////////////////////////////////////////////////////////////手里满足杠牌
 
@@ -1860,8 +1854,6 @@ void Player::OnGangFengPai()
 {
 	if (!CheckFengGangPai(_cards)) return;
 	
-	std::lock_guard<std::mutex> lock(_card_lock); //多线程操作
-
 	auto it = _cards.find(Asset::CARD_TYPE_FENG);
 	if (it == _cards.end()) return;
 
@@ -1912,8 +1904,6 @@ void Player::OnGangJianPai()
 {
 	if (!CheckJianGangPai(_cards)) return;
 	
-	std::lock_guard<std::mutex> lock(_card_lock); //多线程操作
-
 	auto it = _cards.find(Asset::CARD_TYPE_JIAN);
 	for (auto card_value = 1; card_value <= 3; ++card_value) //中发白
 	{
