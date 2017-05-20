@@ -274,7 +274,11 @@ int32_t Player::CmdPaiOperate(pb::Message* message)
 	Asset::PaiOperation* pai_operate = dynamic_cast<Asset::PaiOperation*>(message);
 	if (!pai_operate) return 1; 
 
-	if (!_locate_room || !_game) return 2; //还没加入房间或者还没开始游戏
+	if (!_locate_room || !_game) 
+	{
+		DEBUG_ASSERT(false);
+		return 2; //还没加入房间或者还没开始游戏
+	}
 
 	if (!pai_operate->position()) pai_operate->set_position(GetPosition()); //设置玩家座位
 	
@@ -444,7 +448,11 @@ int32_t Player::CmdEnterRoom(pb::Message* message)
 	Asset::EnterRoom* enter_room = dynamic_cast<Asset::EnterRoom*>(message);
 	if (!enter_room) return 1; 
 
-	if (_locate_room) return 2; //已经在房间
+	if (_locate_room) 
+	{
+		DEBUG_ASSERT(false);
+		return 2; //已经在房间
+	}
 
 	Asset::ROOM_TYPE room_type = enter_room->room().room_type();
 
@@ -530,7 +538,11 @@ bool Player::OnEnterRoom(int64_t room_id)
 {
 	_locate_room = RoomInstance.Get(room_id);
 
-	if (!_locate_room) return false; //非法的房间 
+	if (!_locate_room) 
+	{
+		DEBUG_ASSERT(false);
+		return false; //非法的房间 
+	}
 
 	_locate_room->OnCreated();
 
