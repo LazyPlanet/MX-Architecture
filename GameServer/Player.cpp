@@ -1182,12 +1182,14 @@ bool Player::CheckHuPai(const Asset::PaiElement& pai, std::vector<Asset::FAN_TYP
 
 	for (auto gang : _minggang)
 	{
-		if (gang.card_value() == 1 || gang.card_value() == 9) has_yao = true;
+		if (gang.card_value() == 1 || gang.card_value() == 9 || 
+				gang.card_type() == Asset::CARD_TYPE_FENG || gang.card_type() == Asset::CARD_TYPE_JIAN) has_yao = true;
 	}
 	
 	for (auto gang : _angang)
 	{
-		if (gang.card_value() == 1 || gang.card_value() == 9) has_yao = true;
+		if (gang.card_value() == 1 || gang.card_value() == 9 ||
+				gang.card_type() == Asset::CARD_TYPE_FENG || gang.card_type() == Asset::CARD_TYPE_JIAN) has_yao = true;
 	}
 
 	if (_jiangang > 0 || _fenggang > 0) 
