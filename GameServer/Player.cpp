@@ -1980,7 +1980,6 @@ int32_t Player::OnFaPai(std::vector<int32_t>& cards)
 
 	if (cards.size() > 1) //开局
 	{
-		/*
 		for (auto pai : _cards)
 		{
 			auto pais = notify.mutable_pais()->Add();
@@ -1992,7 +1991,6 @@ int32_t Player::OnFaPai(std::vector<int32_t>& cards)
 		}
 		
 		notify.set_data_type(Asset::PaiNotify_CARDS_DATA_TYPE_CARDS_DATA_TYPE_START); //操作类型：开局
-		*/
 		
 		//旋风杠检查
 		auto xf_card = _cards;
@@ -2030,18 +2028,15 @@ int32_t Player::OnFaPai(std::vector<int32_t>& cards)
 	{
 		auto card = GameInstance.GetCard(cards[0]);
 
-		/*
 		notify.mutable_pai()->set_card_type(card.card_type());
 		notify.mutable_pai()->set_card_value(card.card_value());
 
 		notify.set_data_type(Asset::PaiNotify_CARDS_DATA_TYPE_CARDS_DATA_TYPE_FAPAI); //操作类型：发牌
-		*/
-
-		//SynchronizePai(); //每次都同步
 
 		if (IsTingPai())
 		{
 			auto count = GetCountAfterTingOperation();
+
 			if (count == 1) //听牌后第一次抓牌
 			{
 				Asset::RandomSaizi proto;
@@ -2067,7 +2062,7 @@ int32_t Player::OnFaPai(std::vector<int32_t>& cards)
 		}
 	}
 	
-	//SendProtocol(notify); //发送
+	SendProtocol(notify); //发送牌给玩家：发牌
 
 	return 0;
 }
