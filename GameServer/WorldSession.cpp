@@ -16,6 +16,7 @@ namespace spd = spdlog;
 WorldSession::WorldSession(boost::asio::ip::tcp::socket&& socket) : Socket(std::move(socket))
 {
 	_remote_endpoint = _socket.remote_endpoint();
+	_ip_address = _remote_endpoint.address().to_string();
 }
 
 void WorldSession::InitializeHandler(const boost::system::error_code error, const std::size_t bytes_transferred)
@@ -24,8 +25,7 @@ void WorldSession::InitializeHandler(const boost::system::error_code error, cons
 	{
 		if (error)
 		{
-			spdlog::get("console")->error("{0} Line:{1} Remote client disconnect, remote_ip:{2}, player_id:{3}", 
-					__func__, __LINE__, _socket.remote_endpoint().address().to_string().c_str(), g_player == nullptr ? 0 : g_player->GetID());
+			ERROR("Remote client disconnect, remote_ip:{2}, player_id:{3}", _ip_address, g_player ? g_player->GetID() : 0);
 			KillOutPlayer();
 			//Close(); ////断开网络连接，不要显示的关闭网络连接
 			return;
@@ -59,7 +59,7 @@ void WorldSession::InitializeHandler(const boost::system::error_code error, cons
 			pb::Message* msg = ProtocolInstance.GetMessage(meta.type_t());	
 			if (!msg) 
 			{
-				//DEBUG("Could not found message of type:%d", meta.type_t());
+				TRACE("Could not found message of type:%d", meta.type_t());
 				return;		//非法协议
 			}
 
@@ -90,9 +90,10 @@ void WorldSession::InitializeHandler(const boost::system::error_code error, cons
 					///////如果账号下没有角色，创建一个给Client
 
 					int64_t player_id = redis->CreatePlayer();
+
 					if (player_id == 0) 
 					{
-						//DEBUG("Create player failed.");
+						ERROR("Create player failed.");
 						return; //创建失败
 					}
 
@@ -103,7 +104,9 @@ void WorldSession::InitializeHandler(const boost::system::error_code error, cons
 
 					g_player = std::make_shared<Player>(player_id, shared_from_this());
 					std::string player_name = NameInstance.Get();
-					//DEBUG("%s:line:%d, player_id:%ld, player_name:%s\n", __func__, __LINE__, player_id, player_name.c_str());
+
+					TRACE("Get player_name success, player_id:{}, player_name:{}", player_id, player_name.c_str());
+
 					g_player->SetName(player_name);
 					g_player->Save(); //存盘，防止数据库无数据
 				}
@@ -157,8 +160,7 @@ void WorldSession::InitializeHandler(const boost::system::error_code error, cons
 
 				if (_player_list.find(enter_game->player_id()) == _player_list.end())
 				{
-					//Close();
-					//DEBUG("Player has not found.");
+					ERROR("player_id:{} has not found, maybe it is cheated.", enter_game->player_id());
 					return; //账号下没有该角色数据
 				}
 
@@ -169,7 +171,7 @@ void WorldSession::InitializeHandler(const boost::system::error_code error, cons
 			{
 				if (!g_player) 
 				{
-					//DEBUG("Player has not inited");
+					ERROR("Player has not inited.");
 					return; //未初始化的Player
 				}
 				//其他协议的调用规则
@@ -179,9 +181,8 @@ void WorldSession::InitializeHandler(const boost::system::error_code error, cons
 	}
 	catch (std::exception& e)
 	{
-		spdlog::get("console")->error("{0} Line:{1} Remote client disconnect, remote_ip:{2}, error:{3}, player_id:{4}", 
-				__func__, __LINE__, _socket.remote_endpoint().address().to_string().c_str(), e.what(), g_player == nullptr ? 0 : g_player->GetID());
-		//Close();
+		ERROR("Remote client disconnect, remote_ip:{2}, error:{3}, player_id:{4}", _ip_address, e.what(), g_player ? g_player->GetID() : 0);
+		//Close(); //不用显示关闭网络连接
 		return;
 	}
 	//递归持续接收	
@@ -190,9 +191,7 @@ void WorldSession::InitializeHandler(const boost::system::error_code error, cons
 
 void WorldSession::KillOutPlayer()
 {
-	spdlog::get("console")->warn("{0} Line:{1} Remote client disconnect, remote_ip:{2}, player_id:{3}", 
-			__func__, __LINE__, _socket.remote_endpoint().address().to_string().c_str(), g_player == nullptr ? 0 : g_player->GetID());
-
+	//踢掉玩家
 	if (g_player) //网络断开
 	{
 		g_player->OnLogout(nullptr);

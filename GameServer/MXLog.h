@@ -24,6 +24,14 @@ namespace Adoter
 		spdlog::get("console")->trace("[" __FILE__ " line #" SPDLOG_STR_HELPER(__LINE__) "] " __VA_ARGS__); \
 }\
 
+#define ERROR(...) { \
+		spdlog::get("console")->error("[" __FILE__ " line #" SPDLOG_STR_HELPER(__LINE__) "] " __VA_ARGS__); \
+}\
+
+#define WARN(...) { \
+		spdlog::get("console")->error("[" __FILE__ " line #" SPDLOG_STR_HELPER(__LINE__) "] " __VA_ARGS__); \
+}\
+
 namespace pb = google::protobuf;
 
 ////////////////////////////////////////////////////////////////////////////////
