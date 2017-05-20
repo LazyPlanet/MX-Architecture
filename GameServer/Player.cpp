@@ -1930,10 +1930,13 @@ void Player::OnGangFengPai()
 	try {
 		std::unique_lock<std::mutex> lock(_card_lock, std::defer_lock);
 
-		for (int32_t card_value = 1; card_value <= 4; ++card_value) //东南西北
+		try (lock.try_lock())
 		{
-			auto it_if = std::find(it->second.begin(), it->second.end(), card_value);
-			if (it_if != it->second.end())  it->second.erase(it_if); //删除
+			for (int32_t card_value = 1; card_value <= 4; ++card_value) //东南西北
+			{
+				auto it_if = std::find(it->second.begin(), it->second.end(), card_value);
+				if (it_if != it->second.end())  it->second.erase(it_if); //删除
+			}
 		}
 	}
 	catch(const std::system_error& error)
@@ -1984,11 +1987,15 @@ void Player::OnGangJianPai()
 	
 	try {
 		std::unique_lock<std::mutex> lock(_card_lock, std::defer_lock);
-		auto it = _cards.find(Asset::CARD_TYPE_JIAN);
-		for (auto card_value = 1; card_value <= 3; ++card_value) //中发白
+
+		if (lock.try_lock())
 		{
-			auto it_if = std::find(it->second.begin(), it->second.end(), card_value);
-			if (it_if != it->second.end())  it->second.erase(it_if); //删除
+			auto it = _cards.find(Asset::CARD_TYPE_JIAN);
+			for (auto card_value = 1; card_value <= 3; ++card_value) //中发白
+			{
+				auto it_if = std::find(it->second.begin(), it->second.end(), card_value);
+				if (it_if != it->second.end())  it->second.erase(it_if); //删除
+			}
 		}
 	}
 	catch(const std::system_error& error)
