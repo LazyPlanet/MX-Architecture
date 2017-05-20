@@ -1,4 +1,5 @@
 #include "Protocol.h"
+#include "World.h"
 
 namespace Adoter {
 
