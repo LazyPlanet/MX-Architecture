@@ -529,7 +529,7 @@ void Player::SendProtocol(pb::Message* message)
 
 void Player::SendProtocol(pb::Message& message)
 {
-	if (!Connected()) DEBUG_ASSERT(false);
+	if (!Connected()) { DEBUG_ASSERT(false); }
 
 	GetSession()->SendProtocol(message);
 }
