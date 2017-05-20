@@ -35,8 +35,6 @@ void Room::Enter(std::shared_ptr<Player> player)
 {
 	if (TryEnter(player) != Asset::ERROR_SUCCESS) return; //进入房间之前都需要做此检查，理论上不会出现
 
-	std::lock_guard<std::mutex> lock(_mutex);
-
 	_players.push_back(player); //进入房间
 	
 	DEBUG("当前房间玩家数量:{} 当前进入房间玩家角色:{}", _players.size(), player->GetID());

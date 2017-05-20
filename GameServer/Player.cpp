@@ -1930,7 +1930,7 @@ void Player::OnGangFengPai()
 	try {
 		std::unique_lock<std::mutex> lock(_card_lock, std::defer_lock);
 
-		try (lock.try_lock())
+		if (lock.try_lock())
 		{
 			for (int32_t card_value = 1; card_value <= 4; ++card_value) //东南西北
 			{
