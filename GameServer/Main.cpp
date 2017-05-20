@@ -86,7 +86,7 @@ int main(int argc, const char* argv[])
 		bool re = item->CanUse();
 		Item* item_potion = new Item_Potion(message);	
 		*/
-	DEBUG("Service starting.");
+	std::cout << "Service starting." << std::endl;
 
 	if (argc != 2) return 2; //参数不对
 
@@ -97,7 +97,7 @@ int main(int argc, const char* argv[])
 		//系统配置读取
 		if (!ConfigInstance.LoadInitial(argv[1]))
 		{
-			CRITICAL("Load {} error, please check the file.", argv[1]); //控制台的日志可以直接用该函数
+			std::cout << "Load file error, please check the file, name:" << argv[1] << std::endl;; //控制台的日志可以直接用该函数
 			return 3;
 		}
 	
