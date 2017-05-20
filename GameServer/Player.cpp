@@ -278,8 +278,6 @@ int32_t Player::CmdPaiOperate(pb::Message* message)
 
 	if (!pai_operate->position()) pai_operate->set_position(GetPosition()); //设置玩家座位
 
-	std::lock_guard<std::mutex> lock(_card_lock); //多线程操作
-
 	//进行操作
 	switch (pai_operate->oper_type())
 	{
@@ -296,7 +294,19 @@ int32_t Player::CmdPaiOperate(pb::Message* message)
 				return 3; //没有这张牌
 			}
 
-			pais.erase(it); //打出牌
+			try {
+				std::unique_lock<std::mutex> lock(_card_lock, std::defer_lock);
+
+				if (lock.try_lock()) 
+				{
+					pais.erase(it); //打出牌
+					TRACE("Delete card from player_id:{} card_type:{} card_value:{} for dapai.", _player_id, pai.card_type(), pai.card_value());
+				}
+			}
+			catch(const std::system_error& error)
+			{
+				ERROR("Delete card from player_id:{} card_type:{} card_value:{} error.", _player_id, pai.card_type(), pai.card_value(), error.what());
+			}
 		}
 		break;
 		
@@ -360,10 +370,23 @@ int32_t Player::CmdPaiOperate(pb::Message* message)
 				return 8; //不能听牌
 			}
 
-			pais.erase(it); //删除牌
+			try {
+				std::unique_lock<std::mutex> lock(_card_lock, std::defer_lock);
+
+				if (lock.try_lock()) 
+				{
+					pais.erase(it); //删除牌
+					TRACE("Delete card from player_id:{} card_type:{} card_value:{} for dapai.", _player_id, pai.card_type(), pai.card_value());
+				}
+			}
+			catch(const std::system_error& error)
+			{
+				ERROR("Delete card from player_id:{} card_type:{} card_value:{} error.", _player_id, pai.card_type(), pai.card_value(), error.what());
+			}
 
 			//设置玩家状态
-			_stuff.mutable_player_prop()->set_has_tinged(true);
+			//_stuff.mutable_player_prop()->set_has_tinged(true);
+			_has_ting = true;
 			_game->AddTingPlayer(_player_id);
 		}
 		break;
@@ -914,22 +937,22 @@ std::vector<Asset::PAI_OPER_TYPE> Player::CheckPai(const Asset::PaiElement& pai,
 
 	if (CheckHuPai(pai)) 
 	{
-		std::cout << "玩家胡牌line:" << __LINE__ << std::endl;
+		DEBUG("玩家{}可以胡牌.", _player_id);
 		rtn_check.push_back(Asset::PAI_OPER_TYPE_HUPAI);
 	}
 	if (CheckGangPai(pai, from_player_id)) 
 	{
-		std::cout << "玩家杠牌line:" << __LINE__ << std::endl;
+		DEBUG("玩家{}可以杠牌.", _player_id);
 		rtn_check.push_back(Asset::PAI_OPER_TYPE_GANGPAI);
 	}
 	if (CheckPengPai(pai)) 
 	{
-		std::cout << "玩家碰牌line:" << __LINE__ << std::endl;
+		DEBUG("玩家{}可以碰牌.", _player_id);
 		rtn_check.push_back(Asset::PAI_OPER_TYPE_PENGPAI);
 	}
 	if (CheckChiPai(pai)) 
 	{
-		std::cout << "玩家吃牌line:" << __LINE__ << std::endl;
+		DEBUG("玩家{}可以吃.", _player_id);
 		rtn_check.push_back(Asset::PAI_OPER_TYPE_CHIPAI);
 	}
 		
@@ -1418,24 +1441,36 @@ void Player::OnChiPai(const Asset::PaiElement& pai, pb::Message* message)
 		return; //不是顺子
 	}
 
-	auto first = std::find(it->second.begin(), it->second.end(), pai_operate->pais(0).card_value());
-	if (first == it->second.end()) 
-	{
-		DEBUG_ASSERT(false);
-		return; //理论上不会出现
-	}
-	
-	TRACE("delete pai from player_id:{0}, card_type:{1}, card_value:{2}", pai_operate->pais(0).card_type(), pai_operate->pais(0).card_value());
-	it->second.erase(first); //删除
+	try {
+		std::unique_lock<std::mutex> lock(_card_lock, std::defer_lock);
 
-	auto second = std::find(it->second.begin(), it->second.end(), pai_operate->pais(1).card_value());
-	if (second == it->second.end()) 
-	{
-		DEBUG_ASSERT(false);
-		return; //理论上不会出现
-	}
+		if (lock.try_lock()) 
+		{
+			auto first = std::find(it->second.begin(), it->second.end(), pai_operate->pais(0).card_value());
+			if (first == it->second.end()) 
+			{
+				DEBUG_ASSERT(false);
+				return; //理论上不会出现
+			}
+			
+			TRACE("delete pai from player_id:{}, card_type:{}, card_value:{}", _player_id, pai_operate->pais(0).card_type(), pai_operate->pais(0).card_value());
+			it->second.erase(first); //删除
 
-	it->second.erase(second); //删除
+			auto second = std::find(it->second.begin(), it->second.end(), pai_operate->pais(1).card_value());
+			if (second == it->second.end()) 
+			{
+				DEBUG_ASSERT(false);
+				return; //理论上不会出现
+			}
+
+			TRACE("delete pai from player_id:{}, card_type:{}, card_value:{}", _player_id, pai_operate->pais(1).card_type(), pai_operate->pais(1).card_value());
+			it->second.erase(second); //删除
+		}
+	}
+	catch(const std::system_error& error)
+	{
+		ERROR("Delete card from player_id:{} error:{}.", _player_id, error.what());
+	}
 	
 	for (auto card : cards)
 		_cards_outhand[card.card_type()].push_back(card.card_value());
@@ -1445,8 +1480,6 @@ void Player::OnChiPai(const Asset::PaiElement& pai, pb::Message* message)
 
 bool Player::CheckPengPai(const Asset::PaiElement& pai)
 {
-	std::lock_guard<std::mutex> lock(_card_lock); //多线程操作
-
 	auto it = _cards.find(pai.card_type());
 	if (it == _cards.end()) return false;
 
@@ -1469,17 +1502,28 @@ void Player::OnPengPai(const Asset::PaiElement& pai)
 	auto it = _cards.find(pai.card_type());
 	if (it == _cards.end()) return; //理论上不会如此
 	
-	for (int i = 0; i < 2; ++i)
-	{
-		auto iit = std::find(it->second.begin(), it->second.end(), pai.card_value()); //从玩家手里删除
-		if (iit == it->second.end()) 
-		{
-			DEBUG_ASSERT(false); //理论上不会如此
-			return;
-		}
+	try {
+		std::unique_lock<std::mutex> lock(_card_lock, std::defer_lock);
 
-		it->second.erase(iit);
-		DEBUG("delete card from player_id:{} card_type:{} card_vale:{}", _player_id, pai.card_type(), pai.card_value());
+		if (lock.try_lock()) 
+		{
+			for (int i = 0; i < 2; ++i)
+			{
+				auto iit = std::find(it->second.begin(), it->second.end(), pai.card_value()); //从玩家手里删除
+				if (iit == it->second.end()) 
+				{
+					DEBUG_ASSERT(false); //理论上不会如此
+					return;
+				}
+
+				it->second.erase(iit);
+				DEBUG("delete card from player_id:{} card_type:{} card_vale:{}", _player_id, pai.card_type(), pai.card_value());
+			}
+		}
+	}
+	catch(const std::system_error& error)
+	{
+		ERROR("Delete card from player_id:{} card_type:{} card_value:{} error:{}.", _player_id, pai.card_type(), pai.card_value(), error.what());
 	}
 
 	for (int i = 0; i < 3; ++i)
@@ -1492,8 +1536,6 @@ void Player::OnPengPai(const Asset::PaiElement& pai)
 
 bool Player::CheckGangPai(const Asset::PaiElement& pai, int64_t from_player_id)
 {
-	std::lock_guard<std::mutex> lock(_card_lock); //多线程操作
-
 	auto it = _cards.find(pai.card_type());
 	int32_t card_value = pai.card_value();
 
@@ -1525,8 +1567,6 @@ bool Player::CheckGangPai(const Asset::PaiElement& pai, int64_t from_player_id)
 
 bool Player::CheckAllGangPai(::google::protobuf::RepeatedField<Asset::PaiOperationAlert_AlertElement>& gang_list)
 {
-	std::lock_guard<std::mutex> lock(_card_lock); //多线程操作
-
 	/////手里有4张牌，即暗杠检查
 	for (auto cards : _cards)
 	{
@@ -1617,8 +1657,20 @@ void Player::OnGangPai(const Asset::PaiElement& pai, int64_t from_player_id)
 	else if (count == 4)
 		_angang.push_back(pai);
 	
-	auto remove_it = std::remove(it->second.begin(), it->second.end(), card_value); //从玩家手里删除
-	it->second.erase(remove_it, it->second.end());
+	try {
+		std::unique_lock<std::mutex> lock(_card_lock, std::defer_lock);
+
+		if (lock.try_lock()) 
+		{
+			auto remove_it = std::remove(it->second.begin(), it->second.end(), card_value); //从玩家手里删除
+			it->second.erase(remove_it, it->second.end());
+			DEBUG("delete card from player_id:{} card_type:{} card_vale:{}", _player_id, card_type, card_value);
+		}
+	}
+	catch(const std::system_error& error)
+	{
+		ERROR("Delete card from player_id:{} card_type:{} card_value:{} error:{}.", _player_id, card_type, card_value, error.what());
+	}
 	
 	/////////////////////////////////////////////////////////////////////////////墙外满足杠牌
 	auto iit = _cards_outhand.find(card_type);
@@ -1689,8 +1741,6 @@ bool Player::CanTingPai(const Asset::PaiElement& pai)
 	auto it_baohu = std::find(options.extend_type().begin(), options.extend_type().end(), Asset::ROOM_EXTEND_TYPE_BAOPAI);
 	if (it_baohu == options.extend_type().end()) return false; //不带宝胡，绝对不可能呢听牌
 
-	std::lock_guard<std::mutex> lock(_card_lock); //多线程操作
-	
 	auto card_list = _cards; //复制当前牌
 
 	//前置检查
@@ -1699,7 +1749,18 @@ bool Player::CanTingPai(const Asset::PaiElement& pai)
 	auto find_it = std::find(_cards[pai.card_type()].begin(), _cards[pai.card_type()].end(), pai.card_value());
 	if (find_it == _cards[pai.card_type()].end()) return false; //理论上一定能找到
 				
-	_cards[pai.card_type()].erase(find_it); //删除这张牌
+	try {
+		std::unique_lock<std::mutex> lock(_card_lock, std::defer_lock);
+
+		if (lock.try_lock())
+		{
+			_cards[pai.card_type()].erase(find_it); //删除这张牌
+		}
+	}
+	catch(const std::system_error& error)
+	{
+		ERROR("Delete card from player_id:{} card_type:{} card_value:{} error.", _player_id, pai.card_type(), pai.card_value(), error.what());
+	}
 
 	//能否胡万饼条
 	for (int card_type = Asset::CARD_TYPE_WANZI; card_type <= Asset::CARD_TYPE_TIAOZI; ++card_type)
@@ -1734,7 +1795,18 @@ bool Player::CanTingPai(const Asset::PaiElement& pai)
 		if (CheckHuPai(pai)) return true; 
 	}
 	
-	_cards = card_list; //恢复牌
+	try {
+		std::unique_lock<std::mutex> lock(_card_lock, std::defer_lock);
+
+		if (lock.try_lock())
+		{
+			_cards = card_list; //恢复牌
+		}
+	}
+	catch(const std::system_error& error)
+	{
+		ERROR("Delete card from player_id:{} card_type:{} card_value:{} error.", _player_id, pai.card_type(), pai.card_value(), error.what());
+	}
 
 	return false;
 }
@@ -1753,8 +1825,6 @@ bool Player::CheckTingPai(std::vector<Asset::PaiElement>& pais)
 	auto it_baohu = std::find(options.extend_type().begin(), options.extend_type().end(), Asset::ROOM_EXTEND_TYPE_BAOPAI);
 	if (it_baohu == options.extend_type().end()) return false; //不带宝胡，绝对不可能呢听牌
 	
-	std::lock_guard<std::mutex> lock(_card_lock); //多线程操作
-
 	auto card_list = _cards; //复制当前牌
 
 	for (auto it = card_list.begin(); it != card_list.end(); ++it)
@@ -1857,10 +1927,18 @@ void Player::OnGangFengPai()
 	auto it = _cards.find(Asset::CARD_TYPE_FENG);
 	if (it == _cards.end()) return;
 
-	for (int32_t card_value = 1; card_value <= 4; ++card_value) //东南西北
+	try {
+		std::unique_lock<std::mutex> lock(_card_lock, std::defer_lock);
+
+		for (int32_t card_value = 1; card_value <= 4; ++card_value) //东南西北
+		{
+			auto it_if = std::find(it->second.begin(), it->second.end(), card_value);
+			if (it_if != it->second.end())  it->second.erase(it_if); //删除
+		}
+	}
+	catch(const std::system_error& error)
 	{
-		auto it_if = std::find(it->second.begin(), it->second.end(), card_value);
-		if (it_if != it->second.end())  it->second.erase(it_if); //删除
+		ERROR("Delete card from player_id:{} error:{}.", _player_id, error.what());
 	}
 
 	++_fenggang;
@@ -1904,11 +1982,18 @@ void Player::OnGangJianPai()
 {
 	if (!CheckJianGangPai(_cards)) return;
 	
-	auto it = _cards.find(Asset::CARD_TYPE_JIAN);
-	for (auto card_value = 1; card_value <= 3; ++card_value) //中发白
+	try {
+		std::unique_lock<std::mutex> lock(_card_lock, std::defer_lock);
+		auto it = _cards.find(Asset::CARD_TYPE_JIAN);
+		for (auto card_value = 1; card_value <= 3; ++card_value) //中发白
+		{
+			auto it_if = std::find(it->second.begin(), it->second.end(), card_value);
+			if (it_if != it->second.end())  it->second.erase(it_if); //删除
+		}
+	}
+	catch(const std::system_error& error)
 	{
-		auto it_if = std::find(it->second.begin(), it->second.end(), card_value);
-		if (it_if != it->second.end())  it->second.erase(it_if); //删除
+		ERROR("Delete card from player_id:{} error:{}.", _player_id, error.what());
 	}
 
 	++_jiangang;
@@ -1931,22 +2016,31 @@ void Player::PreCheckOnFaPai()
 
 int32_t Player::OnFaPai(std::vector<int32_t>& cards)
 {
-	std::lock_guard<std::mutex> lock(_card_lock); //多线程操作
-
 	PreCheckOnFaPai(); //发牌前置检查
 
-	//发牌到玩家手里
-	for (auto card_index : cards)
-	{
-		auto card = GameInstance.GetCard(card_index);
-		if (card.card_type() == 0 || card.card_value() == 0) return 1; //数据有误
+	try {
+		std::unique_lock<std::mutex> lock(_card_lock, std::defer_lock);
 
-		_cards[card.card_type()].push_back(card.card_value()); //插入玩家手牌
+		if (lock.try_lock())
+		{
+			//发牌到玩家手里
+			for (auto card_index : cards)
+			{
+				auto card = GameInstance.GetCard(card_index);
+				if (card.card_type() == 0 || card.card_value() == 0) return 1; //数据有误
+
+				_cards[card.card_type()].push_back(card.card_value()); //插入玩家手牌
+			}
+
+			for (auto& cards : _cards) //整理牌
+			{
+				std::sort(cards.second.begin(), cards.second.end(), [](int x, int y){ return x < y; }); //由小到大
+			}
+		}
 	}
-
-	for (auto& cards : _cards) //整理牌
+	catch(const std::system_error& error)
 	{
-		std::sort(cards.second.begin(), cards.second.end(), [](int x, int y){ return x < y; }); //由小到大
+		ERROR("player get cards, player_id:{} error:{}.", _player_id, error.what());
 	}
 
 	Asset::PaiNotify notify; /////玩家当前牌数据发给Client
@@ -1965,7 +2059,8 @@ int32_t Player::OnFaPai(std::vector<int32_t>& cards)
 		
 		notify.set_data_type(Asset::PaiNotify_CARDS_DATA_TYPE_CARDS_DATA_TYPE_START); //操作类型：开局
 		
-		//旋风杠检查
+////////////////////////////////////////////////////旋风杠检查
+// 缓存旋风杠给玩家
 		auto xf_card = _cards;
 
 		//风牌检查
@@ -1996,6 +2091,7 @@ int32_t Player::OnFaPai(std::vector<int32_t>& cards)
 				if (it_if != it->second.end()) it->second.erase(it_if); //删除一个
 			}
 		}
+////////////////////////////////////////////////////旋风杠检查
 	}
 	else if (cards.size() == 1)
 	{
@@ -2112,8 +2208,6 @@ void Player::PrintPai()
 
 void Player::ClearCards() 
 {
-	std::lock_guard<std::mutex> lock(_card_lock); //多线程操作
-
 	_cards.clear();	//清理手里牌
 	_cards_outhand.clear(); //清理墙外牌
  

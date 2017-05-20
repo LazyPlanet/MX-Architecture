@@ -801,7 +801,7 @@ bool Game::CheckPai(const Asset::PaiElement& pai, int64_t from_player_id)
 		if (rtn_check.size() == 0) continue; //不能吃、碰、杠和胡牌
 
 		for (auto value : rtn_check)
-			TRACE("operation player can do: cur_player_index:{} next_player_index:%d player_id:%ld value:%d\n", cur_index, next_player_index, player->GetID(),value);
+			TRACE("operation player can do: cur_player_index:{} next_player_index:{} player_id:{} value:{}", cur_index, next_player_index, player->GetID(), value);
 		
 		auto it_chi = std::find(rtn_check.begin(), rtn_check.end(), Asset::PAI_OPER_TYPE_CHIPAI);
 		if (it_chi != rtn_check.end() && cur_index != next_player_index) rtn_check.erase(it_chi);

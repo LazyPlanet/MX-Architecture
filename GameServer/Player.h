@@ -240,6 +240,7 @@ public:
 ///////游戏逻辑定义
 private:
 	std::mutex _card_lock;
+	std::mutex __card_outhand_lock;
 	std::shared_ptr<Room> _locate_room = nullptr; //实体所在房间
 	std::shared_ptr<Game> _game = nullptr; //当前游戏
 	std::map<int32_t/*麻将牌类型*/, std::vector<int32_t>/*牌值*/> _cards; //玩家手里的牌
@@ -249,7 +250,8 @@ private:
 
 	int32_t _jiangang = 0; //旋风杠，本质是明杠
 	int32_t _fenggang = 0; //旋风杠，本质是暗杠
-	int32_t _oper_count = 0;
+	int32_t _oper_count = 0; //操作次数
+	bool _has_ting = false; //听牌
 
 	std::queue<int32_t> _xf_gang; //旋风杠所有操作
 public:
