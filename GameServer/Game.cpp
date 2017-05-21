@@ -156,6 +156,7 @@ void Game::OnPaiOperate(std::shared_ptr<Player> player, pb::Message* message)
 	switch (pai_operate->oper_type())
 	{
 		case Asset::PAI_OPER_TYPE_DAPAI: //打牌
+		case Asset::PAI_OPER_TYPE_TINGPAI: //听牌
 		{
 			//检查各个玩家手里的牌是否满足胡、杠、碰、吃
 			if (CheckPai(pai, player->GetID())) //有满足要求的玩家

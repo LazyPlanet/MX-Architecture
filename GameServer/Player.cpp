@@ -2421,12 +2421,14 @@ int32_t Player::OnFaPai(std::vector<int32_t>& cards)
 				_game->BroadCast(proto);
 			}
 
+			/*
+
 			Asset::PaiOperation pai_operation; //如果听牌，自动给玩家出牌
 			pai_operation.set_oper_type(Asset::PAI_OPER_TYPE_DAPAI);
 			pai_operation.set_position(GetPosition());
 			pai_operation.mutable_pai()->CopyFrom(card);
 			CmdPaiOperate(&pai_operation);
-
+			*/
 			IncreaseTingOperationCount();
 		}
 	}
