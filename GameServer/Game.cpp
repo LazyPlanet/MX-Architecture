@@ -202,10 +202,10 @@ void Game::OnPaiOperate(std::shared_ptr<Player> player, pb::Message* message)
 				player_next->OnFaPai(cards); //放入玩家牌里面
 
 				//听牌检查
-				std::vector<Asset::PaiElement> tingpais;
-				if (player_next->CheckTingPai(tingpais))
+				std::vector<Asset::PaiElement> ting_list;
+				if (player_next->CheckTingPai(ting_list))
 				{
-					for (auto pai : tingpais) 
+					for (auto pai : ting_list) 
 					{
 						auto pai_perator = alert.mutable_pais()->Add();
 						pai_perator->mutable_pai()->CopyFrom(pai);

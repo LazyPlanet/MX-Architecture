@@ -243,13 +243,15 @@ private:
 	std::mutex __card_outhand_lock;
 	std::shared_ptr<Room> _locate_room = nullptr; //实体所在房间
 	std::shared_ptr<Game> _game = nullptr; //当前游戏
+
+	//玩家牌数据
 	std::map<int32_t/*麻将牌类型*/, std::vector<int32_t>/*牌值*/> _cards; //玩家手里的牌
 	std::map<int32_t/*麻将牌类型*/, std::vector<int32_t>/*牌值*/> _cards_outhand; //玩家墙外牌
 	std::vector<Asset::PaiElement> _minggang; //明杠
 	std::vector<Asset::PaiElement> _angang; //暗杠
-
 	int32_t _jiangang = 0; //旋风杠，本质是明杠
 	int32_t _fenggang = 0; //旋风杠，本质是暗杠
+
 	int32_t _oper_count = 0; //操作次数
 	bool _has_ting = false; //听牌
 
@@ -279,6 +281,13 @@ public:
 
 	bool CheckHuPai(const Asset::PaiElement& pai, std::vector<Asset::FAN_TYPE>& fan_list); //胡牌且算番数
 	bool CheckHuPai(const Asset::PaiElement& pai); //胡牌
+	bool CheckHuPai(std::map<int32_t, std::vector<int32_t>> cards_inhand, //玩家手里的牌
+			std::map<int32_t, std::vector<int32_t>> cards_outhand, //玩家墙外牌
+			std::vector<Asset::PaiElement> minggang, //明杠
+			std::vector<Asset::PaiElement> angang, //暗杠
+			int32_t jiangang, //旋风杠，本质是明杠
+			int32_t fenggang, //旋风杠，本质是暗杠
+			const Asset::PaiElement& pai) const; //胡牌
 
 	bool CheckGangPai(const Asset::PaiElement& pai, int64_t from_player_id); //是否可以杠牌
 	//有玩家一直不杠牌, 每次都要提示, 比如玩家碰了7条,但是手里有7-8-9条,而选择暂时不杠
@@ -297,7 +306,7 @@ public:
 	int32_t CheckXuanFeng(); //检查旋风杠
 	
 	bool CanTingPai(const Asset::PaiElement& pai);
-	bool CheckTingPai(std::vector<Asset::PaiElement>& pais/*应该打出的牌数据*/); //是否可以听牌：能不能听牌，主要是看是否给牌可以胡
+	bool CheckTingPai(std::vector<Asset::PaiElement>& pais/*应该打出的牌数据*/) const; //是否可以听牌：能不能听牌，主要是看是否给牌可以胡
 
 	bool CheckPengPai(const Asset::PaiElement& pai); //是否可以碰牌
 	void OnPengPai(const Asset::PaiElement& pai); //碰牌
