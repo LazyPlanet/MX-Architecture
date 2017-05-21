@@ -1204,10 +1204,18 @@ bool Player::CheckHuPai(const std::map<int32_t, std::vector<int32_t>>& cards_inh
 		if (crds.first == Asset::CARD_TYPE_WANZI || crds.first == Asset::CARD_TYPE_BINGZI || crds.first == Asset::CARD_TYPE_TIAOZI)
 		{
 			if (std::find(crds.second.begin(), crds.second.end(), 1) != crds.second.end() || 
-					(std::find(crds.second.begin(), crds.second.end(), 9) != crds.second.end())) break;
+					(std::find(crds.second.begin(), crds.second.end(), 9) != crds.second.end())) 
+			{
+				has_yao = true;
+				break;
+			}
 		}
 		
-		if (crds.first == Asset::CARD_TYPE_FENG || crds.first == Asset::CARD_TYPE_JIAN) break;
+		if (crds.first == Asset::CARD_TYPE_FENG || crds.first == Asset::CARD_TYPE_JIAN) 
+		{
+			has_yao = true;
+			break;
+		}
 	}
 
 	for (auto gang : minggang)
@@ -1226,7 +1234,7 @@ bool Player::CheckHuPai(const std::map<int32_t, std::vector<int32_t>>& cards_inh
 
 	if (!has_yao) 
 	{
-		TRACE("player_id:{} card_type:{} card_value:{} reason:不可以站立胡牌，且没开门.", _player_id, pai.card_type(), pai.card_value());
+		TRACE("player_id:{} card_type:{} card_value:{} reason:没有幺九.", _player_id, pai.card_type(), pai.card_value());
 		return false;
 	}
 
@@ -1242,7 +1250,11 @@ bool Player::CheckHuPai(const std::map<int32_t, std::vector<int32_t>>& cards_inh
 	}
 
 	bool can_hu = CanHuPai(card_list);	
-	if (!can_hu) return false;
+	if (!can_hu) 
+	{
+		TRACE("player_id:{} card_type:{} card_value:{} reason:牌内无法满足胡牌条件.", _player_id, pai.card_type(), pai.card_value());
+		return false;
+	}
 	
 	//胡牌时至少有一刻子或杠，或有中发白其中一对
 	bool has_ke = false;
@@ -1440,7 +1452,7 @@ bool Player::CheckHuPai(const Asset::PaiElement& pai, std::vector<Asset::FAN_TYP
 			bool can_hu = CanHuPai(card_list);	
 			if (!can_hu) 
 			{
-				DEBUG("player_id:{} card_type:{} card_value:{} reason:自己牌内无法满足胡牌条件.", _player_id, pai.card_type(), pai.card_value());
+				DEBUG("player_id:{} card_type:{} card_value:{} reason:牌内无法满足胡牌条件.", _player_id, pai.card_type(), pai.card_value());
 				return false;
 			}
 			
