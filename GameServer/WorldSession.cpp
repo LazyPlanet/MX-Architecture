@@ -253,7 +253,7 @@ void WorldSession::SendProtocol(pb::Message& message)
 
 	if (content.empty()) 
 	{
-		ERROR("player_id:{} send nothing.", _player_id);
+		ERROR("player_id:{} send nothing.");
 		return;
 	}
 

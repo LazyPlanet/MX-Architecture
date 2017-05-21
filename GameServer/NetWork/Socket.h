@@ -107,6 +107,11 @@ public:
 		auto content = std::move(meta);
 		//////////////////////////////////////////////////////数据包头
 		unsigned short body_size = content.size();
+		if (body_size >= 4096) 
+		{
+			spdlog::get("console")->error("{0} Line:{1} has extend max size:{}.", __func__, __LINE__, body_size);
+			return;
+		}
 		unsigned char header[2] = { 0 };
 
 		header[0] = (body_size >> 8) & 0xff;

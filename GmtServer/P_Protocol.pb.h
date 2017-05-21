@@ -51,6 +51,7 @@ class PlayerCoolDown;
 class PlayerCoolDown_Element;
 class MailAttachment;
 class Mail;
+class ClientInfomation;
 class Player;
 class Inventory;
 class Inventory_Element;
@@ -67,6 +68,7 @@ class EnterRoom;
 class Sign;
 class PlayerLuckyPlate;
 class RandomSaizi;
+class SayHi;
 class GetReward;
 class PaiOperationLimit;
 class PaiOperationList;
@@ -338,6 +340,7 @@ enum META_TYPE {
   META_TYPE_SHARE_SIGN = 9,
   META_TYPE_SHARE_LUCKY_PLATE = 10,
   META_TYPE_SHARE_RANDOM_SAIZI = 11,
+  META_TYPE_SHARE_SAY_HI = 12,
   META_TYPE_SHARE_COUNT = 50,
   META_TYPE_C2S_BEGIN = 51,
   META_TYPE_C2S_LOGIN = 52,
@@ -436,11 +439,12 @@ enum PAI_OPER_TYPE {
   PAI_OPER_TYPE_ANGANGPAI = 9,
   PAI_OPER_TYPE_TINGPAI = 10,
   PAI_OPER_TYPE_BAOPAI = 11,
-  PAI_OPER_TYPE_FEN = 12
+  PAI_OPER_TYPE_LIUJU = 12,
+  PAI_OPER_TYPE_COUNT = 13
 };
 bool PAI_OPER_TYPE_IsValid(int value);
 const PAI_OPER_TYPE PAI_OPER_TYPE_MIN = PAI_OPER_TYPE_BEGIN;
-const PAI_OPER_TYPE PAI_OPER_TYPE_MAX = PAI_OPER_TYPE_FEN;
+const PAI_OPER_TYPE PAI_OPER_TYPE_MAX = PAI_OPER_TYPE_COUNT;
 const int PAI_OPER_TYPE_ARRAYSIZE = PAI_OPER_TYPE_MAX + 1;
 
 const ::google::protobuf::EnumDescriptor* PAI_OPER_TYPE_descriptor();
@@ -2095,6 +2099,120 @@ class Mail : public ::google::protobuf::Message {
 };
 // -------------------------------------------------------------------
 
+class ClientInfomation : public ::google::protobuf::Message {
+ public:
+  ClientInfomation();
+  virtual ~ClientInfomation();
+
+  ClientInfomation(const ClientInfomation& from);
+
+  inline ClientInfomation& operator=(const ClientInfomation& from) {
+    CopyFrom(from);
+    return *this;
+  }
+
+  inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const {
+    return _unknown_fields_;
+  }
+
+  inline ::google::protobuf::UnknownFieldSet* mutable_unknown_fields() {
+    return &_unknown_fields_;
+  }
+
+  static const ::google::protobuf::Descriptor* descriptor();
+  static const ClientInfomation& default_instance();
+
+  void Swap(ClientInfomation* other);
+
+  // implements Message ----------------------------------------------
+
+  ClientInfomation* New() const;
+  void CopyFrom(const ::google::protobuf::Message& from);
+  void MergeFrom(const ::google::protobuf::Message& from);
+  void CopyFrom(const ClientInfomation& from);
+  void MergeFrom(const ClientInfomation& from);
+  void Clear();
+  bool IsInitialized() const;
+
+  int ByteSize() const;
+  bool MergePartialFromCodedStream(
+      ::google::protobuf::io::CodedInputStream* input);
+  void SerializeWithCachedSizes(
+      ::google::protobuf::io::CodedOutputStream* output) const;
+  ::google::protobuf::uint8* SerializeWithCachedSizesToArray(::google::protobuf::uint8* output) const;
+  int GetCachedSize() const { return _cached_size_; }
+  private:
+  void SharedCtor();
+  void SharedDtor();
+  void SetCachedSize(int size) const;
+  public:
+  ::google::protobuf::Metadata GetMetadata() const;
+
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+
+  // optional bytes client_ip = 1;
+  inline bool has_client_ip() const;
+  inline void clear_client_ip();
+  static const int kClientIpFieldNumber = 1;
+  inline const ::std::string& client_ip() const;
+  inline void set_client_ip(const ::std::string& value);
+  inline void set_client_ip(const char* value);
+  inline void set_client_ip(const void* value, size_t size);
+  inline ::std::string* mutable_client_ip();
+  inline ::std::string* release_client_ip();
+  inline void set_allocated_client_ip(::std::string* client_ip);
+
+  // optional bytes system = 2;
+  inline bool has_system() const;
+  inline void clear_system();
+  static const int kSystemFieldNumber = 2;
+  inline const ::std::string& system() const;
+  inline void set_system(const ::std::string& value);
+  inline void set_system(const char* value);
+  inline void set_system(const void* value, size_t size);
+  inline ::std::string* mutable_system();
+  inline ::std::string* release_system();
+  inline void set_allocated_system(::std::string* system);
+
+  // optional bytes phone_type = 3;
+  inline bool has_phone_type() const;
+  inline void clear_phone_type();
+  static const int kPhoneTypeFieldNumber = 3;
+  inline const ::std::string& phone_type() const;
+  inline void set_phone_type(const ::std::string& value);
+  inline void set_phone_type(const char* value);
+  inline void set_phone_type(const void* value, size_t size);
+  inline ::std::string* mutable_phone_type();
+  inline ::std::string* release_phone_type();
+  inline void set_allocated_phone_type(::std::string* phone_type);
+
+  // @@protoc_insertion_point(class_scope:Adoter.Asset.ClientInfomation)
+ private:
+  inline void set_has_client_ip();
+  inline void clear_has_client_ip();
+  inline void set_has_system();
+  inline void clear_has_system();
+  inline void set_has_phone_type();
+  inline void clear_has_phone_type();
+
+  ::google::protobuf::UnknownFieldSet _unknown_fields_;
+
+  ::google::protobuf::uint32 _has_bits_[1];
+  mutable int _cached_size_;
+  ::std::string* client_ip_;
+  ::std::string* system_;
+  ::std::string* phone_type_;
+  friend void  protobuf_AddDesc_P_5fProtocol_2eproto();
+  friend void protobuf_AssignDesc_P_5fProtocol_2eproto();
+  friend void protobuf_ShutdownFile_P_5fProtocol_2eproto();
+
+  void InitAsDefaultInstance();
+  static ClientInfomation* default_instance_;
+};
+// -------------------------------------------------------------------
+
 class Player : public ::google::protobuf::Message {
  public:
   Player();
@@ -2217,6 +2335,15 @@ class Player : public ::google::protobuf::Message {
   inline ::google::protobuf::RepeatedField< ::google::protobuf::int32 >*
       mutable_sign_time();
 
+  // optional .Adoter.Asset.ClientInfomation client_info = 9;
+  inline bool has_client_info() const;
+  inline void clear_client_info();
+  static const int kClientInfoFieldNumber = 9;
+  inline const ::Adoter::Asset::ClientInfomation& client_info() const;
+  inline ::Adoter::Asset::ClientInfomation* mutable_client_info();
+  inline ::Adoter::Asset::ClientInfomation* release_client_info();
+  inline void set_allocated_client_info(::Adoter::Asset::ClientInfomation* client_info);
+
   // repeated .Adoter.Asset.Mail mail_list = 10;
   inline int mail_list_size() const;
   inline void clear_mail_list();
@@ -2254,6 +2381,8 @@ class Player : public ::google::protobuf::Message {
   inline void clear_has_login_time();
   inline void set_has_logout_time();
   inline void clear_has_logout_time();
+  inline void set_has_client_info();
+  inline void clear_has_client_info();
   inline void set_has_player_prop();
   inline void clear_has_player_prop();
 
@@ -2269,6 +2398,7 @@ class Player : public ::google::protobuf::Message {
   ::google::protobuf::int32 login_time_;
   ::google::protobuf::int32 logout_time_;
   ::google::protobuf::RepeatedField< ::google::protobuf::int32 > sign_time_;
+  ::Adoter::Asset::ClientInfomation* client_info_;
   ::google::protobuf::RepeatedPtrField< ::Adoter::Asset::Mail > mail_list_;
   ::Adoter::Asset::PlayerProp* player_prop_;
   friend void  protobuf_AddDesc_P_5fProtocol_2eproto();
@@ -3762,6 +3892,95 @@ class RandomSaizi : public ::google::protobuf::Message {
 };
 // -------------------------------------------------------------------
 
+class SayHi : public ::google::protobuf::Message {
+ public:
+  SayHi();
+  virtual ~SayHi();
+
+  SayHi(const SayHi& from);
+
+  inline SayHi& operator=(const SayHi& from) {
+    CopyFrom(from);
+    return *this;
+  }
+
+  inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const {
+    return _unknown_fields_;
+  }
+
+  inline ::google::protobuf::UnknownFieldSet* mutable_unknown_fields() {
+    return &_unknown_fields_;
+  }
+
+  static const ::google::protobuf::Descriptor* descriptor();
+  static const SayHi& default_instance();
+
+  void Swap(SayHi* other);
+
+  // implements Message ----------------------------------------------
+
+  SayHi* New() const;
+  void CopyFrom(const ::google::protobuf::Message& from);
+  void MergeFrom(const ::google::protobuf::Message& from);
+  void CopyFrom(const SayHi& from);
+  void MergeFrom(const SayHi& from);
+  void Clear();
+  bool IsInitialized() const;
+
+  int ByteSize() const;
+  bool MergePartialFromCodedStream(
+      ::google::protobuf::io::CodedInputStream* input);
+  void SerializeWithCachedSizes(
+      ::google::protobuf::io::CodedOutputStream* output) const;
+  ::google::protobuf::uint8* SerializeWithCachedSizesToArray(::google::protobuf::uint8* output) const;
+  int GetCachedSize() const { return _cached_size_; }
+  private:
+  void SharedCtor();
+  void SharedDtor();
+  void SetCachedSize(int size) const;
+  public:
+  ::google::protobuf::Metadata GetMetadata() const;
+
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+
+  // optional .Adoter.Asset.META_TYPE type_t = 1 [default = META_TYPE_SHARE_SAY_HI];
+  inline bool has_type_t() const;
+  inline void clear_type_t();
+  static const int kTypeTFieldNumber = 1;
+  inline ::Adoter::Asset::META_TYPE type_t() const;
+  inline void set_type_t(::Adoter::Asset::META_TYPE value);
+
+  // optional int32 heart_count = 2;
+  inline bool has_heart_count() const;
+  inline void clear_heart_count();
+  static const int kHeartCountFieldNumber = 2;
+  inline ::google::protobuf::int32 heart_count() const;
+  inline void set_heart_count(::google::protobuf::int32 value);
+
+  // @@protoc_insertion_point(class_scope:Adoter.Asset.SayHi)
+ private:
+  inline void set_has_type_t();
+  inline void clear_has_type_t();
+  inline void set_has_heart_count();
+  inline void clear_has_heart_count();
+
+  ::google::protobuf::UnknownFieldSet _unknown_fields_;
+
+  ::google::protobuf::uint32 _has_bits_[1];
+  mutable int _cached_size_;
+  int type_t_;
+  ::google::protobuf::int32 heart_count_;
+  friend void  protobuf_AddDesc_P_5fProtocol_2eproto();
+  friend void protobuf_AssignDesc_P_5fProtocol_2eproto();
+  friend void protobuf_ShutdownFile_P_5fProtocol_2eproto();
+
+  void InitAsDefaultInstance();
+  static SayHi* default_instance_;
+};
+// -------------------------------------------------------------------
+
 class GetReward : public ::google::protobuf::Message {
  public:
   GetReward();
@@ -3968,12 +4187,12 @@ class PaiOperationLimit : public ::google::protobuf::Message {
   inline ::Adoter::Asset::PaiElement* release_pai();
   inline void set_allocated_pai(::Adoter::Asset::PaiElement* pai);
 
-  // optional .Adoter.Asset.PAI_OPER_TYPE oper_limit = 5;
-  inline bool has_oper_limit() const;
-  inline void clear_oper_limit();
-  static const int kOperLimitFieldNumber = 5;
-  inline ::Adoter::Asset::PAI_OPER_TYPE oper_limit() const;
-  inline void set_oper_limit(::Adoter::Asset::PAI_OPER_TYPE value);
+  // optional .Adoter.Asset.PAI_OPER_TYPE oper_type = 5;
+  inline bool has_oper_type() const;
+  inline void clear_oper_type();
+  static const int kOperTypeFieldNumber = 5;
+  inline ::Adoter::Asset::PAI_OPER_TYPE oper_type() const;
+  inline void set_oper_type(::Adoter::Asset::PAI_OPER_TYPE value);
 
   // @@protoc_insertion_point(class_scope:Adoter.Asset.PaiOperationLimit)
  private:
@@ -3985,8 +4204,8 @@ class PaiOperationLimit : public ::google::protobuf::Message {
   inline void clear_has_time_out();
   inline void set_has_pai();
   inline void clear_has_pai();
-  inline void set_has_oper_limit();
-  inline void clear_has_oper_limit();
+  inline void set_has_oper_type();
+  inline void clear_has_oper_type();
 
   ::google::protobuf::UnknownFieldSet _unknown_fields_;
 
@@ -3996,7 +4215,7 @@ class PaiOperationLimit : public ::google::protobuf::Message {
   ::google::protobuf::int64 from_player_id_;
   ::Adoter::Asset::PaiElement* pai_;
   ::google::protobuf::int32 time_out_;
-  int oper_limit_;
+  int oper_type_;
   friend void  protobuf_AddDesc_P_5fProtocol_2eproto();
   friend void protobuf_AssignDesc_P_5fProtocol_2eproto();
   friend void protobuf_ShutdownFile_P_5fProtocol_2eproto();
@@ -7849,6 +8068,238 @@ inline void Mail::set_allocated_attachment(::Adoter::Asset::MailAttachment* atta
 
 // -------------------------------------------------------------------
 
+// ClientInfomation
+
+// optional bytes client_ip = 1;
+inline bool ClientInfomation::has_client_ip() const {
+  return (_has_bits_[0] & 0x00000001u) != 0;
+}
+inline void ClientInfomation::set_has_client_ip() {
+  _has_bits_[0] |= 0x00000001u;
+}
+inline void ClientInfomation::clear_has_client_ip() {
+  _has_bits_[0] &= ~0x00000001u;
+}
+inline void ClientInfomation::clear_client_ip() {
+  if (client_ip_ != &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
+    client_ip_->clear();
+  }
+  clear_has_client_ip();
+}
+inline const ::std::string& ClientInfomation::client_ip() const {
+  // @@protoc_insertion_point(field_get:Adoter.Asset.ClientInfomation.client_ip)
+  return *client_ip_;
+}
+inline void ClientInfomation::set_client_ip(const ::std::string& value) {
+  set_has_client_ip();
+  if (client_ip_ == &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
+    client_ip_ = new ::std::string;
+  }
+  client_ip_->assign(value);
+  // @@protoc_insertion_point(field_set:Adoter.Asset.ClientInfomation.client_ip)
+}
+inline void ClientInfomation::set_client_ip(const char* value) {
+  set_has_client_ip();
+  if (client_ip_ == &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
+    client_ip_ = new ::std::string;
+  }
+  client_ip_->assign(value);
+  // @@protoc_insertion_point(field_set_char:Adoter.Asset.ClientInfomation.client_ip)
+}
+inline void ClientInfomation::set_client_ip(const void* value, size_t size) {
+  set_has_client_ip();
+  if (client_ip_ == &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
+    client_ip_ = new ::std::string;
+  }
+  client_ip_->assign(reinterpret_cast<const char*>(value), size);
+  // @@protoc_insertion_point(field_set_pointer:Adoter.Asset.ClientInfomation.client_ip)
+}
+inline ::std::string* ClientInfomation::mutable_client_ip() {
+  set_has_client_ip();
+  if (client_ip_ == &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
+    client_ip_ = new ::std::string;
+  }
+  // @@protoc_insertion_point(field_mutable:Adoter.Asset.ClientInfomation.client_ip)
+  return client_ip_;
+}
+inline ::std::string* ClientInfomation::release_client_ip() {
+  clear_has_client_ip();
+  if (client_ip_ == &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
+    return NULL;
+  } else {
+    ::std::string* temp = client_ip_;
+    client_ip_ = const_cast< ::std::string*>(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
+    return temp;
+  }
+}
+inline void ClientInfomation::set_allocated_client_ip(::std::string* client_ip) {
+  if (client_ip_ != &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
+    delete client_ip_;
+  }
+  if (client_ip) {
+    set_has_client_ip();
+    client_ip_ = client_ip;
+  } else {
+    clear_has_client_ip();
+    client_ip_ = const_cast< ::std::string*>(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
+  }
+  // @@protoc_insertion_point(field_set_allocated:Adoter.Asset.ClientInfomation.client_ip)
+}
+
+// optional bytes system = 2;
+inline bool ClientInfomation::has_system() const {
+  return (_has_bits_[0] & 0x00000002u) != 0;
+}
+inline void ClientInfomation::set_has_system() {
+  _has_bits_[0] |= 0x00000002u;
+}
+inline void ClientInfomation::clear_has_system() {
+  _has_bits_[0] &= ~0x00000002u;
+}
+inline void ClientInfomation::clear_system() {
+  if (system_ != &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
+    system_->clear();
+  }
+  clear_has_system();
+}
+inline const ::std::string& ClientInfomation::system() const {
+  // @@protoc_insertion_point(field_get:Adoter.Asset.ClientInfomation.system)
+  return *system_;
+}
+inline void ClientInfomation::set_system(const ::std::string& value) {
+  set_has_system();
+  if (system_ == &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
+    system_ = new ::std::string;
+  }
+  system_->assign(value);
+  // @@protoc_insertion_point(field_set:Adoter.Asset.ClientInfomation.system)
+}
+inline void ClientInfomation::set_system(const char* value) {
+  set_has_system();
+  if (system_ == &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
+    system_ = new ::std::string;
+  }
+  system_->assign(value);
+  // @@protoc_insertion_point(field_set_char:Adoter.Asset.ClientInfomation.system)
+}
+inline void ClientInfomation::set_system(const void* value, size_t size) {
+  set_has_system();
+  if (system_ == &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
+    system_ = new ::std::string;
+  }
+  system_->assign(reinterpret_cast<const char*>(value), size);
+  // @@protoc_insertion_point(field_set_pointer:Adoter.Asset.ClientInfomation.system)
+}
+inline ::std::string* ClientInfomation::mutable_system() {
+  set_has_system();
+  if (system_ == &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
+    system_ = new ::std::string;
+  }
+  // @@protoc_insertion_point(field_mutable:Adoter.Asset.ClientInfomation.system)
+  return system_;
+}
+inline ::std::string* ClientInfomation::release_system() {
+  clear_has_system();
+  if (system_ == &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
+    return NULL;
+  } else {
+    ::std::string* temp = system_;
+    system_ = const_cast< ::std::string*>(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
+    return temp;
+  }
+}
+inline void ClientInfomation::set_allocated_system(::std::string* system) {
+  if (system_ != &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
+    delete system_;
+  }
+  if (system) {
+    set_has_system();
+    system_ = system;
+  } else {
+    clear_has_system();
+    system_ = const_cast< ::std::string*>(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
+  }
+  // @@protoc_insertion_point(field_set_allocated:Adoter.Asset.ClientInfomation.system)
+}
+
+// optional bytes phone_type = 3;
+inline bool ClientInfomation::has_phone_type() const {
+  return (_has_bits_[0] & 0x00000004u) != 0;
+}
+inline void ClientInfomation::set_has_phone_type() {
+  _has_bits_[0] |= 0x00000004u;
+}
+inline void ClientInfomation::clear_has_phone_type() {
+  _has_bits_[0] &= ~0x00000004u;
+}
+inline void ClientInfomation::clear_phone_type() {
+  if (phone_type_ != &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
+    phone_type_->clear();
+  }
+  clear_has_phone_type();
+}
+inline const ::std::string& ClientInfomation::phone_type() const {
+  // @@protoc_insertion_point(field_get:Adoter.Asset.ClientInfomation.phone_type)
+  return *phone_type_;
+}
+inline void ClientInfomation::set_phone_type(const ::std::string& value) {
+  set_has_phone_type();
+  if (phone_type_ == &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
+    phone_type_ = new ::std::string;
+  }
+  phone_type_->assign(value);
+  // @@protoc_insertion_point(field_set:Adoter.Asset.ClientInfomation.phone_type)
+}
+inline void ClientInfomation::set_phone_type(const char* value) {
+  set_has_phone_type();
+  if (phone_type_ == &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
+    phone_type_ = new ::std::string;
+  }
+  phone_type_->assign(value);
+  // @@protoc_insertion_point(field_set_char:Adoter.Asset.ClientInfomation.phone_type)
+}
+inline void ClientInfomation::set_phone_type(const void* value, size_t size) {
+  set_has_phone_type();
+  if (phone_type_ == &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
+    phone_type_ = new ::std::string;
+  }
+  phone_type_->assign(reinterpret_cast<const char*>(value), size);
+  // @@protoc_insertion_point(field_set_pointer:Adoter.Asset.ClientInfomation.phone_type)
+}
+inline ::std::string* ClientInfomation::mutable_phone_type() {
+  set_has_phone_type();
+  if (phone_type_ == &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
+    phone_type_ = new ::std::string;
+  }
+  // @@protoc_insertion_point(field_mutable:Adoter.Asset.ClientInfomation.phone_type)
+  return phone_type_;
+}
+inline ::std::string* ClientInfomation::release_phone_type() {
+  clear_has_phone_type();
+  if (phone_type_ == &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
+    return NULL;
+  } else {
+    ::std::string* temp = phone_type_;
+    phone_type_ = const_cast< ::std::string*>(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
+    return temp;
+  }
+}
+inline void ClientInfomation::set_allocated_phone_type(::std::string* phone_type) {
+  if (phone_type_ != &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
+    delete phone_type_;
+  }
+  if (phone_type) {
+    set_has_phone_type();
+    phone_type_ = phone_type;
+  } else {
+    clear_has_phone_type();
+    phone_type_ = const_cast< ::std::string*>(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
+  }
+  // @@protoc_insertion_point(field_set_allocated:Adoter.Asset.ClientInfomation.phone_type)
+}
+
+// -------------------------------------------------------------------
+
 // Player
 
 // optional .Adoter.Asset.CommonProp common_prop = 1;
@@ -8117,6 +8568,47 @@ Player::mutable_sign_time() {
   return &sign_time_;
 }
 
+// optional .Adoter.Asset.ClientInfomation client_info = 9;
+inline bool Player::has_client_info() const {
+  return (_has_bits_[0] & 0x00000100u) != 0;
+}
+inline void Player::set_has_client_info() {
+  _has_bits_[0] |= 0x00000100u;
+}
+inline void Player::clear_has_client_info() {
+  _has_bits_[0] &= ~0x00000100u;
+}
+inline void Player::clear_client_info() {
+  if (client_info_ != NULL) client_info_->::Adoter::Asset::ClientInfomation::Clear();
+  clear_has_client_info();
+}
+inline const ::Adoter::Asset::ClientInfomation& Player::client_info() const {
+  // @@protoc_insertion_point(field_get:Adoter.Asset.Player.client_info)
+  return client_info_ != NULL ? *client_info_ : *default_instance_->client_info_;
+}
+inline ::Adoter::Asset::ClientInfomation* Player::mutable_client_info() {
+  set_has_client_info();
+  if (client_info_ == NULL) client_info_ = new ::Adoter::Asset::ClientInfomation;
+  // @@protoc_insertion_point(field_mutable:Adoter.Asset.Player.client_info)
+  return client_info_;
+}
+inline ::Adoter::Asset::ClientInfomation* Player::release_client_info() {
+  clear_has_client_info();
+  ::Adoter::Asset::ClientInfomation* temp = client_info_;
+  client_info_ = NULL;
+  return temp;
+}
+inline void Player::set_allocated_client_info(::Adoter::Asset::ClientInfomation* client_info) {
+  delete client_info_;
+  client_info_ = client_info;
+  if (client_info) {
+    set_has_client_info();
+  } else {
+    clear_has_client_info();
+  }
+  // @@protoc_insertion_point(field_set_allocated:Adoter.Asset.Player.client_info)
+}
+
 // repeated .Adoter.Asset.Mail mail_list = 10;
 inline int Player::mail_list_size() const {
   return mail_list_.size();
@@ -8149,13 +8641,13 @@ Player::mutable_mail_list() {
 
 // optional .Adoter.Asset.PlayerProp player_prop = 20;
 inline bool Player::has_player_prop() const {
-  return (_has_bits_[0] & 0x00000200u) != 0;
+  return (_has_bits_[0] & 0x00000400u) != 0;
 }
 inline void Player::set_has_player_prop() {
-  _has_bits_[0] |= 0x00000200u;
+  _has_bits_[0] |= 0x00000400u;
 }
 inline void Player::clear_has_player_prop() {
-  _has_bits_[0] &= ~0x00000200u;
+  _has_bits_[0] &= ~0x00000400u;
 }
 inline void Player::clear_player_prop() {
   if (player_prop_ != NULL) player_prop_->::Adoter::Asset::PlayerProp::Clear();
@@ -9363,6 +9855,59 @@ inline void RandomSaizi::set_allocated_pai(::Adoter::Asset::PaiElement* pai) {
 
 // -------------------------------------------------------------------
 
+// SayHi
+
+// optional .Adoter.Asset.META_TYPE type_t = 1 [default = META_TYPE_SHARE_SAY_HI];
+inline bool SayHi::has_type_t() const {
+  return (_has_bits_[0] & 0x00000001u) != 0;
+}
+inline void SayHi::set_has_type_t() {
+  _has_bits_[0] |= 0x00000001u;
+}
+inline void SayHi::clear_has_type_t() {
+  _has_bits_[0] &= ~0x00000001u;
+}
+inline void SayHi::clear_type_t() {
+  type_t_ = 12;
+  clear_has_type_t();
+}
+inline ::Adoter::Asset::META_TYPE SayHi::type_t() const {
+  // @@protoc_insertion_point(field_get:Adoter.Asset.SayHi.type_t)
+  return static_cast< ::Adoter::Asset::META_TYPE >(type_t_);
+}
+inline void SayHi::set_type_t(::Adoter::Asset::META_TYPE value) {
+  assert(::Adoter::Asset::META_TYPE_IsValid(value));
+  set_has_type_t();
+  type_t_ = value;
+  // @@protoc_insertion_point(field_set:Adoter.Asset.SayHi.type_t)
+}
+
+// optional int32 heart_count = 2;
+inline bool SayHi::has_heart_count() const {
+  return (_has_bits_[0] & 0x00000002u) != 0;
+}
+inline void SayHi::set_has_heart_count() {
+  _has_bits_[0] |= 0x00000002u;
+}
+inline void SayHi::clear_has_heart_count() {
+  _has_bits_[0] &= ~0x00000002u;
+}
+inline void SayHi::clear_heart_count() {
+  heart_count_ = 0;
+  clear_has_heart_count();
+}
+inline ::google::protobuf::int32 SayHi::heart_count() const {
+  // @@protoc_insertion_point(field_get:Adoter.Asset.SayHi.heart_count)
+  return heart_count_;
+}
+inline void SayHi::set_heart_count(::google::protobuf::int32 value) {
+  set_has_heart_count();
+  heart_count_ = value;
+  // @@protoc_insertion_point(field_set:Adoter.Asset.SayHi.heart_count)
+}
+
+// -------------------------------------------------------------------
+
 // GetReward
 
 // optional .Adoter.Asset.META_TYPE type_t = 1 [default = META_TYPE_C2S_GET_REWARD];
@@ -9556,29 +10101,29 @@ inline void PaiOperationLimit::set_allocated_pai(::Adoter::Asset::PaiElement* pa
   // @@protoc_insertion_point(field_set_allocated:Adoter.Asset.PaiOperationLimit.pai)
 }
 
-// optional .Adoter.Asset.PAI_OPER_TYPE oper_limit = 5;
-inline bool PaiOperationLimit::has_oper_limit() const {
+// optional .Adoter.Asset.PAI_OPER_TYPE oper_type = 5;
+inline bool PaiOperationLimit::has_oper_type() const {
   return (_has_bits_[0] & 0x00000010u) != 0;
 }
-inline void PaiOperationLimit::set_has_oper_limit() {
+inline void PaiOperationLimit::set_has_oper_type() {
   _has_bits_[0] |= 0x00000010u;
 }
-inline void PaiOperationLimit::clear_has_oper_limit() {
+inline void PaiOperationLimit::clear_has_oper_type() {
   _has_bits_[0] &= ~0x00000010u;
 }
-inline void PaiOperationLimit::clear_oper_limit() {
-  oper_limit_ = 0;
-  clear_has_oper_limit();
+inline void PaiOperationLimit::clear_oper_type() {
+  oper_type_ = 0;
+  clear_has_oper_type();
 }
-inline ::Adoter::Asset::PAI_OPER_TYPE PaiOperationLimit::oper_limit() const {
-  // @@protoc_insertion_point(field_get:Adoter.Asset.PaiOperationLimit.oper_limit)
-  return static_cast< ::Adoter::Asset::PAI_OPER_TYPE >(oper_limit_);
+inline ::Adoter::Asset::PAI_OPER_TYPE PaiOperationLimit::oper_type() const {
+  // @@protoc_insertion_point(field_get:Adoter.Asset.PaiOperationLimit.oper_type)
+  return static_cast< ::Adoter::Asset::PAI_OPER_TYPE >(oper_type_);
 }
-inline void PaiOperationLimit::set_oper_limit(::Adoter::Asset::PAI_OPER_TYPE value) {
+inline void PaiOperationLimit::set_oper_type(::Adoter::Asset::PAI_OPER_TYPE value) {
   assert(::Adoter::Asset::PAI_OPER_TYPE_IsValid(value));
-  set_has_oper_limit();
-  oper_limit_ = value;
-  // @@protoc_insertion_point(field_set:Adoter.Asset.PaiOperationLimit.oper_limit)
+  set_has_oper_type();
+  oper_type_ = value;
+  // @@protoc_insertion_point(field_set:Adoter.Asset.PaiOperationLimit.oper_type)
 }
 
 // -------------------------------------------------------------------

@@ -13,10 +13,10 @@
 namespace Adoter
 {
 
-#define DEBUG(...) { \
+#define DEBUG(fmt, ...) { \
 	auto debug = ConfigInstance.GetBool("DebugModel", true); \
 	if (debug) { \
-		spdlog::get("console")->debug("[" __FILE__ " line #" SPDLOG_STR_HELPER(__LINE__) "] " __VA_ARGS__); \
+		spdlog::get("console")->debug("[{}:{}:{}" fmt, __FILE__, __func__, __LINE__, ##__VA_ARGS__); \
 	}\
 }\
 

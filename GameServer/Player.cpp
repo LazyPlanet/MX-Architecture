@@ -311,11 +311,13 @@ int32_t Player::CmdPaiOperate(pb::Message* message)
 				else
 				{
 					ERROR("player_id:{} try locked failed.", _player_id);
+					return 10;
 				}
 			}
 			catch(const std::system_error& error)
 			{
 				ERROR("Delete card from player_id:{} card_type:{} card_value:{} error.", _player_id, pai.card_type(), pai.card_value(), error.what());
+				return 10;
 			}
 		}
 		break;
@@ -391,11 +393,13 @@ int32_t Player::CmdPaiOperate(pb::Message* message)
 				else
 				{
 					ERROR("player_id:{} try locked failed.", _player_id);
+					return 10;
 				}
 			}
 			catch(const std::system_error& error)
 			{
 				ERROR("Delete card from player_id:{} card_type:{} card_value:{} error.", _player_id, pai.card_type(), pai.card_value(), error.what());
+				return 10;
 			}
 
 			//设置玩家状态
@@ -1396,11 +1400,13 @@ bool Player::CheckHuPai(const Asset::PaiElement& pai, std::vector<Asset::FAN_TYP
 		else
 		{
 			ERROR("player_id:{} try locked failed.", _player_id);
+			return false;
 		}
 	}
 	catch(const std::system_error& error)
 	{
 		ERROR("Copy cards from player_id:{} error:{}.", _player_id, error.what());
+		return false;
 	}
 
 	return true;
@@ -1501,11 +1507,13 @@ void Player::OnChiPai(const Asset::PaiElement& pai, pb::Message* message)
 		else
 		{
 			ERROR("player_id:{} try locked failed.", _player_id);
+			return;
 		}
 	}
 	catch(const std::system_error& error)
 	{
 		ERROR("Delete card from player_id:{} error:{}.", _player_id, error.what());
+		return;
 	}
 	
 	for (auto card : cards)
@@ -1559,11 +1567,13 @@ void Player::OnPengPai(const Asset::PaiElement& pai)
 		else
 		{
 			ERROR("player_id:{} try locked failed.", _player_id);
+			return;
 		}
 	}
 	catch(const std::system_error& error)
 	{
 		ERROR("Delete card from player_id:{} card_type:{} card_value:{} error:{}.", _player_id, pai.card_type(), pai.card_value(), error.what());
+		return;
 	}
 
 	for (int i = 0; i < 3; ++i)
@@ -1629,7 +1639,7 @@ bool Player::CheckAllGangPai(::google::protobuf::RepeatedField<Asset::PaiOperati
 				{
 					auto gang = gang_list.Add();
 					gang->mutable_pai()->CopyFrom(pai); 
-					gang->mutable_oper_list()->Add(Asset::PAI_OPER_TYPE_GANGPAI);
+					gang->mutable_oper_list()->Add(Asset::PAI_OPER_TYPE_ANGANGPAI);
 				}
 			}
 		}
@@ -1709,11 +1719,13 @@ void Player::OnGangPai(const Asset::PaiElement& pai, int64_t from_player_id)
 		else
 		{
 			ERROR("player_id:{} try locked failed.", _player_id);
+			return;
 		}
 	}
 	catch(const std::system_error& error)
 	{
 		ERROR("Delete card from player_id:{} card_type:{} card_value:{} error:{}.", _player_id, card_type, card_value, error.what());
+		return;
 	}
 	
 	/////////////////////////////////////////////////////////////////////////////墙外满足杠牌
@@ -1803,11 +1815,13 @@ bool Player::CanTingPai(const Asset::PaiElement& pai)
 		else
 		{
 			ERROR("player_id:{} try locked failed.", _player_id);
+			return false;
 		}
 	}
 	catch(const std::system_error& error)
 	{
 		ERROR("Delete card from player_id:{} card_type:{} card_value:{} error.", _player_id, pai.card_type(), pai.card_value(), error.what());
+		return false;
 	}
 
 	//能否胡万饼条
@@ -1853,11 +1867,13 @@ bool Player::CanTingPai(const Asset::PaiElement& pai)
 		else
 		{
 			ERROR("player_id:{} try locked failed.", _player_id);
+			return false;
 		}
 	}
 	catch(const std::system_error& error)
 	{
 		ERROR("Delete card from player_id:{} card_type:{} card_value:{} error.", _player_id, pai.card_type(), pai.card_value(), error.what());
+		return false;
 	}
 
 	return false;
@@ -1895,7 +1911,7 @@ bool Player::CheckTingPai(std::vector<Asset::PaiElement>& pais)
 								
 					_cards[it->first].erase(find_it); //删除这张牌
 
-		///////////////////////////////////////////////////////玩家能否胡牌////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////玩家能否胡牌////////////////////////////////////////////////////////
 
 					//能否胡万饼条
 					for (int card_type = Asset::CARD_TYPE_WANZI; card_type <= Asset::CARD_TYPE_TIAOZI; ++card_type)
@@ -1954,12 +1970,14 @@ bool Player::CheckTingPai(std::vector<Asset::PaiElement>& pais)
 
 				} //for
 			} //for
+
 			_cards = card_list; //恢复牌
 
 		} //if (lock.try_lock())
 		else
 		{
 			ERROR("player_id:{} try locked failed.", _player_id);
+			return false;
 		}
 			
 		return pais.size() > 0;
@@ -1967,6 +1985,7 @@ bool Player::CheckTingPai(std::vector<Asset::PaiElement>& pais)
 	catch(const std::system_error& error)
 	{
 		ERROR("听牌检查加锁失败, player_id:{} error:{}.", _player_id, error.what());
+		return false;
 	}
 
 	return false;
@@ -2013,11 +2032,13 @@ void Player::OnGangFengPai()
 		else
 		{
 			ERROR("player_id:{} try locked failed.", _player_id);
+			return;
 		}
 	}
 	catch(const std::system_error& error)
 	{
 		ERROR("Delete card from player_id:{} error:{}.", _player_id, error.what());
+		return;
 	}
 
 	++_fenggang;
@@ -2076,11 +2097,13 @@ void Player::OnGangJianPai()
 		else
 		{
 			ERROR("player_id:{} try locked failed.", _player_id);
+			return;
 		}
 	}
 	catch(const std::system_error& error)
 	{
 		ERROR("Delete card from player_id:{} error:{}.", _player_id, error.what());
+		return;
 	}
 
 	++_jiangang;
@@ -2127,11 +2150,13 @@ int32_t Player::OnFaPai(std::vector<int32_t>& cards)
 		else
 		{
 			ERROR("player_id:{} try locked failed.", _player_id);
+			return 3;
 		}
 	}
 	catch(const std::system_error& error)
 	{
 		ERROR("player get cards, player_id:{} error:{}.", _player_id, error.what());
+		return 4;
 	}
 
 	Asset::PaiNotify notify; /////玩家当前牌数据发给Client
