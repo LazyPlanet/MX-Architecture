@@ -1166,10 +1166,15 @@ bool Player::CheckHuPai(std::map<int32_t, std::vector<int32_t>> cards_inhand, //
 				auto it_yise = std::find(options.extend_type().begin(), options.extend_type().end(), Asset::ROOM_EXTEND_TYPE_QIYISE);
 				if (it_yise != options.extend_type().end()) //可以清一色
 				{
-					if (has_count == 2) return false; //不可缺门
+					if (has_count == 2) 
+					{
+						TRACE("player_id:{} card_type:{} card_value:{} reason:缺门.", _player_id, pai.card_type(), pai.card_value());
+						return false; //不可缺门
+					}
 				}
 				else //断门还不可以清一色
 				{
+					TRACE("player_id:{} card_type:{} card_value:{} reason:断门还不可以清一色.", _player_id, pai.card_type(), pai.card_value());
 					return false;
 				}
 			}
@@ -1181,7 +1186,11 @@ bool Player::CheckHuPai(std::map<int32_t, std::vector<int32_t>> cards_inhand, //
 		auto it_zhanli = std::find(options.extend_type().begin(), options.extend_type().end(), Asset::ROOM_EXTEND_TYPE_ZHANLIHU);
 		if (it_zhanli == options.extend_type().end()) //不可以站立胡牌
 		{
-			if (cards_outhand.size() == 0 && minggang.size() == 0) return false; //没开门
+			if (cards_outhand.size() == 0 && minggang.size() == 0) 
+			{
+				TRACE("player_id:{} card_type:{} card_value:{} reason:不可以站立胡牌，且没开门.", _player_id, pai.card_type(), pai.card_value());
+				return false; //没开门
+			}
 		}
 	}
 	
@@ -1215,7 +1224,11 @@ bool Player::CheckHuPai(std::map<int32_t, std::vector<int32_t>> cards_inhand, //
 
 	if (jiangang > 0 || fenggang > 0) has_yao = true;
 
-	if (!has_yao) return false;
+	if (!has_yao) 
+	{
+		TRACE("player_id:{} card_type:{} card_value:{} reason:不可以站立胡牌，且没开门.", _player_id, pai.card_type(), pai.card_value());
+		return false;
+	}
 
 	////////////////////////////////////////////////////////////////////////////是否可以满足胡牌的要求
 	
@@ -1247,7 +1260,11 @@ bool Player::CheckHuPai(std::map<int32_t, std::vector<int32_t>> cards_inhand, //
 	
 	if (!has_ke && (jiangang > 0 || fenggang > 0 || minggang.size() > 0 || angang.size() > 0)) has_ke = true;
 	
-	if (!has_ke) return false;
+	if (!has_ke) 
+	{
+		TRACE("player_id:{} card_type:{} card_value:{} reason:胡牌时至少有一刻子或杠，或有中发白其中一对.", _player_id, pai.card_type(), pai.card_value());
+		return false;
+	}
 
 	return true;
 }
@@ -2032,6 +2049,8 @@ bool Player::CanTingPai(const Asset::PaiElement& pai)
 	
 bool Player::CheckTingPai(std::vector<Asset::PaiElement>& pais) const
 {
+	TRACE("player_id:{}", _player_id);
+
 	auto options = _locate_room->GetOptions();
 	
 	auto it_baohu = std::find(options.extend_type().begin(), options.extend_type().end(), Asset::ROOM_EXTEND_TYPE_BAOPAI);
