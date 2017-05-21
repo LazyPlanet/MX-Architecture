@@ -281,10 +281,10 @@ public:
 
 	bool CheckHuPai(const Asset::PaiElement& pai, std::vector<Asset::FAN_TYPE>& fan_list); //胡牌且算番数
 	bool CheckHuPai(const Asset::PaiElement& pai); //胡牌
-	bool CheckHuPai(std::map<int32_t, std::vector<int32_t>> cards_inhand, //玩家手里的牌
-			std::map<int32_t, std::vector<int32_t>> cards_outhand, //玩家墙外牌
-			std::vector<Asset::PaiElement> minggang, //明杠
-			std::vector<Asset::PaiElement> angang, //暗杠
+	bool CheckHuPai(const std::map<int32_t, std::vector<int32_t>>& cards_inhand, //玩家手里的牌
+			const std::map<int32_t, std::vector<int32_t>>& cards_outhand, //玩家墙外牌
+			const std::vector<Asset::PaiElement>& minggang, //明杠
+			const std::vector<Asset::PaiElement>& angang, //暗杠
 			int32_t jiangang, //旋风杠，本质是明杠
 			int32_t fenggang, //旋风杠，本质是暗杠
 			const Asset::PaiElement& pai) const; //胡牌
