@@ -16,24 +16,24 @@ namespace Adoter
 #define DEBUG(fmt, ...) { \
 	auto debug = ConfigInstance.GetBool("DebugModel", true); \
 	if (debug) { \
-		spdlog::get("console")->debug("[file:#{} func:#{} line:#{}]" fmt, __FILE__, __func__, __LINE__, ##__VA_ARGS__); \
+		spdlog::get("console")->debug("[file:#{} func:#{} line:#{}] " fmt, __FILE__, __func__, __LINE__, ##__VA_ARGS__); \
 	}\
 }\
 
 #define TRACE(fmt, ...) { \
-		spdlog::get("console")->trace("[file:#{} func:#{} line:#{}]" fmt, __FILE__, __func__, __LINE__, ##__VA_ARGS__); \
+		spdlog::get("console")->trace("[file:#{} func:#{} line:#{}] " fmt, __FILE__, __func__, __LINE__, ##__VA_ARGS__); \
 }\
 
 #define ERROR(fmt, ...) { \
-		spdlog::get("console")->error("[file:#{} func:#{} line:#{}]" fmt, __FILE__, __func__, __LINE__, ##__VA_ARGS__); \
+		spdlog::get("console")->error("[file:#{} func:#{} line:#{}] " fmt, __FILE__, __func__, __LINE__, ##__VA_ARGS__); \
 }\
 
 #define WARN(fmt, ...) { \
-		spdlog::get("console")->warn("[file:#{} func:#{} line:#{}]" fmt, __FILE__, __func__, __LINE__, ##__VA_ARGS__); \
+		spdlog::get("console")->warn("[file:#{} func:#{} line:#{}] " fmt, __FILE__, __func__, __LINE__, ##__VA_ARGS__); \
 }\
 
 #define CRITICAL(fmt, ...) { \
-		spdlog::get("console")->critical("[file:#{} func:#{} line:#{}]" fmt, __FILE__, __func__, __LINE__, ##__VA_ARGS__); \
+		spdlog::get("console")->critical("[file:#{} func:#{} line:#{}] " fmt, __FILE__, __func__, __LINE__, ##__VA_ARGS__); \
 }\
 
 namespace pb = google::protobuf;
