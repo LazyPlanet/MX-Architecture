@@ -1033,8 +1033,11 @@ bool CanHuPai(std::vector<Card_t>& cards, bool use_pair = false)
 
 	if (size <= 2) 
 	{
-		if (size == 1) return true;	
-			//P(Asset::ERROR, "%s:line:%d, size=1.", __func__, __LINE__);
+		if (size == 1) 
+		{
+			CRITICAL("size==1");
+			return false;	
+		}
 
 		return size == 0 || cards[0] == cards[1]; 
 	}
@@ -1118,7 +1121,7 @@ bool Player::CheckHuPai(const std::map<int32_t, std::vector<int32_t>>& cards_inh
 		int32_t fenggang, //旋风杠，本质是暗杠
 		const Asset::PaiElement& pai) const//胡牌
 {
-	DEBUG("{} player_id:{} card_type:{} card_value:{}", __func__, _player_id, pai.card_type(), pai.card_value());
+	DEBUG("player_id:{} card_type:{} card_value:{}", _player_id, pai.card_type(), pai.card_value());
 
 	auto cards = cards_inhand;
 
@@ -2067,13 +2070,37 @@ bool Player::CheckTingPai(std::vector<Asset::PaiElement>& pais) const
 	
 	auto it_baohu = std::find(options.extend_type().begin(), options.extend_type().end(), Asset::ROOM_EXTEND_TYPE_BAOPAI);
 	if (it_baohu == options.extend_type().end()) return false; //不带宝胡，绝对不可能呢听牌
-			
-	auto cards_inhand = _cards; //玩家手里牌
-	auto cards_outhand = _cards_outhand; //玩家墙外牌
-	auto minggang = _minggang; //明杠
-	auto angang = _angang; //暗杠
-	auto jiangang = _jiangang; //旋风杠，本质是明杠
-	auto fenggang = _fenggang; //旋风杠，本质是暗杠
+	
+	std::map<int32_t, std::vector<int32_t>> cards_inhand; //玩家手里的牌
+	std::map<int32_t, std::vector<int32_t>> cards_outhand; //玩家墙外牌
+	std::vector<Asset::PaiElement> minggang; //明杠
+	std::vector<Asset::PaiElement> angang; //暗杠
+	int32_t jiangang = 0; //旋风杠，本质是明杠
+	int32_t fenggang = 0; //旋风杠，本质是暗杠
+	
+	try {
+		//std::unique_lock<std::mutex> lock(_card_lock, std::defer_lock);
+
+		if (/*lock.try_lock()*/true)
+		{
+			cards_inhand = _cards; //玩家手里牌
+			cards_outhand = _cards_outhand; //玩家墙外牌
+			minggang = _minggang; //明杠
+			angang = _angang; //暗杠
+			jiangang = _jiangang; //旋风杠，本质是明杠
+			fenggang = _fenggang; //旋风杠，本质是暗杠
+		}
+		else
+		{
+			ERROR("player_id:{} try locked failed.", _player_id);
+			return false;
+		}
+	}
+	catch(const std::system_error& error)
+	{
+		ERROR("player_id:{} try locked failed, error:{}", _player_id, error.what());
+		return false;
+	}
 	
 	auto card_list = cards_inhand; //复制当前牌
 
@@ -2142,7 +2169,6 @@ bool Player::CheckTingPai(std::vector<Asset::PaiElement>& pais) const
 ///////////////////////////////////////////////////////玩家能否胡牌////////////////////////////////////////////////////////
 			
 			cards_inhand = card_list; //恢复牌，尝试删除下一张牌
-
 		} 
 	} 
 
