@@ -2042,6 +2042,8 @@ bool Player::CheckTingPai(std::vector<Asset::PaiElement>& pais)
 {
 	TRACE("player_id:{}", _player_id);
 
+	if (_has_ting) return false; //已经听牌，不再提示
+
 	auto options = _locate_room->GetOptions();
 	
 	auto it_baohu = std::find(options.extend_type().begin(), options.extend_type().end(), Asset::ROOM_EXTEND_TYPE_BAOPAI);
