@@ -1566,6 +1566,8 @@ bool Player::CheckHuPai(const Asset::PaiElement& pai, std::vector<Asset::FAN_TYP
 
 bool Player::CheckChiPai(const Asset::PaiElement& pai)
 {
+	if (_has_ting) return false; //已经听牌，不再提示
+
 	auto it = _cards.find(pai.card_type());
 	if (it == _cards.end()) return false;
 
@@ -1676,6 +1678,8 @@ void Player::OnChiPai(const Asset::PaiElement& pai, pb::Message* message)
 
 bool Player::CheckPengPai(const Asset::PaiElement& pai)
 {
+	if (_has_ting) return false; //已经听牌，不再提示
+
 	auto it = _cards.find(pai.card_type());
 	if (it == _cards.end()) return false;
 
