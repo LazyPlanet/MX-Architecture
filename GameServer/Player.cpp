@@ -1002,32 +1002,8 @@ std::vector<Asset::PAI_OPER_TYPE> Player::CheckPai(const Asset::PaiElement& pai,
 //
 //下面的算法是可以直接判断是否牌型是否和牌的，不局限于14张牌(3n+2即可)
 
-struct Card_t {
 
-	int32_t _type; //类型
-	int32_t _value; //值
-
-public:
-	bool operator == (const Card_t& card)
-	{
-		return _type == card._type && _value == card._value;
-	}
-
-	Card_t operator + (int32_t value)
-	{
-		return Card_t(_type, _value + value);
-	}
-
-	Card_t(int32_t type, int32_t value)
-	{
-		_type = type;
-		_value = value;
-	}
-};
-
-std::vector<std::tuple<bool, bool, bool>> hu_result;
-
-bool CanHuPai(std::vector<Card_t>& cards, bool use_pair = false)
+bool Player::CanHuPai(std::vector<Card_t>& cards, bool use_pair)
 {
 	int32_t size = cards.size();
 
@@ -1084,7 +1060,7 @@ bool CanHuPai(std::vector<Card_t>& cards, bool use_pair = false)
 		}
 	}
 
-	hu_result.push_back(std::make_tuple(pair, trips, straight));
+	_hu_result.push_back(std::make_tuple(pair, trips, straight));
 
 	return pair || trips || straight; //一对、刻或者顺子
 }
@@ -1119,7 +1095,7 @@ bool Player::CheckHuPai(const std::map<int32_t, std::vector<int32_t>>& cards_inh
 		const std::vector<Asset::PaiElement>& angang, //暗杠
 		int32_t jiangang, //旋风杠，本质是明杠
 		int32_t fenggang, //旋风杠，本质是暗杠
-		const Asset::PaiElement& pai) const//胡牌
+		const Asset::PaiElement& pai) //胡牌
 {
 	DEBUG("player_id:{} card_type:{} card_value:{}", _player_id, pai.card_type(), pai.card_value());
 
@@ -1243,7 +1219,7 @@ bool Player::CheckHuPai(const std::map<int32_t, std::vector<int32_t>>& cards_inh
 
 	////////////////////////////////////////////////////////////////////////////是否可以满足胡牌的要求
 	
-	hu_result.clear();
+	_hu_result.clear();
 
 	std::vector<Card_t> card_list;
 	for (auto crds : cards) //不同牌类别的牌
@@ -1263,7 +1239,7 @@ bool Player::CheckHuPai(const std::map<int32_t, std::vector<int32_t>>& cards_inh
 	bool has_ke = false;
 	int32_t ke_count = 0; //刻数量，一般最多4个，即12张
 
-	for (auto r : hu_result)
+	for (auto r : _hu_result)
 	{
 		 bool is_ke = std::get<1>(r);
 		 if (is_ke) ++ke_count;
@@ -1443,7 +1419,7 @@ bool Player::CheckHuPai(const Asset::PaiElement& pai, std::vector<Asset::FAN_TYP
 
 			////////////////////////////////////////////////////////////////////////////是否可以满足胡牌的要求
 			
-			hu_result.clear();
+			_hu_result.clear();
 
 			std::vector<Card_t> card_list;
 			for (auto crds : cards) //不同牌类别的牌
@@ -1463,7 +1439,7 @@ bool Player::CheckHuPai(const Asset::PaiElement& pai, std::vector<Asset::FAN_TYP
 			bool has_ke = false;
 			int32_t ke_count = 0; //刻数量，一般最多4个，即12张
 
-			for (auto r : hu_result)
+			for (auto r : _hu_result)
 			{
 				 bool is_ke = std::get<1>(r);
 				 if (is_ke) ++ke_count;
@@ -2062,7 +2038,7 @@ bool Player::CanTingPai(const Asset::PaiElement& pai)
 //
 //玩家全部牌检查，即玩家抓牌后检查
 	
-bool Player::CheckTingPai(std::vector<Asset::PaiElement>& pais) const
+bool Player::CheckTingPai(std::vector<Asset::PaiElement>& pais)
 {
 	TRACE("player_id:{}", _player_id);
 

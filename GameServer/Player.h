@@ -20,6 +20,29 @@ namespace pb = google::protobuf;
 class Room;
 class Game;
 
+struct Card_t {
+
+	int32_t _type; //类型
+	int32_t _value; //值
+
+public:
+	bool operator == (const Card_t& card)
+	{
+		return _type == card._type && _value == card._value;
+	}
+
+	Card_t operator + (int32_t value)
+	{
+		return Card_t(_type, _value + value);
+	}
+
+	Card_t(int32_t type, int32_t value)
+	{
+		_type = type;
+		_value = value;
+	}
+};
+
 class Player : public std::enable_shared_from_this<Player>
 {
 	typedef std::function<int32_t(pb::Message*)> CallBack;
@@ -256,6 +279,7 @@ private:
 	bool _has_ting = false; //听牌
 
 	std::queue<int32_t> _xf_gang; //旋风杠所有操作
+	std::vector<std::tuple<bool, bool, bool>> _hu_result;
 public:
 	//玩家操作
 	virtual int32_t CmdGameOperate(pb::Message* message); //游戏操作
@@ -279,6 +303,8 @@ public:
 
 	bool CheckBaoHu(const Asset::PaiElement& pai);
 
+	bool CanHuPai(std::vector<Card_t>& cards, bool use_pair = false);
+
 	bool CheckHuPai(const Asset::PaiElement& pai, std::vector<Asset::FAN_TYPE>& fan_list); //胡牌且算番数
 	bool CheckHuPai(const Asset::PaiElement& pai); //胡牌
 	bool CheckHuPai(const std::map<int32_t, std::vector<int32_t>>& cards_inhand, //玩家手里的牌
@@ -287,7 +313,7 @@ public:
 			const std::vector<Asset::PaiElement>& angang, //暗杠
 			int32_t jiangang, //旋风杠，本质是明杠
 			int32_t fenggang, //旋风杠，本质是暗杠
-			const Asset::PaiElement& pai) const; //胡牌
+			const Asset::PaiElement& pai); //胡牌
 
 	bool CheckGangPai(const Asset::PaiElement& pai, int64_t from_player_id); //是否可以杠牌
 	//有玩家一直不杠牌, 每次都要提示, 比如玩家碰了7条,但是手里有7-8-9条,而选择暂时不杠
@@ -306,7 +332,7 @@ public:
 	int32_t CheckXuanFeng(); //检查旋风杠
 	
 	bool CanTingPai(const Asset::PaiElement& pai);
-	bool CheckTingPai(std::vector<Asset::PaiElement>& pais/*应该打出的牌数据*/) const; //是否可以听牌：能不能听牌，主要是看是否给牌可以胡
+	bool CheckTingPai(std::vector<Asset::PaiElement>& pais/*应该打出的牌数据*/); //是否可以听牌：能不能听牌，主要是看是否给牌可以胡
 
 	bool CheckPengPai(const Asset::PaiElement& pai); //是否可以碰牌
 	void OnPengPai(const Asset::PaiElement& pai); //碰牌
