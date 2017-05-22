@@ -361,6 +361,8 @@ public:
 	void ClearCards(); //清理玩家手中牌
 	void SynchronizePai(); //同步牌
 	void PreCheckOnFaPai(); //发牌前置检查
+
+	void OnGameOver();
 };
 
 /////////////////////////////////////////////////////

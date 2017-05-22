@@ -405,7 +405,6 @@ int32_t Player::CmdPaiOperate(pb::Message* message)
 			}
 
 			//设置玩家状态
-			//_stuff.mutable_player_prop()->set_has_tinged(true);
 			_has_ting = true;
 			_game->AddTingPlayer(_player_id);
 		}
@@ -2488,6 +2487,11 @@ void Player::ClearCards()
 	_fenggang = 0; //清理旋风杠
 
 	_oper_count = 0; //清理操作数
+}
+	
+void Player::OnGameOver()
+{
+	ClearCards();
 }
 /////////////////////////////////////////////////////
 //玩家通用管理类

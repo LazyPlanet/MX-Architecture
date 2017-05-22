@@ -74,10 +74,12 @@ public:
 	void Calculate(int64_t hupai_player_id/*胡牌玩家*/, int64_t dianpao_player_id/*胡牌玩家*/, std::vector<Asset::FAN_TYPE>& fan_list/*基础分*/);
 	//增加听牌玩家
 	void AddTingPlayer(int64_t player_id) {	_ting_players.push_back(player_id);	}
-	//设置宝牌
+	//设置//获取宝牌
 	void SetBaoPai(const Asset::PaiElement& pai) { _baopai = pai; }
-	//获取宝牌
 	const Asset::PaiElement& GetBaoPai() { return _baopai; }
+	bool IsBaopai(const Asset::PaiElement& pai) {
+		return pai.card_type() == _baopai.card_type() && pai.card_value() == _baopai.card_value();
+	}
 	Asset::PaiElement GetBaopai(int32_t tail_index);
 };
 

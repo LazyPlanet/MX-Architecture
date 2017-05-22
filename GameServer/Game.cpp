@@ -86,12 +86,17 @@ void Game::OnStart()
 
 bool Game::OnOver()
 {
-	_hupai_players.push_back(1);
+	_baopai.Clear();
 	//清理牌
 	for (int i = 0; i < MAX_PLAYER_COUNT; ++i)
 	{
 		auto player = _players[i];
-		player->ClearCards();
+		if (!player) 
+		{
+			ERROR("player_index:{} has not found, maybe it has disconneced.", i);
+			continue;
+		}
+		player->OnGameOver();
 	}
 	return true;
 }
@@ -184,20 +189,24 @@ void Game::OnPaiOperate(std::shared_ptr<Player> player, pb::Message* message)
 				Asset::PaiOperationAlert alert;
 
 				//胡牌检查
-				std::vector<Asset::FAN_TYPE> fan_list;
-				if (player_next->CheckHuPai(card, fan_list)) //自摸
+				//std::vector<Asset::FAN_TYPE> fan_list;
+				if (player_next->CheckHuPai(card/*, fan_list*/)) //自摸
 				{
 					auto pai_perator = alert.mutable_pais()->Add();
 					pai_perator->mutable_pai()->CopyFrom(card);
 					pai_perator->mutable_oper_list()->Add(Asset::PAI_OPER_TYPE_HUPAI);
-					if (player_next->IsTingPai()) pai_perator->mutable_oper_list()->Add(Asset::FAN_TYPE_SHANG_TING);  //听牌玩家胡牌翻番
+
+					//番数
+					//if (player_next->IsTingPai()) fan_list.push_back(Asset::FAN_TYPE_SHANG_TING);  //听牌玩家胡牌翻番
 				}
 				else if (player_next->CheckBaoHu(pai)) //自摸
 				{
 					auto pai_perator = alert.mutable_pais()->Add();
 					pai_perator->mutable_pai()->CopyFrom(card);
 					pai_perator->mutable_oper_list()->Add(Asset::PAI_OPER_TYPE_HUPAI);
-					fan_list.push_back(Asset::FAN_TYPE_LOU_BAO); //宝胡
+					
+					//番数
+					//fan_list.push_back(Asset::FAN_TYPE_LOU_BAO); //宝胡
 				}
 
 				player_next->OnFaPai(cards); //放入玩家牌里面
@@ -269,7 +278,9 @@ void Game::OnPaiOperate(std::shared_ptr<Player> player, pb::Message* message)
 			else
 			{
 				Calculate(player->GetID(), _oper_limit.from_player_id(), fan_list); //结算
+
 				_room->GameOver(player->GetID()); //胡牌
+				_hupai_players.push_back(player->GetID()); 
 
 				OnOver();
 			}
@@ -404,29 +415,29 @@ void Game::OnPaiOperate(std::shared_ptr<Player> player, pb::Message* message)
 			Asset::PaiOperationAlert alert;
 
 			//胡牌检查
-			std::vector<Asset::FAN_TYPE> fan_list;
-			if (player_next->CheckHuPai(card, fan_list)) //自摸
+			//std::vector<Asset::FAN_TYPE> fan_list;
+			if (player_next->CheckHuPai(card/*, fan_list*/)) //自摸
 			{
 				auto pai_perator = alert.mutable_pais()->Add();
 				pai_perator->mutable_pai()->CopyFrom(card);
 				pai_perator->mutable_oper_list()->Add(Asset::PAI_OPER_TYPE_HUPAI);
-				if (player_next->IsTingPai()) pai_perator->mutable_oper_list()->Add(Asset::FAN_TYPE_SHANG_TING);  //听牌玩家胡牌翻番
+				//if (player_next->IsTingPai()) pai_perator->mutable_oper_list()->Add(Asset::FAN_TYPE_SHANG_TING);  //听牌玩家胡牌翻番
 			}
 			else if (player_next->CheckBaoHu(pai)) //自摸
 			{
 				auto pai_perator = alert.mutable_pais()->Add();
 				pai_perator->mutable_pai()->CopyFrom(card);
 				pai_perator->mutable_oper_list()->Add(Asset::PAI_OPER_TYPE_HUPAI);
-				fan_list.push_back(Asset::FAN_TYPE_LOU_BAO); //宝胡
+				//fan_list.push_back(Asset::FAN_TYPE_LOU_BAO); //宝胡
 			}
 
 			player_next->OnFaPai(cards); //放入玩家牌里面
 			
 			////////听牌检查
-			std::vector<Asset::PaiElement> tingpais;
-			if (player_next->CheckTingPai(tingpais))
+			std::vector<Asset::PaiElement> ting_list;
+			if (player_next->CheckTingPai(ting_list))
 			{
-				for (auto pai : tingpais) 
+				for (auto pai : ting_list) 
 				{
 					auto pai_perator = alert.mutable_pais()->Add();
 					pai_perator->mutable_pai()->CopyFrom(pai);
@@ -540,8 +551,6 @@ void Game::Calculate(int64_t hupai_player_id/*胡牌玩家*/, int64_t dianpao_pl
 				score *= 4; //中番夹胡
 			else if (Asset::FAN_TYPE_JIA_HU_HIGHER == fan)
 				score *= 8; //高番夹胡
-			else if (Asset::FAN_TYPE_LOU_BAO == fan)
-				score *= 2; //宝胡
 			else if (Asset::FAN_TYPE_SHANG_TING == fan)
 				score *= 2; //听牌
 			
