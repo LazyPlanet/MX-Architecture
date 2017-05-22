@@ -1263,6 +1263,12 @@ bool Player::CheckHuPai(const Asset::PaiElement& pai, std::vector<Asset::FAN_TYP
 {
 	DEBUG("{} player_id:{} card_type:{} card_value:{}", __func__, _player_id, pai.card_type(), pai.card_value());
 
+	if (!_locate_room || !_game) 
+	{
+		DEBUG_ASSERT(false);
+		return false;
+	}
+
 	try {
 		std::unique_lock<std::mutex> lock(_card_lock, std::defer_lock);
 
@@ -1546,6 +1552,10 @@ bool Player::CheckHuPai(const Asset::PaiElement& pai, std::vector<Asset::FAN_TYP
 						//base_score *= 8;
 					}
 				}
+			}
+			if (_game->IsBaopai(pai)) //搂宝
+			{
+				fan_list.push_back(Asset::FAN_TYPE_LOU_BAO);
 			}
 		}
 		else
