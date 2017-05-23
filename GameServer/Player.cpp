@@ -1962,20 +1962,27 @@ bool Player::CanTingPai(const Asset::PaiElement& pai)
 	auto it_baohu = std::find(options.extend_type().begin(), options.extend_type().end(), Asset::ROOM_EXTEND_TYPE_BAOPAI);
 	if (it_baohu == options.extend_type().end()) return false; //不带宝胡，绝对不可能呢听牌
 
-	auto card_list = _cards; //复制当前牌
+	std::map<int32_t, std::vector<int32_t>> cards_inhand; //玩家手里的牌
+	std::map<int32_t, std::vector<int32_t>> cards_outhand; //玩家墙外牌
+	std::vector<Asset::PaiElement> minggang; //明杠
+	std::vector<Asset::PaiElement> angang; //暗杠
+	int32_t jiangang = 0; //旋风杠，本质是明杠
+	int32_t fenggang = 0; //旋风杠，本质是暗杠
 
 	//前置检查
-	if (_cards[pai.card_type()].size() == 0) return false;
-
-	auto find_it = std::find(_cards[pai.card_type()].begin(), _cards[pai.card_type()].end(), pai.card_value());
-	if (find_it == _cards[pai.card_type()].end()) return false; //理论上一定能找到
+	//if (card_list[pai.card_type()].size() == 0) return false;
 				
 	try {
 		std::unique_lock<std::mutex> lock(_card_lock, std::defer_lock);
 
 		if (lock.try_lock())
 		{
-			_cards[pai.card_type()].erase(find_it); //删除这张牌
+			cards_inhand = _cards; //玩家手里牌
+			cards_outhand = _cards_outhand; //玩家墙外牌
+			minggang = _minggang; //明杠
+			angang = _angang; //暗杠
+			jiangang = _jiangang; //旋风杠，本质是明杠
+			fenggang = _fenggang; //旋风杠，本质是暗杠
 		}
 		else
 		{
@@ -1988,6 +1995,15 @@ bool Player::CanTingPai(const Asset::PaiElement& pai)
 		ERROR("Delete card from player_id:{} card_type:{} card_value:{} error.", _player_id, pai.card_type(), pai.card_value(), error.what());
 		return false;
 	}
+	
+	auto find_it = std::find(cards_inhand[pai.card_type()].begin(), cards_inhand[pai.card_type()].end(), pai.card_value());
+	if (find_it == cards_inhand[pai.card_type()].end()) 
+	{
+		DEBUG_ASSERT(false);
+		return false; //理论上一定能找到
+	}
+			
+	cards_inhand[pai.card_type()].erase(find_it); //删除这张牌
 
 	//能否胡万饼条
 	for (int card_type = Asset::CARD_TYPE_WANZI; card_type <= Asset::CARD_TYPE_TIAOZI; ++card_type)
@@ -1998,7 +2014,7 @@ bool Player::CanTingPai(const Asset::PaiElement& pai)
 			pai.set_card_type((Asset::CARD_TYPE)card_type);
 			pai.set_card_value(card_value);
 
-			if (CheckHuPai(pai)) return true;
+			if (CheckHuPai(cards_inhand, cards_outhand, minggang, angang, jiangang, fenggang, pai)) return true;
 		}
 	}
 	
@@ -2009,7 +2025,7 @@ bool Player::CanTingPai(const Asset::PaiElement& pai)
 		pai.set_card_type(Asset::CARD_TYPE_FENG);
 		pai.set_card_value(card_value);
 
-		if (CheckHuPai(pai)) return true;
+		if (CheckHuPai(cards_inhand, cards_outhand, minggang, angang, jiangang, fenggang, pai)) return true;
 	}
 
 	//能否胡箭牌
@@ -2019,28 +2035,9 @@ bool Player::CanTingPai(const Asset::PaiElement& pai)
 		pai.set_card_type(Asset::CARD_TYPE_JIAN);
 		pai.set_card_value(card_value);
 
-		if (CheckHuPai(pai)) return true; 
+		if (CheckHuPai(cards_inhand, cards_outhand, minggang, angang, jiangang, fenggang, pai)) return true;
 	}
 	
-	try {
-		std::unique_lock<std::mutex> lock(_card_lock, std::defer_lock);
-
-		if (lock.try_lock())
-		{
-			_cards = card_list; //恢复牌
-		}
-		else
-		{
-			ERROR("player_id:{} try locked failed.", _player_id);
-			return false;
-		}
-	}
-	catch(const std::system_error& error)
-	{
-		ERROR("Delete card from player_id:{} card_type:{} card_value:{} error.", _player_id, pai.card_type(), pai.card_value(), error.what());
-		return false;
-	}
-
 	return false;
 }
 
