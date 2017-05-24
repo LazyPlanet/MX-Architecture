@@ -46,6 +46,16 @@ bool Game::Start(std::vector<std::shared_ptr<Player>> players)
 	}
 
 	auto banker_index = _room->GetBankerIndex();
+		
+	auto player_banker = GetPlayerByOrder(banker_index);
+	if (!player_banker) 
+	{
+		DEBUG_ASSERT(false);
+		return false;
+	}
+	_banker_player_id  = player_banker->GetID();
+
+	OnStart(); //同步本次游戏开局数据
 
 	for (int i = 0; i < MAX_PLAYER_COUNT; ++i)
 	{
@@ -59,7 +69,6 @@ bool Game::Start(std::vector<std::shared_ptr<Player>> players)
 		{
 			card_count = 14; //庄家牌数量
 			_curr_player_index = i; //当前操作玩家
-			_banker_player_id = player->GetID(); //庄家
 		}
 
 		auto cards = FaPai(card_count);
@@ -67,8 +76,6 @@ bool Game::Start(std::vector<std::shared_ptr<Player>> players)
 		player->OnFaPai(cards);  //各个玩家发牌
 		player->SetGame(shared_from_this());
 	}
-
-	OnStart();
 
 	return true;
 }
@@ -799,7 +806,7 @@ bool Game::CheckPai(const Asset::PaiElement& pai, int64_t from_player_id)
 			DEBUG("operation player can do: cur_player_index:{} next_player_index:{} player_id:{} value:{}", cur_index, next_player_index, player->GetID(), value);
 		
 		auto it_chi = std::find(rtn_check.begin(), rtn_check.end(), Asset::PAI_OPER_TYPE_CHIPAI);
-		if (it_chi != rtn_check.end() && cur_index != next_player_index) rtn_check.erase(it_chi);
+		if (it_chi != rtn_check.end() && cur_index != next_player_index) rtn_check.erase(it_chi); //只有下家能吃牌
 		
 		if (rtn_check.size() == 0) continue; 
 

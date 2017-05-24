@@ -2185,7 +2185,11 @@ bool Player::CheckFengGangPai(std::map<int32_t/*麻将牌类型*/, std::vector<i
 
 void Player::OnGangFengPai()
 {
-	if (!CheckFengGangPai(_cards)) return;
+	if (!CheckFengGangPai(_cards)) 
+	{
+		DEBUG_ASSERT(false);
+		return;
+	}
 	
 	auto it = _cards.find(Asset::CARD_TYPE_FENG);
 	if (it == _cards.end()) return;
