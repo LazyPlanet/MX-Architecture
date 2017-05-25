@@ -12,6 +12,9 @@
 
 namespace Adoter
 {
+//////////////////////////////////////////////////////////////////////////
+/////各种日志的宏定义/////
+//////////////////////////////////////////////////////////////////////////
 
 #define DEBUG(fmt, ...) { \
 	auto debug = ConfigInstance.GetBool("DebugModel", true); \
@@ -34,6 +37,13 @@ namespace Adoter
 
 #define CRITICAL(fmt, ...) { \
 		spdlog::get("console")->critical("[file:#{} func:#{} line:#{}] " fmt, __FILE__, __func__, __LINE__, ##__VA_ARGS__); \
+}\
+
+//玩家数据
+#define PLAYER(message, ...) { \
+		std::string json; \
+		pbjson::pb2json(&message, json); \
+		spdlog::get("player")->info(json); \
 }\
 
 namespace pb = google::protobuf;
