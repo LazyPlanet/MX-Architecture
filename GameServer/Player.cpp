@@ -2483,6 +2483,8 @@ void Player::ClearCards()
 void Player::OnGameOver()
 {
 	ClearCards();
+
+	 _stuff.mutable_player_prop()->clear_game_oper_state();
 }
 /////////////////////////////////////////////////////
 //玩家通用管理类
