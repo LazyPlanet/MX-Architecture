@@ -278,7 +278,7 @@ private:
 	int32_t _oper_count = 0; //操作次数
 	bool _has_ting = false; //听牌
 
-	std::queue<int32_t> _xf_gang; //旋风杠所有操作
+	std::vector<Asset::PAI_OPER_TYPE> _xf_gang; //旋风杠所有操作
 	std::vector<std::tuple<bool, bool, bool>> _hu_result;
 public:
 	//玩家操作
@@ -325,6 +325,8 @@ public:
 	bool CheckJianGangPai(std::map<int32_t/*麻将牌类型*/, std::vector<int32_t>/*牌值*/>& cards); //是否有箭杠
 	void OnGangFengPai(); //旋风杠-风杠
 	void OnGangJianPai(); //旋风杠-箭杠
+
+	std::vector<Asset::PAI_OPER_TYPE> GetXuanFeng() { return _xf_gang; } //旋风杠获取
 
 	bool CheckFengGangPai(); //是否可以旋风杠-风杠 
 	bool CheckJianGangPai(); //是否可以旋风杠-箭杠

@@ -341,10 +341,12 @@ int32_t Player::CmdPaiOperate(pb::Message* message)
 		
 		case Asset::PAI_OPER_TYPE_XUANFENG_FENG: //旋风杠
 		{
+			/*
 			if (_oper_count >= 2) 
 			{
 				return 5;
 			}
+			*/
 
 			--_oper_count;
 
@@ -354,10 +356,12 @@ int32_t Player::CmdPaiOperate(pb::Message* message)
 		
 		case Asset::PAI_OPER_TYPE_XUANFENG_JIAN: //旋风杠
 		{
+			/*
 			if (_oper_count >= 2) 
 			{
 				return 6;
 			}
+			*/
 			
 			--_oper_count;
 			
@@ -383,6 +387,27 @@ int32_t Player::CmdPaiOperate(pb::Message* message)
 				DEBUG_ASSERT(false);
 				return 8; //不能听牌
 			}
+
+			try {
+				std::unique_lock<std::mutex> lock(_card_lock, std::defer_lock);
+			
+				if (lock.try_lock()) 
+				{
+					pais.erase(it); //删除牌
+					TRACE("Delete card from player_id:{} card_type:{} card_value:{} for dapai.", _player_id, pai.card_type(), pai.card_value());
+				}
+				else
+				{
+					ERROR("player_id:{} try locked failed.", _player_id);
+					return 10;
+				}
+			}
+			catch(const std::system_error& error)
+			{
+				ERROR("Delete card from player_id:{} card_type:{} card_value:{} error.", _player_id, pai.card_type(), pai.card_value(), error.what());
+					return 10;
+			}
+
 
 			//设置玩家状态
 			_has_ting = true;
@@ -959,6 +984,12 @@ std::vector<Asset::PAI_OPER_TYPE> Player::CheckPai(const Asset::PaiElement& pai,
 		DEBUG("玩家{}可以碰牌.", _player_id);
 		rtn_check.push_back(Asset::PAI_OPER_TYPE_PENGPAI);
 	}
+	for (auto xf : _xf_gang)
+	{
+		DEBUG("玩家{}可以进行旋风杠.", _player_id);
+		rtn_check.push_back(Asset::PAI_OPER_TYPE(xf));
+	}
+	_xf_gang.clear(); //只进行一次检查
 	if (CheckChiPai(pai)) 
 	{
 		DEBUG("玩家{}可以吃.", _player_id);
@@ -1925,8 +1956,10 @@ int32_t Player::CheckXuanFeng()
 	auto size = _xf_gang.size();
 	if (size == 0) return 0;
 
-	auto gang = _xf_gang.front();
-	_xf_gang.pop();
+	auto it = _xf_gang.begin();
+	auto gang = *it;
+
+	_xf_gang.erase(it);
 
 	return gang;
 }
@@ -2338,7 +2371,7 @@ int32_t Player::OnFaPai(std::vector<int32_t>& cards)
 		//风牌检查
 		while (CheckFengGangPai(xf_card))
 		{
-			_xf_gang.push(Asset::PAI_OPER_TYPE_XUANFENG_FENG);
+			_xf_gang.push_back(Asset::PAI_OPER_TYPE_XUANFENG_FENG);
 
 			auto it = xf_card.find(Asset::CARD_TYPE_FENG);
 			if (it == xf_card.end()) continue;
@@ -2352,7 +2385,7 @@ int32_t Player::OnFaPai(std::vector<int32_t>& cards)
 		//箭牌 检查
 		while (CheckJianGangPai(xf_card))
 		{
-			_xf_gang.push(Asset::PAI_OPER_TYPE_XUANFENG_JIAN);
+			_xf_gang.push_back(Asset::PAI_OPER_TYPE_XUANFENG_JIAN);
 
 			auto it = xf_card.find(Asset::CARD_TYPE_JIAN);
 			if (it == xf_card.end()) continue;
