@@ -1294,10 +1294,16 @@ bool Player::CheckHuPai(const Asset::PaiElement& pai, std::vector<Asset::FAN_TYP
 			for (auto crds : _cards_outhand) //复制牌外牌
 				cards[crds.first].insert(cards[crds.first].end(), crds.second.begin(), crds.second.end());
 
+			DEBUG("+++++++++++++player_id:{}", _player_id);
+
 			cards[pai.card_type()].push_back(pai.card_value()); //放入可以操作的牌
+			
+			DEBUG("+++++++++++++player_id:{}", _player_id);
 			
 			for (auto& card : cards)
 				std::sort(card.second.begin(), card.second.end(), [](int x, int y){ return x < y; }); //由小到大，排序
+			
+			DEBUG("+++++++++++++player_id:{}", _player_id);
 		}
 		else
 		{
@@ -1310,6 +1316,8 @@ bool Player::CheckHuPai(const Asset::PaiElement& pai, std::vector<Asset::FAN_TYP
 		ERROR("Copy cards from player_id:{} error:{}.", _player_id, error.what());
 		return false;
 	}
+			
+	DEBUG("+++++++++++++player_id:{}", _player_id);
 
 	bool zhanlihu = false, jiahu = false, xuanfenggang = false, duanmen = false, yise = false, piao = false; //积分
 
@@ -1381,6 +1389,8 @@ bool Player::CheckHuPai(const Asset::PaiElement& pai, std::vector<Asset::FAN_TYP
 			}
 		}
 	}
+			
+	DEBUG("+++++++++++++player_id:{}", _player_id);
 
 	////////是否可以站立胡
 	{
@@ -1399,6 +1409,8 @@ bool Player::CheckHuPai(const Asset::PaiElement& pai, std::vector<Asset::FAN_TYP
 		}
 	}
 	
+	DEBUG("+++++++++++++player_id:{}", _player_id);
+
 	////////是否有幺九
 	bool has_yao = false;
 
@@ -1422,6 +1434,8 @@ bool Player::CheckHuPai(const Asset::PaiElement& pai, std::vector<Asset::FAN_TYP
 			break;
 		}
 	}
+	
+	DEBUG("+++++++++++++player_id:{}", _player_id);
 
 	for (auto gang : _minggang)
 	{
@@ -1429,6 +1443,8 @@ bool Player::CheckHuPai(const Asset::PaiElement& pai, std::vector<Asset::FAN_TYP
 				gang.card_type() == Asset::CARD_TYPE_FENG || gang.card_type() == Asset::CARD_TYPE_JIAN) has_yao = true;
 	}
 	
+	DEBUG("+++++++++++++player_id:{}", _player_id);
+
 	for (auto gang : _angang)
 	{
 		if (gang.card_value() == 1 || gang.card_value() == 9 ||
@@ -1440,6 +1456,8 @@ bool Player::CheckHuPai(const Asset::PaiElement& pai, std::vector<Asset::FAN_TYP
 		has_yao = true;
 		xuanfenggang = true;
 	}
+	
+	DEBUG("+++++++++++++player_id:{}", _player_id);
 
 	if (!has_yao) 
 	{
@@ -1451,12 +1469,16 @@ bool Player::CheckHuPai(const Asset::PaiElement& pai, std::vector<Asset::FAN_TYP
 
 	////////////////////////////////////////////////////////////////////////////是否可以满足胡牌的要求
 	
+	DEBUG("+++++++++++++player_id:{}", _player_id);
+	
 	std::vector<Card_t> card_list;
 	for (auto crds : cards) //不同牌类别的牌
 	{
 		for (auto value : crds.second)
 			card_list.push_back(Card_t(crds.first, value));
 	}
+	
+	DEBUG("+++++++++++++player_id:{}", _player_id);
 
 	bool can_hu = CanHuPai(card_list);	
 	if (!can_hu) 
@@ -1465,7 +1487,9 @@ bool Player::CheckHuPai(const Asset::PaiElement& pai, std::vector<Asset::FAN_TYP
 		return false;
 	}
 	
-	//胡牌时至少有一刻子或杠，或有中发白其中一对
+	DEBUG("+++++++++++++player_id:{}", _player_id);
+	
+	//胡牌时至少有刻子或杠，或有中发白
 	bool has_ke = false;
 	int32_t ke_count = 0; //刻数量，一般最多4个，即12张
 
@@ -1474,6 +1498,8 @@ bool Player::CheckHuPai(const Asset::PaiElement& pai, std::vector<Asset::FAN_TYP
 		 bool is_ke = std::get<1>(r);
 		 if (is_ke) ++ke_count;
 	}
+	
+	DEBUG("+++++++++++++player_id:{}", _player_id);
 
 	if (ke_count) has_ke = true;
 
@@ -1481,6 +1507,7 @@ bool Player::CheckHuPai(const Asset::PaiElement& pai, std::vector<Asset::FAN_TYP
 	
 	if (!has_ke && (_jiangang > 0 || _fenggang > 0 || _minggang.size() > 0 || _angang.size() > 0)) has_ke = true;
 	
+	DEBUG("+++++++++++++player_id:{}", _player_id);
 	if (!has_ke) 
 	{
 		//DEBUG("player_id:{} card_type:{} card_value:{} reason:没有刻.", _player_id, pai.card_type(), pai.card_value());
@@ -1489,6 +1516,8 @@ bool Player::CheckHuPai(const Asset::PaiElement& pai, std::vector<Asset::FAN_TYP
 
 	auto ke_total = ke_count + _jiangang + _fenggang + _minggang.size() + _angang.size();
 	if (ke_total == 4) piao = true; //TODO：玩家吃了三套副一样的..
+	
+	DEBUG("+++++++++++++player_id:{}", _player_id);
 
 	////////是否是夹胡
 	{
@@ -1523,6 +1552,8 @@ bool Player::CheckHuPai(const Asset::PaiElement& pai, std::vector<Asset::FAN_TYP
 			if (can_hu) jiahu = true; //如果删除了这个顺子还能胡，就说明真的是夹胡
 		}
 	}
+	
+	DEBUG("+++++++++++++player_id:{}", _player_id);
 
 	////////////////////////////////////////////////////////////////////////////积分计算
 	
@@ -1572,6 +1603,8 @@ bool Player::CheckHuPai(const Asset::PaiElement& pai, std::vector<Asset::FAN_TYP
 	{
 		fan_list.push_back(Asset::FAN_TYPE_LOU_BAO);
 	}
+	
+	DEBUG("+++++++++++++player_id:{}", _player_id);
 
 	return true;
 }
@@ -2387,6 +2420,26 @@ int32_t Player::OnFaPai(std::vector<int32_t>& cards)
 				auto it_if = std::find(it->second.begin(), it->second.end(), card_value);
 				if (it_if != it->second.end()) it->second.erase(it_if); //删除一个
 			}
+		}
+
+		if (cards.size() == 14) //庄家检查
+		{
+			Asset::PaiOperationAlert alert;
+
+			//是否旋风杠
+			for (auto gang : _xf_gang)
+			{
+				auto pai_perator = alert.mutable_pais()->Add();
+				pai_perator->mutable_oper_list()->Add(Asset::PAI_OPER_TYPE(gang));
+			}
+
+			//是否可以胡牌
+			//auto pai_perator = alert.mutable_pais()->Add();
+			//pai_perator->mutable_oper_list()->Add(Asset::PAI_OPER_TYPE_HUPAI);
+
+			if (alert.pais().size()) SendProtocol(alert); //上来即有旋风杠或者胡牌
+			
+			_xf_gang.clear();
 		}
 ////////////////////////////////////////////////////旋风杠检查
 	}
