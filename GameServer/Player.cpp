@@ -384,26 +384,6 @@ int32_t Player::CmdPaiOperate(pb::Message* message)
 				return 8; //不能听牌
 			}
 
-			try {
-				std::unique_lock<std::mutex> lock(_card_lock, std::defer_lock);
-
-				if (lock.try_lock()) 
-				{
-					pais.erase(it); //删除牌
-					TRACE("Delete card from player_id:{} card_type:{} card_value:{} for dapai.", _player_id, pai.card_type(), pai.card_value());
-				}
-				else
-				{
-					ERROR("player_id:{} try locked failed.", _player_id);
-					return 10;
-				}
-			}
-			catch(const std::system_error& error)
-			{
-				ERROR("Delete card from player_id:{} card_type:{} card_value:{} error.", _player_id, pai.card_type(), pai.card_value(), error.what());
-				return 10;
-			}
-
 			//设置玩家状态
 			_has_ting = true;
 			_game->AddTingPlayer(_player_id);
