@@ -60,8 +60,14 @@ bool Game::Start(std::vector<std::shared_ptr<Player>> players)
 	for (int i = 0; i < MAX_PLAYER_COUNT; ++i)
 	{
 		auto player = _players[i];
+		if (!player) 
+		{
+			DEBUG_ASSERT(false);
+			return false;
+		}
+		player->SetGame(shared_from_this());
 
-		//DEBUG("%s:line:%d player_id:%ld player_index:%d\n", __func__, __LINE__, player->GetID(), i);
+		DEBUG("player_index:%d start game.", player->GetID(), i);
 
 		int32_t card_count = 13; //正常开启，普通玩家牌数量
 
@@ -74,7 +80,6 @@ bool Game::Start(std::vector<std::shared_ptr<Player>> players)
 		auto cards = FaPai(card_count);
 
 		player->OnFaPai(cards);  //各个玩家发牌
-		player->SetGame(shared_from_this());
 	}
 
 	return true;
@@ -93,8 +98,6 @@ void Game::OnStart()
 
 bool Game::OnOver()
 {
-	_baopai.Clear();
-	//清理牌
 	for (int i = 0; i < MAX_PLAYER_COUNT; ++i)
 	{
 		auto player = _players[i];
@@ -105,6 +108,11 @@ bool Game::OnOver()
 		}
 		player->OnGameOver();
 	}
+	
+	_baopai.Clear();
+	_oper_limit.Clear();
+	_oper_list.clear();
+
 	return true;
 }
 

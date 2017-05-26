@@ -1072,8 +1072,12 @@ bool Player::CanHuPai(std::vector<Card_t>& cards, bool use_pair)
 			straight = CanHuPai(cards, use_pair);
 		}
 	}
+	
+	DEBUG("+++++++++++++player_id:{}", _player_id);
 
 	_hu_result.push_back(std::make_tuple(pair, trips, straight));
+	
+	DEBUG("+++++++++++++player_id:{}", _player_id);
 
 	return pair || trips || straight; //一对、刻或者顺子
 }
@@ -1289,6 +1293,8 @@ bool Player::CheckHuPai(const Asset::PaiElement& pai, std::vector<Asset::FAN_TYP
 		DEBUG_ASSERT(false);
 		return false;
 	}
+
+	PrintPai();
 
 	std::map<int32_t/*麻将牌类型*/, std::vector<int32_t>/*牌值*/> cards;
 
@@ -1538,20 +1544,24 @@ bool Player::CheckHuPai(const Asset::PaiElement& pai, std::vector<Asset::FAN_TYP
 			if (it->_type == pai.card_type() && it->_value == pai.card_value() - 1)
 			{
 				if (!smaller_deleted) it = card_list.erase(it); //只删除一个
+				DEBUG("+++++++++++++player_id:{}", _player_id);
 				smaller_deleted = true;
 			}
 			else if (it->_type == pai.card_type() && it->_value == pai.card_value())
 			{
 				if (!he_deleted) it = card_list.erase(it); //只删除一个
+				DEBUG("+++++++++++++player_id:{}", _player_id);
 				he_deleted = true;
 			}
 			else if (it->_type == pai.card_type() && it->_value == pai.card_value() + 1)
 			{
 				if (!bigger_deleted) it = card_list.erase(it); //只删除一个
+				DEBUG("+++++++++++++player_id:{}", _player_id);
 				bigger_deleted = true;
 			}
 			else
 			{
+				DEBUG("+++++++++++++player_id:{}", _player_id);
 				++it;
 			}
 		}
@@ -1559,6 +1569,7 @@ bool Player::CheckHuPai(const Asset::PaiElement& pai, std::vector<Asset::FAN_TYP
 		if (smaller_deleted && he_deleted && bigger_deleted)
 		{
 			bool can_hu = CanHuPai(card_list);	
+			DEBUG("+++++++++++++player_id:{}", _player_id);
 			if (can_hu) jiahu = true; //如果删除了这个顺子还能胡，就说明真的是夹胡
 		}
 	}
