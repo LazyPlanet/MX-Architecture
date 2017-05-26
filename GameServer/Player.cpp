@@ -1543,21 +1543,42 @@ bool Player::CheckHuPai(const Asset::PaiElement& pai, std::vector<Asset::FAN_TYP
 		{
 			if (it->_type == pai.card_type() && it->_value == pai.card_value() - 1)
 			{
-				if (!smaller_deleted) it = card_list.erase(it); //只删除一个
-				DEBUG("+++++++++++++player_id:{}", _player_id);
-				smaller_deleted = true;
+				if (!smaller_deleted) 
+				{
+					it = card_list.erase(it); //只删除一个
+					smaller_deleted = true;
+					DEBUG("+++++++++++++player_id:{}", _player_id);
+				}
+				else
+				{
+					++it;
+				}
 			}
 			else if (it->_type == pai.card_type() && it->_value == pai.card_value())
 			{
-				if (!he_deleted) it = card_list.erase(it); //只删除一个
-				DEBUG("+++++++++++++player_id:{}", _player_id);
-				he_deleted = true;
+				if (!he_deleted) 
+				{
+					it = card_list.erase(it); //只删除一个
+					he_deleted = true;
+					DEBUG("+++++++++++++player_id:{}", _player_id);
+				}
+				else
+				{
+					++it;
+				}
 			}
 			else if (it->_type == pai.card_type() && it->_value == pai.card_value() + 1)
 			{
-				if (!bigger_deleted) it = card_list.erase(it); //只删除一个
-				DEBUG("+++++++++++++player_id:{}", _player_id);
-				bigger_deleted = true;
+				if (!bigger_deleted) 
+				{
+					it = card_list.erase(it); //只删除一个
+					bigger_deleted = true;
+					DEBUG("+++++++++++++player_id:{}", _player_id);
+				}
+				else
+				{
+					++it;
+				}
 			}
 			else
 			{
