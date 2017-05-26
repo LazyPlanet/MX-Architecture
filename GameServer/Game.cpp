@@ -67,7 +67,7 @@ bool Game::Start(std::vector<std::shared_ptr<Player>> players)
 		}
 		player->SetGame(shared_from_this());
 
-		DEBUG("player_index:%d start game.", player->GetID(), i);
+		DEBUG("player_id:{} player_index:{} start game.", player->GetID(), i);
 
 		int32_t card_count = 13; //正常开启，普通玩家牌数量
 
@@ -271,7 +271,16 @@ void Game::OnPaiOperate(std::shared_ptr<Player> player, pb::Message* message)
 		{
 			std::vector<Asset::FAN_TYPE> fan_list;
 
-			if (!player->CheckHuPai(pai, fan_list)) //无法胡牌
+			if (player->CheckHuPai(pai, fan_list) || player->CheckBaoHu(pai)) //正常胡牌或者宝胡
+			{
+				Calculate(player->GetID(), _oper_limit.from_player_id(), fan_list); //结算
+
+				_room->GameOver(player->GetID()); //胡牌
+				_hupai_players.push_back(player->GetID()); 
+
+				OnOver();
+			}
+			else
 			{
 				player->AlertMessage(Asset::ERROR_GAME_PAI_UNSATISFIED); //没有牌满足条件
 				
@@ -282,15 +291,6 @@ void Game::OnPaiOperate(std::shared_ptr<Player> player, pb::Message* message)
 				player_next->OnFaPai(cards);
 				
 				_curr_player_index = (_curr_player_index + 1) % MAX_PLAYER_COUNT;
-			}
-			else
-			{
-				Calculate(player->GetID(), _oper_limit.from_player_id(), fan_list); //结算
-
-				_room->GameOver(player->GetID()); //胡牌
-				_hupai_players.push_back(player->GetID()); 
-
-				OnOver();
 			}
 		}
 		break;

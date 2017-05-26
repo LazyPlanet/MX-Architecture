@@ -2485,6 +2485,7 @@ int32_t Player::OnFaPai(std::vector<int32_t>& cards)
 				Asset::RandomSaizi proto;
 				int32_t result = CommonUtil::Random(1, 6);
 				proto.set_random_result(result);
+				proto.set_player_id(_player_id);
 
 				auto baopai = _game->GetBaopai(result);
 				_game->SetBaoPai(baopai);
