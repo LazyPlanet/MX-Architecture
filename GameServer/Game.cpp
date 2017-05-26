@@ -196,24 +196,17 @@ void Game::OnPaiOperate(std::shared_ptr<Player> player, pb::Message* message)
 				Asset::PaiOperationAlert alert;
 
 				//胡牌检查
-				//std::vector<Asset::FAN_TYPE> fan_list;
-				if (player_next->CheckHuPai(card/*, fan_list*/)) //自摸
+				if (player_next->CheckHuPai(card)) //自摸
 				{
 					auto pai_perator = alert.mutable_pais()->Add();
 					pai_perator->mutable_pai()->CopyFrom(card);
 					pai_perator->mutable_oper_list()->Add(Asset::PAI_OPER_TYPE_HUPAI);
-
-					//番数
-					//if (player_next->IsTingPai()) fan_list.push_back(Asset::FAN_TYPE_SHANG_TING);  //听牌玩家胡牌翻番
 				}
 				else if (player_next->CheckBaoHu(pai)) //自摸
 				{
 					auto pai_perator = alert.mutable_pais()->Add();
 					pai_perator->mutable_pai()->CopyFrom(card);
 					pai_perator->mutable_oper_list()->Add(Asset::PAI_OPER_TYPE_HUPAI);
-					
-					//番数
-					//fan_list.push_back(Asset::FAN_TYPE_LOU_BAO); //宝胡
 				}
 
 				player_next->OnFaPai(cards); //放入玩家牌里面
@@ -422,20 +415,17 @@ void Game::OnPaiOperate(std::shared_ptr<Player> player, pb::Message* message)
 			Asset::PaiOperationAlert alert;
 
 			//胡牌检查
-			//std::vector<Asset::FAN_TYPE> fan_list;
-			if (player_next->CheckHuPai(card/*, fan_list*/)) //自摸
+			if (player_next->CheckHuPai(card)) //自摸
 			{
 				auto pai_perator = alert.mutable_pais()->Add();
 				pai_perator->mutable_pai()->CopyFrom(card);
 				pai_perator->mutable_oper_list()->Add(Asset::PAI_OPER_TYPE_HUPAI);
-				//if (player_next->IsTingPai()) pai_perator->mutable_oper_list()->Add(Asset::FAN_TYPE_SHANG_TING);  //听牌玩家胡牌翻番
 			}
 			else if (player_next->CheckBaoHu(pai)) //自摸
 			{
 				auto pai_perator = alert.mutable_pais()->Add();
 				pai_perator->mutable_pai()->CopyFrom(card);
 				pai_perator->mutable_oper_list()->Add(Asset::PAI_OPER_TYPE_HUPAI);
-				//fan_list.push_back(Asset::FAN_TYPE_LOU_BAO); //宝胡
 			}
 
 			player_next->OnFaPai(cards); //放入玩家牌里面
@@ -942,8 +932,6 @@ bool GameManager::Load()
 		
 		for (int k = 0; k < asset_card->group_count(); ++k)
 		{
-			//std::cout << "group_count:" << asset_card->group_count() << "cards_size" << asset_card->cards_size() << std::endl;
-
 			int32_t cards_count = std::min(asset_card->cards_count(), asset_card->cards_size());
 
 			for (int i = 0; i < cards_count; ++i)

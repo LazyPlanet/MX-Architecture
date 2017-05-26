@@ -984,12 +984,15 @@ std::vector<Asset::PAI_OPER_TYPE> Player::CheckPai(const Asset::PaiElement& pai,
 		DEBUG("玩家{}可以碰牌.", _player_id);
 		rtn_check.push_back(Asset::PAI_OPER_TYPE_PENGPAI);
 	}
-	for (auto xf : _xf_gang)
+	if (from_player_id == _player_id)
 	{
-		DEBUG("玩家{}可以进行旋风杠.", _player_id);
-		rtn_check.push_back(Asset::PAI_OPER_TYPE(xf));
+		for (auto xf : _xf_gang)
+		{
+			DEBUG("玩家{}可以进行旋风杠.", _player_id);
+			rtn_check.push_back(Asset::PAI_OPER_TYPE(xf));
+		}
+		_xf_gang.clear(); //只进行一次检查
 	}
-	_xf_gang.clear(); //只进行一次检查
 	if (CheckChiPai(pai)) 
 	{
 		DEBUG("玩家{}可以吃.", _player_id);
@@ -1270,6 +1273,13 @@ bool Player::CheckHuPai(const std::map<int32_t, std::vector<int32_t>>& cards_inh
 	return true;
 }
 
+bool Player::CheckHuPai()
+{
+	Asset::PaiElement pai;
+
+	return CheckHuPai(pai);
+}
+
 bool Player::CheckHuPai(const Asset::PaiElement& pai, std::vector<Asset::FAN_TYPE>& fan_list)
 {
 	DEBUG("{} player_id:{} card_type:{} card_value:{}", __func__, _player_id, pai.card_type(), pai.card_value());
@@ -1296,7 +1306,7 @@ bool Player::CheckHuPai(const Asset::PaiElement& pai, std::vector<Asset::FAN_TYP
 
 			DEBUG("+++++++++++++player_id:{}", _player_id);
 
-			cards[pai.card_type()].push_back(pai.card_value()); //放入可以操作的牌
+			if (pai.card_type() && pai.card_value()) cards[pai.card_type()].push_back(pai.card_value()); //放入可以操作的牌
 			
 			DEBUG("+++++++++++++player_id:{}", _player_id);
 			
@@ -2434,8 +2444,11 @@ int32_t Player::OnFaPai(std::vector<int32_t>& cards)
 			}
 
 			//是否可以胡牌
-			//auto pai_perator = alert.mutable_pais()->Add();
-			//pai_perator->mutable_oper_list()->Add(Asset::PAI_OPER_TYPE_HUPAI);
+			if (CheckHuPai())
+			{
+				auto pai_perator = alert.mutable_pais()->Add();
+				pai_perator->mutable_oper_list()->Add(Asset::PAI_OPER_TYPE_HUPAI);
+			}
 
 			if (alert.pais().size()) SendProtocol(alert); //上来即有旋风杠或者胡牌
 			
