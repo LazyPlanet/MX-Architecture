@@ -1097,6 +1097,7 @@ bool Player::CheckBaoHu(const Asset::PaiElement& pai)
 	auto it_baohu = std::find(options.extend_type().begin(), options.extend_type().end(), Asset::ROOM_EXTEND_TYPE_BAOPAI);
 	if (it_baohu == options.extend_type().end()) return false; //不带宝胡
 
+	DEBUG("玩家{}可以宝胡.", _player_id);
 	return true;
 }
 	
