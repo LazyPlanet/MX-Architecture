@@ -2504,9 +2504,11 @@ int32_t Player::OnFaPai(std::vector<int32_t>& cards)
 			if (count == 1) //听牌后第一次抓牌
 			{
 				Asset::RandomSaizi proto;
+				proto.set_reason_type(Asset::RandomSaizi_REASON_TYPE_REASON_TYPE_TINGPAI);
+				proto.set_player_id(_player_id);
+
 				int32_t result = CommonUtil::Random(1, 6);
 				proto.set_random_result(result);
-				proto.set_player_id(_player_id);
 
 				auto baopai = _game->GetBaopai(result);
 				_game->SetBaoPai(baopai);
@@ -2600,15 +2602,18 @@ void Player::ClearCards()
 
 	_jiangang = 0; //清理旋风杠
 	_fenggang = 0; //清理旋风杠
-
-	_oper_count = 0; //清理操作数
 }
 	
 void Player::OnGameOver()
 {
 	ClearCards();
 
-	 _stuff.mutable_player_prop()->clear_game_oper_state();
+	_stuff.mutable_player_prop()->clear_game_oper_state();
+
+	_oper_count = 0; //清理操作数
+
+	_has_ting = false;
+
 }
 /////////////////////////////////////////////////////
 //玩家通用管理类

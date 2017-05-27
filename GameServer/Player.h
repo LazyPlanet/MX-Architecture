@@ -347,6 +347,7 @@ public:
 	bool IsBimen() { return _cards_outhand.size() == 0 && _minggang.size() == 0; } //是否闭门
 
 	bool IsTingPai() { return _has_ting; } //是否听牌
+	bool HasTingPai() { return _has_ting; } //是否听牌
 
 	int32_t GetCountAfterTingOperation() { return _stuff.player_prop().oper_count_tingpai(); } //听牌后玩家操作
 	void IncreaseTingOperationCount(){ //听牌后操作
