@@ -30,8 +30,7 @@ export PROTOBUF_DIR=/export/lazy/ServerService/ThirdParty/protobuf-2.6.0/output
 
 #关于引入BOOTST第三方库使用
 
-./bootstrap.sh --with-libraries=date_time   
-./bootstrap.sh --with-libraries=filesystem
+./bootstrap.sh --with-libraries=date_time, filesystem
 ./b2
 
 ThirdParty
