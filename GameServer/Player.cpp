@@ -1077,12 +1077,8 @@ bool Player::CanHuPai(std::vector<Card_t>& cards, bool use_pair)
 		}
 	}
 	
-	DEBUG("+++++++++++++player_id:{}", _player_id);
-
 	_hu_result.push_back(std::make_tuple(pair, trips, straight));
 	
-	DEBUG("+++++++++++++player_id:{}", _player_id);
-
 	return pair || trips || straight; //一对、刻或者顺子
 }
 	
@@ -1335,14 +1331,6 @@ bool Player::CheckHuPai(const Asset::PaiElement& pai, std::vector<Asset::FAN_TYP
 			_hu_result.clear();
 
 			cards = _cards; //复制当前牌
-
-			for (const auto crds : _cards_outhand) //复制牌外牌
-				cards[crds.first].insert(cards[crds.first].end(), crds.second.begin(), crds.second.end());
-
-			if (pai.card_type() && pai.card_value()) cards[pai.card_type()].push_back(pai.card_value()); //放入可以操作的牌
-			
-			for (auto& card : cards)
-				std::sort(card.second.begin(), card.second.end(), [](int x, int y){ return x < y; }); //由小到大，排序
 		}
 		else
 		{
@@ -1355,6 +1343,14 @@ bool Player::CheckHuPai(const Asset::PaiElement& pai, std::vector<Asset::FAN_TYP
 		ERROR("Copy cards from player_id:{} error:{}.", _player_id, error.what());
 		return false;
 	}
+
+	for (const auto& crds : _cards_outhand) //复制牌外牌
+		cards[crds.first].insert(cards[crds.first].end(), crds.second.begin(), crds.second.end());
+
+	if (pai.card_type() && pai.card_value()) cards[pai.card_type()].push_back(pai.card_value()); //放入可以操作的牌
+	
+	for (auto& card : cards)
+		std::sort(card.second.begin(), card.second.end(), [](int x, int y){ return x < y; }); //由小到大，排序
 			
 	bool zhanlihu = false, jiahu = false, xuanfenggang = false, duanmen = false, yise = false, piao = false; //积分
 
@@ -1760,7 +1756,7 @@ void Player::OnChiPai(const Asset::PaiElement& pai, pb::Message* message)
 			TRACE("delete pai from player_id:{}, card_type:{}, card_value:{}", _player_id, pai_operate->pais(1).card_type(), pai_operate->pais(1).card_value());
 			it->second.erase(second); //删除
 
-			for (auto card : cards)
+			for (const auto& card : cards)
 				_cards_outhand[card.card_type()].push_back(card.card_value());
 		}
 		else
