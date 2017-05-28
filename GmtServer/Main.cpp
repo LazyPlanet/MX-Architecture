@@ -8,6 +8,7 @@
 
 #include "Timer.h"
 #include "Config.h"
+#include "MXLog.h"
 #include "ClientSession.h"
 
 const int const_world_sleep = 50;
@@ -45,11 +46,15 @@ int main(int argc, const char* argv[])
 
 	try 
 	{
+		//系统配置读取
 		if (!ConfigInstance.LoadInitial(argv[1]))
 		{
 			printf("Load %s error, please check the file.", argv[1]); //控制台的日志可以直接用该函数
 			return 3;
 		}
+
+		//日志系统配置
+		MXLogInstance.Load();
 	
 		//网络初始化
 		_io_service_work = std::make_shared<boost::asio::io_service::work>(_io_service);
@@ -62,14 +67,15 @@ int main(int argc, const char* argv[])
 			_threads.push_back(pthread);
 		}
 
-		//boost::asio::signal_set signals(_io_service, SIGINT, SIGTERM);
-		//signals.async_wait(SignalHandler);
-		//
+		/*
+		boost::asio::signal_set signals(_io_service, SIGINT, SIGTERM);
+		signals.async_wait(SignalHandler);
+		*/
 
 		std::string server_ip = ConfigInstance.GetString("ServerIP", "0.0.0.0");
 		if (server_ip.empty()) return 4;
 		
-		int32_t server_port = ConfigInstance.GetInt("ServerPort", 50000);
+		int32_t server_port = ConfigInstance.GetInt("ServerPort", 50003);
 		if (server_port <= 0 || server_port > 0xffff) return 5;
 		
 		int32_t thread_count = ConfigInstance.GetInt("ThreadCount", 5);
