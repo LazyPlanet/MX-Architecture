@@ -25,11 +25,12 @@ void Game::Init(std::shared_ptr<Room> room)
 
 	_cards = std::list<int32_t>(cards.begin(), cards.end());
 
+	/*
 	auto log = make_unique<Asset::LogMessage>();
 	log->set_type(Asset::GAME_CARDS);
 	for (auto card : _cards) log->mutable_cards()->Add(card);
 	LOG(INFO, log.get()); 
-
+	*/
 	_room = room;
 }
 
