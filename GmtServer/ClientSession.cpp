@@ -25,6 +25,8 @@ void ClientSession::InitializeHandler(const boost::system::error_code error, con
 			bool result = command.ParseFromArray(_buffer.data(), bytes_transferred);
 
 			if (!result) return;		//非法协议
+
+			ProcessCommand(command);
 		}
 	}
 	catch (std::exception& e)
@@ -33,6 +35,11 @@ void ClientSession::InitializeHandler(const boost::system::error_code error, con
 	}
 	//递归持续接收	
 	AsyncReceiveWithCallback(&ClientSession::InitializeHandler);
+}
+	
+bool ClientSession::ProcessCommand(Asset::Command& command)
+{
+	return true;
 }
 
 void ClientSession::Start()

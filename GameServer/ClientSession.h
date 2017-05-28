@@ -25,6 +25,9 @@ public:
 
 	ClientSession(ClientSession const& right) = delete;    
 	ClientSession& operator = (ClientSession const& right) = delete;
+    
+	virtual void OnConnected(); //连接上服务器
+	virtual void OnReceived(const std::string& message); //处理服务器的数据
 
     virtual bool StartReceive()
     {
@@ -127,14 +130,11 @@ public:
 		}
     }
             
-	void OnReceived(const std::string& message)
-	{
-
-	}
-
 private:
 	std::deque<std::string> _send_list;
 	std::deque<std::string> _receive_list;
+	boost::asio::ip::tcp::endpoint _remote_endpoint;
+	std::string _ip_address;
 };
 
 }

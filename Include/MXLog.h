@@ -43,7 +43,7 @@ namespace Adoter
 }\
 
 //玩家数据
-#define PLAYER(message, ...) { \
+#define PLAYER(message) { \
 		std::string json; \
 		pbjson::pb2json(&message, json); \
 		spdlog::get("player")->info(json); \

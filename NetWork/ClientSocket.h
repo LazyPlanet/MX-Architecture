@@ -67,6 +67,7 @@ public:
     }
 
     virtual void OnClose() { }
+    virtual void OnConnected() { }
 
     virtual void OnReadSome(const boost::system::error_code& error, std::size_t bytes_transferred) { }
 	virtual void OnWriteSome(const boost::system::error_code& error, std::size_t bytes_transferred) { }
@@ -121,6 +122,8 @@ protected:
 
         _status = STATUS_CONNECTED;
         _timer.cancel();
+
+		OnConnected();
 
         StartReceive(); //开始接收数据
         StartSend(); //开始发送数据

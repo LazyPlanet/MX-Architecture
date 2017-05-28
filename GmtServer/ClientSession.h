@@ -13,6 +13,20 @@
 #include "Socket.h"
 #include "P_Header.h"
 
+/*
+ *
+ * 负责将运维或者运营发送的WEB指令，发给指定的玩家或者广播出去.
+ *
+ * 1.查询数据库，检查玩家登陆和登出时间判断玩家是否在线.
+ *
+ * 2.如果玩家不在线，则直接修改数据库中内容.
+ * 
+ * 3.如果玩家在线，则广播，接收服务器负责修改内容，同时存储.
+ *
+ * 不考虑，检查时玩家在线，但是发送数据时，玩家不在线这种情况.
+ *
+ * */
+
 namespace Adoter
 {
 
@@ -38,6 +52,7 @@ public:
 	void SendProtocol(pb::Message* message);
 
 	const std::string GetRemoteAddress() { return _remote_endpoint.address().to_string(); }
+	bool ProcessCommand(Asset::Command& command); //内部协议处理
 
 private:
 	boost::asio::ip::tcp::endpoint _remote_endpoint;

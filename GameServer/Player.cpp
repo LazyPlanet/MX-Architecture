@@ -131,19 +131,11 @@ int32_t Player::OnLogout(pb::Message* message)
 
 	this->_stuff.set_login_time(0);
 	this->_stuff.set_logout_time(CommonTimerInstance.GetTime());
-	//非存盘数据
-	this->_stuff.mutable_player_prop()->Clear(); 
-	//存档数据库
-	Save();	
-	/*
-	//日志
-	auto log = make_unique<Asset::LogMessage>();
-	log->set_player_id(_player_id);
-	log->set_type(Asset::PLAYER_INFO);
-	log->set_content(GetString());
+	Save();	//存档数据库
 
-	LOG(INFO, log.get()); //记录日志
-	*/
+	this->_stuff.mutable_player_prop()->Clear(); //非存盘数据
+	PLAYER(_stuff);	//BI日志
+
 	return 0;
 }
 	
@@ -172,9 +164,7 @@ int32_t Player::OnEnterGame()
 	this->_stuff.set_logout_time(0);
 
 	//BI日志
-	std::string json;
-	pbjson::pb2json(&_stuff, json);
-	spdlog::get("player")->info(json);
+	PLAYER(_stuff);	//BI日志
 
 	return 0;
 }
@@ -705,8 +695,6 @@ void Player::OnLeaveRoom()
 
 	//清理状态
 	_stuff.mutable_player_prop()->clear_game_oper_state();
-	//通知房间
-	//GetRoom()->LeaveRoom(shared_from_this());
 }
 	
 void Player::BroadCast(Asset::MsgItem& item) 
