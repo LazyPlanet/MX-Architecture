@@ -305,6 +305,7 @@ public:
 
 	bool CheckHuPai(); //胡牌检查:玩家手里现有牌检查
 	bool CheckHuPai(const Asset::PaiElement& pai); //胡牌
+	bool CheckHuPai(std::vector<Asset::FAN_TYPE>& fan_list); //胡牌且算番数
 	bool CheckHuPai(const Asset::PaiElement& pai, std::vector<Asset::FAN_TYPE>& fan_list); //胡牌且算番数
 	bool CheckHuPai(const std::map<int32_t, std::vector<int32_t>>& cards_inhand, //玩家手里的牌
 			const std::map<int32_t, std::vector<int32_t>>& cards_outhand, //玩家墙外牌

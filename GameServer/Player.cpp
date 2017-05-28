@@ -1305,8 +1305,13 @@ bool Player::CheckHuPai(const std::map<int32_t, std::vector<int32_t>>& cards_inh
 bool Player::CheckHuPai()
 {
 	Asset::PaiElement pai;
-
 	return CheckHuPai(pai);
+}
+	
+bool Player::CheckHuPai(std::vector<Asset::FAN_TYPE>& fan_list)
+{
+	Asset::PaiElement pai;
+	return CheckHuPai(pai, fan_list);
 }
 
 bool Player::CheckHuPai(const Asset::PaiElement& pai, std::vector<Asset::FAN_TYPE>& fan_list)
@@ -1321,6 +1326,7 @@ bool Player::CheckHuPai(const Asset::PaiElement& pai, std::vector<Asset::FAN_TYP
 
 	PrintPai();
 
+	fan_list.clear();
 	std::map<int32_t/*麻将牌类型*/, std::vector<int32_t>/*牌值*/> cards;
 
 	try {

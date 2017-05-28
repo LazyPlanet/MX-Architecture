@@ -211,7 +211,7 @@ void Game::OnPaiOperate(std::shared_ptr<Player> player, pb::Message* message)
 					pai_perator->mutable_pai()->CopyFrom(card);
 					pai_perator->mutable_oper_list()->Add(Asset::PAI_OPER_TYPE_HUPAI);
 				}
-				else if (player_next->CheckBaoHu(pai)) //自摸
+				else if (player_next->CheckBaoHu(pai)) //自摸宝胡
 				{
 					auto pai_perator = alert.mutable_pais()->Add();
 					pai_perator->mutable_pai()->CopyFrom(card);
@@ -272,7 +272,7 @@ void Game::OnPaiOperate(std::shared_ptr<Player> player, pb::Message* message)
 		{
 			std::vector<Asset::FAN_TYPE> fan_list;
 
-			if (player->CheckHuPai(pai, fan_list) || player->CheckBaoHu(pai)) //正常胡牌或者宝胡
+			if (player->CheckHuPai(pai, fan_list)/*玩家点炮*/ || player->CheckHuPai(fan_list)/*自摸*/ || player->CheckBaoHu(pai)) //正常胡牌或者宝胡
 			{
 				Calculate(player->GetID(), _oper_limit.from_player_id(), fan_list); //结算
 
@@ -430,7 +430,7 @@ void Game::OnPaiOperate(std::shared_ptr<Player> player, pb::Message* message)
 				pai_perator->mutable_pai()->CopyFrom(card);
 				pai_perator->mutable_oper_list()->Add(Asset::PAI_OPER_TYPE_HUPAI);
 			}
-			else if (player_next->CheckBaoHu(pai)) //自摸
+			else if (player_next->CheckBaoHu(pai)) //自摸宝胡
 			{
 				auto pai_perator = alert.mutable_pais()->Add();
 				pai_perator->mutable_pai()->CopyFrom(card);
