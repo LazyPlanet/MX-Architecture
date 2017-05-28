@@ -198,6 +198,8 @@ int32_t Player::CmdCreateRoom(pb::Message* message)
 	
 	OnCreateRoom(create_room); //创建房间成功，直接将玩家设置到该房间
 
+	LOG(ACTION, "player_id:{} create room_id:{}", _player_id, room_id);
+
 	return 0;
 }
 

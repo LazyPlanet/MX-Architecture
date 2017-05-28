@@ -12,13 +12,7 @@ namespace pb = google::protobuf;
 
 class PlayerCommonReward : public std::enable_shared_from_this<PlayerCommonReward> 
 {
-	//Asset::CommonReward _reward;
 public:
-	/*
-	PlayerCommonReward(const Asset::CommonReward& reward){
-		_reward.CopyFrom(reward);
-	}*/
-	
 	static PlayerCommonReward& Instance()
 	{
 		static PlayerCommonReward _instance;
@@ -27,6 +21,8 @@ public:
 
 	bool DeliverReward(std::shared_ptr<Player> player, int64_t global_id)
 	{
+		if (!player || global_id <= 0) return false;
+
 		const auto message = AssetInstance.Get(global_id);
 		if (!message) return false;
 
@@ -45,7 +41,6 @@ public:
 				case Asset::CommonReward_REWARD_TYPE_REWARD_TYPE_DIAMOND:
 				{
 					player->IncreaseDiamond(count);
-
 				}
 				break;
 
@@ -68,12 +63,8 @@ public:
 				break;
 			}
 
-			/*
-			auto message = make_unique<Asset::LogMessage>();
-			message->set_common_reward(global_id); //奖励
-			message->set_common_limit(common_limit_id); //限制
-			LOG(TRACE, message.get()); //日志
-			*/
+			LOG(INFO, "player_id:{} global_id:{} common_limit_id:{} reward_type:{}", player->GetID(), global_id, common_limit_id, reward.reward_type());
+
 			player->AddCommonLimit(common_limit_id); 
 		}
 		return true;

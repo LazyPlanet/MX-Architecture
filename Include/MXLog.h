@@ -19,6 +19,7 @@ namespace Adoter
 /////各种日志的宏定义/////
 //////////////////////////////////////////////////////////////////////////
 
+//调试日志
 #define DEBUG(fmt, ...) { \
 	auto debug = ConfigInstance.GetBool("DebugModel", true); \
 	if (debug) { \
@@ -42,12 +43,39 @@ namespace Adoter
 		spdlog::get("console")->critical("[file:#{} func:#{} line:#{}] " fmt, __FILE__, __func__, __LINE__, ##__VA_ARGS__); \
 }\
 
-//玩家数据
+//玩家数据，主要供BI日志查询
 #define PLAYER(message) { \
 		std::string json; \
 		pbjson::pb2json(&message, json); \
 		spdlog::get("player")->info(json); \
 }\
+
+//通用日志
+#define LOG_TRACE(fmt, ...) { \
+		spdlog::get("common")->trace("[file:#{} func:#{} line:#{}] " fmt, __FILE__, __func__, __LINE__, ##__VA_ARGS__); \
+}\
+
+#define LOG_DEBUG(fmt, ...) { \
+		spdlog::get("common")->debug("[file:#{} func:#{} line:#{}] " fmt, __FILE__, __func__, __LINE__, ##__VA_ARGS__); \
+}\
+
+#define LOG_INFO(fmt, ...) { \
+		spdlog::get("common")->info("[file:#{} func:#{} line:#{}] " fmt, __FILE__, __func__, __LINE__, ##__VA_ARGS__); \
+}\
+
+#define LOG_ACTION(fmt, ...) { \
+		spdlog::get("common")->info("[file:#{} func:#{} line:#{}] " fmt, __FILE__, __func__, __LINE__, ##__VA_ARGS__); \
+}\
+
+#define LOG_ERROR(fmt, ...) { \
+		spdlog::get("common")->error("[file:#{} func:#{} line:#{}] " fmt, __FILE__, __func__, __LINE__, ##__VA_ARGS__); \
+}\
+
+#define LOG_CRITICAL(fmt, ...) { \
+		spdlog::get("common")->critical("[file:#{} func:#{} line:#{}] " fmt, __FILE__, __func__, __LINE__, ##__VA_ARGS__); \
+}\
+
+#define LOG(level, fmt, ...) LOG_##level(fmt, ##__VA_ARGS__);
 
 namespace pb = google::protobuf;
 
@@ -76,12 +104,13 @@ public:
 		auto console = spdlog::stdout_color_mt("console");
 		console->set_level(spdlog::level::trace);
 		//玩家日志
-		auto players = spdlog::basic_logger_mt("players", "logs/players");
-		players->flush_on(spdlog::level::trace);
-		//异步日志
 		spdlog::set_async_mode(4096); //队列大小必须是2的整数倍
 		auto player = spdlog::daily_logger_st("player", "logs/player");
 		player->flush_on(spdlog::level::trace);
+		//通用日志
+		spdlog::set_async_mode(4096); //队列大小必须是2的整数倍
+		auto common = spdlog::daily_logger_st("common", "logs/log");
+		common->flush_on(spdlog::level::trace);
 	}
 
 	static MXLog& Instance()
@@ -105,10 +134,5 @@ public:
 };
 
 #define MXLogInstance MXLog::Instance()
-
-//按级别日志
-#define LOG(level, message) \
-	message->set_level(Asset::level); \
-	MXLog::Instance().Print(message); \
 
 }
