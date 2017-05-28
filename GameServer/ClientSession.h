@@ -88,8 +88,7 @@ public:
             return;
         }
 
-		//继续下一次数据接收
-        TryStartReceive();
+        TryStartReceive(); //继续下一次数据接收
         
 		std::deque<std::string> received_messages;
 		received_messages.swap(_receive_list);

@@ -262,7 +262,6 @@ public:
 ///////游戏逻辑定义
 private:
 	std::mutex _card_lock;
-	std::mutex __card_outhand_lock;
 	std::shared_ptr<Room> _locate_room = nullptr; //实体所在房间
 	std::shared_ptr<Game> _game = nullptr; //当前游戏
 

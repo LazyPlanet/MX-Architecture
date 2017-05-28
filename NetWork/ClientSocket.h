@@ -66,8 +66,6 @@ public:
         _socket.async_write_some(boost::asio::buffer(data, size), boost::bind(&ClientSocket::OnWriteSome, shared_from_this(), _1, _2));
     }
 
-    virtual bool OnConnected() { return true; }
-
     virtual void OnClose() { }
 
     virtual void OnReadSome(const boost::system::error_code& error, std::size_t bytes_transferred) { }
@@ -118,12 +116,6 @@ protected:
         if (ec)
         {
             Close("init stream failed: " + ec.message());
-            return;
-        }
-
-        if (!OnConnected())
-        {
-            Close("init stream failed: call OnConnected() failed");
             return;
         }
 

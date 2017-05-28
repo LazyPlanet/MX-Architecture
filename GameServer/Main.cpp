@@ -134,9 +134,9 @@ int main(int argc, const char* argv[])
 		WorldSessionInstance.StartNetwork(_io_service, server_ip, server_port, thread_count);
 
 		//GMT Client 连接
-		//boost::asio::ip::tcp::endpoint endpoint(boost::asio::ip::address::from_string("0.0.0.0"), 50003);
-		//auto client = std::make_shared<ClientSession>(_io_service, endpoint);
-		//client->AsyncConnect();
+		boost::asio::ip::tcp::endpoint endpoint(boost::asio::ip::address::from_string("0.0.0.0"), 50003);
+		auto client = std::make_shared<ClientSession>(_io_service, endpoint);
+		client->AsyncConnect();
 
 		//世界循环
 		WorldUpdateLoop();
