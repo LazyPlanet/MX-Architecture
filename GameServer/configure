@@ -6,6 +6,3 @@ ln -sf Asset/P_Protocol.proto .
 ln -sf ../ThirdParty/protobuf-2.6.1/src/google .
 
 ln -sf ../ThirdParty/protobuf-2.6.1/output/lib/libprotobuf.so.9 .
-
-ln -sf ../NetWork/ .
-ln -sf ../Include/ .

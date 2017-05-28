@@ -2391,13 +2391,13 @@ void Player::OnGangJianPai()
 
 	++_jiangang;
 	
-	//递归旋风杠检查
-	auto xf_gang = CheckXuanFeng();
-	if (xf_gang)
+	///////////////////////旋风杠检查///////////////////////
+	auto xuanfeng_gang = CheckXuanFeng();
+	if (xuanfeng_gang)
 	{
 		Asset::PaiOperationAlert alert;
 		auto pai_perator = alert.mutable_pais()->Add();
-		pai_perator->mutable_oper_list()->Add((Asset::PAI_OPER_TYPE)xf_gang);
+		pai_perator->mutable_oper_list()->Add((Asset::PAI_OPER_TYPE)xuanfeng_gang);
 		SendProtocol(alert); //提示Client
 	}
 }

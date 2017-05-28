@@ -451,7 +451,7 @@ void Game::OnPaiOperate(std::shared_ptr<Player> player, pb::Message* message)
 				}
 			}
 			
-			///////杠检查：包括明杠和暗杠
+			///////杠检查：明杠和暗杠
 			::google::protobuf::RepeatedField<Asset::PaiOperationAlert_AlertElement> gang_list;
 			if (player_next->CheckAllGangPai(gang_list)) 
 			{
