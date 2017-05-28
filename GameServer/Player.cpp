@@ -2060,6 +2060,13 @@ int32_t Player::CheckXuanFeng()
 	auto size = _xf_gang.size();
 	if (size == 0) return 0;
 
+	//玩家手牌中发白白，初始上家打了白板，玩家碰白板后不具备旋风杠条件
+	if (!CheckFengGangPai() && !CheckJianGangPai()) 
+	{
+		_xf_gang.clear();
+		return 0; 
+	}
+
 	auto it = _xf_gang.begin();
 	auto gang = *it;
 
