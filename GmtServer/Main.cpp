@@ -1,19 +1,14 @@
-/*
- * C++版本：C++11
- *
- * 说明：倾向于用标准类库中接口
- *
- */
-
 #include <thread>
 #include <vector>
 #include <memory>
 #include <functional>
+
 #include <boost/asio.hpp>
 #include <boost/bind.hpp>
+
 #include "Timer.h"
-#include "WorldSession.h"
 #include "Config.h"
+#include "ClientSession.h"
 
 const int const_world_sleep = 50;
 
@@ -80,7 +75,7 @@ int main(int argc, const char* argv[])
 		int32_t thread_count = ConfigInstance.GetInt("ThreadCount", 5);
 		if (thread_count <= 0) return 6;
 
-		WorldSessionInstance.StartNetwork(_io_service, server_ip, server_port, thread_count);
+		ClientSessionInstance.StartNetwork(_io_service, server_ip, server_port, thread_count);
 
 		_io_service.run();
 
