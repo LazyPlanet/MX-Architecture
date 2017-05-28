@@ -28,12 +28,12 @@ public:
     {
         _status = STATUS_CONNECTING;
 
-        _socket.async_connect(_remote_endpoint, boost::bind(&ClientSocket::OnConnect, shared_from_this(), _1));
+        _socket.async_connect(_remote_endpoint, std::bind(&ClientSocket::OnConnect, shared_from_this(), std::placeholders::_1));
 
         if (_connect_timeout > 0) 
         {
             _timer.expires_from_now(boost::posix_time::milliseconds(_connect_timeout));
-            _timer.async_wait(boost::bind(&ClientSocket::OnConnectTimeout, shared_from_this(), _1));
+            _timer.async_wait(std::bind(&ClientSocket::OnConnectTimeout, shared_from_this(), std::placeholders::_1));
         }
     }
     
@@ -58,12 +58,12 @@ public:
 
     void AsynyReadSome()
     {
-        _socket.async_read_some(boost::asio::buffer(_buffer), boost::bind(&ClientSocket::OnReadSome, shared_from_this(), _1, _2));
+        _socket.async_read_some(boost::asio::buffer(_buffer), std::bind(&ClientSocket::OnReadSome, shared_from_this(), std::placeholders::_1, std::placeholders::_2));
     }
 
     void AsyncWriteSome(const char* data, size_t size)
     {
-        _socket.async_write_some(boost::asio::buffer(data, size), boost::bind(&ClientSocket::OnWriteSome, shared_from_this(), _1, _2));
+        _socket.async_write_some(boost::asio::buffer(data, size), std::bind(&ClientSocket::OnWriteSome, shared_from_this(), std::placeholders::_1, std::placeholders::_2));
     }
 
     virtual void OnClose() { }
