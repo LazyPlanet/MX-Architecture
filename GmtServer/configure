@@ -1,6 +1,6 @@
 #!/bin/bash
 
 ln -sf MX-Data Asset
-ln -sf Asset/P_Asset.proto .
-ln -sf Asset/P_Protocol.proto .
-ln -s ThirdParty/protobuf-2.6.1/src/google .
+ln -sf ThirdParty/protobuf-2.6.1/src/google .
+ln -sf ../Include/ .
+ln -sf ../NetWork/ .

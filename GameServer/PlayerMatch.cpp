@@ -70,11 +70,13 @@ void PlayerMatch::Join(std::shared_ptr<Player> player, pb::Message* message)
 
 		default:
 		{
+			/*
 			auto log = make_unique<Asset::LogMessage>();
 			log->set_player_id(player_id);
 			log->set_type(Asset::PLAYER_MATCH);
 
 			LOG(ERROR, log.get())
+			*/
 		}
 		break;
 	}
@@ -116,10 +118,12 @@ void PlayerMatch::DoMatch()
 				{
 					match_success = false; //理论上不应该出现，TODO：如果该玩家一直进不去，可能会导致后面玩家都进不去，需要处理
 
+					/*
 					auto log = make_unique<Asset::LogMessage>();
 					log->set_player_id(it->second->GetID());
 					log->set_type(Asset::PLAYER_MATCH);
 					LOG(ERROR, log.get())
+					*/
 				}
 			}
 

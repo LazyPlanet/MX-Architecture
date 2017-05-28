@@ -66,13 +66,13 @@ T ConfigManager::GetValue(std::string const& name, T def) const
     }
     catch (boost::property_tree::ptree_bad_path)
     {
-		 //LOG(ERROR, "Missing Name %s in config file %s, add \"%s = %s\" to this file",
-		//		 name.c_str(), _filename.c_str(), name.c_str(), std::to_string(def).c_str());
+		 printf("Missing Name %s in config file %s, add \"%s = %s\" to this file",
+				 name.c_str(), _filename.c_str(), name.c_str(), std::to_string(def).c_str());
     }
     catch (boost::property_tree::ptree_bad_data)
     {
-		//LOG(ERROR, "Bad value defined for name %s in config file %s, going to use %s instead",
-        //    name.c_str(), _filename.c_str(), std::to_string(def).c_str());
+		printf("Bad value defined for name %s in config file %s, going to use %s instead",
+            name.c_str(), _filename.c_str(), std::to_string(def).c_str());
     }
 
     return def;
@@ -87,13 +87,11 @@ std::string ConfigManager::GetValue<std::string>(std::string const& name, std::s
     }
     catch (boost::property_tree::ptree_bad_path)
     {
-        //TC_LOG_WARN("server.loading", "Missing name %s in config file %s, add \"%s = %s\" to this file",
-        //    name.c_str(), _filename.c_str(), name.c_str(), def.c_str());
+        printf("Missing name %s in config file %s, add %s = %s to this file", name.c_str(), _filename.c_str(), name.c_str(), def.c_str());
     }
     catch (boost::property_tree::ptree_bad_data)
     {
-        //TC_LOG_ERROR("server.loading", "Bad value defined for name %s in config file %s, going to use %s instead",
-        //    name.c_str(), _filename.c_str(), def.c_str());
+        printf("Bad value defined for name %s in config file %s, going to use %s instead", name.c_str(), _filename.c_str(), def.c_str());
     }
 
     return def;

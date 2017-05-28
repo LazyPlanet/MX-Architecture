@@ -15,7 +15,6 @@
 #include "RedisManager.h"
 #include "PlayerCommonReward.h"
 #include "PlayerCommonLimit.h"
-#include "MessageFormat.h"
 #include "PlayerMatch.h"
 
 namespace Adoter
@@ -93,6 +92,7 @@ int32_t Player::Save()
 	return 0;
 }
 	
+/*
 std::string Player::GetString()
 {
 	::google::protobuf::MessageFormat::Printer printer;
@@ -104,6 +104,7 @@ std::string Player::GetString()
 
 	return output;
 }
+*/
 
 int32_t Player::OnLogin(pb::Message* message)
 {
@@ -134,6 +135,7 @@ int32_t Player::OnLogout(pb::Message* message)
 	this->_stuff.mutable_player_prop()->Clear(); 
 	//存档数据库
 	Save();	
+	/*
 	//日志
 	auto log = make_unique<Asset::LogMessage>();
 	log->set_player_id(_player_id);
@@ -141,7 +143,7 @@ int32_t Player::OnLogout(pb::Message* message)
 	log->set_content(GetString());
 
 	LOG(INFO, log.get()); //记录日志
-
+	*/
 	return 0;
 }
 	
