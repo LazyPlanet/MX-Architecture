@@ -2,3 +2,4 @@
 
 ln -sf ThirdParty/protobuf-2.6.1/src/google .
 ln -sf ../GameServer/P_Server.proto .
+ln -sf ../GameServer/P_Command.proto .
