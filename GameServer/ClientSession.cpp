@@ -95,6 +95,7 @@ void ClientSession::OnWriteSome(const boost::system::error_code& error, std::siz
 	if (error)
 	{
 		Close(error.message());
+		CRITICAL("server:{} send success, bytes_transferred:{}, error:{}", _ip_address, bytes_transferred, error.message());
 		return;
 	}
 
