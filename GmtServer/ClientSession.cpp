@@ -23,7 +23,11 @@ void ClientSession::InitializeHandler(const boost::system::error_code error, con
 		{
 			Asset::InnerMeta meta;
 			auto result = meta.ParseFromArray(_buffer.data(), bytes_transferred);
-			if (result) InnerCommand(meta);
+			if (result) 
+			{
+				InnerCommand(meta);
+				LOG(INFO, "Receive message:{} from server:{}", meta.ShortDebugString(), _ip_address);
+			}
 		}
 	}
 	catch (std::exception& e)

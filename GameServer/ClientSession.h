@@ -28,6 +28,9 @@ public:
     
 	virtual void OnConnected(); //连接上服务器
 	virtual void OnReceived(const std::string& message); //处理服务器的数据
+	
+	void SendProtocol(pb::Message& message);
+	void SendProtocol(pb::Message* message);
 
     virtual bool StartReceive()
     {

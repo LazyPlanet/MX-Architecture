@@ -46,6 +46,6 @@ message Command {
 	optional COMMAND_ERROR_CODE error_code = 3; //返回码
 
 	optional bytes account = 4; //账号
-	optional int64 plyaer_id = 5; //玩家角色ID
+	optional int64 player_id = 5; //玩家角色ID
 	optional int32 count = 6; //数量(根据COMMAND_TYPE有不同的意义)
 }
