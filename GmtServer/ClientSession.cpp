@@ -1,4 +1,5 @@
 #include "ClientSession.h"
+#include "RedisManager.h"
 #include "MXLog.h"
 
 namespace Adoter
@@ -31,7 +32,7 @@ void ClientSession::InitializeHandler(const boost::system::error_code error, con
 				return;
 			}
 				
-			InnerCommand(meta);
+			InnerProcess(meta);
 			LOG(INFO, "Receive message:{} from server:{}", meta.ShortDebugString(), _ip_address);
 		}
 	}
@@ -43,7 +44,7 @@ void ClientSession::InitializeHandler(const boost::system::error_code error, con
 	AsyncReceiveWithCallback(&ClientSession::InitializeHandler);
 }
 
-bool ClientSession::InnerCommand(const Asset::InnerMeta& meta)
+bool ClientSession::InnerProcess(const Asset::InnerMeta& meta)
 {
 	TRACE("Receive message:{} from server", meta.ShortDebugString());
 
@@ -77,6 +78,9 @@ bool ClientSession::InnerCommand(const Asset::InnerMeta& meta)
 				ERROR("Server:{} which is not gmt server send gmt message:{}", _ip_address, message.ShortDebugString());
 				return false;
 			}
+
+			auto error_code = OnCommandProcess(message);
+			if (Asset::COMMAND_ERROR_CODE_PLAYER_ONLINE == error_code) ClientSessionInstance.BroadCastProtocol(meta);
 		}
 		break;
 
@@ -87,6 +91,88 @@ bool ClientSession::InnerCommand(const Asset::InnerMeta& meta)
 		break;
 	}
 	return true;
+}
+			
+Asset::COMMAND_ERROR_CODE ClientSession::OnCommandProcess(const Asset::Command& command)
+{
+#define RETURN(x) \
+	auto response = command; \
+	response.set_error_code(x); \
+	ERROR("command excute failed for:{} command:{}", x, command.ShortDebugString()); \
+	SendProtocol(response); \
+	return x; \
+
+	auto redis = std::make_shared<Redis>();
+
+	Asset::User user; //账号数据
+	auto result = user.ParseFromString(redis->GetUser(command.account()));
+	if (!result)
+	{
+		RETURN(Asset::COMMAND_ERROR_CODE_NO_ACCOUNT);
+	}
+
+	//玩家角色校验
+	auto player_id = command.player_id();
+	if (player_id <= 0) 
+	{
+		RETURN(Asset::COMMAND_ERROR_CODE_PARA); //数据错误
+	}
+	
+	auto it = std::find(user.player_list().begin(), user.player_list().end(), player_id);
+	if (it == user.player_list().end()) 
+	{
+		RETURN(Asset::COMMAND_ERROR_CODE_NO_PLAYER); //账号下不存在该角色
+	}
+
+	Asset::Player player;
+	result = player.ParseFromString(redis->GetPlayer(player_id));
+	if (!result)
+	{
+		RETURN(Asset::COMMAND_ERROR_CODE_PARA); //数据错误
+	}
+
+	if (player.logout_time() == 0 && player.login_time() != 0) //玩家在线不支持
+	{
+		RETURN(Asset::COMMAND_ERROR_CODE_PLAYER_ONLINE); //玩家目前在线
+	}
+		
+	if (command.count() <= 0) //不可能是负数
+	{
+		RETURN(Asset::COMMAND_ERROR_CODE_PARA); //数据错误
+	}
+
+	switch(command.command_type())
+	{
+		case Asset::COMMAND_TYPE_RECHARGE:
+		{
+			player.mutable_common_prop()->set_diamond(player.common_prop().diamond() + command.count());
+		}
+		break;
+		
+		case Asset::COMMAND_TYPE_ROOM_CARD:
+		{
+		}
+		break;
+		
+		case Asset::COMMAND_TYPE_HUANLEDOU:
+		{
+			player.mutable_common_prop()->set_huanledou(player.common_prop().huanledou() + command.count());
+		}
+		break;
+		
+		default:
+		{
+		}
+		break;
+	}
+
+	//存盘
+	auto stuff = player.SerializeAsString();
+	redis->SavePlayer(player_id, stuff);
+
+	RETURN(Asset::COMMAND_ERROR_CODE_SUCCESS); //玩家目前在线
+
+#undef RETURN
 }
 
 void ClientSession::Start()
@@ -103,15 +189,31 @@ void ClientSession::OnClose()
 {
 }
 
-void ClientSession::SendProtocol(pb::Message* message)
+void ClientSession::SendProtocol(const pb::Message* message)
 {
+	if (!message) return;
 	SendProtocol(*message);
 }
 
-void ClientSession::SendProtocol(pb::Message& message)
+void ClientSession::SendProtocol(const pb::Message& message)
 {
 	std::string content = message.SerializeAsString();
 	AsyncSend(content);
+}
+	
+void ClientSessionManager::BroadCastProtocol(const pb::Message* message)
+{
+	if (!message) return;
+	BroadCastProtocol(*message);
+}
+
+void ClientSessionManager::BroadCastProtocol(const pb::Message& message)
+{
+	for (auto session : _sessions)
+	{
+		if (!session) continue;
+		session->SendProtocol(message);
+	}
 }
 
 void ClientSessionManager::Add(std::shared_ptr<ClientSession> session)

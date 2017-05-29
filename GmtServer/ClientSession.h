@@ -48,12 +48,13 @@ public:
 
 	void InitializeHandler(const boost::system::error_code error, const std::size_t bytes_transferred);
 
-	void SendProtocol(pb::Message& message);
-	void SendProtocol(pb::Message* message);
+	void SendProtocol(const pb::Message& message);
+	void SendProtocol(const pb::Message* message);
 
 	const std::string GetRemoteAddress() { return _remote_endpoint.address().to_string(); }
 	const boost::asio::ip::tcp::endpoint GetRemotePoint() { return _remote_endpoint; }
-	bool InnerCommand(const Asset::InnerMeta& command); //内部协议处理
+	bool InnerProcess(const Asset::InnerMeta& meta); //内部协议处理
+	Asset::COMMAND_ERROR_CODE OnCommandProcess(const Asset::Command& command);
 
 private:
 	boost::asio::ip::tcp::endpoint _remote_endpoint;
@@ -77,6 +78,9 @@ public:
 		static ClientSessionManager _instance;
 		return _instance;
 	}
+	
+	void BroadCastProtocol(const pb::Message& message);
+	void BroadCastProtocol(const pb::Message* message);
 
 	void Add(std::shared_ptr<ClientSession> session);
 	bool StartNetwork(boost::asio::io_service& io_service, const std::string& bind_ip, int32_t port, int thread_count = 1) override;

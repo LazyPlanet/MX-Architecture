@@ -6,7 +6,7 @@ CXXFLAGS += $(OPT) -pipe -Wno-unused-local-typedefs -Wno-unused-but-set-variable
 LIBRARY=$(PROTOBUF_DIR)/lib/libprotobuf.a -L$(BOOST_ROOT)/stage/lib/ ../ThirdParty/hiredis/libhiredis.so
 LDFLAGS = -lboost_system -lboost_thread -lboost_filesystem -lboost_date_time
 
-PROTO_SRC=P_Command.proto P_Server.proto
+PROTO_SRC=P_Command.proto P_Server.proto P_Asset.proto P_Protocol.proto
 PROTO_OBJ=$(patsubst %.proto,%.pb.o,$(PROTO_SRC))
 PROTO_OPTIONS=--proto_path=. --proto_path=$(PROTOBUF_DIR)/include
 

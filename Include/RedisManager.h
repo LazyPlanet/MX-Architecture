@@ -4,7 +4,7 @@
 #include <string>
 #include <iostream>
 
-#include <Player.h>
+#include "MXLog.h" 
 
 /*
  * 数据库管理
@@ -60,7 +60,7 @@ public:
 		int64_t player_id = reply->integer;
 		freeReplyObject(reply);
 		
-		std::cout << __func__ << " success, player_id:" << player_id << std::endl;
+		LOG(TRACE, "create player_id:{} success", player_id);
 
 		return player_id;
 	}
@@ -81,8 +81,6 @@ public:
 		value = reply->str;
 		freeReplyObject(reply);
 
-		std::cout << __func__ << " success, player_id:" << player_id << std::endl;
-
 		return value;
 	}
 	
@@ -97,7 +95,7 @@ public:
 
 		freeReplyObject(reply);
 		
-		std::cout << __func__ << " success, player_id:" << player_id << std::endl;
+		LOG(TRACE, "save player_id:{} success", player_id);
 	}
 	
 	int64_t CreateRoom()
@@ -110,8 +108,6 @@ public:
 		int64_t room_id = reply->integer;
 		freeReplyObject(reply);
 		
-		std::cout << __func__ << " success, room_id:" << room_id << std::endl;
-
 		return room_id;
 	}
 
@@ -131,8 +127,6 @@ public:
 		value = reply->str;
 		freeReplyObject(reply);
 
-		std::cout << __func__ << " success, username:" << username << std::endl;
-
 		return value;
 	}
 	
@@ -147,7 +141,7 @@ public:
 
 		freeReplyObject(reply);
 		
-		std::cout << __func__ << " success, user:" << username << std::endl;
+		LOG(TRACE, "save user success, username:{} data:{}", username, stuff);
 	}
 };
 

@@ -26,6 +26,11 @@ enum COMMAND_TYPE {
 enum COMMAND_ERROR_CODE {
 	COMMAND_ERROR_CODE_SUCCESS = 0; //成功
 	COMMAND_ERROR_CODE_NO_PERMISSION = 1; //没有权限
+	COMMAND_ERROR_CODE_PARA = 2; //参数错误
+	COMMAND_ERROR_CODE_NO_ACCOUNT = 3; //没有账号数据
+	COMMAND_ERROR_CODE_NO_PLAYER = 4; //没有玩家数据(即账号存在，但账号下无该角色数据)
+	COMMAND_ERROR_CODE_PLAYER_ONLINE = 5; //玩家在线
+	COMMAND_ERROR_CODE_PLAYER_OFFLINE = 6; //玩家离线
 }
 
 enum SERVER_TYPE {
@@ -47,5 +52,6 @@ message Command {
 
 	optional bytes account = 4; //账号
 	optional int64 player_id = 5; //玩家角色ID
-	optional int32 count = 6; //数量(根据COMMAND_TYPE有不同的意义)
+	optional int64 item_id = 6; //如果是物品，物品ID(房卡是特殊物品)
+	optional int32 count = 7; //数量(根据COMMAND_TYPE有不同的意义)
 }
