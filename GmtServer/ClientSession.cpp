@@ -21,13 +21,18 @@ void ClientSession::InitializeHandler(const boost::system::error_code error, con
 		}
 		else
 		{
+			TRACE("Receive message from game server:{} bytes_transferred:{}", _ip_address, bytes_transferred);
+
 			Asset::InnerMeta meta;
 			auto result = meta.ParseFromArray(_buffer.data(), bytes_transferred);
-			if (result) 
+			if (!result) 
 			{
-				InnerCommand(meta);
-				LOG(INFO, "Receive message:{} from server:{}", meta.ShortDebugString(), _ip_address);
+				LOG(ERROR, "Receive message error from server:{}", _ip_address);
+				return;
 			}
+				
+			InnerCommand(meta);
+			LOG(INFO, "Receive message:{} from server:{}", meta.ShortDebugString(), _ip_address);
 		}
 	}
 	catch (std::exception& e)
@@ -40,6 +45,8 @@ void ClientSession::InitializeHandler(const boost::system::error_code error, con
 
 bool ClientSession::InnerCommand(const Asset::InnerMeta& meta)
 {
+	TRACE("Receive message:{} from server", meta.ShortDebugString());
+
 	switch (meta.type_t())
 	{
 		case Asset::INNER_TYPE_REGISTER: //注册服务器
@@ -48,11 +55,34 @@ bool ClientSession::InnerCommand(const Asset::InnerMeta& meta)
 			auto result = message.ParseFromString(meta.stuff());
 			if (!result) return false;
 
+			if (message.server_type() == Asset::SERVER_TYPE_GMT) //GMT服务器
+			{
+				ClientSessionInstance.SetGmtServer(shared_from_this());
+			}
+			else if (message.server_type() == Asset::SERVER_TYPE_GAME) //游戏服务器
+			{
+				ClientSessionInstance.Add(shared_from_this());
+			}
+		}
+		break;
+		
+		case Asset::INNER_TYPE_COMMAND: //发送指令
+		{
+			Asset::Command message;
+			auto result = message.ParseFromString(meta.stuff());
+			if (!result) return false;
+
+			if (!ClientSessionInstance.IsGmtServer(shared_from_this())) 
+			{
+				ERROR("Server:{} which is not gmt server send gmt message:{}", _ip_address, message.ShortDebugString());
+				return false;
+			}
 		}
 		break;
 
 		default:
 		{
+			WARN("Receive message:{} from server has no process type:{}", meta.ShortDebugString(), meta.type_t());
 		}
 		break;
 	}
@@ -86,15 +116,9 @@ void ClientSession::SendProtocol(pb::Message& message)
 
 void ClientSessionManager::Add(std::shared_ptr<ClientSession> session)
 {
-	std::lock_guard<std::mutex> lock(_mutex);
-	_list.push_back(session);
+	//std::lock_guard<std::mutex> lock(_mutex);
+	_sessions.push_back(session);
 }	
-
-size_t ClientSessionManager::GetCount()
-{
-	std::lock_guard<std::mutex> lock(_mutex);
-	return _list.size();
-}
 
 NetworkThread<ClientSession>* ClientSessionManager::CreateThreads() const
 {    

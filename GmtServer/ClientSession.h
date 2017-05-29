@@ -52,6 +52,7 @@ public:
 	void SendProtocol(pb::Message* message);
 
 	const std::string GetRemoteAddress() { return _remote_endpoint.address().to_string(); }
+	const boost::asio::ip::tcp::endpoint GetRemotePoint() { return _remote_endpoint; }
 	bool InnerCommand(const Asset::InnerMeta& command); //内部协议处理
 
 private:
@@ -67,8 +68,9 @@ class ClientSessionManager : public SocketManager<ClientSession>
 	typedef SocketManager<ClientSession> SuperSocketManager;
 private:
 	std::mutex _mutex;
-	std::vector<std::shared_ptr<ClientSession>> _list; //定时清理断开的会话
-	std::unordered_map<int64_t, std::shared_ptr<ClientSession>> _sessions; //根据玩家状态变化处理	
+	std::vector<std::shared_ptr<ClientSession>> _sessions; //定时清理断开的会话
+
+	std::shared_ptr<ClientSession> _gmt_session = nullptr;
 public:
 	static ClientSessionManager& Instance()
 	{
@@ -76,9 +78,15 @@ public:
 		return _instance;
 	}
 
-	size_t GetCount();
 	void Add(std::shared_ptr<ClientSession> session);
 	bool StartNetwork(boost::asio::io_service& io_service, const std::string& bind_ip, int32_t port, int thread_count = 1) override;
+
+	void SetGmtServer(std::shared_ptr<ClientSession> session) { _gmt_session = session; }
+	std::shared_ptr<ClientSession> GetGmtServer() { return _gmt_session; }
+	bool IsGmtServer(std::shared_ptr<ClientSession> sesssion) {
+		if (!sesssion || !_gmt_session) return false;
+		return sesssion->GetRemotePoint() == _gmt_session->GetRemotePoint();
+	}
 protected:        
 	NetworkThread<ClientSession>* CreateThreads() const override;
 private:        

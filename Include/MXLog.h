@@ -71,6 +71,10 @@ namespace Adoter
 		spdlog::get("common")->error("[file:#{} func:#{} line:#{}] " fmt, __FILE__, __func__, __LINE__, ##__VA_ARGS__); \
 }\
 
+#define LOG_ERR(fmt, ...) { \
+		spdlog::get("common")->error("[file:#{} func:#{} line:#{}] " fmt, __FILE__, __func__, __LINE__, ##__VA_ARGS__); \
+}\
+
 #define LOG_CRITICAL(fmt, ...) { \
 		spdlog::get("common")->critical("[file:#{} func:#{} line:#{}] " fmt, __FILE__, __func__, __LINE__, ##__VA_ARGS__); \
 }\

@@ -14,9 +14,12 @@ ClientSession::ClientSession(boost::asio::io_service& io_service, const boost::a
 void ClientSession::OnConnected()
 {
 	DEBUG("Connet GmtServer success, ip_address:{}", _ip_address);
+
+	//注册服务器角色
 	Asset::Register message;
 	message.set_server_type(Asset::SERVER_TYPE_GAME);
 	message.set_server_id(1);
+	SendProtocol(message);
 }
 
 void ClientSession::OnReceived(const std::string& message)
@@ -49,7 +52,104 @@ void ClientSession::SendProtocol(pb::Message& message)
 		return;
 	}
 
+	TRACE("server:{} send message to gmt server, message:{}", _ip_address, meta.ShortDebugString());
 	AsyncSendMessage(content);
+}
+
+bool ClientSession::StartSend()
+{
+	bool started = false;
+
+	while (IsConnected())
+	{
+		if (_send_list.size())
+		{
+			auto& message = _send_list.front();
+			AsyncWriteSome(message.c_str(), message.size());
+			_send_list.pop_front();
+
+			started = true;
+		}
+		else
+		{
+			break;
+		}
+	}
+	return started;
+}
+
+
+void ClientSession::AsyncSendMessage(std::string message)
+{
+	if (IsClosed()) return;
+
+	_send_list.push_back(message);
+
+	StartSend();
+}
+
+void ClientSession::OnWriteSome(const boost::system::error_code& error, std::size_t bytes_transferred)
+{
+	if (!IsConnected()) return;
+
+	if (error)
+	{
+		Close(error.message());
+		return;
+	}
+
+	DEBUG("server:{} send success, bytes_transferred:{}, error:{}", _ip_address, bytes_transferred, error.message());
+	/*
+	std::deque<std::string> send_messages;
+	send_messages.swap(_send_list);
+	
+	if (!IsClosed() && !send_messages.empty())
+	{
+		const std::string& message = send_messages.front();
+		AsyncWriteSome(message.c_str(), message.size()); //发送数据
+		send_messages.pop_front();
+	}
+	else
+	{
+		StartSend();
+	}
+	*/
+}
+
+bool ClientSession::StartReceive()
+{
+	if (!IsConnected()) return false;
+
+	AsynyReadSome();
+	return true;
+}
+
+void ClientSession::OnReadSome(const boost::system::error_code& error, std::size_t bytes_transferred)
+{
+	if (!IsConnected()) return;
+
+	if (error)
+	{
+		if (error != boost::asio::error::eof)
+		{
+		}
+
+		Close(error.message());
+		return;
+	}
+
+	StartReceive(); //继续下一次数据接收
+	
+	std::deque<std::string> received_messages;
+	received_messages.swap(_receive_list);
+
+	//数据处理
+	while (!IsClosed() && !received_messages.empty())
+	{
+		const std::string& message = received_messages.front();
+		OnReceived(message);
+		received_messages.pop_front();
+	}
 }
 
 }
