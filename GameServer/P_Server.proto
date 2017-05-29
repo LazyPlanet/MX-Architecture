@@ -1,3 +1,5 @@
+import "P_Command.proto";
+
 package Adoter.Asset;
 
 /////////////////////////////////////////////////////
@@ -98,16 +100,3 @@ message ManName {
 	repeated bytes name = 1;
 }
 
-message InnerMeta {
-	optional INNER_TYPE type_t = 1;
-	optional bytes stuff = 2;
-}
-
-/////////////////////////////////////////////////////
-//服务器之间通用协议类型
-/////////////////////////////////////////////////////
-enum INNER_TYPE {
-	INNER_TYPE_BEGIN = 0; //开始协议
-	INNER_TYPE_REGISTER = 1; //注册服务器
-	INNER_TYPE_COUNT = 100; //协议最大数量
-}

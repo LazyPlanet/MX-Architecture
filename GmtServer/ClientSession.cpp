@@ -21,12 +21,9 @@ void ClientSession::InitializeHandler(const boost::system::error_code error, con
 		}
 		else
 		{
-			Asset::Command command;
-			bool result = command.ParseFromArray(_buffer.data(), bytes_transferred);
-
-			if (!result) return;		//非法协议
-
-			ProcessCommand(command);
+			Asset::InnerMeta meta;
+			auto result = meta.ParseFromArray(_buffer.data(), bytes_transferred);
+			if (result) InnerCommand(meta);
 		}
 	}
 	catch (std::exception& e)
@@ -36,9 +33,25 @@ void ClientSession::InitializeHandler(const boost::system::error_code error, con
 	//递归持续接收	
 	AsyncReceiveWithCallback(&ClientSession::InitializeHandler);
 }
-	
-bool ClientSession::ProcessCommand(Asset::Command& command)
+
+bool ClientSession::InnerCommand(const Asset::InnerMeta& meta)
 {
+	switch (meta.type_t())
+	{
+		case Asset::INNER_TYPE_REGISTER: //注册服务器
+		{
+			Asset::Register message;
+			auto result = message.ParseFromString(meta.stuff());
+			if (!result) return false;
+
+		}
+		break;
+
+		default:
+		{
+		}
+		break;
+	}
 	return true;
 }
 

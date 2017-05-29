@@ -52,7 +52,7 @@ public:
 	void SendProtocol(pb::Message* message);
 
 	const std::string GetRemoteAddress() { return _remote_endpoint.address().to_string(); }
-	bool ProcessCommand(Asset::Command& command); //内部协议处理
+	bool InnerCommand(const Asset::InnerMeta& command); //内部协议处理
 
 private:
 	boost::asio::ip::tcp::endpoint _remote_endpoint;
