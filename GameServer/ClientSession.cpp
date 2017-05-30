@@ -44,6 +44,12 @@ bool ClientSession::InnerProcess(const Asset::InnerMeta& meta)
 
 	switch (meta.type_t())
 	{
+		case Asset::INNER_TYPE_REGISTER: //注册服务器成功
+		{
+			TRACE("Register gameserver to gmtserver success");
+		}
+		break;
+
 		case Asset::INNER_TYPE_COMMAND: //GMT指令
 		{
 			Asset::Command message;
