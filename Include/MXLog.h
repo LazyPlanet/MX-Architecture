@@ -47,7 +47,8 @@ namespace Adoter
 #define PLAYER(message) { \
 		std::string json; \
 		pbjson::pb2json(&message, json); \
-		spdlog::get("player")->info(json); \
+		spdlog::get("player_info")->info(json); \
+		spdlog::get("player")->info(message.ShortDebugString()); \
 }\
 
 //通用日志
@@ -101,6 +102,7 @@ public:
 	{
 		////////////////////日志格式////////////////////
 		spdlog::set_pattern("[%Y-%m-%d %H:%M:%S.%f] [logname:%n] [level:%l] [thread:%t] %v");
+		spdlog::set_async_mode(4096); //队列大小必须是2的整数倍
 
 		////////////////////日志定义////////////////////
 		//
@@ -108,11 +110,12 @@ public:
 		auto console = spdlog::stdout_color_mt("console");
 		console->set_level(spdlog::level::trace);
 		//玩家日志
-		spdlog::set_async_mode(4096); //队列大小必须是2的整数倍
-		auto player = spdlog::daily_logger_st("player", "logs/player");
+		auto player_info = spdlog::daily_logger_st("player_info", "logs/player");
+		player_info->flush_on(spdlog::level::trace);
+		
+		auto player = spdlog::daily_logger_st("player", "logs/player_pb");
 		player->flush_on(spdlog::level::trace);
 		//通用日志
-		spdlog::set_async_mode(4096); //队列大小必须是2的整数倍
 		auto common = spdlog::daily_logger_st("common", "logs/log");
 		common->flush_on(spdlog::level::trace);
 	}
