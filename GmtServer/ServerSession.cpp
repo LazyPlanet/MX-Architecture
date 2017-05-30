@@ -1,6 +1,7 @@
 #include "ServerSession.h"
 #include "RedisManager.h"
 #include "MXLog.h"
+#include "Asset.h"
 
 namespace Adoter
 {
@@ -158,6 +159,98 @@ Asset::COMMAND_ERROR_CODE ServerSession::OnCommandProcess(const Asset::Command& 
 		
 		case Asset::COMMAND_TYPE_ROOM_CARD:
 		{
+			auto global_id = command.item_id();
+			const auto message = AssetInstance.Get(global_id); //例如：Asset::Item_Potion
+
+			auto message_item = message->New(); 
+			message_item->CopyFrom(*message);
+
+			if (!message_item)
+			{
+				RETURN(Asset::COMMAND_ERROR_CODE_ITEM_NOT_FOUND); //物品未能找到
+			}
+			
+			const pb::FieldDescriptor* prop_field = message_item->GetDescriptor()->FindFieldByName("item_common_prop"); //物品公共属性变量
+			if (!prop_field) //不是物品
+			{
+				RETURN(Asset::COMMAND_ERROR_CODE_PARA); //数据错误
+			}
+
+			try {
+				const pb::Message& const_item_common_prop = message_item->GetReflection()->GetMessage(*message_item, prop_field);
+
+				pb::Message& item_common_prop = const_cast<pb::Message&>(const_item_common_prop);
+				auto& common_prop = dynamic_cast<Asset::Item_CommonProp&>(item_common_prop);
+
+				auto inventory_type = common_prop.inventory(); //物品默认进包
+
+				auto it_inventory = std::find_if(player.mutable_inventory()->mutable_inventory()->begin(), player.mutable_inventory()->mutable_inventory()->end(), 
+						[inventory_type](const Asset::Inventory_Element& element){
+					return inventory_type == element.inventory_type();		
+				});
+
+				if (it_inventory == player.mutable_inventory()->mutable_inventory()->end())
+				{
+					RETURN(Asset::COMMAND_ERROR_CODE_PARA); //数据错误
+				}
+
+				auto inventory_items = it_inventory->mutable_items(); //包裹中物品数据
+
+				if (!inventory_items)
+				{
+					RETURN(Asset::COMMAND_ERROR_CODE_PARA); //数据错误
+				}
+
+				const pb::FieldDescriptor* type_field = message_item->GetDescriptor()->FindFieldByName("type_t");
+				if (!type_field)
+				{
+					RETURN(Asset::COMMAND_ERROR_CODE_PARA); //数据错误
+				}
+
+				auto type_t = type_field->default_value_enum()->number();
+
+				auto it_item = inventory_items->begin(); //查找包裹中该物品数据
+				for ( ; it_item != inventory_items->end(); ++it_item)
+				{
+					if (type_t == it_item->type_t())
+					{
+						auto item = message_item->New();
+						item->ParseFromString(it_item->stuff()); //解析存盘数据
+
+						const FieldDescriptor* item_prop_field = item->GetDescriptor()->FindFieldByName("item_common_prop");
+						if (!item_prop_field) continue;
+
+						const Message& item_prop_message = item->GetReflection()->GetMessage(*item, item_prop_field);
+						prop_field = item_prop_message.GetDescriptor()->FindFieldByName("common_prop");
+						if (!prop_field) continue;
+
+						const Message& prop_message = item_prop_message.GetReflection()->GetMessage(item_prop_message, prop_field);
+						const FieldDescriptor* global_id_field = prop_message.GetDescriptor()->FindFieldByName("global_id");
+						if (!global_id_field) continue;
+
+						auto item_global_id = prop_message.GetReflection()->GetInt64(prop_message, global_id_field);
+						if (item_global_id == global_id) break; //TODO:不限制堆叠
+					}
+				}
+				
+				if (it_item == inventory_items->end()) //没有该类型物品
+				{
+					auto item_toadd = inventory_items->Add();
+					item_toadd->set_type_t((Adoter::Asset::ASSET_TYPE)type_t);
+					common_prop.set_count(command.count()); //Item_CommonProp
+					item_toadd->set_stuff(message_item->SerializeAsString());
+				}
+				else
+				{
+					common_prop.set_count(common_prop.count() + command.count()); //Item_CommonProp
+					it_item->set_stuff(message_item->SerializeAsString());
+				}
+			}
+			catch (std::exception& e)
+			{
+				LOG(ERR, "const_cast or dynamic_cast exception:{}", e.what());	
+				RETURN(Asset::COMMAND_ERROR_CODE_PARA); //数据错误
+			}
 		}
 		break;
 		

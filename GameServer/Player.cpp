@@ -656,7 +656,7 @@ bool Player::GainItem(int64_t global_item_id, int32_t count)
 	if (!asset_item) return false;
 
 	Item* item = new Item(asset_item);
-	GainItem(item);
+	GainItem(item, count);
 	return true;
 }
 
@@ -665,7 +665,7 @@ bool Player::GainItem(Item* item, int32_t count)
 	if (!item || count <= 0) return false;
 
 	Asset::Item_CommonProp& common_prop = item->GetCommonProp(); 
-	common_prop.set_count(count);
+	common_prop.set_count(common_prop.count() + count); //数量
 
 	if (!PushBackItem(common_prop.inventory(), item)) return false;
 	return true;
@@ -682,7 +682,7 @@ bool Player::PushBackItem(Asset::INVENTORY_TYPE inventory_type, Item* item)
 	if (!inventory) return false;
 
 	auto item_toadd = inventory->mutable_items()->Add();
-	item_toadd->CopyFrom(item->GetCommonProp());
+	item_toadd->CopyFrom(item->GetCommonProp()); //Asset::Item_CommonProp数据
 
 	return true;
 }

@@ -8,6 +8,7 @@
 
 #include "Timer.h"
 #include "Config.h"
+#include "Asset.h"
 #include "MXLog.h"
 #include "ServerSession.h"
 
@@ -51,6 +52,13 @@ int main(int argc, const char* argv[])
 		{
 			printf("Load %s error, please check the file.", argv[1]); //控制台的日志可以直接用该函数
 			return 3;
+		}
+
+		//数据初始化
+		if (!AssetInstance.Load())
+		{
+			printf("Load asset error, please check the file."); //控制台的日志可以直接用该函数
+			return 4;
 		}
 
 		//日志系统配置
