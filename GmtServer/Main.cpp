@@ -9,7 +9,7 @@
 #include "Timer.h"
 #include "Config.h"
 #include "MXLog.h"
-#include "ClientSession.h"
+#include "ServerSession.h"
 
 const int const_world_sleep = 50;
 
@@ -81,7 +81,7 @@ int main(int argc, const char* argv[])
 		int32_t thread_count = ConfigInstance.GetInt("ThreadCount", 5);
 		if (thread_count <= 0) return 6;
 
-		ClientSessionInstance.StartNetwork(_io_service, server_ip, server_port, thread_count);
+		ServerSessionInstance.StartNetwork(_io_service, server_ip, server_port, thread_count);
 
 		_io_service.run();
 

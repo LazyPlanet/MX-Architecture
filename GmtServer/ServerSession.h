@@ -33,14 +33,14 @@ namespace Adoter
 using namespace google::protobuf;
 namespace pb = google::protobuf;
 
-class ClientSession : public Socket<ClientSession>
+class ServerSession : public Socket<ServerSession>
 {
 public:
 	typedef std::function<int32_t(Message*)> CallBack;
 public:
-	explicit ClientSession(boost::asio::ip::tcp::socket&& socket);
-	ClientSession(ClientSession const& right) = delete;    
-	ClientSession& operator=(ClientSession const& right) = delete;
+	explicit ServerSession(boost::asio::ip::tcp::socket&& socket);
+	ServerSession(ServerSession const& right) = delete;    
+	ServerSession& operator=(ServerSession const& right) = delete;
 	
 	virtual void Start() override;
 	virtual bool Update() override; 
@@ -64,39 +64,39 @@ private:
 	int64_t _plyaer_id = 0; //角色信息
 };
 
-class ClientSessionManager : public SocketManager<ClientSession> 
+class ServerSessionManager : public SocketManager<ServerSession> 
 {
-	typedef SocketManager<ClientSession> SuperSocketManager;
+	typedef SocketManager<ServerSession> SuperSocketManager;
 private:
 	std::mutex _mutex;
-	std::vector<std::shared_ptr<ClientSession>> _sessions; //定时清理断开的会话
+	std::vector<std::shared_ptr<ServerSession>> _sessions; //定时清理断开的会话
 
-	std::shared_ptr<ClientSession> _gmt_session = nullptr;
+	std::shared_ptr<ServerSession> _gmt_session = nullptr;
 public:
-	static ClientSessionManager& Instance()
+	static ServerSessionManager& Instance()
 	{
-		static ClientSessionManager _instance;
+		static ServerSessionManager _instance;
 		return _instance;
 	}
 	
 	void BroadCastProtocol(const pb::Message& message);
 	void BroadCastProtocol(const pb::Message* message);
 
-	void Add(std::shared_ptr<ClientSession> session);
+	void Add(std::shared_ptr<ServerSession> session);
 	bool StartNetwork(boost::asio::io_service& io_service, const std::string& bind_ip, int32_t port, int thread_count = 1) override;
 
-	void SetGmtServer(std::shared_ptr<ClientSession> session) { _gmt_session = session; }
-	std::shared_ptr<ClientSession> GetGmtServer() { return _gmt_session; }
-	bool IsGmtServer(std::shared_ptr<ClientSession> sesssion) {
+	void SetGmtServer(std::shared_ptr<ServerSession> session) { _gmt_session = session; }
+	std::shared_ptr<ServerSession> GetGmtServer() { return _gmt_session; }
+	bool IsGmtServer(std::shared_ptr<ServerSession> sesssion) {
 		if (!sesssion || !_gmt_session) return false;
 		return sesssion->GetRemotePoint() == _gmt_session->GetRemotePoint();
 	}
 protected:        
-	NetworkThread<ClientSession>* CreateThreads() const override;
+	NetworkThread<ServerSession>* CreateThreads() const override;
 private:        
 	static void OnSocketAccept(tcp::socket&& socket, int32_t thread_index);
 };
 
-#define ClientSessionInstance ClientSessionManager::Instance()
+#define ServerSessionInstance ServerSessionManager::Instance()
 
 }

@@ -10,7 +10,7 @@ PROTO_SRC=P_Command.proto P_Server.proto P_Asset.proto P_Protocol.proto
 PROTO_OBJ=$(patsubst %.proto,%.pb.o,$(PROTO_SRC))
 PROTO_OPTIONS=--proto_path=. --proto_path=$(PROTOBUF_DIR)/include
 
-BASE_OBJ=ClientSession.o Config.o
+BASE_OBJ=ServerSession.o Config.o
 
 BIN=GmtServer
 
