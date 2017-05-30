@@ -73,14 +73,19 @@ bool ClientSession::InnerProcess(const Asset::InnerMeta& meta)
 			auto result = message.ParseFromString(meta.stuff());
 			if (!result) return false;
 
-			if (!ClientSessionInstance.IsGmtServer(shared_from_this())) 
+			if (ClientSessionInstance.IsGmtServer(shared_from_this())) //处理GMT服务器发送的数据
 			{
-				ERROR("Server:{} which is not gmt server send gmt message:{}", _ip_address, message.ShortDebugString());
-				return false;
+				auto error_code = OnCommandProcess(message); //处理离线玩家的指令执行
+				if (Asset::COMMAND_ERROR_CODE_PLAYER_ONLINE == error_code) ClientSessionInstance.BroadCastProtocol(meta); //处理在线玩家的指令执行
+				DEBUG("Server:{} server send gmt message:{} error_code:{}", _ip_address, message.ShortDebugString(), error_code);
 			}
-
-			auto error_code = OnCommandProcess(message);
-			if (Asset::COMMAND_ERROR_CODE_PLAYER_ONLINE == error_code) ClientSessionInstance.BroadCastProtocol(meta);
+			else //处理游戏服务器发送的数据
+			{
+				auto gmt_server = ClientSessionInstance.GetGmtServer();
+				if (!gmt_server) return false;
+			
+				gmt_server->SendProtocol(message);
+			}
 		}
 		break;
 
@@ -98,11 +103,11 @@ Asset::COMMAND_ERROR_CODE ClientSession::OnCommandProcess(const Asset::Command& 
 #define RETURN(x) \
 	auto response = command; \
 	response.set_error_code(x); \
-	ERROR("command excute failed for:{} command:{}", x, command.ShortDebugString()); \
+	ERROR("command excute for:{} command:{}", x, command.ShortDebugString()); \
 	SendProtocol(response); \
 	return x; \
 
-	auto redis = std::make_shared<Redis>();
+	auto redis = make_unique<Redis>();
 
 	Asset::User user; //账号数据
 	auto result = user.ParseFromString(redis->GetUser(command.account()));
@@ -170,7 +175,7 @@ Asset::COMMAND_ERROR_CODE ClientSession::OnCommandProcess(const Asset::Command& 
 	auto stuff = player.SerializeAsString();
 	redis->SavePlayer(player_id, stuff);
 
-	RETURN(Asset::COMMAND_ERROR_CODE_SUCCESS); //玩家目前在线
+	RETURN(Asset::COMMAND_ERROR_CODE_SUCCESS); //成功执行
 
 #undef RETURN
 }
@@ -197,7 +202,25 @@ void ClientSession::SendProtocol(const pb::Message* message)
 
 void ClientSession::SendProtocol(const pb::Message& message)
 {
-	std::string content = message.SerializeAsString();
+	const pb::FieldDescriptor* field = message.GetDescriptor()->FindFieldByName("type_t");
+	if (!field) return;
+	
+	int type_t = field->default_value_enum()->number();
+	if (!Asset::INNER_TYPE_IsValid(type_t)) return;	//如果不合法，不检查会宕线
+	
+	Asset::InnerMeta meta;
+	meta.set_type_t((Asset::INNER_TYPE)type_t);
+	meta.set_stuff(message.SerializeAsString());
+
+	std::string content = meta.SerializeAsString();
+
+	if (content.empty()) 
+	{
+		ERROR("server:{} send nothing, message:{}", _ip_address, meta.ShortDebugString());
+		return;
+	}
+
+	TRACE("server:{} send message to gmt server, message:{}", _ip_address, meta.ShortDebugString());
 	AsyncSend(content);
 }
 	

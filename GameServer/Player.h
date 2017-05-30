@@ -375,7 +375,7 @@ class PlayerManager : public std::enable_shared_from_this<PlayerManager>
 {
 private:
 	std::mutex _mutex;
-	std::unordered_map<int64_t, std::shared_ptr<Player>> _entities; //实体为智能指针，不要传入引用
+	std::unordered_map<int64_t, std::shared_ptr<Player>> _players; //实体为智能指针，不要传入引用
 public:
 	static PlayerManager& Instance()
 	{
@@ -383,12 +383,12 @@ public:
 		return _instance;
 	}
 
-	void Erase(int64_t entity_id);
-	void Erase(Player& entity);
-	void Add(std::shared_ptr<Player> entity);
-	void Emplace(int64_t entity_id, std::shared_ptr<Player> entity);
-	bool Has(int64_t entity_id);
-	std::shared_ptr<Player> GetPlayer(int64_t id);
+	void Erase(int64_t player_id);
+	void Erase(std::shared_ptr<Player> player);
+	void Emplace(int64_t player_id, std::shared_ptr<Player> player);
+	bool Has(int64_t player_id);
+	std::shared_ptr<Player> GetPlayer(int64_t player_id);
+	std::shared_ptr<Player> Get(int64_t player_id);
 };
 
 #define PlayerInstance PlayerManager::Instance()

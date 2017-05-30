@@ -65,7 +65,6 @@ class WorldSessionManager : public SocketManager<WorldSession>
 	typedef SocketManager<WorldSession> SuperSocketManager;
 private:
 	std::mutex _mutex;
-	std::vector<std::shared_ptr<WorldSession>> _list; //定时清理断开的会话
 	std::unordered_map<int64_t, std::shared_ptr<WorldSession>> _sessions; //根据玩家状态变化处理	
 public:
 	static WorldSessionManager& Instance()
@@ -74,9 +73,8 @@ public:
 		return _instance;
 	}
 
-	size_t GetCount();
-	void Add(std::shared_ptr<WorldSession> session);
 	void Emplace(int64_t player_id, std::shared_ptr<WorldSession> session);
+	void Erase(int64_t player_id);
 	bool StartNetwork(boost::asio::io_service& io_service, const std::string& bind_ip, int32_t port, int thread_count = 1) override;
 protected:        
 	NetworkThread<WorldSession>* CreateThreads() const override;

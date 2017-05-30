@@ -25,6 +25,10 @@ public:
 
 	ClientSession(ClientSession const& right) = delete;    
 	ClientSession& operator = (ClientSession const& right) = delete;
+	
+	const boost::asio::ip::tcp::endpoint GetRemotePoint() { return _remote_endpoint; }
+	bool InnerProcess(const Asset::InnerMeta& meta); //内部协议处理
+	Asset::COMMAND_ERROR_CODE OnCommandProcess(const Asset::Command& command);
     
 	virtual void OnConnected(); //连接上服务器
 	virtual void OnReceived(const std::string& message); //处理服务器的数据

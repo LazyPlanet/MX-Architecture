@@ -45,8 +45,8 @@ Player::Player()
 
 Player::Player(int64_t player_id, std::shared_ptr<WorldSession> session) : Player()/*委派构造函数*/
 {
-	this->SetID(player_id);	//设置玩家ID
-	this->_session = session; //地址拷贝
+	SetID(player_id);	
+	_session = session; //地址拷贝
 }
 
 int32_t Player::Load()
@@ -135,6 +135,9 @@ int32_t Player::OnLogout(pb::Message* message)
 
 	this->_stuff.mutable_player_prop()->Clear(); //非存盘数据
 	PLAYER(_stuff);	//BI日志
+	
+	WorldSessionInstance.Erase(_player_id); //网络会话数据
+	PlayerInstance.Erase(_player_id); //玩家管理
 
 	return 0;
 }
@@ -163,8 +166,9 @@ int32_t Player::OnEnterGame()
 	this->_stuff.set_login_time(CommonTimerInstance.GetTime());
 	this->_stuff.set_logout_time(0);
 
-	//BI日志
 	PLAYER(_stuff);	//BI日志
+	WorldSessionInstance.Emplace(_player_id, _session); //网络会话数据
+	PlayerInstance.Emplace(_player_id, shared_from_this()); //玩家管理
 
 	return 0;
 }
@@ -2639,37 +2643,25 @@ void Player::OnGameOver()
 /////////////////////////////////////////////////////
 //玩家通用管理类
 /////////////////////////////////////////////////////
-void PlayerManager::Add(std::shared_ptr<Player> player)
-{
-	std::lock_guard<std::mutex> lock(_mutex);
-	if (_entities.find(player->GetID()) == _entities.end())
-	{
-		_entities.emplace(player->GetID(), player);
-		std::cout << "Add player to manager current size is:" << _entities.size() << ", added id:" << player->GetID() << std::endl;
-	}
-}
-
 void PlayerManager::Emplace(int64_t player_id, std::shared_ptr<Player> player)
 {
-	try
-	{
-		std::lock_guard<std::mutex> lock(_mutex);
-		if (_entities.find(player_id) == _entities.end())
-			_entities.emplace(player_id, player);
-		std::cout << __func__ << ":size:" << _entities.size() << ":id:" << player->GetID() << std::endl;
-	}
-	catch(std::exception& ex)
-	{
-		std::cout << __LINE__ << ex.what() << std::endl;
-	}
+	//std::lock_guard<std::mutex> lock(_mutex);
+	if (!player) return;
+	if (_players.find(player_id) == _players.end())
+		_players.emplace(player_id, player);
 }
 
 std::shared_ptr<Player> PlayerManager::GetPlayer(int64_t player_id)
 {
-	std::lock_guard<std::mutex> lock(_mutex);
-	auto it = _entities.find(player_id);
-	if (it == _entities.end()) return nullptr;
+	//std::lock_guard<std::mutex> lock(_mutex);
+	auto it = _players.find(player_id);
+	if (it == _players.end()) return nullptr;
 	return it->second;
+}
+
+std::shared_ptr<Player> PlayerManager::Get(int64_t player_id)
+{
+	return GetPlayer(player_id);
 }
 	
 bool PlayerManager::Has(int64_t player_id)
@@ -2680,14 +2672,15 @@ bool PlayerManager::Has(int64_t player_id)
 
 void PlayerManager::Erase(int64_t player_id)
 {
-	std::lock_guard<std::mutex> lock(_mutex);
-	_entities.erase(player_id);
+	//std::lock_guard<std::mutex> lock(_mutex);
+	_players.erase(player_id);
 }
 
-void PlayerManager::Erase(Player& player)
+void PlayerManager::Erase(std::shared_ptr<Player> player)
 {
-	std::lock_guard<std::mutex> lock(_mutex);
-	_entities.erase(player.GetID());
+	//std::lock_guard<std::mutex> lock(_mutex);
+	if (!player) return;
+	_players.erase(player->GetID());
 }
 
 }

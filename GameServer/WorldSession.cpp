@@ -118,19 +118,13 @@ void WorldSession::InitializeHandler(const boost::system::error_code error, cons
 					user.ParseFromString(stuff);
 				}
 
-				///////清理状态
-				_account.Clear(); _player_list.clear();
-				//账号信息
-				_account.CopyFrom(login->account());
-				//玩家数据
-				for (auto player_id : user.player_list())
-				{
-					_player_list.emplace(player_id);
-				}
-				///////发送给Client当前的角色信息
-				Asset::PlayerList player_list;
+				_account.Clear(); _player_list.clear(); //清理状态
+				_account.CopyFrom(login->account()); //账号信息
+				for (auto player_id : user.player_list()) _player_list.emplace(player_id); //玩家数据
+				
+				Asset::PlayerList player_list; //发送给Client当前的角色信息
 				player_list.mutable_player_list()->CopyFrom(user.player_list());
-				SendProtocol(player_list); //传给Client，带有角色ID
+				SendProtocol(player_list); 
 			}
 			else if (Asset::META_TYPE_C2S_LOGOUT == meta.type_t()) //账号登出
 			{
@@ -139,9 +133,9 @@ void WorldSession::InitializeHandler(const boost::system::error_code error, cons
 
 				KillOutPlayer();
 			}
+			/*
 			else if (Asset::META_TYPE_SHARE_CREATE_PLAYER == meta.type_t()) //创建角色
 			{
-				return;
 				Asset::CreatePlayer* create_player = dynamic_cast<Asset::CreatePlayer*>(message);
 				if (!create_player) return; 
 				
@@ -156,6 +150,7 @@ void WorldSession::InitializeHandler(const boost::system::error_code error, cons
 				create_player->set_player_id(player_id);
 				g_player->SendProtocol(create_player);
 			}
+			*/
 			else if (Asset::META_TYPE_C2S_ENTER_GAME == meta.type_t()) //进入游戏
 			{
 				const Asset::EnterGame* enter_game = dynamic_cast<Asset::EnterGame*>(message);
@@ -177,7 +172,7 @@ void WorldSession::InitializeHandler(const boost::system::error_code error, cons
 					ERROR("Player has not inited.");
 					return; //未初始化的Player
 				}
-				//其他协议的调用规则
+				//协议处理
 				g_player->HandleProtocol(meta.type_t(), message);
 			}
 		}
@@ -221,8 +216,6 @@ bool WorldSession::Update()
 
 	g_player->Update(); 
 
-	//std::cout << "-------------update" << std::endl;
-
 	return true;
 }
 
@@ -249,7 +242,6 @@ void WorldSession::SendProtocol(pb::Message& message)
 	meta.set_stuff(message.SerializeAsString());
 
 	std::string content = meta.SerializeAsString();
-	//AsyncSend(content);
 
 	if (content.empty()) 
 	{
@@ -260,23 +252,19 @@ void WorldSession::SendProtocol(pb::Message& message)
 	EnterQueue(std::move(content));
 }
 
-void WorldSessionManager::Add(std::shared_ptr<WorldSession> session)
-{
-	std::lock_guard<std::mutex> lock(_mutex);
-	_list.push_back(session);
-}	
-
 void WorldSessionManager::Emplace(int64_t player_id, std::shared_ptr<WorldSession> session)
 {
 	std::lock_guard<std::mutex> lock(_mutex);
 	if (_sessions.find(player_id) == _sessions.end())
 		_sessions.emplace(player_id, session);
 }
-
-size_t WorldSessionManager::GetCount()
+	
+void WorldSessionManager::Erase(int64_t player_id)
 {
 	std::lock_guard<std::mutex> lock(_mutex);
-	return _list.size();
+	auto it = _sessions.find(player_id);
+	if (it == _sessions.end()) return;
+	_sessions.erase(it);
 }
 
 NetworkThread<WorldSession>* WorldSessionManager::CreateThreads() const
