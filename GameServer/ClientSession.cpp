@@ -264,7 +264,19 @@ bool ClientSession::StartReceive()
 void ClientSession::OnReadSome(const boost::system::error_code& error, std::size_t bytes_transferred)
 {
 	if (!IsConnected()) return;
+		
+	Asset::InnerMeta meta;
+	auto result = meta.ParseFromArray(_buffer.data(), bytes_transferred);
+	if (!result)
+	{
+		LOG(ERROR, "Receive message error from server:{}", _ip_address);
+		return;
+	}
 
+	InnerProcess(meta);
+	LOG(INFO, "Receive message:{} from server:{}", meta.ShortDebugString(), _ip_address);
+
+	/*
 	if (error)
 	{
 		if (error != boost::asio::error::eof)
@@ -287,6 +299,7 @@ void ClientSession::OnReadSome(const boost::system::error_code& error, std::size
 		OnReceived(message);
 		received_messages.pop_front();
 	}
+	*/
 }
 
 }

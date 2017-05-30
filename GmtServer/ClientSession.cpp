@@ -17,7 +17,7 @@ void ClientSession::InitializeHandler(const boost::system::error_code error, con
 	{
 		if (error)
 		{
-			ERROR("Remote client disconnect, remote_ip:{} account:{} player_id:{}", _ip_address, _account, _plyaer_id);
+			ERROR("Remote client disconnect, remote_ip:{}", _ip_address);
 			return;
 		}
 		else
@@ -64,6 +64,8 @@ bool ClientSession::InnerProcess(const Asset::InnerMeta& meta)
 			{
 				ClientSessionInstance.Add(shared_from_this());
 			}
+
+			SendProtocol(message);
 		}
 		break;
 		
@@ -220,7 +222,7 @@ void ClientSession::SendProtocol(const pb::Message& message)
 		return;
 	}
 
-	TRACE("server:{} send message to gmt server, message:{}", _ip_address, meta.ShortDebugString());
+	TRACE("send message to server:{} message:{}", _ip_address, meta.ShortDebugString());
 	AsyncSend(content);
 }
 	
