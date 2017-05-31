@@ -294,6 +294,7 @@ public:
 	virtual void SetRoomID(int64_t room_id) { _stuff.mutable_player_prop()->set_room_id(room_id); }	
 	virtual int32_t GetRoomID() { return _stuff.player_prop().room_id(); }
 	virtual bool HasRoom() { return _locate_room != nullptr; }
+	virtual void SetRoom(std::shared_ptr<Room> room) { _locate_room = room; }
 
 	void SetGame(std::shared_ptr<Game> game) { _game = game; }
 

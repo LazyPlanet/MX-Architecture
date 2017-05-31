@@ -123,6 +123,8 @@ bool Room::Remove(int64_t player_id)
 	for (auto it = _players.begin(); it != _players.end(); ++it)
 	{
 		if ((*it)->GetID() != player_id) continue;
+			
+		it->get()->OnLeaveRoom(); //玩家退出房间
 
 		_players.erase(it); //删除玩家
 

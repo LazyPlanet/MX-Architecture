@@ -38,11 +38,19 @@ bool Game::Start(std::vector<std::shared_ptr<Player>> players)
 {
 	if (MAX_PLAYER_COUNT != players.size()) return false; //做下检查，是否满足开局条件
 
+	if (!_room)
+	{
+		DEBUG_ASSERT(false);
+		return false;
+	}
+
 	int32_t player_index = 0;
 
 	for (auto player : players)
 	{
 		_players[player_index++] = player; //复制成员
+
+		player->SetRoom(_room);
 		player->SetPosition(Asset::POSITION_TYPE(player_index));
 	}
 

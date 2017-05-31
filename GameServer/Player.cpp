@@ -628,22 +628,22 @@ void Player::SendProtocol(pb::Message& message)
 
 void Player::Send2Roomers(pb::Message& message, int64_t exclude_player_id) 
 {
-	if (!_game) 
+	if (!_locate_room) 
 	{
 		DEBUG_ASSERT(false);
 		return;
 	}
-	_game->BroadCast(message, exclude_player_id);
+	_locate_room->BroadCast(message, exclude_player_id);
 }
 
 void Player::Send2Roomers(pb::Message* message, int64_t exclude_player_id)
 {
-	if (!_game) 
+	if (!_locate_room) 
 	{
 		DEBUG_ASSERT(false);
 		return;
 	}
-	_game->BroadCast(message, exclude_player_id);
+	_locate_room->BroadCast(message, exclude_player_id);
 }
 
 //玩家心跳周期为10MS，如果该函数返回FALSE则表示掉线
@@ -819,6 +819,7 @@ void Player::OnLeaveRoom()
 
 	//清理状态
 	_stuff.mutable_player_prop()->clear_game_oper_state();
+	_locate_room = nullptr;
 }
 	
 void Player::BroadCast(Asset::MsgItem& item) 
