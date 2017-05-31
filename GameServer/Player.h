@@ -81,8 +81,6 @@ public:
 	const Asset::CommonProp& CommonProp() { return _stuff.common_prop(); }
 	const Asset::CommonProp& GetCommonProp() { return _stuff.common_prop(); }
 	Asset::CommonProp* MutableCommonProp() { return _stuff.mutable_common_prop(); }
-	//发送玩家基础属性
-	void SyncCommonProperty();
 	//获取ID
 	virtual int64_t GetID() { return _stuff.common_prop().player_id(); }
 	virtual void SetID(int64_t player_id) { 
@@ -104,7 +102,8 @@ public:
 	virtual bool HandleProtocol(int32_t type_t, pb::Message* message);
 	virtual void SendProtocol(pb::Message& message);
 	virtual void SendProtocol(pb::Message* message);
-	//virtual void SendToRoomers(pb::Message& message); //向房间里玩家发送协议数据，发送到客户端
+	virtual void Send2Roomers(pb::Message& message, int64_t exclude_player_id = 0); //向房间里玩家发送协议数据，发送到Client
+	virtual void Send2Roomers(pb::Message* message, int64_t exclude_player_id = 0); //向房间里玩家发送协议数据，发送到Client
 	virtual void BroadCast(Asset::MsgItem& item);
 	//virtual void OnCreatePlayer(int64_t player_id);
 	//进入游戏
@@ -141,6 +140,9 @@ public:
 	bool IsOnline() { return _stuff.player_prop().online(); }
 	//签到
 	virtual int32_t CmdSign(pb::Message* message);
+	//获取玩家基础属性
+	virtual int32_t CmdGetCommonProperty(pb::Message* message);
+	void SyncCommonProperty(Asset::CommonProperty_SYNC_REASON_TYPE reason = Asset::CommonProperty_SYNC_REASON_TYPE_SYNC_REASON_TYPE_SELF);
 public:
 	//获取所有包裹
 	const Asset::Inventory& GetInventory()

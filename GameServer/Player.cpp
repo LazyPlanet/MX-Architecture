@@ -36,6 +36,7 @@ Player::Player()
 	AddHandler(Asset::META_TYPE_SHARE_ENTER_ROOM, std::bind(&Player::CmdEnterRoom, this, std::placeholders::_1));
 	AddHandler(Asset::META_TYPE_SHARE_SIGN, std::bind(&Player::CmdSign, this, std::placeholders::_1));
 	AddHandler(Asset::META_TYPE_SHARE_RANDOM_SAIZI, std::bind(&Player::CmdSaizi, this, std::placeholders::_1));
+	AddHandler(Asset::META_TYPE_SHARE_COMMON_PROPERTY, std::bind(&Player::CmdGetCommonProperty, this, std::placeholders::_1));
 
 	//AddHandler(Asset::META_TYPE_C2S_LOGIN, std::bind(&Player::CmdLogin, this, std::placeholders::_1));
 	//AddHandler(Asset::META_TYPE_C2S_ENTER_GAME, std::bind(&Player::CmdEnterGame, this, std::placeholders::_1));
@@ -462,6 +463,26 @@ int32_t Player::CmdSign(pb::Message* message)
 	return 0;
 }
 
+int32_t Player::CmdGetCommonProperty(pb::Message* message)
+{
+	Asset::CommonProperty* common_prop = dynamic_cast<Asset::CommonProperty*>(message);
+	if (!common_prop) return 1; 
+
+	SyncCommonProperty(Asset::CommonProperty_SYNC_REASON_TYPE_SYNC_REASON_TYPE_GET);
+	return 0;
+}
+	
+void Player::SyncCommonProperty(Asset::CommonProperty_SYNC_REASON_TYPE reason)
+{
+	Asset::CommonProperty common_prop;
+	
+	common_prop.set_reason_type(reason);
+	common_prop.set_player_id(_player_id);
+	common_prop.mutable_common_prop()->CopyFrom(_stuff.common_prop());
+
+	SendProtocol(common_prop);
+}
+
 int32_t Player::CmdEnterRoom(pb::Message* message) 
 {
 	Asset::EnterRoom* enter_room = dynamic_cast<Asset::EnterRoom*>(message);
@@ -605,11 +626,26 @@ void Player::SendProtocol(pb::Message& message)
 	TRACE("send protocol to player_id:{} protocol_name:{} content:{}", _player_id, enum_value->name().c_str(), message.ShortDebugString().c_str());
 }
 
-/*
-void Player::SendToRoomers(pb::Message& message) 
+void Player::Send2Roomers(pb::Message& message, int64_t exclude_player_id) 
 {
+	if (!_game) 
+	{
+		DEBUG_ASSERT(false);
+		return;
+	}
+	_game->BroadCast(message, exclude_player_id);
 }
-*/
+
+void Player::Send2Roomers(pb::Message* message, int64_t exclude_player_id)
+{
+	if (!_game) 
+	{
+		DEBUG_ASSERT(false);
+		return;
+	}
+	_game->BroadCast(message, exclude_player_id);
+}
+
 //玩家心跳周期为10MS，如果该函数返回FALSE则表示掉线
 bool Player::Update()
 {
@@ -919,14 +955,6 @@ int32_t Player::CmdGetReward(pb::Message* message)
 	}
 
 	return 0;
-}
-
-void Player::SyncCommonProperty()
-{
-	Asset::CommonProperty common_prop;
-	common_prop.set_reason_type(Asset::CommonProperty_SYNC_REASON_TYPE_SYNC_REASON_TYPE_SELF);
-	common_prop.set_player_id(_player_id);
-	common_prop.mutable_common_prop()->CopyFrom(GetCommonProp());
 }
 
 bool Player::CmdBuySomething(pb::Message* message)
@@ -2523,6 +2551,7 @@ int32_t Player::OnFaPai(std::vector<int32_t>& cards)
 	}
 
 	Asset::PaiNotify notify; /////玩家当前牌数据发给Client
+	notify.set_player_id(_player_id); //目标玩家
 
 	if (cards.size() > 1) //开局
 	{
@@ -2639,6 +2668,9 @@ int32_t Player::OnFaPai(std::vector<int32_t>& cards)
 	}
 	
 	SendProtocol(notify); //发送牌给玩家：发牌
+
+	notify.mutable_pais()->Clear(); notify.mutable_pai()->Clear(); //其他玩家不能知道具体发了什么牌
+	Send2Roomers(notify, _player_id); //广播玩家抓牌行为
 
 	return 0;
 }
