@@ -90,9 +90,7 @@ void WorldSession::InitializeHandler(const boost::system::error_code error, cons
 				{
 					user.mutable_account()->CopyFrom(login->account());
 
-					///////如果账号下没有角色，创建一个给Client
-
-					int64_t player_id = redis->CreatePlayer();
+					int64_t player_id = redis->CreatePlayer(); //如果账号下没有角色，创建一个给Client
 
 					if (player_id == 0) 
 					{

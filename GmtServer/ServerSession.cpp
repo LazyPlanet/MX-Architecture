@@ -47,7 +47,7 @@ void ServerSession::InitializeHandler(const boost::system::error_code error, con
 
 bool ServerSession::InnerProcess(const Asset::InnerMeta& meta)
 {
-	TRACE("Receive message:{} from server", meta.ShortDebugString());
+	TRACE("Receive message:{} from server:{}", meta.ShortDebugString(), _ip_address);
 
 	switch (meta.type_t())
 	{
@@ -76,11 +76,17 @@ bool ServerSession::InnerProcess(const Asset::InnerMeta& meta)
 			auto result = message.ParseFromString(meta.stuff());
 			if (!result) return false;
 
-			if (ServerSessionInstance.IsGmtServer(shared_from_this())) //处理GMT服务器发送的数据
+			std::string gmt_server_address;
+			auto gmt_server = ServerSessionInstance.GetGmtServer();
+			if (gmt_server) gmt_server_address = gmt_server->GetRemoteAddress();
+
+			TRACE("Receive command:{} from server:{} gmt_server:{}", message.ShortDebugString(), _ip_address, gmt_server_address);
+
+			if (true/*ServerSessionInstance.IsGmtServer(shared_from_this())*/) //处理GMT服务器发送的数据
 			{
 				auto error_code = OnCommandProcess(message); //处理离线玩家的指令执行
 				if (Asset::COMMAND_ERROR_CODE_PLAYER_ONLINE == error_code) ServerSessionInstance.BroadCastProtocol(meta); //处理在线玩家的指令执行
-				DEBUG("Server:{} server send gmt message:{} error_code:{}", _ip_address, message.ShortDebugString(), error_code);
+				TRACE("Server:{} server send gmt message:{} error_code:{}", _ip_address, message.ShortDebugString(), error_code);
 			}
 			else //处理游戏服务器发送的数据
 			{
@@ -106,19 +112,24 @@ Asset::COMMAND_ERROR_CODE ServerSession::OnCommandProcess(const Asset::Command& 
 #define RETURN(x) \
 	auto response = command; \
 	response.set_error_code(x); \
-	ERROR("command excute for:{} command:{}", x, command.ShortDebugString()); \
+	if (x) { \
+		LOG(ERR, "command excute failed for:{} command:{}", x, command.ShortDebugString()); \
+	} else { \
+		LOG(TRACE, "command excute success for:{} command:{}", x, command.ShortDebugString()); \
+	} \
 	SendProtocol(response); \
 	return x; \
 
 	auto redis = make_unique<Redis>();
 
+	/*
 	Asset::User user; //账号数据
 	auto result = user.ParseFromString(redis->GetUser(command.account()));
 	if (!result)
 	{
 		RETURN(Asset::COMMAND_ERROR_CODE_NO_ACCOUNT);
 	}
-
+	*/
 	//玩家角色校验
 	auto player_id = command.player_id();
 	if (player_id <= 0) 
@@ -126,17 +137,25 @@ Asset::COMMAND_ERROR_CODE ServerSession::OnCommandProcess(const Asset::Command& 
 		RETURN(Asset::COMMAND_ERROR_CODE_PARA); //数据错误
 	}
 	
+	/*
 	auto it = std::find(user.player_list().begin(), user.player_list().end(), player_id);
 	if (it == user.player_list().end()) 
 	{
 		RETURN(Asset::COMMAND_ERROR_CODE_NO_PLAYER); //账号下不存在该角色
 	}
+	*/
 
-	Asset::Player player;
-	result = player.ParseFromString(redis->GetPlayer(player_id));
-	if (!result)
+	auto stuff = redis->GetPlayer(player_id);
+	if (stuff.empty())
 	{
 		RETURN(Asset::COMMAND_ERROR_CODE_PARA); //数据错误
+	}
+
+	Asset::Player player;
+	auto result = player.ParseFromString(stuff);
+	if (!result)
+	{
+		//RETURN(Asset::COMMAND_ERROR_CODE_PARA); //数据错误
 	}
 
 	if (player.logout_time() == 0 && player.login_time() != 0) //玩家在线不支持
@@ -161,6 +180,10 @@ Asset::COMMAND_ERROR_CODE ServerSession::OnCommandProcess(const Asset::Command& 
 		{
 			auto global_id = command.item_id();
 			const auto message = AssetInstance.Get(global_id); //例如：Asset::Item_Potion
+			if (!message) //没找到物品
+			{
+				RETURN(Asset::COMMAND_ERROR_CODE_ITEM_NOT_FOUND); //物品未能找到
+			}
 
 			auto message_item = message->New(); 
 			message_item->CopyFrom(*message);
@@ -267,7 +290,7 @@ Asset::COMMAND_ERROR_CODE ServerSession::OnCommandProcess(const Asset::Command& 
 	}
 
 	//存盘
-	auto stuff = player.SerializeAsString();
+	stuff = player.SerializeAsString();
 	redis->SavePlayer(player_id, stuff);
 
 	RETURN(Asset::COMMAND_ERROR_CODE_SUCCESS); //成功执行

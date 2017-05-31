@@ -60,7 +60,12 @@ int32_t Player::Load()
 		return 1;
 	}
 	//初始化结构数据
-	this->_stuff.ParseFromString(stuff);
+	bool result = _stuff.ParseFromString(stuff);
+	if (!result)
+	{
+		LOG(ERR, "Load player_id:{} information failed.", _player_id);
+		//return 2;
+	}
 	//初始化包裹，创建角色或者增加包裹会调用一次
 	do {
 		const pb::EnumDescriptor* enum_desc = Asset::INVENTORY_TYPE_descriptor();
@@ -82,13 +87,14 @@ int32_t Player::Load()
 
 int32_t Player::Save()
 {
-	//存入数据库
-	std::string stuff = this->_stuff.SerializeAsString();
+	_stuff.mutable_player_prop()->Clear(); //非存盘数据
+	std::string stuff = _stuff.SerializeAsString(); //存入数据库
 
 	auto redis = make_unique<Redis>();
-
 	redis->SavePlayer(_player_id, stuff);
-
+		
+	PLAYER(_stuff);	//BI日志
+		
 	return 0;
 }
 	
@@ -132,13 +138,10 @@ int32_t Player::OnLogout(pb::Message* message)
 	this->_stuff.set_login_time(0);
 	this->_stuff.set_logout_time(CommonTimerInstance.GetTime());
 	Save();	//存档数据库
-
-	this->_stuff.mutable_player_prop()->Clear(); //非存盘数据
-	PLAYER(_stuff);	//BI日志
 	
 	WorldSessionInstance.Erase(_player_id); //网络会话数据
 	PlayerInstance.Erase(_player_id); //玩家管理
-
+	
 	return 0;
 }
 	
@@ -652,11 +655,90 @@ bool Player::HandleProtocol(int32_t type_t, pb::Message* message)
 
 bool Player::GainItem(int64_t global_item_id, int32_t count)
 {
+	/*
 	pb::Message* asset_item = AssetInstance.Get(global_item_id); //此处取出来的必然为合法ITEM.
 	if (!asset_item) return false;
 
 	Item* item = new Item(asset_item);
 	GainItem(item, count);
+	*/
+	const auto message = AssetInstance.Get(global_item_id); //例如：Asset::Item_Potion
+	if (!message) return false;
+
+	auto message_item = message->New(); 
+	message_item->CopyFrom(*message);
+
+	if (!message_item) return false; //内存不足
+	
+	const pb::FieldDescriptor* prop_field = message_item->GetDescriptor()->FindFieldByName("item_common_prop"); //物品公共属性变量
+	if (!prop_field) return false; //不是物品
+
+	try {
+		const pb::Message& const_item_common_prop = message_item->GetReflection()->GetMessage(*message_item, prop_field);
+
+		pb::Message& item_common_prop = const_cast<pb::Message&>(const_item_common_prop);
+		auto& common_prop = dynamic_cast<Asset::Item_CommonProp&>(item_common_prop);
+
+		auto inventory_type = common_prop.inventory(); //物品默认进包
+
+		auto it_inventory = std::find_if(_stuff.mutable_inventory()->mutable_inventory()->begin(), _stuff.mutable_inventory()->mutable_inventory()->end(), 
+				[inventory_type](const Asset::Inventory_Element& element){
+			return inventory_type == element.inventory_type();		
+		});
+
+		if (it_inventory == _stuff.mutable_inventory()->mutable_inventory()->end()) return false; //数据错误
+
+		auto inventory_items = it_inventory->mutable_items(); //包裹中物品数据
+
+		if (!inventory_items) return false; //数据错误
+
+		const pb::FieldDescriptor* type_field = message_item->GetDescriptor()->FindFieldByName("type_t");
+		if (!type_field) return false; //数据错误
+
+		auto type_t = type_field->default_value_enum()->number();
+
+		auto it_item = inventory_items->begin(); //查找包裹中该物品数据
+		for ( ; it_item != inventory_items->end(); ++it_item)
+		{
+			if (type_t == it_item->type_t())
+			{
+				auto item = message_item->New();
+				item->ParseFromString(it_item->stuff()); //解析存盘数据
+
+				const FieldDescriptor* item_prop_field = item->GetDescriptor()->FindFieldByName("item_common_prop");
+				if (!item_prop_field) continue;
+
+				const Message& item_prop_message = item->GetReflection()->GetMessage(*item, item_prop_field);
+				prop_field = item_prop_message.GetDescriptor()->FindFieldByName("common_prop");
+				if (!prop_field) continue;
+
+				const Message& prop_message = item_prop_message.GetReflection()->GetMessage(item_prop_message, prop_field);
+				const FieldDescriptor* global_id_field = prop_message.GetDescriptor()->FindFieldByName("global_id");
+				if (!global_id_field) continue;
+
+				auto global_id = prop_message.GetReflection()->GetInt64(prop_message, global_id_field);
+				if (global_id == global_item_id) break; //TODO:不限制堆叠
+			}
+		}
+		
+		if (it_item == inventory_items->end()) //没有该类型物品
+		{
+			auto item_toadd = inventory_items->Add();
+			item_toadd->set_type_t((Adoter::Asset::ASSET_TYPE)type_t);
+			common_prop.set_count(count); //Asset::Item_CommonProp
+			item_toadd->set_stuff(message_item->SerializeAsString());
+		}
+		else
+		{
+			common_prop.set_count(common_prop.count() + count); //Asset::Item_CommonProp
+			it_item->set_stuff(message_item->SerializeAsString());
+		}
+	}
+	catch (std::exception& e)
+	{
+		LOG(ERR, "const_cast or dynamic_cast exception:{}", e.what());	
+		return false;
+	}
 	return true;
 }
 

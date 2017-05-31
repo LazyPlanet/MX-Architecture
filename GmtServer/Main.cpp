@@ -53,6 +53,9 @@ int main(int argc, const char* argv[])
 			printf("Load %s error, please check the file.", argv[1]); //控制台的日志可以直接用该函数
 			return 3;
 		}
+		
+		//日志系统配置
+		MXLogInstance.Load();
 
 		//数据初始化
 		if (!AssetInstance.Load())
@@ -60,9 +63,6 @@ int main(int argc, const char* argv[])
 			printf("Load asset error, please check the file."); //控制台的日志可以直接用该函数
 			return 4;
 		}
-
-		//日志系统配置
-		MXLogInstance.Load();
 	
 		//网络初始化
 		_io_service_work = std::make_shared<boost::asio::io_service::work>(_io_service);
