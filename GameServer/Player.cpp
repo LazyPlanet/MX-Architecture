@@ -170,6 +170,8 @@ int32_t Player::OnEnterGame()
 	this->_stuff.set_login_time(CommonTimerInstance.GetTime());
 	this->_stuff.set_logout_time(0);
 
+	SetDirty(); //存盘
+
 	PLAYER(_stuff);	//BI日志
 	WorldSessionInstance.Emplace(_player_id, _session); //网络会话数据
 	PlayerInstance.Emplace(_player_id, shared_from_this()); //玩家管理

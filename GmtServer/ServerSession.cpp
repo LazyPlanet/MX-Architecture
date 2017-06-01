@@ -86,7 +86,15 @@ bool ServerSession::InnerProcess(const Asset::InnerMeta& meta)
 			{
 				auto error_code = OnCommandProcess(message); //处理离线玩家的指令执行
 				if (Asset::COMMAND_ERROR_CODE_PLAYER_ONLINE == error_code) ServerSessionInstance.BroadCastProtocol(meta); //处理在线玩家的指令执行
-				TRACE("Server:{} server send gmt message:{} error_code:{}", _ip_address, message.ShortDebugString(), error_code);
+
+				if (Asset::COMMAND_ERROR_CODE_SUCCESS == error_code)
+				{
+					TRACE("Server:{} server send gmt message:{} error_code:{}", _ip_address, message.ShortDebugString(), error_code);
+				}
+				else
+				{
+					ERROR("Server:{} server send gmt message:{} error_code:{}", _ip_address, message.ShortDebugString(), error_code);
+				}
 			}
 			else //处理游戏服务器发送的数据
 			{
@@ -353,6 +361,7 @@ void ServerSessionManager::BroadCastProtocol(const pb::Message& message)
 	for (auto session : _sessions)
 	{
 		if (!session) continue;
+		DEBUG("send protocol to game server.");
 		session->SendProtocol(message);
 	}
 }
