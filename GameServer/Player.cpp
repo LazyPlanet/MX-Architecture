@@ -128,12 +128,12 @@ int32_t Player::OnLogin(pb::Message* message)
 
 int32_t Player::OnLogout(pb::Message* message)
 {
-	if (_locate_room) 
+	if (_room) 
 	{
 		Asset::GameOperation game_operate;
 		game_operate.set_source_player_id(_player_id); //设置当前操作玩家
 		game_operate.set_oper_type(Asset::GAME_OPER_TYPE_LEAVE); //离开游戏，退出房间
-		_locate_room->OnPlayerOperate(shared_from_this(), &game_operate); //广播给其他玩家
+		_room->OnPlayerOperate(shared_from_this(), &game_operate); //广播给其他玩家
 	}
 
 	this->_stuff.set_login_time(0);
@@ -218,12 +218,12 @@ void Player::OnCreateRoom(Asset::CreateRoom* create_room)
 	Asset::Room asset_room;
 	asset_room.CopyFrom(create_room->room());
 
-	_locate_room = std::make_shared<Room>(asset_room);
-	_locate_room->OnCreated();
+	_room = std::make_shared<Room>(asset_room);
+	_room->OnCreated();
 
-	//_locate_room->Enter(shared_from_this()); //玩家进入房间
+	//_room->Enter(shared_from_this()); //玩家进入房间
 
-	RoomInstance.OnCreateRoom(_locate_room); //房间管理
+	RoomInstance.OnCreateRoom(_room); //房间管理
 }
 
 int32_t Player::CmdGameOperate(pb::Message* message)
@@ -231,7 +231,7 @@ int32_t Player::CmdGameOperate(pb::Message* message)
 	auto game_operate = dynamic_cast<Asset::GameOperation*>(message);
 	if (!game_operate) return 1;
 	
-	if (!_locate_room) 
+	if (!_room) 
 	{
 		DEBUG_ASSERT(false);
 		return 2; //如果玩家不在房间，也不存在后面的逻辑
@@ -250,7 +250,7 @@ int32_t Player::CmdGameOperate(pb::Message* message)
 
 		case Asset::GAME_OPER_TYPE_KICKOUT: //踢人
 		{
-			if (!_locate_room->IsHoster(_player_id)) //不是房主，不能踢人
+			if (!_room->IsHoster(_player_id)) //不是房主，不能踢人
 			{
 				AlertMessage(Asset::ERROR_ROOM_NO_PERMISSION); //没有权限
 				return 3;
@@ -266,7 +266,7 @@ int32_t Player::CmdGameOperate(pb::Message* message)
 		break;
 	}
 
-	_locate_room->OnPlayerOperate(shared_from_this(), message); //广播给其他玩家
+	_room->OnPlayerOperate(shared_from_this(), message); //广播给其他玩家
 
 	return 0;
 }
@@ -276,7 +276,7 @@ int32_t Player::CmdPaiOperate(pb::Message* message)
 	Asset::PaiOperation* pai_operate = dynamic_cast<Asset::PaiOperation*>(message);
 	if (!pai_operate) return 1; 
 
-	if (!_locate_room || !_game) 
+	if (!_room || !_game) 
 	{
 		DEBUG_ASSERT(false);
 		return 2; //还没加入房间或者还没开始游戏
@@ -488,7 +488,7 @@ int32_t Player::CmdEnterRoom(pb::Message* message)
 	Asset::EnterRoom* enter_room = dynamic_cast<Asset::EnterRoom*>(message);
 	if (!enter_room) return 1; 
 
-	if (_locate_room) 
+	if (_room) 
 	{
 		DEBUG_ASSERT(false);
 		return 2; //已经在房间
@@ -576,17 +576,17 @@ int32_t Player::CmdEnterRoom(pb::Message* message)
 
 bool Player::OnEnterRoom(int64_t room_id)
 {
-	_locate_room = RoomInstance.Get(room_id);
+	_room = RoomInstance.Get(room_id);
 
-	if (!_locate_room) 
+	if (!_room) 
 	{
 		DEBUG_ASSERT(false);
 		return false; //非法的房间 
 	}
 
-	_locate_room->OnCreated();
+	_room->OnCreated();
 
-	_locate_room->Enter(shared_from_this()); //玩家进入房间
+	_room->Enter(shared_from_this()); //玩家进入房间
 
 	return true;
 }
@@ -628,22 +628,22 @@ void Player::SendProtocol(pb::Message& message)
 
 void Player::Send2Roomers(pb::Message& message, int64_t exclude_player_id) 
 {
-	if (!_locate_room) 
+	if (!_room) 
 	{
 		DEBUG_ASSERT(false);
 		return;
 	}
-	_locate_room->BroadCast(message, exclude_player_id);
+	_room->BroadCast(message, exclude_player_id);
 }
 
 void Player::Send2Roomers(pb::Message* message, int64_t exclude_player_id)
 {
-	if (!_locate_room) 
+	if (!_room) 
 	{
 		DEBUG_ASSERT(false);
 		return;
 	}
-	_locate_room->BroadCast(message, exclude_player_id);
+	_room->BroadCast(message, exclude_player_id);
 }
 
 //玩家心跳周期为10MS，如果该函数返回FALSE则表示掉线
@@ -815,16 +815,16 @@ void Player::BroadCastCommonProp(Asset::MSG_TYPE type)
 
 void Player::OnLeaveRoom()
 {
-	if (!_locate_room) return; 
+	if (!_room) return; 
 
 	//清理状态
 	_stuff.mutable_player_prop()->clear_game_oper_state();
-	_locate_room = nullptr;
+	_room = nullptr;
 }
 	
 void Player::BroadCast(Asset::MsgItem& item) 
 {
-	if (!_locate_room) return;
+	if (!_room) return;
 	
 }	
 
@@ -1004,9 +1004,9 @@ int32_t Player::CmdLoadScene(pb::Message* message)
 
 			if (ret != Asset::ERROR_SUCCESS) return 4;
 
-			_locate_room = locate_room;
+			_room = locate_room;
 
-			_locate_room->Enter(shared_from_this()); //玩家进入房间
+			_room->Enter(shared_from_this()); //玩家进入房间
 			
 			_stuff.mutable_player_prop()->clear_load_type(); //状态
 			_stuff.mutable_player_prop()->clear_room_id(); //状态
@@ -1189,7 +1189,7 @@ bool Player::CanHuPai(std::vector<Card_t>& cards, bool use_pair)
 	
 bool Player::CheckBaoHu(const Asset::PaiElement& pai)
 {
-	if (!_game || !_locate_room) return false;
+	if (!_game || !_room) return false;
 
 	if (!IsTingPai()) return false; //没有听牌显然不能胡宝牌
 
@@ -1197,7 +1197,7 @@ bool Player::CheckBaoHu(const Asset::PaiElement& pai)
 
 	if (pai.card_type() != baopai.card_type() || pai.card_value() != baopai.card_value())  return false; //不是宝牌
 	
-	auto options = _locate_room->GetOptions();
+	auto options = _room->GetOptions();
 	
 	auto it_baohu = std::find(options.extend_type().begin(), options.extend_type().end(), Asset::ROOM_EXTEND_TYPE_BAOPAI);
 	if (it_baohu == options.extend_type().end()) return false; //不带宝胡
@@ -1233,7 +1233,7 @@ bool Player::CheckHuPai(const std::map<int32_t, std::vector<int32_t>>& cards_inh
 		std::sort(card.second.begin(), card.second.end(), [](int x, int y){ return x < y; }); //由小到大，排序
 
 	////////////////////////////////////////////////////////////////////////////是否可以胡牌的前置检查
-	auto options = _locate_room->GetOptions();
+	auto options = _room->GetOptions();
 
 	////////是否可以缺门、清一色
 	{
@@ -1423,7 +1423,7 @@ bool Player::CheckHuPai(const Asset::PaiElement& pai, std::vector<Asset::FAN_TYP
 {
 	DEBUG("{} player_id:{} card_type:{} card_value:{}", __func__, _player_id, pai.card_type(), pai.card_value());
 
-	if (!_locate_room || !_game) 
+	if (!_room || !_game) 
 	{
 		DEBUG_ASSERT(false);
 		return false;
@@ -1466,7 +1466,7 @@ bool Player::CheckHuPai(const Asset::PaiElement& pai, std::vector<Asset::FAN_TYP
 	bool zhanlihu = false, jiahu = false, xuanfenggang = false, duanmen = false, yise = false, piao = false; //积分
 
 	////////////////////////////////////////////////////////////////////////////是否可以胡牌的前置检查
-	auto options = _locate_room->GetOptions();
+	auto options = _room->GetOptions();
 
 	////////是否可以缺门、清一色
 	{
@@ -2186,7 +2186,7 @@ int32_t Player::CheckXuanFeng()
 
 bool Player::CanTingPai(const Asset::PaiElement& pai)
 {
-	auto options = _locate_room->GetOptions();
+	auto options = _room->GetOptions();
 	
 	auto it_baohu = std::find(options.extend_type().begin(), options.extend_type().end(), Asset::ROOM_EXTEND_TYPE_BAOPAI);
 	if (it_baohu == options.extend_type().end()) return false; //不带宝胡，绝对不可能呢听牌
@@ -2280,7 +2280,7 @@ bool Player::CheckTingPai(std::vector<Asset::PaiElement>& pais)
 
 	if (_has_ting) return false; //已经听牌，不再提示
 
-	auto options = _locate_room->GetOptions();
+	auto options = _room->GetOptions();
 	
 	auto it_baohu = std::find(options.extend_type().begin(), options.extend_type().end(), Asset::ROOM_EXTEND_TYPE_BAOPAI);
 	if (it_baohu == options.extend_type().end()) return false; //不带宝胡，绝对不可能呢听牌
@@ -2381,9 +2381,9 @@ bool Player::CheckTingPai(std::vector<Asset::PaiElement>& pais)
 
 bool Player::CheckFengGangPai(std::map<int32_t/*麻将牌类型*/, std::vector<int32_t>/*牌值*/>& cards)
 {
-	if (!_locate_room) return false;
+	if (!_room) return false;
 
-	auto options = _locate_room->GetOptions();
+	auto options = _room->GetOptions();
 
 	auto it_xuanfeng = std::find(options.extend_type().begin(), options.extend_type().end(), Asset::ROOM_EXTEND_TYPE_XUANFENGGANG);
 	if (it_xuanfeng == options.extend_type().end()) return false; //不支持旋风杠
@@ -2452,9 +2452,9 @@ void Player::OnGangFengPai()
 
 bool Player::CheckJianGangPai(std::map<int32_t/*麻将牌类型*/, std::vector<int32_t>/*牌值*/>& cards)
 {
-	if (!_locate_room) return false;
+	if (!_room) return false;
 
-	auto options = _locate_room->GetOptions();
+	auto options = _room->GetOptions();
 
 	auto it_xuanfeng = std::find(options.extend_type().begin(), options.extend_type().end(), Asset::ROOM_EXTEND_TYPE_XUANFENGGANG);
 	if (it_xuanfeng == options.extend_type().end()) return false; //不支持
