@@ -151,9 +151,6 @@ bool AssetManager::LoadAssets(fs::path& full_path)
 					global_id = prop_message.GetReflection()->GetInt64(prop_message, global_id_field);
 				}
 				////////////////////////////////////////////加载到全局唯一表
-
-				DEBUG("加载资源成功，资源类型:{} 全局ID:{}", type_field->name(), global_id);
-
 				_assets.emplace(global_id, message);
 
 				////////////////////////////////////////////加载到类型表
