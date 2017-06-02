@@ -37,9 +37,9 @@ void Room::Enter(std::shared_ptr<Player> player)
 
 	_players.push_back(player); //进入房间
 	
-	DEBUG("当前房间玩家数量:{} 当前进入房间玩家角色:{}", _players.size(), player->GetID());
-
 	player->SetPosition((Asset::POSITION_TYPE)_players.size()); //设置位置
+	
+	DEBUG("当前房间玩家数量:{} 当前进入房间玩家角色:{} 位置:{}", _players.size(), player->GetID(), player->GetPosition());
 
 	SyncRoom(); //同步当前房间内玩家数据
 }
@@ -129,6 +129,8 @@ bool Room::Remove(int64_t player_id)
 		_players.erase(it); //删除玩家
 
 		OnPlayerLeave(player_id); //玩家离开房间
+		
+		DEBUG("player:{} leave room.", player_id);
 
 		return true;
 	}
@@ -171,7 +173,7 @@ void Room::SyncRoom()
 	
 	for (auto player : _players)
 	{
-		DEBUG("同步房间数据:{} player_id:{} position:{}", _players.size(), player->GetID(), player->GetPosition());
+		DEBUG("同步房间数据, 当前房间玩家数量:{} player_id:{} position:{}", _players.size(), player->GetID(), player->GetPosition());
 		auto p = message.mutable_player_list()->Add();
 		p->set_position(player->GetPosition());
 		p->mutable_common_prop()->CopyFrom(player->CommonProp());

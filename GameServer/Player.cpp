@@ -88,7 +88,10 @@ int32_t Player::Load()
 
 int32_t Player::Save()
 {
-	_stuff.mutable_player_prop()->Clear(); //非存盘数据
+	if (!_room && !_game)
+	{
+		_stuff.mutable_player_prop()->Clear(); //非存盘数据
+	}
 	std::string stuff = _stuff.SerializeAsString(); //存入数据库
 
 	auto redis = make_unique<Redis>();
@@ -819,9 +822,11 @@ void Player::OnLeaveRoom()
 {
 	if (!_room) return; 
 
-	//清理状态
-	_stuff.mutable_player_prop()->clear_game_oper_state();
-	_room = nullptr;
+	TRACE("player_id:{} leave room.", _player_id);
+
+	_stuff.mutable_player_prop()->clear_game_oper_state(); //玩家操作状态
+
+	_room.reset();
 }
 	
 void Player::BroadCast(Asset::MsgItem& item) 
