@@ -1632,7 +1632,7 @@ bool Player::CheckHuPai(const Asset::PaiElement& pai, std::vector<Asset::FAN_TYP
 	 * So，这里对牌内牌进行胡牌检查
 	 * */
 	{
-		auto cards_inhand = cards_inhand_check;
+		auto cards_inhand_check = cards_inhand;
 		if (pai.card_type() && pai.card_value()) cards_inhand_check[pai.card_type()].push_back(pai.card_value()); //放入可以操作的牌
 			
 		for (auto& card : cards_inhand_check)
