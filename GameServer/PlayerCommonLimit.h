@@ -22,7 +22,7 @@ public:
 
 	bool AddCommonLimit(std::shared_ptr<Player> player, int64_t global_id)
 	{
-		if (!player || global_id == 0) return false; 
+		if (!player || global_id <= 0) return false; 
 
 		auto common_limit = player->GetMutableCommonLimit(); //玩家所有通用限制数据
 
@@ -55,7 +55,7 @@ public:
 	//是否限制内
 	bool IsCommonLimit(std::shared_ptr<Player> player, int64_t global_id)
 	{
-		if (!player || global_id == 0) return false; //没有限制
+		if (!player || global_id <= 0) return false; //没有限制
 		
 		auto player_common_limit = player->GetMutableCommonLimit(); //玩家所有通用限制数据
 

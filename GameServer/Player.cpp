@@ -96,6 +96,16 @@ int32_t Player::Save()
 
 	auto redis = make_unique<Redis>();
 	redis->SavePlayer(_player_id, stuff);
+	
+	bool result = _stuff.ParseFromString(stuff);
+	if (!result)
+	{
+		ERROR("player_id:{} 解析失败.", _player_id);
+	}
+	else
+	{
+		ERROR("player_id:{} 解析成功, 看来是Redis问题.", _player_id);
+	}
 		
 	PLAYER(_stuff);	//BI日志
 		
@@ -848,11 +858,13 @@ void Player::AlertMessage(Asset::ERROR_CODE error_code, Asset::ERROR_TYPE error_
 
 bool Player::AddCommonLimit(int64_t global_id)
 {
+	if (global_id <= 0) return false;
 	return CommonLimitInstance.AddCommonLimit(shared_from_this(), global_id);
 }
 	
 bool Player::IsCommonLimit(int64_t global_id)
 {
+	if (global_id <= 0) return false;
 	return CommonLimitInstance.IsCommonLimit(shared_from_this(), global_id);
 }
 
@@ -1240,7 +1252,7 @@ bool Player::CheckHuPai(const std::map<int32_t, std::vector<int32_t>>& cards_inh
 		std::sort(card.second.begin(), card.second.end(), [](int x, int y){ return x < y; }); //由小到大，排序
 
 	////////////////////////////////////////////////////////////////////////////是否可以胡牌的前置检查
-	auto options = _room->GetOptions();
+	const auto& options = _room->GetOptions();
 
 	////////是否可以缺门、清一色
 	{

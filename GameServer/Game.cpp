@@ -10,6 +10,8 @@
 namespace Adoter
 {
 
+extern const Asset::CommonConst* g_const;
+
 /////////////////////////////////////////////////////
 //一场游戏
 /////////////////////////////////////////////////////
@@ -517,8 +519,21 @@ void Game::ClearOperation()
 	_oper_limit.Clear(); //清理状态
 }
 	
-void Game::Calculate(int64_t hupai_player_id/*胡牌玩家*/, int64_t dianpao_player_id/*胡牌玩家*/, std::vector<Asset::FAN_TYPE>& fan_list)
+void Game::Calculate(int64_t hupai_player_id/*胡牌玩家*/, int64_t dianpao_player_id/*点炮玩家*/, std::vector<Asset::FAN_TYPE>& fan_list)
 {
+	if (!_room) return;
+	
+	const auto fan_asset = dynamic_cast<const Asset::RoomFan*>(AssetInstance.Get(g_const->fan_id()));
+	if (!fan_asset) return;
+
+	auto get_multiple = [&](const Asset::FAN_TYPE& fan_type)->int32_t {
+		auto it = std::find_if(fan_asset->fans().begin(), fan_asset->fans().end(), [fan_type](const Asset::RoomFan_FanElement& element){
+			return fan_type == element.fan_type();
+		});
+		if (it == fan_asset->fans().end()) return 0;
+		return pow(2, it->multiple());
+	};
+
 	int32_t base_score = 1, total_score = 0;
 
 	//番数由于玩家角色性检查(比如庄家胡牌翻番)
@@ -526,6 +541,9 @@ void Game::Calculate(int64_t hupai_player_id/*胡牌玩家*/, int64_t dianpao_pl
 	{
 		fan_list.push_back(Asset::FAN_TYPE_ZHUANG);
 	}
+
+	//const auto& options = _room->GetOptions();
+	//ROOM_EXTEND_TYPE_BAOSANJIA
 
 	Asset::GameCalculate message;
 
@@ -544,40 +562,24 @@ void Game::Calculate(int64_t hupai_player_id/*胡牌玩家*/, int64_t dianpao_pl
 
 		int32_t score = base_score;
 
-		////////牌型基础分值计算
+		//牌型基础分值计算
 		for (const auto& fan : fan_list)
 		{
-			if (Asset::FAN_TYPE_ZHUANG == fan)
-				score *= 2; //是否庄家
-			else if (Asset::FAN_TYPE_ZHAN_LI == fan)
-				score *= 2; //是否站立胡
-			else if (Asset::FAN_TYPE_DUAN_MEN == fan)
-				score *= 2; //是否缺门
-			else if (Asset::FAN_TYPE_QING_YI_SE == fan)
-				score *= 2; //是否清一色  
-			else if (Asset::FAN_TYPE_LOU_BAO == fan)
-				score *= 2; //是否搂宝  
-			else if (Asset::FAN_TYPE_PIAO_HU == fan)
-				score *= 2; //是否飘胡
-			else if (Asset::FAN_TYPE_JIA_HU_NORMAL == fan)
-				score *= 2; //夹胡
-			else if (Asset::FAN_TYPE_JIA_HU_MIDDLE == fan)
-				score *= 4; //中番夹胡
-			else if (Asset::FAN_TYPE_JIA_HU_HIGHER == fan)
-				score *= 8; //高番夹胡
-			else if (Asset::FAN_TYPE_SHANG_TING == fan)
-				score *= 2; //听牌
+			score *= get_multiple(fan);
 			
-			//推送列表
 			auto detail = record->mutable_details()->Add();
 			detail->set_fan_type(fan);
 			detail->set_score(score);
 		}
 		
-		////////操作和玩家牌状态分值计算
+		//
+		//操作和玩家牌状态分值计算
+		//
+		//每个玩家不同
+		//
 		if (dianpao_player_id == hupai_player_id)
 		{
-			score *= 2; //自摸
+			score *= get_multiple(Asset::FAN_TYPE_ZI_MO); //自摸
 			
 			auto detail = record->mutable_details()->Add();
 			detail->set_fan_type(Asset::FAN_TYPE_ZI_MO);
@@ -586,7 +588,7 @@ void Game::Calculate(int64_t hupai_player_id/*胡牌玩家*/, int64_t dianpao_pl
 
 		if (player_id == dianpao_player_id) 
 		{
-			score *= 2; //点炮翻番
+			score *= get_multiple(Asset::FAN_TYPE_DIAN_PAO); //炮翻番
 			
 			auto detail = record->mutable_details()->Add();
 			detail->set_fan_type(Asset::FAN_TYPE_DIAN_PAO);
@@ -595,7 +597,7 @@ void Game::Calculate(int64_t hupai_player_id/*胡牌玩家*/, int64_t dianpao_pl
 
 		if (player->IsBimen()) 
 		{
-			score *= 2; //闭门翻番
+			score *= get_multiple(Asset::FAN_TYPE_BIMEN); //闭门翻番
 			
 			auto detail = record->mutable_details()->Add();
 			detail->set_fan_type(Asset::FAN_TYPE_BIMEN);
@@ -604,7 +606,7 @@ void Game::Calculate(int64_t hupai_player_id/*胡牌玩家*/, int64_t dianpao_pl
 
 		if (dianpao_player_id == player_id)
 		{
-			score *= 2; //庄点炮
+			score *= get_multiple(Asset::FAN_TYPE_DIAN_PAO); //点炮
 		
 			auto detail = record->mutable_details()->Add();
 			detail->set_fan_type(Asset::FAN_TYPE_DIAN_PAO);
@@ -632,10 +634,10 @@ void Game::Calculate(int64_t hupai_player_id/*胡牌玩家*/, int64_t dianpao_pl
 		
 		auto an_count = player->GetAnGangCount();
 
-		int32_t ming_score = ming_count * 1, an_score = an_count * 2;
+		int32_t ming_score = ming_count * get_multiple(Asset::FAN_TYPE_MING_GANG), an_score = an_count * get_multiple(Asset::FAN_TYPE_AN_GANG);
 		auto score = ming_score + an_score;
 				
-		//DEBUG("%s:line:%d player_id:%ld, ming_count:%d, an_count:%d, score:%d\n", __func__, __LINE__, player->GetID(), ming_count, an_count, score);
+		DEBUG("player_id:%ld, ming_count:%d, an_count:%d, score:%d\n", player->GetID(), ming_count, an_count, score);
 
 		auto record = message.mutable_record()->mutable_list(i);
 		record->set_score((record->score() + score) * (MAX_PLAYER_COUNT - 1)); //增加杠分
