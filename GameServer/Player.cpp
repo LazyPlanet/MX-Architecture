@@ -1373,14 +1373,14 @@ bool Player::CheckHuPai(const std::map<int32_t, std::vector<int32_t>>& cards_inh
 	 * So，这里对牌内牌进行胡牌检查
 	 * */
 	{
-		auto cards_inhand = _cards;
-		if (pai.card_type() && pai.card_value()) cards_inhand[pai.card_type()].push_back(pai.card_value()); //放入可以操作的牌
+		auto cards_inhand_check = cards_inhand;
+		if (pai.card_type() && pai.card_value()) cards_inhand_check[pai.card_type()].push_back(pai.card_value()); //放入可以操作的牌
 			
-		for (auto& card : cards_inhand)
+		for (auto& card : cards_inhand_check)
 			std::sort(card.second.begin(), card.second.end(), [](int x, int y){ return x < y; }); //由小到大，排序
 	
 		std::vector<Card_t> card_list;
-		for (auto crds : cards) //胡牌逻辑检查
+		for (auto crds : cards_inhand_check) //胡牌逻辑检查
 		{
 			for (auto value : crds.second)
 				card_list.push_back(Card_t(crds.first, value));
@@ -1632,10 +1632,10 @@ bool Player::CheckHuPai(const Asset::PaiElement& pai, std::vector<Asset::FAN_TYP
 	 * So，这里对牌内牌进行胡牌检查
 	 * */
 	{
-		auto cards_inhand = _cards;
-		if (pai.card_type() && pai.card_value()) cards_inhand[pai.card_type()].push_back(pai.card_value()); //放入可以操作的牌
+		auto cards_inhand = cards_inhand_check;
+		if (pai.card_type() && pai.card_value()) cards_inhand_check[pai.card_type()].push_back(pai.card_value()); //放入可以操作的牌
 			
-		for (auto& card : cards_inhand)
+		for (auto& card : cards_inhand_check)
 			std::sort(card.second.begin(), card.second.end(), [](int x, int y){ return x < y; }); //由小到大，排序
 	
 		std::vector<Card_t> card_list;
