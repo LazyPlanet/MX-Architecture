@@ -161,6 +161,75 @@ int32_t Player::CmdEnterGame(pb::Message* message)
 	return 0;
 }
 */
+int64_t Player::ConsumeHuanledou(int64_t count)
+{
+	if (count <= 0) return 0;
+
+	if (!CheckHuanledou(count)) return 0;
+
+	_stuff.mutable_common_prop()->set_huanledou(_stuff.common_prop().huanledou() - count);
+	
+	SyncCommonProperty();
+	
+	return count;
+}
+
+int64_t Player::IncreaseHuanledou(int64_t count)
+{
+	if (count <= 0) return 0;
+
+	_stuff.mutable_common_prop()->set_huanledou(_stuff.common_prop().huanledou() + count);
+	
+	SyncCommonProperty();
+	
+	return count;
+}
+
+bool Player::CheckHuanledou(int64_t count)
+{
+	int64_t curr_count = _stuff.common_prop().huanledou();
+	return curr_count >= count;
+}
+
+int64_t Player::GetHuanledou() 
+{ 
+	return _stuff.common_prop().huanledou(); 
+}
+
+int64_t Player::GetDiamond() 
+{ 
+	return _stuff.common_prop().diamond(); 
+}
+
+int64_t Player::ConsumeDiamond(int64_t count)
+{
+	if (count <= 0) return 0;
+
+	if (!CheckDiamond(count)) return 0;
+
+	_stuff.mutable_common_prop()->set_diamond(_stuff.common_prop().diamond() - count);
+	
+	SyncCommonProperty();
+	
+	return count;
+}
+
+int64_t Player::IncreaseDiamond(int64_t count)
+{
+	if (count >= 0) return 0;
+
+	_stuff.mutable_common_prop()->set_diamond(_stuff.common_prop().diamond() + count);
+
+	SyncCommonProperty();
+	
+	return count;
+}
+
+bool Player::CheckDiamond(int64_t count)
+{
+	int64_t curr_count = _stuff.common_prop().diamond();
+	return curr_count >= count;
+}
 
 int32_t Player::OnEnterGame() 
 {

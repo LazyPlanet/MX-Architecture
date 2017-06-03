@@ -17,7 +17,7 @@ namespace Adoter
 		auto debug = ConfigInstance.GetBool("DebugModel", true); \
 		if (debug) { \
 			assert(expr); \
-		} else if (expr) { \
+		} else if (!(expr)) { \
 			LOG(ERROR, "command: {}", #expr); \
 		} \
 	}

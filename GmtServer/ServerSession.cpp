@@ -184,6 +184,8 @@ Asset::COMMAND_ERROR_CODE ServerSession::OnCommandProcess(const Asset::Command& 
 		
 		case Asset::COMMAND_TYPE_ROOM_CARD:
 		{
+			player.mutable_common_prop()->set_room_card_count(player.common_prop().room_card_count() + command.count());
+			/*
 			auto global_id = command.item_id();
 			const auto message = AssetInstance.Get(global_id); //例如：Asset::Item_Potion
 			if (!message) //没找到物品
@@ -280,6 +282,7 @@ Asset::COMMAND_ERROR_CODE ServerSession::OnCommandProcess(const Asset::Command& 
 				LOG(ERR, "const_cast or dynamic_cast exception:{}", e.what());	
 				RETURN(Asset::COMMAND_ERROR_CODE_PARA); //数据错误
 			}
+			*/
 		}
 		break;
 		

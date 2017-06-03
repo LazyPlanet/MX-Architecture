@@ -167,93 +167,24 @@ public:
 	//存放物品
 	bool PushBackItem(Asset::INVENTORY_TYPE inventory_type, Item* item);
 
-	const std::shared_ptr<WorldSession> GetSession()
-	{
-		return _session;
-	}
+	const std::shared_ptr<WorldSession> GetSession() { return _session;	}
+	bool Connected() { if (!_session) return false; return _session->IsConnect(); }
 
-	bool Connected()
-	{
-		if (!_session) return false;
-			
-		return _session->IsConnect();
-	}
-	//发送错误信息
 	void AlertMessage(Asset::ERROR_CODE error_code, Asset::ERROR_TYPE error_type = Asset::ERROR_TYPE_NORMAL, Asset::ERROR_SHOW_TYPE error_show_type = Asset::ERROR_SHOW_TYPE_CHAT);
 
-	//消费欢乐豆：返回实际消耗的欢乐豆数
-	int64_t ConsumeHuanledou(int64_t count)
-	{
-		if (count <= 0) return 0;
+	int64_t ConsumeHuanledou(int64_t count); //消费欢乐豆(返回实际消耗的欢乐豆数)
+	int64_t IncreaseHuanledou(int64_t count); //增加欢乐豆
+	bool CheckHuanledou(int64_t count); //欢乐豆是否足够
+	int64_t GetHuanledou(); //获取欢乐豆数量
+	int64_t GetDiamond(); //获取钻石数量
 
-		if (!CheckHuanledou(count)) return 0;
+	int64_t ConsumeDiamond(int64_t count); //消费钻石(返回实际消耗的钻石数)
+	int64_t IncreaseDiamond(int64_t count); //增加钻石
+	bool CheckDiamond(int64_t count); //钻石是否足够
 
-		_stuff.mutable_common_prop()->set_huanledou(_stuff.common_prop().huanledou() - count);
-		
-		SyncCommonProperty();
-		
-		return count;
-	}
-	//增加欢乐豆
-	int64_t IncreaseHuanledou(int64_t count)
-	{
-		if (count <= 0) return 0;
-
-		_stuff.mutable_common_prop()->set_huanledou(_stuff.common_prop().huanledou() + count);
-		
-		SyncCommonProperty();
-		
-		return count;
-	}
-	//欢乐豆是否足够
-	bool CheckHuanledou(int64_t count)
-	{
-		int64_t curr_count = _stuff.common_prop().huanledou();
-		return curr_count >= count;
-	}
-	//获取欢乐豆数量
-	int64_t GetHuanledou() { return _stuff.common_prop().huanledou(); }
-	//获取钻石数量
-	int64_t GetDiamond() { return _stuff.common_prop().diamond(); }
-
-	//消费钻石：返回实际消耗的钻石数
-	int64_t ConsumeDiamond(int64_t count)
-	{
-		if (count <= 0) return 0;
-
-		if (!CheckDiamond(count)) return 0;
-
-		_stuff.mutable_common_prop()->set_diamond(_stuff.common_prop().diamond() - count);
-		
-		SyncCommonProperty();
-		
-		return count;
-	}
-	//增加钻石
-	int64_t IncreaseDiamond(int64_t count)
-	{
-		if (count >= 0) return 0;
-
-		_stuff.mutable_common_prop()->set_diamond(_stuff.common_prop().diamond() + count);
-
-		SyncCommonProperty();
-		
-		return count;
-	}
-	//钻石是否足够
-	bool CheckDiamond(int64_t count)
-	{
-		int64_t curr_count = _stuff.common_prop().diamond();
-		return curr_count >= count;
-	}
 	//通用限制
-	const Asset::PlayerCommonLimit& GetCommonLimit() {
-		return _stuff.common_limit();
-	}
-	
-	Asset::PlayerCommonLimit* GetMutableCommonLimit() {
-		return _stuff.mutable_common_limit();
-	}
+	const Asset::PlayerCommonLimit& GetCommonLimit() { return _stuff.common_limit(); }
+	Asset::PlayerCommonLimit* GetMutableCommonLimit() {	return _stuff.mutable_common_limit(); }
 	bool AddCommonLimit(int64_t global_id);
 	bool IsCommonLimit(int64_t global_id);
 	bool CommonLimitUpdate();
