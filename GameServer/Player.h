@@ -128,7 +128,7 @@ public:
 	virtual int32_t Save();
 	//是否脏数据
 	virtual bool IsDirty() { return _dirty; }
-	virtual void SetDirty() { _dirty = true; }
+	virtual void SetDirty(bool dirty = true) { _dirty = dirty; }
 	//同步玩家数据
 	virtual void SendPlayer();
 	//玩家心跳周期为10MS，如果该函数返回FALSE则表示掉线
