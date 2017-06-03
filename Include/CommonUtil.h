@@ -13,8 +13,14 @@ namespace Adoter
 	}
 
 #define DEBUG_ASSERT(expr) \
-	auto debug = ConfigInstance.GetBool("DebugModel", true); \
-		assert(debug && expr); \
+	{ \
+		auto debug = ConfigInstance.GetBool("DebugModel", true); \
+		if (debug) { \
+			assert(expr); \
+		} else if (expr) { \
+			LOG(ERROR, "command: {}", #expr); \
+		} \
+	}
 
 }
 

@@ -637,7 +637,7 @@ void Game::Calculate(int64_t hupai_player_id/*胡牌玩家*/, int64_t dianpao_pl
 		int32_t ming_score = ming_count * get_multiple(Asset::FAN_TYPE_MING_GANG), an_score = an_count * get_multiple(Asset::FAN_TYPE_AN_GANG);
 		auto score = ming_score + an_score;
 				
-		DEBUG("player_id:%ld, ming_count:%d, an_count:%d, score:%d\n", player->GetID(), ming_count, an_count, score);
+		DEBUG("player_id:{}, ming_count:{}, an_count:{}, score:{}", player->GetID(), ming_count, an_count, score);
 
 		auto record = message.mutable_record()->mutable_list(i);
 		record->set_score((record->score() + score) * (MAX_PLAYER_COUNT - 1)); //增加杠分
