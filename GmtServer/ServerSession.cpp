@@ -82,7 +82,7 @@ bool ServerSession::InnerProcess(const Asset::InnerMeta& meta)
 
 			TRACE("Receive command:{} from server:{} gmt_server:{}", message.ShortDebugString(), _ip_address, gmt_server_address);
 
-			if (true/*ServerSessionInstance.IsGmtServer(shared_from_this())*/) //处理GMT服务器发送的数据
+			if (ServerSessionInstance.IsGmtServer(shared_from_this())) //处理GMT服务器发送的数据
 			{
 				auto error_code = OnCommandProcess(message); //处理离线玩家的指令执行
 				if (Asset::COMMAND_ERROR_CODE_PLAYER_ONLINE == error_code) ServerSessionInstance.BroadCastProtocol(meta); //处理在线玩家的指令执行
@@ -98,6 +98,8 @@ bool ServerSession::InnerProcess(const Asset::InnerMeta& meta)
 			}
 			else //处理游戏服务器发送的数据
 			{
+				TRACE("Server:{} is not gmt server whose send message:{}.", _ip_address, message.ShortDebugString());
+
 				auto gmt_server = ServerSessionInstance.GetGmtServer();
 				if (!gmt_server) return false;
 			
@@ -138,6 +140,7 @@ Asset::COMMAND_ERROR_CODE ServerSession::OnCommandProcess(const Asset::Command& 
 		RETURN(Asset::COMMAND_ERROR_CODE_NO_ACCOUNT);
 	}
 	*/
+
 	//玩家角色校验
 	auto player_id = command.player_id();
 	if (player_id <= 0) 
@@ -153,17 +156,12 @@ Asset::COMMAND_ERROR_CODE ServerSession::OnCommandProcess(const Asset::Command& 
 	}
 	*/
 
-	auto stuff = redis->GetPlayer(player_id);
-	if (stuff.empty())
+	Asset::Player player; //玩家数据
+
+	auto success = redis->GetPlayer(player_id, player);
+	if (!success)
 	{
 		RETURN(Asset::COMMAND_ERROR_CODE_PARA); //数据错误
-	}
-
-	Asset::Player player;
-	auto result = player.ParseFromString(stuff);
-	if (!result)
-	{
-		//RETURN(Asset::COMMAND_ERROR_CODE_PARA); //数据错误
 	}
 
 	if (player.logout_time() == 0 && player.login_time() != 0) //玩家在线不支持
@@ -298,8 +296,7 @@ Asset::COMMAND_ERROR_CODE ServerSession::OnCommandProcess(const Asset::Command& 
 	}
 
 	//存盘
-	stuff = player.SerializeAsString();
-	redis->SavePlayer(player_id, stuff);
+	redis->SavePlayer(player_id, player);
 
 	RETURN(Asset::COMMAND_ERROR_CODE_SUCCESS); //成功执行
 

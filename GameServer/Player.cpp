@@ -54,32 +54,31 @@ int32_t Player::Load()
 {
 	//加载数据库
 	std::shared_ptr<Redis> redis = std::make_shared<Redis>();
-	std::string stuff = redis->GetPlayer(_player_id); //不能用引用
-	if (stuff.empty())
-	{
-		DEBUG_ASSERT(false);
-		return 1;
-	}
-	//初始化结构数据
-	bool result = _stuff.ParseFromString(stuff);
-	if (!result)
-	{
-		LOG(ERR, "Load player_id:{} information failed.", _player_id);
-		//return 2;
-	}
-	//初始化包裹，创建角色或者增加包裹会调用一次
+
+	auto success = redis->GetPlayer(_player_id, _stuff);
+	if (!success) return 1;
+		
+	DEBUG("player_id:{} load info:{}", _player_id, _stuff.ShortDebugString());
+
+	//初始化包裹
+	//
+	//创建角色或者增加包裹会调用一次
+	//
 	do {
 		const pb::EnumDescriptor* enum_desc = Asset::INVENTORY_TYPE_descriptor();
 		if (!enum_desc) return 0;
+
 		int32_t curr_inventories_size = _stuff.inventory().inventory_size(); 
 		if (curr_inventories_size == enum_desc->value_count() - 1) break; 
+
 		for (int inventory_index = curr_inventories_size; inventory_index < enum_desc->value_count() - 1; ++inventory_index)
 		{
 			auto inventory = _stuff.mutable_inventory()->mutable_inventory()->Add(); //增加新包裹，且初始化数据
 			inventory->set_inventory_type((Asset::INVENTORY_TYPE)(inventory_index + 1));
-			//提示信息
+
 			const pb::EnumValueDescriptor *enum_value = enum_desc->value(inventory_index);
 			if (!enum_value) break;
+			TRACE("player_id:{} add inventory:{}", _player_id, enum_value->name());
 		}
 	} while(false);
 
@@ -92,21 +91,10 @@ int32_t Player::Save()
 	{
 		_stuff.mutable_player_prop()->Clear(); //非存盘数据
 	}
-	std::string stuff = _stuff.SerializeAsString(); //存入数据库
 
 	auto redis = make_unique<Redis>();
-	redis->SavePlayer(_player_id, stuff);
+	redis->SavePlayer(_player_id, _stuff);
 	
-	bool result = _stuff.ParseFromString(stuff);
-	if (!result)
-	{
-		ERROR("player_id:{} 解析失败.", _player_id);
-	}
-	else
-	{
-		ERROR("player_id:{} 解析成功, 看来是Redis问题.", _player_id);
-	}
-		
 	PLAYER(_stuff);	//BI日志
 		
 	return 0;

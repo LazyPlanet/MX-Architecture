@@ -40,13 +40,13 @@ void ClientSession::OnReceived(const std::string& message)
 
 bool ClientSession::InnerProcess(const Asset::InnerMeta& meta)
 {
-	TRACE("Receive message:{} from server", meta.ShortDebugString());
+	TRACE("Receive message:{} from server:{}", meta.ShortDebugString(), _ip_address);
 
 	switch (meta.type_t())
 	{
 		case Asset::INNER_TYPE_REGISTER: //注册服务器成功
 		{
-			TRACE("Register gameserver to gmtserver success");
+			TRACE("Register gameserver to gmtserver success.");
 		}
 		break;
 
@@ -108,6 +108,7 @@ Asset::COMMAND_ERROR_CODE ClientSession::OnCommandProcess(const Asset::Command& 
 	}
 
 	Asset::Player player;
+	/*
 	result = player.ParseFromString(redis->GetPlayer(player_id));
 	if (!result)
 	{
@@ -118,7 +119,7 @@ Asset::COMMAND_ERROR_CODE ClientSession::OnCommandProcess(const Asset::Command& 
 	{
 		RETURN(Asset::COMMAND_ERROR_CODE_PLAYER_OFFLINE); //玩家目前不在线
 	}
-
+	*/
 	player_ptr = PlayerInstance.Get(player_id);
 	//
 	//理论上玩家应该在线，但是没有查到该玩家，原因
