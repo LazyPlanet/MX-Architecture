@@ -1091,6 +1091,8 @@ int32_t Player::CmdLoadScene(pb::Message* message)
 	Asset::LoadScene* load_scene = dynamic_cast<Asset::LoadScene*>(message);
 	if (!load_scene) return 1;
 
+	TRACE("player_id:{}, message:{}", _player_id, load_scene->ShortDebugString());
+
 	switch (load_scene->load_type())
 	{
 		case Asset::LOAD_SCENE_TYPE_START: //加载开始
@@ -1110,11 +1112,19 @@ int32_t Player::CmdLoadScene(pb::Message* message)
 			auto room_id = _stuff.player_prop().room_id();
 			
 			auto locate_room = RoomInstance.Get(room_id);
-			if (!locate_room) return 3; //非法的房间 
+			if (!locate_room) 
+			{
+				DEBUG_ASSERT(false);
+				return 3; //非法的房间 
+			}
 			
 			auto ret = locate_room->TryEnter(shared_from_this()); //玩家进入房间
 
-			if (ret != Asset::ERROR_SUCCESS) return 4;
+			if (ret != Asset::ERROR_SUCCESS) 
+			{
+				ERROR("player_id:{} enter room:{} failed, reason:{}.", _player_id, room_id, ret);
+				return 4;
+			}
 
 			_room = locate_room;
 
@@ -1332,7 +1342,7 @@ bool Player::CheckHuPai(const std::map<int32_t, std::vector<int32_t>>& cards_inh
 		int32_t fenggang, //旋风杠，本质是暗杠
 		const Asset::PaiElement& pai) //胡牌
 {
-	DEBUG("player_id:{} card_type:{} card_value:{}", _player_id, pai.card_type(), pai.card_value());
+	//DEBUG("player_id:{} card_type:{} card_value:{}", _player_id, pai.card_type(), pai.card_value());
 
 	auto cards = cards_inhand;
 
@@ -1776,7 +1786,14 @@ bool Player::CheckHuPai(const Asset::PaiElement& pai, std::vector<Asset::FAN_TYP
 	}
 
 	auto ke_total = ke_count + _jiangang + _fenggang + _minggang.size() + _angang.size();
-	if (ke_total == 4) piao = true; //TODO：玩家吃了三套副一样的..
+		
+	DEBUG("player_id:{} ke_total:{} ke_count:{} jiangang_count:{} fenggang_count:{} minggang.size():{} angang.size():{}", 
+			_player_id, ke_total, ke_count, _jiangang, _fenggang, _minggang.size(), _angang.size());
+
+	if (ke_total == 4) 
+	{
+		piao = true; //TODO：玩家吃了三套副一样的..
+	}
 	
 	////////是否是夹胡
 	{

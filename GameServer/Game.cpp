@@ -545,7 +545,7 @@ void Game::Calculate(int64_t hupai_player_id/*胡牌玩家*/, int64_t dianpao_pl
 
 	int32_t base_score = 1, total_score = 0;
 
-	//番数由于玩家角色性检查(比如庄家胡牌翻番)
+	//玩家角色性检查(比如，庄家胡牌)
 	if (IsBanker(hupai_player_id)) 
 	{
 		fan_list.push_back(Asset::FAN_TYPE_ZHUANG);
@@ -567,7 +567,7 @@ void Game::Calculate(int64_t hupai_player_id/*胡牌玩家*/, int64_t dianpao_pl
 		auto record = message.mutable_record()->mutable_list()->Add();
 		record->set_player_id(player_id);
 
-		if (hupai_player_id == player_id) continue;
+		//if (hupai_player_id == player_id) continue;
 
 		int32_t score = base_score;
 
@@ -622,7 +622,11 @@ void Game::Calculate(int64_t hupai_player_id/*胡牌玩家*/, int64_t dianpao_pl
 			detail->set_score(score);
 		}
 		
-		record->set_score(-score); //玩家总共所输积分
+		if (hupai_player_id == player_id) 
+			record->set_score(score); //玩家所赢积分
+		else
+			record->set_score(-score); //玩家所输积分
+
 		total_score += score; //胡牌玩家赢了该玩家积分
 	}
 
