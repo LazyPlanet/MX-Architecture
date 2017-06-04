@@ -543,7 +543,7 @@ void Game::Calculate(int64_t hupai_player_id/*胡牌玩家*/, int64_t dianpao_pl
 		return pow(2, it->multiple());
 	};
 
-	int32_t base_score = 1, total_score = 0;
+	int32_t base_score = 1;
 
 	//玩家角色性检查(比如，庄家胡牌)
 	if (IsBanker(hupai_player_id)) 
@@ -595,7 +595,7 @@ void Game::Calculate(int64_t hupai_player_id/*胡牌玩家*/, int64_t dianpao_pl
 			detail->set_score(score);
 		}
 
-		if (player_id == dianpao_player_id) 
+		if (hupai_player_id != player_id && player_id == dianpao_player_id) 
 		{
 			score *= get_multiple(Asset::FAN_TYPE_DIAN_PAO); //炮翻番
 			
@@ -604,7 +604,7 @@ void Game::Calculate(int64_t hupai_player_id/*胡牌玩家*/, int64_t dianpao_pl
 			detail->set_score(score);
 		}
 
-		if (player->IsBimen()) 
+		if (hupai_player_id != player_id && player->IsBimen()) 
 		{
 			score *= get_multiple(Asset::FAN_TYPE_BIMEN); //闭门翻番
 			
@@ -613,7 +613,7 @@ void Game::Calculate(int64_t hupai_player_id/*胡牌玩家*/, int64_t dianpao_pl
 			detail->set_score(score);
 		}
 
-		if (dianpao_player_id == player_id)
+		if (hupai_player_id != player_id && dianpao_player_id == player_id)
 		{
 			score *= get_multiple(Asset::FAN_TYPE_DIAN_PAO); //点炮
 		
@@ -626,16 +626,42 @@ void Game::Calculate(int64_t hupai_player_id/*胡牌玩家*/, int64_t dianpao_pl
 			record->set_score(score); //玩家所赢积分
 		else
 			record->set_score(-score); //玩家所输积分
-
-		total_score += score; //胡牌玩家赢了该玩家积分
 	}
 
+	//
+	//胡牌玩家积分
+	//
+	//其他玩家积分之和
+	//
 	auto record = std::find_if(message.mutable_record()->mutable_list()->begin(), message.mutable_record()->mutable_list()->end(), 
-			[hupai_player_id](const Asset::GameRecord_GameElement& ele){
-				return hupai_player_id == ele.player_id();
-			});
+		[hupai_player_id](const Asset::GameRecord_GameElement& ele){
+			return hupai_player_id == ele.player_id();
+	});
 	if (record == message.mutable_record()->mutable_list()->end()) return;
-	record->set_score(total_score); //胡牌玩家赢积分
+
+	for (const auto& list_element : message.record().list())
+	{
+		if (list_element.player_id() == hupai_player_id) continue;
+		
+		for (const auto& element : list_element.details())
+		{
+			const auto& fan_type = element.fan_type();
+
+			auto it_score = std::find_if(record->mutable_details()->begin(), record->mutable_details()->end(), 
+				[fan_type](const Asset::GameRecord_GameElement_DetailElement& detail_element){
+					return detail_element.fan_type() == fan_type;
+			});
+			if (it_score == record->mutable_details()->end()) //理论不会如此
+			{
+				auto rcd = record->mutable_details()->Add();
+				rcd->CopyFrom(element);
+			}
+			else
+			{
+				it_score->set_score(it_score->score() + element.score());
+			}
+		}
+	}
 	
 	/////////////////////////////////////////////////////////////////杠牌积分
 	for (int i = 0; i < MAX_PLAYER_COUNT; ++i)
