@@ -40,13 +40,13 @@ public:
 			{
 				case Asset::CommonReward_REWARD_TYPE_REWARD_TYPE_DIAMOND:
 				{
-					player->IncreaseDiamond(count);
+					player->GainDiamond(count);
 				}
 				break;
 
 				case Asset::CommonReward_REWARD_TYPE_REWARD_TYPE_HUANLEDOU:
 				{
-					player->IncreaseHuanledou(count);
+					player->GainHuanledou(count);
 				}
 				break;
 				

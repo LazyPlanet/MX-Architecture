@@ -135,7 +135,7 @@ Asset::COMMAND_ERROR_CODE ClientSession::OnCommandProcess(const Asset::Command& 
 	{
 		case Asset::COMMAND_TYPE_RECHARGE:
 		{
-			player_ptr->IncreaseHuanledou(command.count());
+			player_ptr->GainHuanledou(command.count());
 		}
 		break;
 		
@@ -152,7 +152,7 @@ Asset::COMMAND_ERROR_CODE ClientSession::OnCommandProcess(const Asset::Command& 
 		
 		case Asset::COMMAND_TYPE_HUANLEDOU:
 		{
-			player_ptr->IncreaseDiamond(command.count());
+			player_ptr->GainDiamond(command.count());
 		}
 		break;
 		

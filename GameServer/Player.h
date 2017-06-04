@@ -173,14 +173,19 @@ public:
 	void AlertMessage(Asset::ERROR_CODE error_code, Asset::ERROR_TYPE error_type = Asset::ERROR_TYPE_NORMAL, Asset::ERROR_SHOW_TYPE error_show_type = Asset::ERROR_SHOW_TYPE_CHAT);
 
 	int64_t ConsumeHuanledou(int64_t count); //消费欢乐豆(返回实际消耗的欢乐豆数)
-	int64_t IncreaseHuanledou(int64_t count); //增加欢乐豆
+	int64_t GainHuanledou(int64_t count); //增加欢乐豆
 	bool CheckHuanledou(int64_t count); //欢乐豆是否足够
 	int64_t GetHuanledou(); //获取欢乐豆数量
-	int64_t GetDiamond(); //获取钻石数量
 
 	int64_t ConsumeDiamond(int64_t count); //消费钻石(返回实际消耗的钻石数)
-	int64_t IncreaseDiamond(int64_t count); //增加钻石
+	int64_t GainDiamond(int64_t count); //增加钻石
 	bool CheckDiamond(int64_t count); //钻石是否足够
+	int64_t GetDiamond(); //获取钻石数量
+	
+	int64_t ConsumeRoomCard(int64_t count); //消费房卡(返回实际消耗的房卡数)
+	int64_t GainRoomCard(int64_t count); //增加房卡
+	bool CheckRoomCard(int64_t count); //房卡是否足够
+	int64_t GetRoomCard(); //获取房卡数量
 
 	//通用限制
 	const Asset::PlayerCommonLimit& GetCommonLimit() { return _stuff.common_limit(); }

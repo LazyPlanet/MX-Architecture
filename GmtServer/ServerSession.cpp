@@ -56,6 +56,8 @@ bool ServerSession::InnerProcess(const Asset::InnerMeta& meta)
 			Asset::Register message;
 			auto result = message.ParseFromString(meta.stuff());
 			if (!result) return false;
+			
+			TRACE("接收服务器注册数据:{} 服务器信息:{} GMT服务器数据:{}", message.ShortDebugString(), _ip_address, gmt_server_address);
 
 			if (message.server_type() == Asset::SERVER_TYPE_GMT) //GMT服务器
 			{
@@ -164,9 +166,14 @@ Asset::COMMAND_ERROR_CODE ServerSession::OnCommandProcess(const Asset::Command& 
 		RETURN(Asset::COMMAND_ERROR_CODE_PARA); //数据错误
 	}
 
+	//
+	// 玩家在线不做回发处理，直接发到游戏逻辑服务器进行处理
+	//
+	// 此处直接退出即可
+	//
 	if (player.logout_time() == 0 && player.login_time() != 0) //玩家在线不支持
 	{
-		RETURN(Asset::COMMAND_ERROR_CODE_PLAYER_ONLINE); //玩家目前在线
+		return Asset::COMMAND_ERROR_CODE_PLAYER_ONLINE; //玩家目前在线
 	}
 		
 	if (command.count() <= 0) //不可能是负数

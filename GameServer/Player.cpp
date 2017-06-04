@@ -161,6 +161,42 @@ int32_t Player::CmdEnterGame(pb::Message* message)
 	return 0;
 }
 */
+	
+int64_t Player::ConsumeRoomCard(int64_t count)
+{
+	if (count <= 0) return 0;
+
+	if (!CheckRoomCard(count)) return 0;
+
+	_stuff.mutable_common_prop()->set_room_card_count(_stuff.common_prop().room_card_count() - count);
+	
+	SyncCommonProperty();
+	
+	return count;
+}
+
+int64_t Player::GainRoomCard(int64_t count) 
+{
+	if (count <= 0) return 0;
+
+	_stuff.mutable_common_prop()->set_room_card_count(_stuff.common_prop().room_card_count() + count);
+	
+	SyncCommonProperty();
+	
+	return count;
+}
+
+bool Player::CheckRoomCard(int64_t count)
+{
+	int64_t curr_count = _stuff.common_prop().room_card_count();
+	return curr_count >= count;
+}
+
+int64_t Player::GetRoomCard()
+{
+	return _stuff.common_prop().room_card_count();
+}
+
 int64_t Player::ConsumeHuanledou(int64_t count)
 {
 	if (count <= 0) return 0;
@@ -174,7 +210,7 @@ int64_t Player::ConsumeHuanledou(int64_t count)
 	return count;
 }
 
-int64_t Player::IncreaseHuanledou(int64_t count)
+int64_t Player::GainHuanledou(int64_t count)
 {
 	if (count <= 0) return 0;
 
@@ -214,9 +250,9 @@ int64_t Player::ConsumeDiamond(int64_t count)
 	return count;
 }
 
-int64_t Player::IncreaseDiamond(int64_t count)
+int64_t Player::GainDiamond(int64_t count)
 {
-	if (count >= 0) return 0;
+	if (count <= 0) return 0;
 
 	_stuff.mutable_common_prop()->set_diamond(_stuff.common_prop().diamond() + count);
 

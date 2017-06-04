@@ -25,7 +25,7 @@ void WorldSession::InitializeHandler(const boost::system::error_code error, cons
 	{
 		if (error)
 		{
-			ERROR("Remote client disconnect, remote_ip:{}, player_id:{}", _ip_address, g_player ? g_player->GetID() : 0);
+			WARN("Remote client disconnect, remote_ip:{}, player_id:{}", _ip_address, g_player ? g_player->GetID() : 0);
 			KillOutPlayer();
 			//Close(); ////断开网络连接，不要显示的关闭网络连接
 			return;

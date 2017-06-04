@@ -51,7 +51,7 @@ public:
 
 				player->ConsumeDiamond(diamond);
 
-				player->IncreaseHuanledou(mall->count());
+				player->GainHuanledou(mall->count());
 			}
 			break;
 			
