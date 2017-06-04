@@ -18,7 +18,7 @@ void ServerSession::InitializeHandler(const boost::system::error_code error, con
 	{
 		if (error)
 		{
-			ERROR("Remote client disconnect, remote_ip:{}", _ip_address);
+			WARN("Remote client disconnect, remote_ip:{}", _ip_address);
 			return;
 		}
 		else
@@ -87,13 +87,13 @@ bool ServerSession::InnerProcess(const Asset::InnerMeta& meta)
 			if (ServerSessionInstance.IsGmtServer(shared_from_this())) //处理GMT服务器发送的数据
 			{
 				auto error_code = OnCommandProcess(message); //处理离线玩家的指令执行
-				if (Asset::COMMAND_ERROR_CODE_PLAYER_ONLINE == error_code) ServerSessionInstance.BroadCastProtocol(meta); //处理在线玩家的指令执行
+				if (Asset::COMMAND_ERROR_CODE_PLAYER_ONLINE == error_code) ServerSessionInstance.BroadCastProtocol(message); //处理在线玩家的指令执行
 
 				if (Asset::COMMAND_ERROR_CODE_SUCCESS == error_code)
 				{
 					TRACE("Server:{} server send gmt message:{} error_code:{}", _ip_address, message.ShortDebugString(), error_code);
 				}
-				else
+				else if (Asset::COMMAND_ERROR_CODE_PLAYER_ONLINE != error_code) //在线
 				{
 					ERROR("Server:{} server send gmt message:{} error_code:{}", _ip_address, message.ShortDebugString(), error_code);
 				}
@@ -368,7 +368,6 @@ void ServerSessionManager::BroadCastProtocol(const pb::Message& message)
 	for (auto session : _sessions)
 	{
 		if (!session) continue;
-		DEBUG("send protocol to game server.");
 		session->SendProtocol(message);
 	}
 }
