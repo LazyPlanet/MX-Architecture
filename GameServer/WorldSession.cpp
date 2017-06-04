@@ -86,7 +86,7 @@ void WorldSession::InitializeHandler(const boost::system::error_code error, cons
 			 	auto redis = std::make_shared<Redis>();
 				auto success = redis->GetUser(login->account().username(), user);
 
-				if (success) 
+				if (!success) //没有该用户
 				{
 					user.mutable_account()->CopyFrom(login->account());
 
