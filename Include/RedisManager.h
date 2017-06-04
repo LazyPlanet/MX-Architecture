@@ -46,10 +46,6 @@ public:
 		return reply;
 	}
 
-	void GetEntity(int64_t entity_id)
-	{
-	}
-	
 	int64_t CreatePlayer()
 	{
 		redisReply* reply = (redisReply*)redisCommand(_client, "Incr player_counter");
@@ -116,37 +112,42 @@ public:
 		return room_id;
 	}
 
-	std::string GetUser(std::string username)
+	bool GetUser(std::string username, Asset::User& user)
 	{
-		std::string value = "";
-
 		std::string command = "Get user:" + username;
 		redisReply* reply = (redisReply*)redisCommand(_client, command.c_str());
 
-		if (!reply) return value;
+		if (!reply) return false;
 
-		if (reply->type == REDIS_REPLY_NIL) return value;
+		if (reply->type == REDIS_REPLY_NIL) return false;
 		
-		if (reply->type != REDIS_REPLY_STRING) return value;
+		if (reply->type != REDIS_REPLY_STRING) return false;
 
-		value = reply->str;
+		if (reply->len == 0) return false;
+
+		auto success = user.ParseFromArray(reply->str, reply->len);
+
 		freeReplyObject(reply);
 
-		return value;
+		return success;
 	}
 	
-	void SaveUser(std::string username, std::string& stuff)
+	bool SaveUser(std::string username, const Asset::User& user)
 	{
+		const int user_length = user.ByteSize();
+		char user_buff[user_length];
+		memset(user_buff, 0, user_length);
+
+		user.SerializeToArray(user_buff, user_length);
+		
 		std::string key = "user:" + username;
 
-		redisReply* reply = (redisReply*)redisCommand(_client, "Set %s %s", key.c_str(), stuff.c_str());
-		if (!reply) return;
-		
-		if (reply->type != REDIS_REPLY_STRING) return;
+		redisReply* reply = (redisReply*)redisCommand(_client, "Set %s %b", key.c_str(), user_buff, user_length);
+		if (!reply) return false;
 
 		freeReplyObject(reply);
 		
-		LOG(TRACE, "save user success, username:{} data:{}", username, stuff);
+		return true;
 	}
 };
 

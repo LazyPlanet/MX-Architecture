@@ -80,13 +80,13 @@ void WorldSession::InitializeHandler(const boost::system::error_code error, cons
 			{
 				Asset::Login* login = dynamic_cast<Asset::Login*>(message);
 				if (!login) return; 
+			
+				Asset::User user;
 				
 			 	auto redis = std::make_shared<Redis>();
-				std::string stuff = redis->GetUser(login->account().username());
+				auto success = redis->GetUser(login->account().username(), user);
 
-				Asset::User user;
-
-				if (stuff.empty()) //没有数据
+				if (success) 
 				{
 					user.mutable_account()->CopyFrom(login->account());
 
@@ -94,29 +94,28 @@ void WorldSession::InitializeHandler(const boost::system::error_code error, cons
 
 					if (player_id == 0) 
 					{
-						ERROR("Create player failed.");
+						LOG(ERROR, "create player failed, username:{}", login->account().username());
 						return; //创建失败
 					}
 
 					user.mutable_player_list()->Add(player_id);
 
-					auto stuff = user.SerializeAsString();
-					redis->SaveUser(login->account().username(), stuff); //账号数据存盘
+					redis->SaveUser(login->account().username(), user); //账号数据存盘
 
 					g_player = std::make_shared<Player>(player_id, shared_from_this());
 					std::string player_name = NameInstance.Get();
 
-					TRACE("Get player_name success, player_id:{}, player_name:{}", player_id, player_name.c_str());
+					TRACE("get player_name success, player_id:{}, player_name:{}", player_id, player_name.c_str());
 
 					g_player->SetName(player_name);
 					g_player->Save(); //存盘，防止数据库无数据
 				}
 				else
 				{
-					user.ParseFromString(stuff);
+					LOG(ERROR, "get player_name failed, username:{}", login->account().username());
 				}
 
-				_account.Clear(); _player_list.clear(); //清理状态
+				_player_list.clear(); 
 				_account.CopyFrom(login->account()); //账号信息
 				for (auto player_id : user.player_list()) _player_list.emplace(player_id); //玩家数据
 				

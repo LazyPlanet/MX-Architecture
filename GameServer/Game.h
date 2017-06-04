@@ -40,6 +40,8 @@ private:
 	std::vector<Asset::PaiOperationList> _oper_list; //可操作列表
 
 	std::shared_ptr<Player> _players[MAX_PLAYER_COUNT]; //玩家数据：按照进房间的顺序，0->1->2->3...主要用于控制发牌和出牌顺序
+
+	bool _liuju = false;
 public:
 	virtual void Init(std::shared_ptr<Room> room); //初始化
 	virtual bool Start(std::vector<std::shared_ptr<Player>> players); //开始游戏
@@ -81,6 +83,8 @@ public:
 		return pai.card_type() == _baopai.card_type() && pai.card_value() == _baopai.card_value();
 	}
 	Asset::PaiElement GetBaopai(int32_t tail_index);
+	//流局检查
+	bool CheckLiuJu();
 };
 
 /////////////////////////////////////////////////////

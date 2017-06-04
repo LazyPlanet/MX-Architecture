@@ -31,7 +31,7 @@ public:
 	Asset::COMMAND_ERROR_CODE OnCommandProcess(const Asset::Command& command);
     
 	virtual void OnConnected(); //连接上服务器
-	virtual void OnReceived(const std::string& message); //处理服务器的数据
+	virtual void OnReceived(const Asset::InnerMeta& message); //处理服务器的数据
 	
 	void SendProtocol(pb::Message& message);
 	void SendProtocol(pb::Message* message);
@@ -45,7 +45,7 @@ public:
     virtual void OnWriteSome(const boost::system::error_code& error, std::size_t bytes_transferred);  
 private:
 	std::deque<std::string> _send_list;
-	std::deque<std::string> _receive_list;
+	std::deque<Asset::InnerMeta> _receive_list;
 	boost::asio::ip::tcp::endpoint _remote_endpoint;
 	std::string _ip_address;
 };

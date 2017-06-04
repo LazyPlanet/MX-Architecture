@@ -189,12 +189,22 @@ void Game::OnPaiOperate(std::shared_ptr<Player> player, pb::Message* message)
 		case Asset::PAI_OPER_TYPE_DAPAI: //打牌
 		case Asset::PAI_OPER_TYPE_TINGPAI: //听牌
 		{
-			//检查各个玩家手里的牌是否满足胡、杠、碰、吃
+			//
+			//(1) 检查各个玩家手里的牌是否满足胡、杠、碰、吃
+			//
+			//(2) 检查是否到了流局阶段
+			//
+			//(3) 否则给当前玩家的下家继续发牌
+			//
 			if (CheckPai(pai, player->GetID())) //有满足要求的玩家
 			{
 				SendCheckRtn();
 			}
-			else //没有玩家需要操作：给当前玩家的下家继续发牌
+			else if (CheckLiuJu())
+			{
+				return;
+			}
+			else
 			{
 				auto next_player_index = (_curr_player_index + 1) % MAX_PLAYER_COUNT; 
 
@@ -221,7 +231,7 @@ void Game::OnPaiOperate(std::shared_ptr<Player> player, pb::Message* message)
 					pai_perator->mutable_pai()->CopyFrom(card);
 					pai_perator->mutable_oper_list()->Add(Asset::PAI_OPER_TYPE_HUPAI);
 				}
-				else if (player_next->CheckBaoHu(pai)) //自摸宝胡
+				else if (player_next->CheckBaoHu(card)) //自摸宝胡
 				{
 					auto pai_perator = alert.mutable_pais()->Add();
 					pai_perator->mutable_pai()->CopyFrom(card);
@@ -273,7 +283,6 @@ void Game::OnPaiOperate(std::shared_ptr<Player> player, pb::Message* message)
 				{
 					_curr_player_index = next_player_index;
 				}
-
 			}
 		}
 		break;
@@ -440,7 +449,7 @@ void Game::OnPaiOperate(std::shared_ptr<Player> player, pb::Message* message)
 				pai_perator->mutable_pai()->CopyFrom(card);
 				pai_perator->mutable_oper_list()->Add(Asset::PAI_OPER_TYPE_HUPAI);
 			}
-			else if (player_next->CheckBaoHu(pai)) //自摸宝胡
+			else if (player_next->CheckBaoHu(card)) //自摸宝胡
 			{
 				auto pai_perator = alert.mutable_pais()->Add();
 				pai_perator->mutable_pai()->CopyFrom(card);
@@ -852,17 +861,61 @@ std::vector<int32_t> Game::TailPai(size_t card_count)
 
 	return cards;
 }
+	
+bool Game::CheckLiuJu()
+{
+	if (_cards.size() > size_t(g_const->liuju_count() + 4)) return false;
+
+	Asset::LiuJu message;
+
+	auto next_player_index = (_curr_player_index + 1) % MAX_PLAYER_COUNT;
+
+	for (int32_t i = next_player_index; i < MAX_PLAYER_COUNT - 1 + next_player_index; ++i)
+	{
+		auto cur_index = i % MAX_PLAYER_COUNT;
+
+		auto player = GetPlayerByOrder(cur_index);
+		if (!player)
+		{
+			DEBUG_ASSERT(false);
+			return false;
+		}
+
+		Asset::PaiOperationAlert alert;
+				
+		auto cards = FaPai(1); 
+		auto card = GameInstance.GetCard(cards[0]); //玩家待抓的牌
+
+		auto ju_element = message.mutable_elements()->Add();
+		ju_element->mutable_pai()->CopyFrom(card);
+		ju_element->set_player_id(player->GetID());
+
+		if (player->CheckHuPai(card)) 
+		{
+			auto pai_perator = alert.mutable_pais()->Add();
+			pai_perator->mutable_pai()->CopyFrom(card);
+			pai_perator->mutable_oper_list()->Add(Asset::PAI_OPER_TYPE_HUPAI);
+		}
+		else if (player->CheckBaoHu(card))
+		{
+			auto pai_perator = alert.mutable_pais()->Add();
+			pai_perator->mutable_pai()->CopyFrom(card);
+			pai_perator->mutable_oper_list()->Add(Asset::PAI_OPER_TYPE_HUPAI);
+		}
+	}
+
+	BroadCast(message);
+	
+	_liuju = true;
+
+	TRACE("curr cards count:{} liuju_count:{}", _cards.size(), g_const->liuju_count());
+	return true;
+}
 
 std::vector<int32_t> Game::FaPai(size_t card_count)
 {
 	std::vector<int32_t> cards;
 
-	if (_cards.size() / 2 <= 12) //可以分牌，不能继续抓牌
-	{
-		//DEBUG("%s:line:%d, size:%u\n", __func__, __LINE__, _cards.size());
-		return cards;
-	}
-	
 	if (_cards.size() < card_count) return cards;
 
 	for (size_t i = 0; i < card_count; ++i)

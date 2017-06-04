@@ -15,27 +15,28 @@ ClientSession::ClientSession(boost::asio::io_service& io_service, const boost::a
 	
 void ClientSession::OnConnected()
 {
-	DEBUG("Connet GmtServer success, ip_address:{}", _ip_address);
+	DEBUG("Connected server:{} success.", _ip_address);
 
-	//注册服务器角色
 	Asset::Register message;
 	message.set_server_type(Asset::SERVER_TYPE_GAME);
 	message.set_server_id(1);
-	SendProtocol(message);
+	SendProtocol(message); //注册服务器角色
 }
 
-void ClientSession::OnReceived(const std::string& message)
+void ClientSession::OnReceived(const Asset::InnerMeta& message)
 {
+	/*
 	Asset::InnerMeta meta;
 	auto result = meta.ParseFromString(message);
 	if (!result)
 	{
 		LOG(ERROR, "Receive message error from server:{}", _ip_address);
 		return;
-	}
+	}	
+	*/
 
-	InnerProcess(meta);
-	LOG(INFO, "Receive message:{} from server:{}", meta.ShortDebugString(), _ip_address);
+	InnerProcess(message);
+	LOG(INFO, "Receive message:{} from server:{}", message.ShortDebugString(), _ip_address);
 }
 
 bool ClientSession::InnerProcess(const Asset::InnerMeta& meta)
@@ -74,20 +75,24 @@ Asset::COMMAND_ERROR_CODE ClientSession::OnCommandProcess(const Asset::Command& 
 #define RETURN(x) \
 	auto response = command; \
 	response.set_error_code(x); \
-	ERROR("command excute for:{} command:{}", x, command.ShortDebugString()); \
+	if (x) { \
+		LOG(ERR, "command excute failed for:{} command:{}", x, command.ShortDebugString()); \
+	} else { \
+		LOG(TRACE, "command excute success for:{} command:{}", x, command.ShortDebugString()); \
+	} \
 	SendProtocol(response); \
 	return x; \
 
 	auto redis = make_unique<Redis>();
 
+	/*
 	Asset::User user; //账号数据
 	auto result = user.ParseFromString(redis->GetUser(command.account()));
 	if (!result)
 	{
 		RETURN(Asset::COMMAND_ERROR_CODE_NO_ACCOUNT);
 	}
-
-	std::shared_ptr<Player> player_ptr = nullptr;
+	*/
 
 	//玩家角色校验
 	auto player_id = command.player_id();
@@ -101,26 +106,15 @@ Asset::COMMAND_ERROR_CODE ClientSession::OnCommandProcess(const Asset::Command& 
 		RETURN(Asset::COMMAND_ERROR_CODE_PARA); //数据错误
 	}
 	
+	/*
 	auto it = std::find(user.player_list().begin(), user.player_list().end(), player_id);
 	if (it == user.player_list().end()) 
 	{
 		RETURN(Asset::COMMAND_ERROR_CODE_NO_PLAYER); //账号下不存在该角色
 	}
-
-	Asset::Player player;
-	/*
-	result = player.ParseFromString(redis->GetPlayer(player_id));
-	if (!result)
-	{
-		RETURN(Asset::COMMAND_ERROR_CODE_PARA); //数据错误
-	}
-
-	if (player.logout_time() != 0 && player.login_time() == 0) //玩家在线
-	{
-		RETURN(Asset::COMMAND_ERROR_CODE_PLAYER_OFFLINE); //玩家目前不在线
-	}
 	*/
-	player_ptr = PlayerInstance.Get(player_id);
+
+	auto player_ptr = PlayerInstance.Get(player_id);
 	//
 	//理论上玩家应该在线，但是没有查到该玩家，原因
 	//
@@ -141,12 +135,7 @@ Asset::COMMAND_ERROR_CODE ClientSession::OnCommandProcess(const Asset::Command& 
 		
 		case Asset::COMMAND_TYPE_ROOM_CARD:
 		{
-			auto ret = player_ptr->GainItem(command.item_id(), command.count());   
-			if (!ret)
-			{
-				LOG(ERR, "Excute command to player_id:{} for gainning room card id:{} count:{} error.", player_id, command.item_id(), command.count());
-				RETURN(Asset::COMMAND_ERROR_CODE_PARA); //数据错误
-			}
+			player_ptr->GainRoomCard(command.count());   
 		}
 		break;
 		
@@ -272,41 +261,36 @@ void ClientSession::OnReadSome(const boost::system::error_code& error, std::size
 {
 	if (!IsConnected()) return;
 		
+	if (error)
+	{
+		Close(error.message());
+		return;
+	}
+	
+	DEBUG("Receive message from server:{} bytes_transferred:{} error:{}", _ip_address, bytes_transferred, error.message());
+
 	Asset::InnerMeta meta;
 	auto result = meta.ParseFromArray(_buffer.data(), bytes_transferred);
 	if (!result)
 	{
-		LOG(ERROR, "Receive message error from server:{}", _ip_address);
+		LOG(ERROR, "Receive message error from server:{} cannot parse from data.", _ip_address);
 		return;
 	}
 
-	InnerProcess(meta);
-	LOG(INFO, "Receive message:{} from server:{}", meta.ShortDebugString(), _ip_address);
+	_receive_list.push_back(meta);
 
-	/*
-	if (error)
-	{
-		if (error != boost::asio::error::eof)
-		{
-		}
-
-		Close(error.message());
-		return;
-	}
-
-	StartReceive(); //继续下一次数据接收
-	
-	std::deque<std::string> received_messages;
+	std::deque<Asset::InnerMeta> received_messages;
 	received_messages.swap(_receive_list);
 
 	//数据处理
 	while (!IsClosed() && !received_messages.empty())
 	{
-		const std::string& message = received_messages.front();
+		const auto& message = received_messages.front();
 		OnReceived(message);
 		received_messages.pop_front();
 	}
-	*/
+	
+	AsynyReadSome(); //继续下一次数据接收
 }
 
 }

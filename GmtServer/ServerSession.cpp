@@ -57,7 +57,7 @@ bool ServerSession::InnerProcess(const Asset::InnerMeta& meta)
 			auto result = message.ParseFromString(meta.stuff());
 			if (!result) return false;
 			
-			TRACE("接收服务器注册数据:{} 服务器信息地址:{}", message.ShortDebugString(), _ip_address);
+			TRACE("Receive server register:{} ip_address:{}", message.ShortDebugString(), _ip_address);
 
 			if (message.server_type() == Asset::SERVER_TYPE_GMT) //GMT服务器
 			{
