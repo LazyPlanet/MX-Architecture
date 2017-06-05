@@ -28,12 +28,20 @@ Asset::ERROR_CODE Room::TryEnter(std::shared_ptr<Player> player)
 
 	if (it != _players.end()) return Asset::ERROR_ROOM_HAS_BEEN_IN; //已经在房间
 
+	DEBUG("player_id:{} enter room:{} success.", player->GetID(), GetID());
+
 	return Asset::ERROR_SUCCESS;
 }
 
-void Room::Enter(std::shared_ptr<Player> player)
+bool Room::Enter(std::shared_ptr<Player> player)
 {
-	if (TryEnter(player) != Asset::ERROR_SUCCESS) return; //进入房间之前都需要做此检查，理论上不会出现
+	if (TryEnter(player) != Asset::ERROR_SUCCESS) 
+	{
+		ERROR("player_id:{} cannot enter room:{}", player->GetID(), GetID());
+		return false; //进入房间之前都需要做此检查，理论上不会出现
+	}
+	
+	DEBUG("当前房间玩家数量:{} 当前进入房间玩家角色:{} 位置:{}", _players.size(), player->GetID(), player->GetPosition());
 
 	_players.push_back(player); //进入房间
 	
@@ -42,6 +50,7 @@ void Room::Enter(std::shared_ptr<Player> player)
 	DEBUG("当前房间玩家数量:{} 当前进入房间玩家角色:{} 位置:{}", _players.size(), player->GetID(), player->GetPosition());
 
 	SyncRoom(); //同步当前房间内玩家数据
+	return true;
 }
 
 void Room::OnPlayerLeave(int64_t player_id)
@@ -130,7 +139,7 @@ bool Room::Remove(int64_t player_id)
 
 		OnPlayerLeave(player_id); //玩家离开房间
 		
-		DEBUG("player:{} leave room.", player_id);
+		WARN("player:{} leave room.", player_id);
 
 		return true;
 	}

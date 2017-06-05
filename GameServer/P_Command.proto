@@ -12,6 +12,7 @@ enum INNER_TYPE {
 	INNER_TYPE_BEGIN = 0; //开始协议
 	INNER_TYPE_REGISTER = 1; //注册服务器
 	INNER_TYPE_COMMAND = 2; //GMT指令
+	INNER_TYPE_OPEN_ROOM = 3; //代开房间
 	INNER_TYPE_COUNT = 100; //协议最大数量
 }
 
@@ -40,12 +41,14 @@ enum SERVER_TYPE {
 	SERVER_TYPE_GAME = 2; //游戏服务器
 }
 
+//注册服务器
 message Register {
 	optional INNER_TYPE type_t = 1 [default = INNER_TYPE_REGISTER];
 	optional SERVER_TYPE server_type = 2; //服务器类型
 	optional int64 server_id = 3; //服务器ID
 }
 
+//GMT指令
 message Command {
 	optional INNER_TYPE type_t = 1 [default = INNER_TYPE_COMMAND];
 	optional COMMAND_TYPE command_type = 2; //操作类型
@@ -55,4 +58,10 @@ message Command {
 	optional int64 player_id = 5; //玩家角色ID
 	optional int64 item_id = 6; //如果是物品，物品ID(房卡是特殊物品)
 	optional int32 count = 7; //数量(根据COMMAND_TYPE有不同的意义)
+}
+
+//代开房间
+message OpenRoom {
+	optional INNER_TYPE type_t = 1 [default = INNER_TYPE_OPEN_ROOM];
+	optional int64 room_id = 2; //房间ID，如果非0则证明开放成功
 }

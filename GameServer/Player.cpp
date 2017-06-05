@@ -925,7 +925,7 @@ void Player::OnLeaveRoom()
 {
 	if (!_room) return; 
 
-	TRACE("player_id:{} leave room.", _player_id);
+	WARN("player_id:{} leave room.", _player_id);
 
 	_stuff.mutable_player_prop()->clear_game_oper_state(); //玩家操作状态
 
@@ -1105,7 +1105,11 @@ int32_t Player::CmdLoadScene(pb::Message* message)
 		
 		case Asset::LOAD_SCENE_TYPE_SUCCESS: //加载成功
 		{
-			if (_stuff.player_prop().load_type() != Asset::LOAD_SCENE_TYPE_START) return 2;
+			if (_stuff.player_prop().load_type() != Asset::LOAD_SCENE_TYPE_START) 
+			{
+				DEBUG_ASSERT(false && "player is not loaded.");
+				return 2;
+			}
 
 			SendPlayer(); //发送数据给客户端
 
@@ -1126,12 +1130,19 @@ int32_t Player::CmdLoadScene(pb::Message* message)
 				return 4;
 			}
 
-			_room = locate_room;
-
-			_room->Enter(shared_from_this()); //玩家进入房间
+			auto is_entered = locate_room->Enter(shared_from_this()); //玩家进入房间
+			if (!is_entered)
+			{
+				DEBUG_ASSERT(false);
+				return 5;
+			}
 			
-			_stuff.mutable_player_prop()->clear_load_type(); //状态
-			_stuff.mutable_player_prop()->clear_room_id(); //状态
+			SetRoom(locate_room);
+				
+			DEBUG("player_id:{} enter room:{} success.", _player_id, room_id);
+			
+			_stuff.mutable_player_prop()->clear_load_type(); 
+			_stuff.mutable_player_prop()->clear_room_id(); 
 		}
 		break;
 		

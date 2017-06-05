@@ -552,8 +552,11 @@ void Game::Calculate(int64_t hupai_player_id/*胡牌玩家*/, int64_t dianpao_pl
 	}
 	
 	Asset::GameCalculate message;
-	
-	/////////////////////////////////////////////////////////////////胡牌积分
+	//
+	//胡牌积分，三部分
+	//
+	//1.各个玩家输牌积分
+	//
 	for (int i = 0; i < MAX_PLAYER_COUNT; ++i)
 	{
 		auto player = _players[i];
@@ -575,7 +578,7 @@ void Game::Calculate(int64_t hupai_player_id/*胡牌玩家*/, int64_t dianpao_pl
 			
 			auto detail = record->mutable_details()->Add();
 			detail->set_fan_type(fan);
-			detail->set_score(score);
+			detail->set_score(-score);
 		}
 		
 		//
@@ -589,7 +592,7 @@ void Game::Calculate(int64_t hupai_player_id/*胡牌玩家*/, int64_t dianpao_pl
 			
 			auto detail = record->mutable_details()->Add();
 			detail->set_fan_type(Asset::FAN_TYPE_ZI_MO);
-			detail->set_score(score);
+			detail->set_score(-score);
 		}
 
 		if (player_id == dianpao_player_id) 
@@ -598,7 +601,7 @@ void Game::Calculate(int64_t hupai_player_id/*胡牌玩家*/, int64_t dianpao_pl
 			
 			auto detail = record->mutable_details()->Add();
 			detail->set_fan_type(Asset::FAN_TYPE_DIAN_PAO);
-			detail->set_score(score);
+			detail->set_score(-score);
 		}
 
 		if (player->IsBimen()) 
@@ -607,7 +610,7 @@ void Game::Calculate(int64_t hupai_player_id/*胡牌玩家*/, int64_t dianpao_pl
 			
 			auto detail = record->mutable_details()->Add();
 			detail->set_fan_type(Asset::FAN_TYPE_BIMEN);
-			detail->set_score(score);
+			detail->set_score(-score);
 		}
 
 		if (dianpao_player_id == player_id)
@@ -616,14 +619,14 @@ void Game::Calculate(int64_t hupai_player_id/*胡牌玩家*/, int64_t dianpao_pl
 		
 			auto detail = record->mutable_details()->Add();
 			detail->set_fan_type(Asset::FAN_TYPE_DIAN_PAO);
-			detail->set_score(score);
+			detail->set_score(-score);
 		}
 		
 		record->set_score(-score); //玩家所输积分
 	}
 
 	//
-	//胡牌玩家积分
+	//2.胡牌玩家积分
 	//
 	//其他玩家积分之和
 	//
@@ -653,16 +656,19 @@ void Game::Calculate(int64_t hupai_player_id/*胡牌玩家*/, int64_t dianpao_pl
 			if (it_score == record->mutable_details()->end()) //理论不会如此
 			{
 				auto rcd = record->mutable_details()->Add();
-				rcd->CopyFrom(element);
+				rcd->set_fan_type(element.fan_type());
+				rcd->set_score(-element.score());
 			}
 			else
 			{
-				it_score->set_score(it_score->score() + element.score());
+				it_score->set_score(it_score->score() - element.score()); //输牌玩家存储的是负数
 			}
 		}
 	}
 	
-	/////////////////////////////////////////////////////////////////杠牌积分
+	//
+	//杠牌积分，一个部分
+	//
 	for (int i = 0; i < MAX_PLAYER_COUNT; ++i)
 	{
 		auto player = _players[i];
@@ -683,9 +689,8 @@ void Game::Calculate(int64_t hupai_player_id/*胡牌玩家*/, int64_t dianpao_pl
 		auto record = message.mutable_record()->mutable_list(i);
 		record->set_score((record->score() + score) * (MAX_PLAYER_COUNT - 1)); //增加杠分
 
-		//杠牌玩家所赢积分
 		//
-		//赢牌玩家积分
+		//杠牌玩家积分
 		//
 		if (ming_count)
 		{
@@ -709,7 +714,7 @@ void Game::Calculate(int64_t hupai_player_id/*胡牌玩家*/, int64_t dianpao_pl
 		}
 
 		//
-		//输牌玩家积分
+		//其他玩家所输积分
 		//
 		for (int index = 0; index < MAX_PLAYER_COUNT; ++index)
 		{
@@ -736,13 +741,13 @@ void Game::Calculate(int64_t hupai_player_id/*胡牌玩家*/, int64_t dianpao_pl
 			{
 				auto detail = record->mutable_details()->Add();
 				detail->set_fan_type(Asset::FAN_TYPE_XUAN_FENG_GANG);
-				detail->set_score(xf_score * (MAX_PLAYER_COUNT - 1));
+				detail->set_score(-xf_score * (MAX_PLAYER_COUNT - 1));
 			}
 		}
 	}
 
 	//
-	// 点炮包三家
+	//4.点炮包三家
 	//
 	const auto options = _room->GetOptions();
 	auto it_baosanjia = std::find(options.extend_type().begin(), options.extend_type().end(), Asset::ROOM_EXTEND_TYPE_BAOSANJIA);
