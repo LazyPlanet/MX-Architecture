@@ -550,12 +550,9 @@ void Game::Calculate(int64_t hupai_player_id/*胡牌玩家*/, int64_t dianpao_pl
 	{
 		fan_list.push_back(Asset::FAN_TYPE_ZHUANG);
 	}
-
-	//const auto& options = _room->GetOptions();
-	//ROOM_EXTEND_TYPE_BAOSANJIA
-
+	
 	Asset::GameCalculate message;
-
+	
 	/////////////////////////////////////////////////////////////////胡牌积分
 	for (int i = 0; i < MAX_PLAYER_COUNT; ++i)
 	{
@@ -567,7 +564,7 @@ void Game::Calculate(int64_t hupai_player_id/*胡牌玩家*/, int64_t dianpao_pl
 		auto record = message.mutable_record()->mutable_list()->Add();
 		record->set_player_id(player_id);
 
-		//if (hupai_player_id == player_id) continue;
+		if (hupai_player_id == player_id) continue;
 
 		int32_t score = base_score;
 
@@ -595,7 +592,7 @@ void Game::Calculate(int64_t hupai_player_id/*胡牌玩家*/, int64_t dianpao_pl
 			detail->set_score(score);
 		}
 
-		if (hupai_player_id != player_id && player_id == dianpao_player_id) 
+		if (player_id == dianpao_player_id) 
 		{
 			score *= get_multiple(Asset::FAN_TYPE_DIAN_PAO); //炮翻番
 			
@@ -604,7 +601,7 @@ void Game::Calculate(int64_t hupai_player_id/*胡牌玩家*/, int64_t dianpao_pl
 			detail->set_score(score);
 		}
 
-		if (hupai_player_id != player_id && player->IsBimen()) 
+		if (player->IsBimen()) 
 		{
 			score *= get_multiple(Asset::FAN_TYPE_BIMEN); //闭门翻番
 			
@@ -613,7 +610,7 @@ void Game::Calculate(int64_t hupai_player_id/*胡牌玩家*/, int64_t dianpao_pl
 			detail->set_score(score);
 		}
 
-		if (hupai_player_id != player_id && dianpao_player_id == player_id)
+		if (dianpao_player_id == player_id)
 		{
 			score *= get_multiple(Asset::FAN_TYPE_DIAN_PAO); //点炮
 		
@@ -622,10 +619,7 @@ void Game::Calculate(int64_t hupai_player_id/*胡牌玩家*/, int64_t dianpao_pl
 			detail->set_score(score);
 		}
 		
-		if (hupai_player_id == player_id) 
-			record->set_score(score); //玩家所赢积分
-		else
-			record->set_score(-score); //玩家所输积分
+		record->set_score(-score); //玩家所输积分
 	}
 
 	//
@@ -633,10 +627,15 @@ void Game::Calculate(int64_t hupai_player_id/*胡牌玩家*/, int64_t dianpao_pl
 	//
 	//其他玩家积分之和
 	//
-	auto record = std::find_if(message.mutable_record()->mutable_list()->begin(), message.mutable_record()->mutable_list()->end(), 
-		[hupai_player_id](const Asset::GameRecord_GameElement& ele){
-			return hupai_player_id == ele.player_id();
-	});
+	auto get_record = [&](int64_t player_id)->google::protobuf::internal::RepeatedPtrIterator<Adoter::Asset::GameRecord_GameElement> { 
+		auto it = std::find_if(message.mutable_record()->mutable_list()->begin(), message.mutable_record()->mutable_list()->end(), 
+				[player_id](const Asset::GameRecord_GameElement& ele){
+					return player_id == ele.player_id();
+			});
+		return it;
+	};
+	
+	auto record = get_record(hupai_player_id); 
 	if (record == message.mutable_record()->mutable_list()->end()) return;
 
 	for (const auto& list_element : message.record().list())
@@ -669,19 +668,25 @@ void Game::Calculate(int64_t hupai_player_id/*胡牌玩家*/, int64_t dianpao_pl
 		auto player = _players[i];
 		if (!player) return;
 		
-		auto ming_count = player->GetMingGangCount();
-		
-		auto an_count = player->GetAnGangCount();
+		auto ming_count = player->GetMingGangCount(); 
+		auto an_count = player->GetAnGangCount(); 
+		auto xf_count = player->GetXuanFengCount(); 
 
-		int32_t ming_score = ming_count * get_multiple(Asset::FAN_TYPE_MING_GANG), an_score = an_count * get_multiple(Asset::FAN_TYPE_AN_GANG);
-		auto score = ming_score + an_score;
+		int32_t ming_score = ming_count * get_multiple(Asset::FAN_TYPE_MING_GANG);
+		int32_t an_score = an_count * get_multiple(Asset::FAN_TYPE_AN_GANG);
+		int32_t xf_score = xf_count * get_multiple(Asset::FAN_TYPE_XUAN_FENG_GANG);
+
+		auto score = ming_score + an_score + xf_score;
 				
 		DEBUG("player_id:{}, ming_count:{}, an_count:{}, score:{}", player->GetID(), ming_count, an_count, score);
 
 		auto record = message.mutable_record()->mutable_list(i);
 		record->set_score((record->score() + score) * (MAX_PLAYER_COUNT - 1)); //增加杠分
 
-		////////杠牌玩家所赢积分
+		//杠牌玩家所赢积分
+		//
+		//赢牌玩家积分
+		//
 		if (ming_count)
 		{
 			auto detail = record->mutable_details()->Add();
@@ -695,7 +700,17 @@ void Game::Calculate(int64_t hupai_player_id/*胡牌玩家*/, int64_t dianpao_pl
 			detail->set_fan_type(Asset::FAN_TYPE_AN_GANG);
 			detail->set_score(an_score * (MAX_PLAYER_COUNT - 1));
 		}
+		
+		if (xf_count)
+		{
+			auto detail = record->mutable_details()->Add();
+			detail->set_fan_type(Asset::FAN_TYPE_XUAN_FENG_GANG);
+			detail->set_score(xf_score * (MAX_PLAYER_COUNT - 1));
+		}
 
+		//
+		//输牌玩家积分
+		//
 		for (int index = 0; index < MAX_PLAYER_COUNT; ++index)
 		{
 			if (index == i) continue;
@@ -703,7 +718,6 @@ void Game::Calculate(int64_t hupai_player_id/*胡牌玩家*/, int64_t dianpao_pl
 			auto record = message.mutable_record()->mutable_list(index);
 			record->set_score(record->score() - score); //扣除杠分
 
-			////////被杠牌玩家所输积分
 			if (ming_count)
 			{
 				auto detail = record->mutable_details()->Add();
@@ -717,9 +731,57 @@ void Game::Calculate(int64_t hupai_player_id/*胡牌玩家*/, int64_t dianpao_pl
 				detail->set_fan_type(Asset::FAN_TYPE_AN_GANG);
 				detail->set_score(-an_score * (MAX_PLAYER_COUNT - 1));
 			}
+
+			if (xf_count)
+			{
+				auto detail = record->mutable_details()->Add();
+				detail->set_fan_type(Asset::FAN_TYPE_XUAN_FENG_GANG);
+				detail->set_score(xf_score * (MAX_PLAYER_COUNT - 1));
+			}
 		}
 	}
 
+	//
+	// 点炮包三家
+	//
+	const auto options = _room->GetOptions();
+	auto it_baosanjia = std::find(options.extend_type().begin(), options.extend_type().end(), Asset::ROOM_EXTEND_TYPE_BAOSANJIA);
+	auto baosanjia = (it_baosanjia != options.extend_type().end()); //是否支持包三家
+
+	if (baosanjia) //包三家
+	{
+		auto it_dianpao = get_record(dianpao_player_id);
+		if (it_dianpao == message.mutable_record()->mutable_list()->end()) 
+		{
+			DEBUG_ASSERT(false && "dianpao_player_id has not found"); //理论不会出现
+			return;
+		}
+
+		for (auto player : _players)
+		{
+			if (!player)
+			{
+				DEBUG_ASSERT(false && "player in game has not found"); //理论不会出现
+				continue;
+			}
+
+			auto player_id = player->GetID();
+
+			if (player_id == hupai_player_id) continue; //和胡牌玩家无关
+
+			auto it_player = get_record(player_id);
+			if (it_player == message.mutable_record()->mutable_list()->end()) 
+			{
+				DEBUG_ASSERT(false && "player has not found"); //理论不会出现
+				continue;
+			}
+
+			//点炮玩家付钱
+			it_dianpao->set_score(it_player->score() + it_dianpao->score());
+			it_player->set_score(0);
+		}
+	}
+	
 	message.PrintDebugString();
 		
 	BroadCast(message);
@@ -751,7 +813,7 @@ bool Game::SendCheckRtn()
 
 	if (_oper_list.size() == 0) return false;
 
-	auto check = [this](Asset::PAI_OPER_TYPE rtn_type, Asset::PaiOperationList& operation)->bool{
+	auto check = [this](Asset::PAI_OPER_TYPE rtn_type, Asset::PaiOperationList& operation)->bool {
 
 		for (const auto& oper : _oper_list)
 		{

@@ -292,8 +292,9 @@ public:
 		 _stuff.mutable_player_prop()->set_oper_count_tingpai(GetCountAfterTingOperation() + 1);
 	}
 
-	int32_t GetMingGangCount() { return _jiangang + _minggang.size(); } //明杠数量
-	int32_t GetAnGangCount() { return _fenggang + _angang.size(); } //暗杠数量
+	int32_t GetMingGangCount() { return _minggang.size(); } //明杠数量
+	int32_t GetAnGangCount() { return _angang.size(); } //暗杠数量
+	int32_t GetXuanFengCount() { return _jiangang + _fenggang; } //旋风杠数量
 	bool IsReady() { return _stuff.player_prop().game_oper_state() == Asset::GAME_OPER_TYPE_START; } //是否已经在准备状态 
 	//获取玩家座次
 	Asset::POSITION_TYPE GetPosition() { return _stuff.player_prop().position(); }

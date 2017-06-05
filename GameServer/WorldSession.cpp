@@ -112,7 +112,7 @@ void WorldSession::InitializeHandler(const boost::system::error_code error, cons
 				}
 				else
 				{
-					LOG(ERROR, "get player_name failed, username:{}", login->account().username());
+					LOG(TRACE, "get player_name success, username:{} who has exist.", login->account().username());
 				}
 
 				_player_list.clear(); 
