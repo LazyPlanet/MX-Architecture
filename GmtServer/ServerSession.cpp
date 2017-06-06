@@ -65,7 +65,7 @@ bool ServerSession::InnerProcess(const Asset::InnerMeta& meta)
 			}
 			else if (message.server_type() == Asset::SERVER_TYPE_GAME) //游戏服务器
 			{
-				ServerSessionInstance.Add(shared_from_this());
+				ServerSessionInstance.Add(message.server_id(), shared_from_this());
 			}
 
 			SendProtocol(message);
@@ -107,6 +107,19 @@ bool ServerSession::InnerProcess(const Asset::InnerMeta& meta)
 			
 				gmt_server->SendProtocol(message);
 			}
+		}
+		break;
+
+		case Asset::INNER_TYPE_OPEN_ROOM: //代开房
+		{
+			Asset::OpenRoom message;
+			auto result = message.ParseFromString(meta.stuff());
+			if (!result) return false;
+
+			auto game_server = ServerSessionInstance.Get(message.server_id());
+			if (!game_server) return false;
+
+			game_server->SendProtocol(message);
 		}
 		break;
 
@@ -367,15 +380,14 @@ void ServerSessionManager::BroadCastProtocol(const pb::Message& message)
 {
 	for (auto session : _sessions)
 	{
-		if (!session) continue;
-		session->SendProtocol(message);
+		if (!session.second) continue;
+		session.second->SendProtocol(message);
 	}
 }
 
-void ServerSessionManager::Add(std::shared_ptr<ServerSession> session)
+void ServerSessionManager::Add(int64_t server_id, std::shared_ptr<ServerSession> session)
 {
-	//std::lock_guard<std::mutex> lock(_mutex);
-	_sessions.push_back(session);
+	_sessions.emplace(server_id, session);
 }	
 
 NetworkThread<ServerSession>* ServerSessionManager::CreateThreads() const

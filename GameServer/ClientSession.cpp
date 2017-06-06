@@ -2,6 +2,7 @@
 #include "RedisManager.h"
 #include "MXLog.h"
 #include "Player.h"
+#include "Room.h"
 
 namespace Adoter
 {
@@ -58,6 +59,19 @@ bool ClientSession::InnerProcess(const Asset::InnerMeta& meta)
 			if (!result) return false;
 
 			OnCommandProcess(message);
+		}
+		break;
+
+		case Asset::INNER_TYPE_OPEN_ROOM: //代开房
+		{
+			Asset::OpenRoom message;
+			auto result = message.ParseFromString(meta.stuff());
+			if (!result) return false;
+
+			int64_t room_id = RoomInstance.CreateRoom();
+			if (!room_id) return 2;
+
+
 		}
 		break;
 
@@ -129,7 +143,7 @@ Asset::COMMAND_ERROR_CODE ClientSession::OnCommandProcess(const Asset::Command& 
 	{
 		case Asset::COMMAND_TYPE_RECHARGE:
 		{
-			player_ptr->GainHuanledou(command.count());
+			player_ptr->GainDiamond(command.count());
 		}
 		break;
 		
@@ -141,7 +155,7 @@ Asset::COMMAND_ERROR_CODE ClientSession::OnCommandProcess(const Asset::Command& 
 		
 		case Asset::COMMAND_TYPE_HUANLEDOU:
 		{
-			player_ptr->GainDiamond(command.count());
+			player_ptr->GainHuanledou(command.count());
 		}
 		break;
 		

@@ -193,7 +193,7 @@ void Room::SyncRoom()
 
 void Room::OnCreated() 
 { 
-	RoomInstance.OnCreateRoom(shared_from_this()); 
+	//RoomInstance.OnCreateRoom(shared_from_this()); 
 }
 	
 bool Room::CanStarGame()
@@ -238,7 +238,7 @@ std::shared_ptr<Room> RoomManager::CreateRoom(const Asset::Room& room)
 	auto locate_room = std::make_shared<Room>(room);
 	locate_room->OnCreated();
 
-	RoomInstance.OnCreateRoom(locate_room); //房间管理
+	OnCreateRoom(locate_room); //房间管理
 
 	return locate_room;
 }

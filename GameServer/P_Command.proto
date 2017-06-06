@@ -63,5 +63,6 @@ message Command {
 //代开房间
 message OpenRoom {
 	optional INNER_TYPE type_t = 1 [default = INNER_TYPE_OPEN_ROOM];
-	optional int64 room_id = 2; //房间ID，如果非0则证明开放成功
+	optional int64 server_id = 2 [default = 1]; //服务器ID
+	optional int64 room_id = 3; //房间ID，如果非0则证明开放成功
 }

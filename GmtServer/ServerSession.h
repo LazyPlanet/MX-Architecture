@@ -69,7 +69,7 @@ class ServerSessionManager : public SocketManager<ServerSession>
 	typedef SocketManager<ServerSession> SuperSocketManager;
 private:
 	std::mutex _mutex;
-	std::vector<std::shared_ptr<ServerSession>> _sessions; //定时清理断开的会话
+	std::unordered_map<int64_t/*server_id*/, std::shared_ptr<ServerSession>> _sessions; //定时清理断开的会话
 
 	std::shared_ptr<ServerSession> _gmt_session = nullptr;
 public:
@@ -82,7 +82,9 @@ public:
 	void BroadCastProtocol(const pb::Message& message);
 	void BroadCastProtocol(const pb::Message* message);
 
-	void Add(std::shared_ptr<ServerSession> session);
+	void Add(int64_t server_id, std::shared_ptr<ServerSession> session);
+	std::shared_ptr<ServerSession> Get(int64_t server_id) { return _sessions[server_id]; }
+
 	bool StartNetwork(boost::asio::io_service& io_service, const std::string& bind_ip, int32_t port, int thread_count = 1) override;
 
 	void SetGmtServer(std::shared_ptr<ServerSession> session) { _gmt_session = session; }
