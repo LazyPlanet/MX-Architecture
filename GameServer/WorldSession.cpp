@@ -80,6 +80,8 @@ void WorldSession::InitializeHandler(const boost::system::error_code error, cons
 			{
 				Asset::Login* login = dynamic_cast<Asset::Login*>(message);
 				if (!login) return; 
+				
+				_player_list.clear(); //账号下玩家列表，对于棋牌游戏，只有一个玩家
 			
 				Asset::User user;
 				
@@ -115,27 +117,16 @@ void WorldSession::InitializeHandler(const boost::system::error_code error, cons
 					LOG(TRACE, "get player_name success, username:{} who has exist.", login->account().username());
 				}
 
-				_player_list.clear(); 
 				_account.CopyFrom(login->account()); //账号信息
+
 				for (auto player_id : user.player_list()) _player_list.emplace(player_id); //玩家数据
 				
-				Asset::PlayerList player_list; //发送给Client当前的角色信息
+				//
+				//发送当前的角色信息
+				//
+				Asset::PlayerList player_list; 
 				player_list.mutable_player_list()->CopyFrom(user.player_list());
 				SendProtocol(player_list); 
-
-				//
-				// 已经在线玩家检查
-				//
-				// 对于已经进入游戏内操作的玩家进行托管
-				//
-
-				auto session = WorldSessionInstance.Get(g_player->GetID());
-				if (session) //已经在线
-				{
-					session->KillOutPlayer();
-					WorldSessionInstance.Erase(g_player->GetID());
-				}
-				WorldSessionInstance.Emplace(g_player->GetID(), shared_from_this()); //在线玩家
 			}
 			else if (Asset::META_TYPE_C2S_LOGOUT == meta.type_t()) //账号登出
 			{
@@ -175,6 +166,19 @@ void WorldSession::InitializeHandler(const boost::system::error_code error, cons
 
 				if (!g_player) g_player = std::make_shared<Player>(enter_game->player_id(), shared_from_this());
 				g_player->OnEnterGame(); //加载数据
+
+				//
+				// 已经在线玩家检查
+				//
+				// 对于已经进入游戏内操作的玩家进行托管
+				//
+				auto session = WorldSessionInstance.Get(g_player->GetID());
+				if (session) //已经在线
+				{
+					session->KillOutPlayer();
+					WorldSessionInstance.Erase(g_player->GetID());
+				}
+				WorldSessionInstance.Emplace(g_player->GetID(), shared_from_this()); //在线玩家
 			}
 			else
 			{
