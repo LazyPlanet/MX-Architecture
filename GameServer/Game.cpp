@@ -46,16 +46,22 @@ bool Game::Start(std::vector<std::shared_ptr<Player>> players)
 		return false;
 	}
 
+	//
+	//房间(Room)其实是游戏(Game)的管理类
+	//
+	//复制房间数据到游戏中
+	//
 	int32_t player_index = 0;
 
 	for (auto player : players)
 	{
-		_players[player_index++] = player; //复制成员
+		_players[player_index++] = player; 
 
 		player->SetRoom(_room);
 		player->SetPosition(Asset::POSITION_TYPE(player_index));
 	}
 
+	//当前庄家
 	auto banker_index = _room->GetBankerIndex();
 		
 	auto player_banker = GetPlayerByOrder(banker_index);
@@ -65,9 +71,12 @@ bool Game::Start(std::vector<std::shared_ptr<Player>> players)
 		return false;
 	}
 	_banker_player_id  = player_banker->GetID();
+	
+	OnStart(); //同步本次游戏开局数据：此时玩家没有进入游戏
 
-	OnStart(); //同步本次游戏开局数据
-
+	//
+	//设置游戏数据
+	//
 	for (int i = 0; i < MAX_PLAYER_COUNT; ++i)
 	{
 		auto player = _players[i];
@@ -102,9 +111,22 @@ void Game::OnStart()
 
 	_room->SetBanker(_banker_player_id); //设置庄家
 
-	Asset::GameInformation message;
-	message.set_banker_player_id(_banker_player_id);
-	BroadCast(message);
+	//游戏数据广播
+	Asset::GameInformation info;
+	info.set_banker_player_id(_banker_player_id);
+	BroadCast(info);
+	
+	//开局股子广播
+	Asset::RandomSaizi saizi;
+	saizi.set_reason_type(Asset::RandomSaizi_REASON_TYPE_REASON_TYPE_START);
+	saizi.set_player_id(_banker_player_id); //庄家打股
+
+	for (int i = 0; i < 2; ++i)
+	{
+		int32_t result = CommonUtil::Random(1, 6);
+		saizi.mutable_random_result()->Add(result);
+	}
+	_room->BroadCast(saizi);
 }
 
 bool Game::OnOver()

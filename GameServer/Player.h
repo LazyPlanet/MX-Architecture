@@ -48,11 +48,16 @@ class Player : public std::enable_shared_from_this<Player>
 	typedef std::function<int32_t(pb::Message*)> CallBack;
 	std::unordered_map<int32_t, CallBack>  _callbacks;	//每个协议的回调函数，不要传入引用
 private:
-	Asset::Player _stuff; //玩家数据
-	int64_t _heart_count = 0; //心跳次数
 	int64_t _player_id = 0; //玩家ID
-	bool _dirty = false;
+	Asset::Player _stuff; //玩家数据
 
+	int64_t _heart_count = 0; //心跳次数
+
+	int32_t _hi_time = 0; 
+	
+	bool _dirty = false; //脏数据
+
+//协议处理回调函数
 	CallBack _method;
 	std::shared_ptr<WorldSession> _session = nullptr;	//网络连接
 public:
@@ -143,6 +148,9 @@ public:
 	//获取玩家基础属性
 	virtual int32_t CmdGetCommonProperty(pb::Message* message);
 	void SyncCommonProperty(Asset::CommonProperty_SYNC_REASON_TYPE reason = Asset::CommonProperty_SYNC_REASON_TYPE_SYNC_REASON_TYPE_SELF);
+	//离线状态实时监测
+	virtual int32_t CmdSayHi(pb::Message* message);
+	void SayHi();
 public:
 	//获取所有包裹
 	const Asset::Inventory& GetInventory()

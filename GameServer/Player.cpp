@@ -37,6 +37,7 @@ Player::Player()
 	AddHandler(Asset::META_TYPE_SHARE_SIGN, std::bind(&Player::CmdSign, this, std::placeholders::_1));
 	AddHandler(Asset::META_TYPE_SHARE_RANDOM_SAIZI, std::bind(&Player::CmdSaizi, this, std::placeholders::_1));
 	AddHandler(Asset::META_TYPE_SHARE_COMMON_PROPERTY, std::bind(&Player::CmdGetCommonProperty, this, std::placeholders::_1));
+	AddHandler(Asset::META_TYPE_SHARE_SAY_HI, std::bind(&Player::CmdSayHi, this, std::placeholders::_1));
 
 	//AddHandler(Asset::META_TYPE_C2S_LOGIN, std::bind(&Player::CmdLogin, this, std::placeholders::_1));
 	//AddHandler(Asset::META_TYPE_C2S_ENTER_GAME, std::bind(&Player::CmdEnterGame, this, std::placeholders::_1));
@@ -768,7 +769,13 @@ bool Player::Update()
 	if (_heart_count % 1000 == 0) //10s
 	{
 		if (_dirty) Save(); //触发存盘
+
 		CommonLimitUpdate(); //通用限制,定时更新
+	}
+	
+	if (_heart_count % 3000 == 0) //30s
+	{
+		SayHi();
 	}
 
 	if (_heart_count % 6000 == 0) //1min
@@ -1200,7 +1207,7 @@ int32_t Player::CmdSaizi(pb::Message* message)
 	if (!saizi) return 1;
 
 	int32_t result = CommonUtil::Random(1, 6);
-	saizi->set_random_result(result);
+	saizi->mutable_random_result()->Add(result);
 
 	SendProtocol(saizi);
 	return 0;
@@ -2796,7 +2803,7 @@ int32_t Player::OnFaPai(std::vector<int32_t>& cards)
 				proto.set_player_id(_player_id);
 
 				int32_t result = CommonUtil::Random(1, 6);
-				proto.set_random_result(result);
+				proto.mutable_random_result()->Add(result);
 
 				auto baopai = _game->GetBaopai(result);
 				_game->SetBaoPai(baopai);
@@ -2912,6 +2919,28 @@ void Player::OnGameOver()
 
 	_has_ting = _tuoguan_server = false;
 }
+
+int32_t Player::CmdSayHi(pb::Message* message)
+{
+	auto say_hi = dynamic_cast<const Asset::SayHi*>(message);
+	if (!say_hi) return 1;
+
+	auto hi_time = CommonTimerInstance.GetTime();
+
+	DEBUG("player_id:{} hi_time:{} last_hi_time:{}", _player_id, hi_time, _hi_time);
+	return 0;
+}
+	
+void Player::SayHi()
+{
+	_hi_time = CommonTimerInstance.GetTime();
+
+	Asset::SayHi message;
+	message.set_heart_count(_heart_count);
+
+	SendProtocol(message);
+}
+
 /////////////////////////////////////////////////////
 //玩家通用管理类
 /////////////////////////////////////////////////////
