@@ -77,12 +77,11 @@ public:
 	//增加听牌玩家
 	void AddTingPlayer(int64_t player_id) {	_ting_players.push_back(player_id);	}
 	//设置//获取宝牌
-	void SetBaoPai(const Asset::PaiElement& pai) { _baopai = pai; }
-	const Asset::PaiElement& GetBaoPai() { return _baopai; }
-	bool IsBaopai(const Asset::PaiElement& pai) {
-		return pai.card_type() == _baopai.card_type() && pai.card_value() == _baopai.card_value();
-	}
-	Asset::PaiElement GetBaopai(int32_t tail_index);
+	Asset::PaiElement GetBaopai(int32_t tail_index); //随机宝牌
+	void SetBaoPai(const Asset::PaiElement& pai) { _baopai = pai; } //设置宝牌
+	const Asset::PaiElement& GetBaoPai() { return _baopai; } //获取当前宝牌
+	bool IsBaopai(const Asset::PaiElement& pai) { return pai.card_type() == _baopai.card_type() && pai.card_value() == _baopai.card_value(); } //是否宝牌
+	bool HasBaopai() { return _baopai.card_type() != 0 && _baopai.card_value() != 0; } //当前局是否含有宝牌
 	//流局检查
 	bool CheckLiuJu();
 };

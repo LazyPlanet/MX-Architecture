@@ -211,8 +211,11 @@ private:
 	int32_t _jiangang = 0; //旋风杠，本质是明杠
 	int32_t _fenggang = 0; //旋风杠，本质是暗杠
 
-	int32_t _oper_count = 0; //操作次数
+	int32_t _oper_count = 0; //牌操作次数
+	int32_t _oper_count_tingpai = 0; //听牌后操作次数
 	bool _has_ting = false; //听牌
+	bool _tuoguan_server = false; //服务器托管
+	//bool _tuoguan_client = false; //Client托管
 
 	std::vector<Asset::PAI_OPER_TYPE> _xf_gang; //旋风杠所有操作
 	std::vector<std::tuple<bool, bool, bool>> _hu_result;
@@ -233,6 +236,7 @@ public:
 	virtual void SetRoom(std::shared_ptr<Room> room) { _room = room; }
 
 	void SetGame(std::shared_ptr<Game> game) { _game = game; }
+	bool IsInGame() { return _game != nullptr; }
 
 	virtual int32_t OnFaPai(std::vector<int32_t>& cards); //发牌
 
@@ -287,25 +291,27 @@ public:
 	bool IsTingPai() { return _has_ting; } //是否听牌
 	bool HasTingPai() { return _has_ting; } //是否听牌
 
-	int32_t GetCountAfterTingOperation() { return _stuff.player_prop().oper_count_tingpai(); } //听牌后玩家操作
-	void IncreaseTingOperationCount(){ //听牌后操作
-		 _stuff.mutable_player_prop()->set_oper_count_tingpai(GetCountAfterTingOperation() + 1);
-	}
-
 	int32_t GetMingGangCount() { return _minggang.size(); } //明杠数量
 	int32_t GetAnGangCount() { return _angang.size(); } //暗杠数量
 	int32_t GetXuanFengCount() { return _jiangang + _fenggang; } //旋风杠数量
-	bool IsReady() { return _stuff.player_prop().game_oper_state() == Asset::GAME_OPER_TYPE_START; } //是否已经在准备状态 
-	//获取玩家座次
+	//发牌前置检查
+	void PreCheckOnFaPai(); 
+	//是否已经在准备状态 
+	bool IsReady() { return _stuff.player_prop().game_oper_state() == Asset::GAME_OPER_TYPE_START; } 
+	//获取//设置玩家座次
 	Asset::POSITION_TYPE GetPosition() { return _stuff.player_prop().position(); }
 	void SetPosition(Asset::POSITION_TYPE position) { _stuff.mutable_player_prop()->set_position(position); }
-
-	void PrintPai(); //打印牌玩家当前牌
-	void ClearCards(); //清理玩家手中牌
-	void SynchronizePai(); //同步牌
-	void PreCheckOnFaPai(); //发牌前置检查
-
+	//打印牌玩家当前牌
+	void PrintPai(); 
+	//同步玩家牌给Client
+	void SynchronizePai(); 
+	//删除玩家牌(包括手里牌、墙外牌)
+	void ClearCards(); 
+	//游戏结束
 	void OnGameOver();
+	//是否//设置服务器托管状态
+	bool HasTuoGuan() { return _tuoguan_server; }
+	void SetTuoGuan() { _tuoguan_server = true; }
 };
 
 /////////////////////////////////////////////////////

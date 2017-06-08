@@ -122,13 +122,27 @@ void WorldSession::InitializeHandler(const boost::system::error_code error, cons
 				Asset::PlayerList player_list; //发送给Client当前的角色信息
 				player_list.mutable_player_list()->CopyFrom(user.player_list());
 				SendProtocol(player_list); 
+
+				//
+				// 已经在线玩家检查
+				//
+				// 对于已经进入游戏内操作的玩家进行托管
+				//
+
+				auto session = WorldSessionInstance.Get(g_player->GetID());
+				if (session) //已经在线
+				{
+					session->KillOutPlayer();
+					WorldSessionInstance.Erase(g_player->GetID());
+				}
+				WorldSessionInstance.Emplace(g_player->GetID(), shared_from_this()); //在线玩家
 			}
 			else if (Asset::META_TYPE_C2S_LOGOUT == meta.type_t()) //账号登出
 			{
 				Asset::Logout* logout = dynamic_cast<Asset::Logout*>(message);
 				if (!logout) return; 
 
-				KillOutPlayer();
+				OnLogout();
 			}
 			/*
 			else if (Asset::META_TYPE_SHARE_CREATE_PLAYER == meta.type_t()) //创建角色
@@ -186,14 +200,27 @@ void WorldSession::InitializeHandler(const boost::system::error_code error, cons
 
 void WorldSession::KillOutPlayer()
 {
-	//踢掉玩家
 	if (g_player) //网络断开
 	{
+		//提示Client
+		Asset::KillOut message;
+		message.set_player_id(g_player->GetID());
+		message.set_out_reason(Asset::KILL_OUT_REASON_OTHER_LOGIN);
+		SendProtocol(message);
+
+		//玩家退出登陆
 		g_player->OnLogout(nullptr);
-
 		g_player.reset();
-
 		g_player = nullptr;
+	}
+}
+	
+void WorldSession::OnLogout()
+{
+	if (g_player) 
+	{
+		WARN("player_id:{}", g_player->GetID())
+		g_player->OnLogout(nullptr);
 	}
 }
 
@@ -262,6 +289,11 @@ void WorldSessionManager::Erase(int64_t player_id)
 	auto it = _sessions.find(player_id);
 	if (it == _sessions.end()) return;
 	_sessions.erase(it);
+}
+	
+std::shared_ptr<WorldSession> WorldSessionManager::Get(int64_t player_id)
+{
+	return _sessions[player_id];
 }
 
 NetworkThread<WorldSession>* WorldSessionManager::CreateThreads() const

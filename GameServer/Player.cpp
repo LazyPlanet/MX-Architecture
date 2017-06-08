@@ -89,7 +89,7 @@ int32_t Player::Save()
 {
 	if (!_room && !_game)
 	{
-		_stuff.mutable_player_prop()->Clear(); //非存盘数据
+		//_stuff.mutable_player_prop()->Clear(); //非存盘数据
 	}
 
 	auto redis = make_unique<Redis>();
@@ -131,10 +131,18 @@ int32_t Player::OnLogout(pb::Message* message)
 {
 	if (_room) 
 	{
-		Asset::GameOperation game_operate;
-		game_operate.set_source_player_id(_player_id); //设置当前操作玩家
-		game_operate.set_oper_type(Asset::GAME_OPER_TYPE_LEAVE); //离开游戏，退出房间
-		_room->OnPlayerOperate(shared_from_this(), &game_operate); //广播给其他玩家
+		if (_game) //游戏中
+		{
+			SetTuoGuan(); //服务器托管
+		}
+		else
+		{
+			Asset::GameOperation game_operate;
+			game_operate.set_source_player_id(_player_id); 
+			game_operate.set_oper_type(Asset::GAME_OPER_TYPE_LEAVE); //离开游戏，退出房间
+
+			_room->OnPlayerOperate(shared_from_this(), &game_operate); //广播给其他玩家
+		}
 	}
 
 	this->_stuff.set_login_time(0);
@@ -1089,7 +1097,7 @@ int32_t Player::CmdLoadScene(pb::Message* message)
 	Asset::LoadScene* load_scene = dynamic_cast<Asset::LoadScene*>(message);
 	if (!load_scene) return 1;
 
-	TRACE("player_id:{}, message:{}", _player_id, load_scene->ShortDebugString());
+	TRACE("player_id:{}, curr_load_type:{} message:{}", _player_id, _stuff.player_prop().load_type(), load_scene->ShortDebugString());
 
 	switch (load_scene->load_type())
 	{
@@ -1778,10 +1786,12 @@ bool Player::CheckHuPai(const Asset::PaiElement& pai, std::vector<Asset::FAN_TYP
 
 	for (auto r : _hu_result)
 	{
+		 DEBUG("对:{} 刻:{} 顺子:{}", std::get<0>(r), std::get<1>(r), std::get<2>(r));
+
 		 bool is_ke = std::get<1>(r);
 		 if (is_ke) ++ke_count;
 	}
-	
+
 	if (ke_count) has_ke = true;
 
 	if (!has_ke && (cards[Asset::CARD_TYPE_FENG].size() || cards[Asset::CARD_TYPE_JIAN].size())) has_ke = true;
@@ -2656,6 +2666,8 @@ void Player::PreCheckOnFaPai()
 
 int32_t Player::OnFaPai(std::vector<int32_t>& cards)
 {
+	if (!_room || !_game) return 1;
+
 	PreCheckOnFaPai(); //发牌前置检查
 
 	try {
@@ -2667,7 +2679,7 @@ int32_t Player::OnFaPai(std::vector<int32_t>& cards)
 			for (auto card_index : cards)
 			{
 				auto card = GameInstance.GetCard(card_index);
-				if (card.card_type() == 0 || card.card_value() == 0) return 1; //数据有误
+				if (card.card_type() == 0 || card.card_value() == 0) return 2; //数据有误
 
 				_cards[card.card_type()].push_back(card.card_value()); //插入玩家手牌
 			}
@@ -2772,11 +2784,12 @@ int32_t Player::OnFaPai(std::vector<int32_t>& cards)
 
 		notify.set_data_type(Asset::PaiNotify_CARDS_DATA_TYPE_CARDS_DATA_TYPE_FAPAI); //操作类型：发牌
 
-		if (IsTingPai())
+		//
+		//听牌后第一次抓牌，产生宝牌
+		//
+		if (IsTingPai() && !_game->HasBaopai())
 		{
-			auto count = GetCountAfterTingOperation();
-
-			if (count == 1) //听牌后第一次抓牌
+			if (_oper_count_tingpai == 1) //听牌后第一次抓牌
 			{
 				Asset::RandomSaizi proto;
 				proto.set_reason_type(Asset::RandomSaizi_REASON_TYPE_REASON_TYPE_TINGPAI);
@@ -2794,15 +2807,22 @@ int32_t Player::OnFaPai(std::vector<int32_t>& cards)
 				_game->BroadCast(proto);
 			}
 
-			/*
-
-			Asset::PaiOperation pai_operation; //如果听牌，自动给玩家出牌
+			++_oper_count_tingpai;
+		}
+			
+		//
+		//如果玩家处于服务器托管状态，则自动出牌
+		//
+		//可能玩家掉线或者已经逃跑
+		//
+		if (HasTuoGuan())
+		{
+			Asset::PaiOperation pai_operation; 
 			pai_operation.set_oper_type(Asset::PAI_OPER_TYPE_DAPAI);
 			pai_operation.set_position(GetPosition());
 			pai_operation.mutable_pai()->CopyFrom(card);
+
 			CmdPaiOperate(&pai_operation);
-			*/
-			IncreaseTingOperationCount();
 		}
 	}
 	
@@ -2888,10 +2908,9 @@ void Player::OnGameOver()
 
 	_stuff.mutable_player_prop()->clear_game_oper_state();
 
-	_oper_count = 0; //清理操作数
+	_oper_count_tingpai = _oper_count = 0; //操作次数
 
-	_has_ting = false;
-
+	_has_ting = _tuoguan_server = false;
 }
 /////////////////////////////////////////////////////
 //玩家通用管理类

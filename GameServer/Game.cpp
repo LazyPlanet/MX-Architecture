@@ -621,17 +621,6 @@ void Game::Calculate(int64_t hupai_player_id/*胡牌玩家*/, int64_t dianpao_pl
 			DEBUG("player_id:{} fan:{} score:{}", player_id, Asset::FAN_TYPE_BIMEN, -score);
 		}
 
-		if (dianpao_player_id == player_id)
-		{
-			score *= get_multiple(Asset::FAN_TYPE_DIAN_PAO); //点炮
-		
-			auto detail = record->mutable_details()->Add();
-			detail->set_fan_type(Asset::FAN_TYPE_DIAN_PAO);
-			detail->set_score(-score);
-			
-			DEBUG("player_id:{} fan:{} score:{}", player_id, Asset::FAN_TYPE_DIAN_PAO, -score);
-		}
-		
 		record->set_score(-score); //玩家所输积分
 			
 		DEBUG("玩家:{} 因为牌型和位置输所有积分:{}", player_id, -score);
@@ -657,9 +646,13 @@ void Game::Calculate(int64_t hupai_player_id/*胡牌玩家*/, int64_t dianpao_pl
 		return;
 	}
 
+	auto total_score = 0;
+
 	for (const auto& list_element : message.record().list())
 	{
 		if (list_element.player_id() == hupai_player_id) continue;
+
+		total_score -= list_element.score();
 		
 		for (const auto& element : list_element.details())
 		{
@@ -675,15 +668,26 @@ void Game::Calculate(int64_t hupai_player_id/*胡牌玩家*/, int64_t dianpao_pl
 				rcd->set_fan_type(element.fan_type());
 				rcd->set_score(-element.score());
 
+				/*
+				total_score += (-element.score());
+
 				DEBUG("hupai_player_id:{} get score:{} from player_id:{} for fan_type:{}", hupai_player_id, -element.score(), list_element.player_id(), element.fan_type());
+				*/
 			}
 			else
 			{
 				it_score->set_score(it_score->score() + (-element.score())); //输牌玩家存储的是负数
+
+				/*
+				total_score += (-element.score());
+
 				DEBUG("hupai_player_id:{} get score:{} from player_id:{} for fan_type:{}", hupai_player_id, -element.score(), list_element.player_id(), element.fan_type());
+				*/
 			}
 		}
 	}
+
+	record->set_score(total_score); //胡牌玩家赢的总积分
 	
 	//
 	//杠牌积分，一个部分

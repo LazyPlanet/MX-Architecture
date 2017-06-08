@@ -50,6 +50,7 @@ public:
 	void SendProtocol(pb::Message& message);
 	void SendProtocol(pb::Message* message);
 	void KillOutPlayer();
+	void OnLogout();
 	boost::asio::ip::tcp::endpoint GetRemotePoint() { return _remote_endpoint; }
 	std::string GetRemoteAddress() {return _remote_endpoint.address().to_string(); }
 
@@ -75,6 +76,7 @@ public:
 
 	void Emplace(int64_t player_id, std::shared_ptr<WorldSession> session);
 	void Erase(int64_t player_id);
+	std::shared_ptr<WorldSession> Get(int64_t player_id);
 	bool StartNetwork(boost::asio::io_service& io_service, const std::string& bind_ip, int32_t port, int thread_count = 1) override;
 protected:        
 	NetworkThread<WorldSession>* CreateThreads() const override;
