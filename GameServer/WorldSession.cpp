@@ -165,8 +165,6 @@ void WorldSession::InitializeHandler(const boost::system::error_code error, cons
 				}
 
 				if (!g_player) g_player = std::make_shared<Player>(enter_game->player_id(), shared_from_this());
-				g_player->OnEnterGame(); //加载数据
-
 				//
 				// 已经在线玩家检查
 				//
@@ -176,9 +174,23 @@ void WorldSession::InitializeHandler(const boost::system::error_code error, cons
 				if (session) //已经在线
 				{
 					session->KillOutPlayer();
-					WorldSessionInstance.Erase(g_player->GetID());
 				}
 				WorldSessionInstance.Emplace(g_player->GetID(), shared_from_this()); //在线玩家
+				
+				//
+				//此时才可以真正进入游戏大厅
+				//
+				//加载数据
+				//
+				if (g_player->OnEnterGame())
+				{
+					Asset::AlertMessage alert;
+					alert.set_error_type(Asset::ERROR_TYPE_NORMAL);
+					alert.set_error_show_type(Asset::ERROR_SHOW_TYPE_CHAT);
+					alert.set_error_code(Asset::ERROR_DATABASE); //数据库错误
+
+					SendProtocol(alert);
+				}
 			}
 			else
 			{
@@ -206,6 +218,8 @@ void WorldSession::KillOutPlayer()
 {
 	if (g_player) //网络断开
 	{
+		WorldSessionInstance.Erase(g_player->GetID());
+
 		//提示Client
 		Asset::KillOut message;
 		message.set_player_id(g_player->GetID());
@@ -290,9 +304,7 @@ void WorldSessionManager::Emplace(int64_t player_id, std::shared_ptr<WorldSessio
 void WorldSessionManager::Erase(int64_t player_id)
 {
 	std::lock_guard<std::mutex> lock(_mutex);
-	auto it = _sessions.find(player_id);
-	if (it == _sessions.end()) return;
-	_sessions.erase(it);
+	_sessions.erase(player_id);
 }
 	
 std::shared_ptr<WorldSession> WorldSessionManager::Get(int64_t player_id)

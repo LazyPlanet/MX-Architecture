@@ -288,6 +288,7 @@ int32_t Player::OnEnterGame()
 	SetDirty(); //存盘
 
 	PLAYER(_stuff);	//BI日志
+
 	WorldSessionInstance.Emplace(_player_id, _session); //网络会话数据
 	PlayerInstance.Emplace(_player_id, shared_from_this()); //玩家管理
 
@@ -2955,9 +2956,7 @@ void PlayerManager::Emplace(int64_t player_id, std::shared_ptr<Player> player)
 std::shared_ptr<Player> PlayerManager::GetPlayer(int64_t player_id)
 {
 	//std::lock_guard<std::mutex> lock(_mutex);
-	auto it = _players.find(player_id);
-	if (it == _players.end()) return nullptr;
-	return it->second;
+	return _players[player_id];
 }
 
 std::shared_ptr<Player> PlayerManager::Get(int64_t player_id)
