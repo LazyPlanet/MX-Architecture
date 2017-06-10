@@ -566,6 +566,7 @@ void Game::Calculate(int64_t hupai_player_id/*胡牌玩家*/, int64_t dianpao_pl
 	};
 
 	int32_t base_score = 1;
+	fan_list.push_back(Asset::FAN_TYPE_PINGHU); //平胡，1积分
 
 	//玩家角色性检查(比如，庄家胡牌)
 	if (IsBanker(hupai_player_id)) 

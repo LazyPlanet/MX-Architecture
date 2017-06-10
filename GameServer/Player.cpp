@@ -521,8 +521,7 @@ int32_t Player::CmdPaiOperate(pb::Message* message)
 					return 10;
 			}
 
-			_has_ting = true; //设置玩家状态
-			_game->AddTingPlayer(_player_id);
+			OnTingPai();
 		}
 		break;
 
@@ -2811,9 +2810,9 @@ int32_t Player::OnFaPai(std::vector<int32_t>& cards)
 				//宝牌
 				_game->BroadCast(proto);
 			}
-
-			++_oper_count_tingpai;
 		}
+
+		if (IsTingPai()) ++_oper_count_tingpai; //听牌后发了多少张牌
 			
 		//
 		//如果玩家处于服务器托管状态，则自动出牌
@@ -2837,6 +2836,17 @@ int32_t Player::OnFaPai(std::vector<int32_t>& cards)
 	Send2Roomers(notify, _player_id); //广播玩家抓牌行为
 
 	return 0;
+}
+
+void Player::OnTingPai()
+{
+	if (!_game) return;
+
+	_has_ting = true;
+
+	_oper_count_tingpai = 1;
+
+	_game->AddTingPlayer(_player_id);
 }
 	
 void Player::SynchronizePai()

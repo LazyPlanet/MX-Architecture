@@ -296,6 +296,7 @@ public:
 
 	bool IsTingPai() { return _has_ting; } //是否听牌
 	bool HasTingPai() { return _has_ting; } //是否听牌
+	void OnTingPai();
 
 	int32_t GetMingGangCount() { return _minggang.size(); } //明杠数量
 	int32_t GetAnGangCount() { return _angang.size(); } //暗杠数量
