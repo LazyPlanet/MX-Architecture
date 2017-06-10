@@ -41,13 +41,11 @@ bool Room::Enter(std::shared_ptr<Player> player)
 		return false; //进入房间之前都需要做此检查，理论上不会出现
 	}
 	
-	DEBUG("当前房间玩家数量:{} 当前进入房间玩家角色:{} 位置:{}", _players.size(), player->GetID(), player->GetPosition());
-
 	_players.push_back(player); //进入房间
 	
 	player->SetPosition((Asset::POSITION_TYPE)_players.size()); //设置位置
 	
-	DEBUG("当前房间玩家数量:{} 当前进入房间玩家角色:{} 位置:{}", _players.size(), player->GetID(), player->GetPosition());
+	DEBUG("curr_count:{} curr_enter:{} position:{}", _players.size(), player->GetID(), player->GetPosition());
 
 	SyncRoom(); //同步当前房间内玩家数据
 	return true;
@@ -182,7 +180,7 @@ void Room::SyncRoom()
 	
 	for (auto player : _players)
 	{
-		DEBUG("同步房间数据, 当前房间玩家数量:{} player_id:{} position:{}", _players.size(), player->GetID(), player->GetPosition());
+		DEBUG("sync room infomation, curr_player_size:{} player_id:{} position:{}", _players.size(), player->GetID(), player->GetPosition());
 		auto p = message.mutable_player_list()->Add();
 		p->set_position(player->GetPosition());
 		p->mutable_common_prop()->CopyFrom(player->CommonProp());

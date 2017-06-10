@@ -49,12 +49,11 @@ class Player : public std::enable_shared_from_this<Player>
 	std::unordered_map<int32_t, CallBack>  _callbacks;	//每个协议的回调函数，不要传入引用
 private:
 	int64_t _player_id = 0; //玩家ID
-	Asset::Player _stuff; //玩家数据
+	Asset::Player _stuff; //玩家数据，存盘数据
+	Asset::PlayerProp _player_prop; //玩家临时状态，不进行存盘
 
 	int64_t _heart_count = 0; //心跳次数
-
 	int32_t _hi_time = 0; 
-	
 	bool _dirty = false; //脏数据
 
 //协议处理回调函数
@@ -140,9 +139,8 @@ public:
 	virtual bool Update();
 	//购买商品
 	virtual bool CmdBuySomething(pb::Message* message);
-	//在线状态
-	void SetOnline(bool online) { _stuff.mutable_player_prop()->set_online(online);	}
-	bool IsOnline() { return _stuff.player_prop().online(); }
+	//是否在线
+	bool IsOnline() { return _stuff.login_time() != 0; }
 	//签到
 	virtual int32_t CmdSign(pb::Message* message);
 	//获取玩家基础属性
@@ -238,8 +236,8 @@ public:
 	void OnEnterScene();
 	//获取房间
 	virtual std::shared_ptr<Room> GetRoom() { return _room; }	//获取当前房间
-	virtual void SetRoomID(int64_t room_id) { _stuff.mutable_player_prop()->set_room_id(room_id); }	
-	virtual int32_t GetRoomID() { return _stuff.player_prop().room_id(); }
+	virtual void SetRoomID(int64_t room_id) { _player_prop.set_room_id(room_id); }	
+	virtual int32_t GetRoomID() { return _player_prop.room_id(); }
 	virtual bool HasRoom() { return _room != nullptr; }
 	virtual void SetRoom(std::shared_ptr<Room> room) { _room = room; }
 
@@ -305,10 +303,10 @@ public:
 	//发牌前置检查
 	void PreCheckOnFaPai(); 
 	//是否已经在准备状态 
-	bool IsReady() { return _stuff.player_prop().game_oper_state() == Asset::GAME_OPER_TYPE_START; } 
+	bool IsReady() { return _player_prop.game_oper_state() == Asset::GAME_OPER_TYPE_START; } 
 	//获取//设置玩家座次
-	Asset::POSITION_TYPE GetPosition() { return _stuff.player_prop().position(); }
-	void SetPosition(Asset::POSITION_TYPE position) { _stuff.mutable_player_prop()->set_position(position); }
+	Asset::POSITION_TYPE GetPosition() { return _player_prop.position(); }
+	void SetPosition(Asset::POSITION_TYPE position) { _player_prop.set_position(position); }
 	//打印牌玩家当前牌
 	void PrintPai(); 
 	//同步玩家牌给Client

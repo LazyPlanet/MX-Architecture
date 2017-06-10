@@ -320,7 +320,7 @@ void Game::OnPaiOperate(std::shared_ptr<Player> player, pb::Message* message)
 				_room->GameOver(player->GetID()); //胡牌
 				_hupai_players.push_back(player->GetID()); 
 
-				OnOver();
+				OnOver(); //结算之后才是真正结束
 			}
 			else
 			{
@@ -647,6 +647,8 @@ void Game::Calculate(int64_t hupai_player_id/*胡牌玩家*/, int64_t dianpao_pl
 			
 		DEBUG("玩家:{} 因为牌型和位置输所有积分:{}", player_id, -score);
 	}
+	
+	message.PrintDebugString();
 
 	//
 	//2.胡牌玩家积分
@@ -710,6 +712,8 @@ void Game::Calculate(int64_t hupai_player_id/*胡牌玩家*/, int64_t dianpao_pl
 	}
 
 	record->set_score(total_score); //胡牌玩家赢的总积分
+	
+	message.PrintDebugString();
 	
 	//
 	//杠牌积分，一个部分
@@ -790,6 +794,8 @@ void Game::Calculate(int64_t hupai_player_id/*胡牌玩家*/, int64_t dianpao_pl
 			}
 		}
 	}
+	
+	message.PrintDebugString();
 
 	//
 	//4.点炮包三家

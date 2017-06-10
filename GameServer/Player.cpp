@@ -88,11 +88,6 @@ int32_t Player::Load()
 
 int32_t Player::Save()
 {
-	if (!_room && !_game)
-	{
-		//_stuff.mutable_player_prop()->Clear(); //非存盘数据
-	}
-
 	auto redis = make_unique<Redis>();
 	redis->SavePlayer(_player_id, _stuff);
 	
@@ -357,10 +352,11 @@ int32_t Player::CmdGameOperate(pb::Message* message)
 
 	switch(game_operate->oper_type())
 	{
+		case Asset::GAME_OPER_TYPE_NULL: 
 		case Asset::GAME_OPER_TYPE_START: //开始游戏：相当于准备
 		case Asset::GAME_OPER_TYPE_LEAVE: //离开游戏：相当于退出房间
 		{
-			_stuff.mutable_player_prop()->set_game_oper_state(game_operate->oper_type());
+			_player_prop.set_game_oper_state(game_operate->oper_type());
 		}
 		break;
 
@@ -373,11 +369,10 @@ int32_t Player::CmdGameOperate(pb::Message* message)
 			}
 		}
 		break;
-		
-		case Asset::GAME_OPER_TYPE_NULL: 
+
 		default:
 		{
-			 _stuff.mutable_player_prop()->clear_game_oper_state();
+			 _player_prop.clear_game_oper_state(); //错误状态
 		}
 		break;
 	}
@@ -526,9 +521,7 @@ int32_t Player::CmdPaiOperate(pb::Message* message)
 					return 10;
 			}
 
-
-			//设置玩家状态
-			_has_ting = true;
+			_has_ting = true; //设置玩家状态
 			_game->AddTingPlayer(_player_id);
 		}
 		break;
@@ -776,7 +769,7 @@ bool Player::Update()
 	
 	if (_heart_count % 3000 == 0) //30s
 	{
-		SayHi();
+		//SayHi();
 	}
 
 	if (_heart_count % 6000 == 0) //1min
@@ -941,7 +934,7 @@ void Player::OnLeaveRoom()
 
 	WARN("player_id:{} leave room.", _player_id);
 
-	_stuff.mutable_player_prop()->clear_game_oper_state(); //玩家操作状态
+	_player_prop.clear_game_oper_state(); //玩家操作状态
 
 	_room.reset();
 }
@@ -1105,21 +1098,20 @@ int32_t Player::CmdLoadScene(pb::Message* message)
 	Asset::LoadScene* load_scene = dynamic_cast<Asset::LoadScene*>(message);
 	if (!load_scene) return 1;
 
-	TRACE("player_id:{}, curr_load_type:{} message:{}", _player_id, _stuff.player_prop().load_type(), load_scene->ShortDebugString());
+	TRACE("player_id:{}, curr_load_type:{} message:{}", _player_id, _player_prop.load_type(), load_scene->ShortDebugString());
 
 	switch (load_scene->load_type())
 	{
 		case Asset::LOAD_SCENE_TYPE_START: //加载开始
 		{
-			_stuff.mutable_player_prop()->set_load_type(Asset::LOAD_SCENE_TYPE_START);
-			
-			_stuff.mutable_player_prop()->set_room_id(load_scene->scene_id()); //状态
+			_player_prop.set_load_type(Asset::LOAD_SCENE_TYPE_START);
+			_player_prop.set_room_id(load_scene->scene_id()); //进入房间ID
 		}
 		break;
 		
 		case Asset::LOAD_SCENE_TYPE_SUCCESS: //加载成功
 		{
-			if (_stuff.player_prop().load_type() != Asset::LOAD_SCENE_TYPE_START) 
+			if (_player_prop.load_type() != Asset::LOAD_SCENE_TYPE_START) 
 			{
 				DEBUG_ASSERT(false && "player is not loaded.");
 				return 2;
@@ -1127,7 +1119,7 @@ int32_t Player::CmdLoadScene(pb::Message* message)
 
 			SendPlayer(); //发送数据给客户端
 
-			auto room_id = _stuff.player_prop().room_id();
+			auto room_id = _player_prop.room_id();
 			
 			auto locate_room = RoomInstance.Get(room_id);
 			if (!locate_room) 
@@ -1155,8 +1147,8 @@ int32_t Player::CmdLoadScene(pb::Message* message)
 				
 			DEBUG("player_id:{} enter room:{} success.", _player_id, room_id);
 			
-			_stuff.mutable_player_prop()->clear_load_type(); 
-			_stuff.mutable_player_prop()->clear_room_id(); 
+			_player_prop.clear_load_type(); 
+			_player_prop.clear_room_id(); 
 		}
 		break;
 		
@@ -1812,6 +1804,7 @@ bool Player::CheckHuPai(const Asset::PaiElement& pai, std::vector<Asset::FAN_TYP
 		return false;
 	}
 
+	ke_count /= 2; 
 	auto ke_total = ke_count + _jiangang + _fenggang + _minggang.size() + _angang.size();
 		
 	DEBUG("player_id:{} ke_total:{} ke_count:{} jiangang_count:{} fenggang_count:{} minggang.size():{} angang.size():{}", 
@@ -1931,7 +1924,11 @@ bool Player::CheckHuPai(const Asset::PaiElement& pai, std::vector<Asset::FAN_TYP
 
 bool Player::CheckChiPai(const Asset::PaiElement& pai)
 {
-	if (_has_ting) return false; //已经听牌，不再提示
+	if (_has_ting) 
+	{
+		DEBUG("player_id:{} has tinged", _player_id);
+		return false; //已经听牌，不再提示
+	}
 
 	auto it = _cards.find(pai.card_type());
 	if (it == _cards.end()) return false;
@@ -2869,14 +2866,16 @@ void Player::SynchronizePai()
 
 void Player::PrintPai()
 {
+	return;
+
 	for (const auto& pai : _minggang)
 	{
-		DEBUG("【明杠】 player_id:{} card_type:{} card_value:{}", _player_id, pai.card_type(), pai.card_value());
+		DEBUG("[明杠] player_id:{} card_type:{} card_value:{}", _player_id, pai.card_type(), pai.card_value());
 	}
 	
 	for (auto pai : _angang)
 	{
-		DEBUG("【暗杠】 player_id:{} card_type:{} card_value:{}", _player_id, pai.card_type(), pai.card_value());
+		DEBUG("[暗杠] player_id:{} card_type:{} card_value:{}", _player_id, pai.card_type(), pai.card_value());
 	}
 	
 	for (const auto& pai : _cards_outhand)
@@ -2885,7 +2884,7 @@ void Player::PrintPai()
 		for (auto card_value : pai.second) 
 			card_value_list << card_value << " ";
 
-		DEBUG("【牌外】 player_id:{} card_type:{} card_value:{}", _player_id, pai.first, card_value_list.str());
+		DEBUG("[牌外] player_id:{} card_type:{} card_value:{}", _player_id, pai.first, card_value_list.str());
 	}
 
 	for (const auto& pai : _cards)
@@ -2894,7 +2893,7 @@ void Player::PrintPai()
 		for (auto card_value : pai.second) 
 			card_value_list << card_value << " ";
 
-		DEBUG("【牌内】 player_id:{} card_type:{} card_value:{}", _player_id, pai.first, card_value_list.str());
+		DEBUG("[牌内] player_id:{} card_type:{} card_value:{}", _player_id, pai.first, card_value_list.str());
 	}
 }
 
@@ -2914,7 +2913,7 @@ void Player::OnGameOver()
 {
 	ClearCards();
 
-	_stuff.mutable_player_prop()->clear_game_oper_state();
+	_player_prop.clear_game_oper_state();
 
 	_oper_count_tingpai = _oper_count = 0; //操作次数
 
