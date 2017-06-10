@@ -48,11 +48,7 @@ bool World::Load()
 	//特殊ID定义表
 	pb::Message* message = AssetInstance.Get(458753); 
 	g_const = dynamic_cast<const Asset::CommonConst*>(message); 
-	if (!g_const) 
-	{
-		//LOG(ERROR, "g_const is null.");
-		return false;
-	}
+	if (!g_const) return false; //如果没有起不来
 
 	//玩家匹配
 	MatchInstance.DoMatch();

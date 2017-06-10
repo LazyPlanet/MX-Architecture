@@ -38,9 +38,9 @@ public:
 		return _stuff; //数据
 	}
 	
-	const Asset::RoomOptions& GetOptions() {
-		return _stuff->options(); //数据
-	}
+	//额外番型
+	const Asset::RoomOptions& GetOptions() { return _stuff->options(); }
+	void SetOption(const Asset::RoomOptions& options) {	_stuff->mutable_options()->CopyFrom(options);}
 
 public:
 	Asset::ERROR_CODE TryEnter(std::shared_ptr<Player> player);
@@ -104,11 +104,12 @@ public:
 		return _instance;
 	}
 	
-	//创建房间
+	//创建房间：获取房间全局ID
 	int64_t CreateRoom();
+	//通过配置创建房间
 	std::shared_ptr<Room> CreateRoom(const Asset::Room& room);
 	//进入房间回调
-	void OnCreateRoom(std::shared_ptr<Room> room);
+	bool OnCreateRoom(std::shared_ptr<Room> room);
 	//获取房间
 	std::shared_ptr<Room> Get(int64_t room_id);
 	//获取可入房间

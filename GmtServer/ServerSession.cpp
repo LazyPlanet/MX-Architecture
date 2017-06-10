@@ -45,6 +45,9 @@ void ServerSession::InitializeHandler(const boost::system::error_code error, con
 	AsyncReceiveWithCallback(&ServerSession::InitializeHandler);
 }
 
+//
+// 处理来自GMT和游戏服务器的的消息数据
+//
 bool ServerSession::InnerProcess(const Asset::InnerMeta& meta)
 {
 	TRACE("Receive message:{} from server:{}", meta.ShortDebugString(), _ip_address);
@@ -116,10 +119,28 @@ bool ServerSession::InnerProcess(const Asset::InnerMeta& meta)
 			auto result = message.ParseFromString(meta.stuff());
 			if (!result) return false;
 
-			auto game_server = ServerSessionInstance.Get(message.server_id());
-			if (!game_server) return false;
+			if (ServerSessionInstance.IsGmtServer(shared_from_this())) //处理GMT服务器发送的数据
+			{
+				auto game_server = ServerSessionInstance.Get(message.server_id());
+				if (!game_server) 
+				{
+					message.set_error_code(Asset::COMMAND_ERROR_CODE_SERVER_NOT_FOUND);
+					SendProtocol(message); //返回给GMT服务器
+				}
+				else
+				{
+					game_server->SendProtocol(message);
+				}
+			}
+			else //处理游戏服务器返回的数据
+			{
+				TRACE("Server:{} is not gmt server whose send message:{}.", _ip_address, message.ShortDebugString());
 
-			game_server->SendProtocol(message);
+				auto gmt_server = ServerSessionInstance.GetGmtServer();
+				if (!gmt_server) return false;
+			
+				gmt_server->SendProtocol(message);
+			}
 		}
 		break;
 

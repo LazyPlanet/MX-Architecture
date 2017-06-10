@@ -33,6 +33,8 @@ enum COMMAND_ERROR_CODE {
 	COMMAND_ERROR_CODE_PLAYER_ONLINE = 5; //玩家在线
 	COMMAND_ERROR_CODE_PLAYER_OFFLINE = 6; //玩家离线
 	COMMAND_ERROR_CODE_ITEM_NOT_FOUND = 7; //物品未能找到
+	COMMAND_ERROR_CODE_SERVER_NOT_FOUND = 8; //未能找到服务器
+	COMMAND_ERROR_CODE_ASSET_NOT_FOUND = 9; //未能找到相关数据，由于策划配置造成
 }
 
 enum SERVER_TYPE {
@@ -63,6 +65,7 @@ message Command {
 //代开房间
 message OpenRoom {
 	optional INNER_TYPE type_t = 1 [default = INNER_TYPE_OPEN_ROOM];
-	optional int64 server_id = 2 [default = 1]; //服务器ID
-	optional int64 room_id = 3; //房间ID，如果非0则证明开放成功
+	optional COMMAND_ERROR_CODE error_code = 2; //返回码
+	optional int64 server_id = 3 [default = 1]; //游戏服务器ID
+	optional int64 room_id = 4; //房间ID，如果非0则证明开放成功
 }

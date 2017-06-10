@@ -235,19 +235,30 @@ int64_t RoomManager::CreateRoom()
 	
 std::shared_ptr<Room> RoomManager::CreateRoom(const Asset::Room& room)
 {
+	auto room_id = room.room_id();
+
+	if (room_id <= 0) room_id = CreateRoom(); //如果没有房间号，则创建
+
+	if (room_id <= 0) return nullptr;
+
 	auto locate_room = std::make_shared<Room>(room);
+	locate_room->SetID(room_id);
 	locate_room->OnCreated();
 
-	OnCreateRoom(locate_room); //房间管理
-
+	auto success = OnCreateRoom(locate_room); //成功创建房间
+	if (!success)
+	{
+		LOG(ERROR, "Enter room_id:{} callback failed.", room_id);
+	}
 	return locate_room;
 }
 
-void RoomManager::OnCreateRoom(std::shared_ptr<Room> room)
+bool RoomManager::OnCreateRoom(std::shared_ptr<Room> room)
 {
-	if (_rooms.find(room->GetID()) != _rooms.end()) return;
+	if (_rooms.find(room->GetID()) != _rooms.end()) return false;
 
 	_rooms.emplace(room->GetID(), room);
+	return true;
 }
 
 std::shared_ptr<Room> RoomManager::GetAvailableRoom()

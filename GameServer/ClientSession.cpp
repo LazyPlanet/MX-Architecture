@@ -3,6 +3,7 @@
 #include "MXLog.h"
 #include "Player.h"
 #include "Room.h"
+#include "Config.h"
 
 namespace Adoter
 {
@@ -20,29 +21,20 @@ void ClientSession::OnConnected()
 
 	Asset::Register message;
 	message.set_server_type(Asset::SERVER_TYPE_GAME);
-	message.set_server_id(1);
+	message.set_server_id(ConfigInstance.GetInt("ServerID", 1)); //服务器ID，全球唯一
+
 	SendProtocol(message); //注册服务器角色
 }
 
 void ClientSession::OnReceived(const Asset::InnerMeta& message)
 {
-	/*
-	Asset::InnerMeta meta;
-	auto result = meta.ParseFromString(message);
-	if (!result)
-	{
-		LOG(ERROR, "Receive message error from server:{}", _ip_address);
-		return;
-	}	
-	*/
-
 	InnerProcess(message);
 	LOG(INFO, "Receive message:{} from server:{}", message.ShortDebugString(), _ip_address);
 }
 
 bool ClientSession::InnerProcess(const Asset::InnerMeta& meta)
 {
-	TRACE("Receive message:{} from server:{}", meta.ShortDebugString(), _ip_address);
+	LOG(INFO, "Receive message:{} from server:{}", meta.ShortDebugString(), _ip_address);
 
 	switch (meta.type_t())
 	{
@@ -68,10 +60,29 @@ bool ClientSession::InnerProcess(const Asset::InnerMeta& meta)
 			auto result = message.ParseFromString(meta.stuff());
 			if (!result) return false;
 
-			int64_t room_id = RoomInstance.CreateRoom();
-			if (!room_id) return 2;
+			//获取策划好友房数据
+			const auto& messages = AssetInstance.GetMessagesByType(Asset::ASSET_TYPE_ROOM);
+			auto it = std::find_if(messages.begin(), messages.end(), [](pb::Message* message){
+					auto room_limit = dynamic_cast<Asset::RoomLimit*>(message);
+					if (!room_limit) return false;
+					return Asset::ROOM_TYPE_FRIEND == room_limit->room_type();
+				});
+			if (it == messages.end()) return false;
 
+			auto room_limit = dynamic_cast<Asset::RoomLimit*>(*it);
+			if (!room_limit) return Asset::ERROR_ROOM_TYPE_NOT_FOUND;
 
+			//房间属性
+			Asset::Room room;
+			room.set_room_type(Asset::ROOM_TYPE_FRIEND);
+			room.mutable_options()->CopyFrom(room_limit->room_options());
+
+			auto room_ptr = RoomInstance.CreateRoom(room);
+			if (!room_ptr) return false; //未能创建成功房间，理论不会出现
+
+			message.set_room_id(room_ptr->GetID());
+			message.set_error_code(Asset::COMMAND_ERROR_CODE_SUCCESS); //成功创建
+			SendProtocol(message); //发送给GTM服务器
 		}
 		break;
 
