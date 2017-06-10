@@ -648,8 +648,6 @@ void Game::Calculate(int64_t hupai_player_id/*胡牌玩家*/, int64_t dianpao_pl
 		DEBUG("玩家:{} 因为牌型和位置输所有积分:{}", player_id, -score);
 	}
 	
-	message.PrintDebugString();
-
 	//
 	//2.胡牌玩家积分
 	//
@@ -713,8 +711,6 @@ void Game::Calculate(int64_t hupai_player_id/*胡牌玩家*/, int64_t dianpao_pl
 
 	record->set_score(total_score); //胡牌玩家赢的总积分
 	
-	message.PrintDebugString();
-	
 	//
 	//杠牌积分，一个部分
 	//
@@ -731,15 +727,15 @@ void Game::Calculate(int64_t hupai_player_id/*胡牌玩家*/, int64_t dianpao_pl
 		int32_t an_score = an_count * get_multiple(Asset::FAN_TYPE_AN_GANG);
 		int32_t xf_score = xf_count * get_multiple(Asset::FAN_TYPE_XUAN_FENG_GANG);
 
-		auto score = ming_score + an_score + xf_score;
+		auto score = ming_score + an_score + xf_score; //玩家杠牌赢得其他单个玩家积分
 				
 		DEBUG("player_id:{}, ming_count:{}, an_count:{}, score:{}", player->GetID(), ming_count, an_count, score);
 
 		auto record = message.mutable_record()->mutable_list(i);
-		record->set_score((record->score() + score) * (MAX_PLAYER_COUNT - 1)); //增加杠分
+		record->set_score(record->score() + score * (MAX_PLAYER_COUNT - 1)); //增加杠牌玩家总杠积分
 
 		//
-		//杠牌玩家积分
+		//1.杠牌玩家赢得积分列表
 		//
 		if (ming_count)
 		{
@@ -763,7 +759,7 @@ void Game::Calculate(int64_t hupai_player_id/*胡牌玩家*/, int64_t dianpao_pl
 		}
 
 		//
-		//其他玩家所输积分
+		//2.其他玩家所输积分
 		//
 		for (int index = 0; index < MAX_PLAYER_COUNT; ++index)
 		{
@@ -771,6 +767,10 @@ void Game::Calculate(int64_t hupai_player_id/*胡牌玩家*/, int64_t dianpao_pl
 
 			auto record = message.mutable_record()->mutable_list(index);
 			record->set_score(record->score() - score); //扣除杠分
+
+			//
+			//3.非杠牌玩家所输积分列表
+			//
 
 			if (ming_count)
 			{
@@ -795,8 +795,6 @@ void Game::Calculate(int64_t hupai_player_id/*胡牌玩家*/, int64_t dianpao_pl
 		}
 	}
 	
-	message.PrintDebugString();
-
 	//
 	//4.点炮包三家
 	//
