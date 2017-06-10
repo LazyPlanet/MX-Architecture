@@ -768,29 +768,27 @@ void Game::Calculate(int64_t hupai_player_id/*胡牌玩家*/, int64_t dianpao_pl
 			auto record = message.mutable_record()->mutable_list(index);
 			record->set_score(record->score() - score); //扣除杠分
 
-			//
-			//3.非杠牌玩家所输积分列表
-			//
+			//非杠牌玩家所输积分列表
 
 			if (ming_count)
 			{
 				auto detail = record->mutable_details()->Add();
 				detail->set_fan_type(Asset::FAN_TYPE_MING_GANG);
-				detail->set_score(-ming_score * (MAX_PLAYER_COUNT - 1));
+				detail->set_score(-ming_score);
 			}
 
 			if (an_count)
 			{
 				auto detail = record->mutable_details()->Add();
 				detail->set_fan_type(Asset::FAN_TYPE_AN_GANG);
-				detail->set_score(-an_score * (MAX_PLAYER_COUNT - 1));
+				detail->set_score(-an_score);
 			}
 
 			if (xf_count)
 			{
 				auto detail = record->mutable_details()->Add();
 				detail->set_fan_type(Asset::FAN_TYPE_XUAN_FENG_GANG);
-				detail->set_score(-xf_score * (MAX_PLAYER_COUNT - 1));
+				detail->set_score(-xf_score);
 			}
 		}
 	}
