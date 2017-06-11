@@ -1916,9 +1916,9 @@ bool Player::CheckChiPai(const Asset::PaiElement& pai)
 	//
 	//朝阳特殊玩法：如果不是明飘，不能手把一
 	//
-	if (_cards.size() == 4)
+	if (GetCardCount() == 4)
 	{
-		TRACE("player_id:{} has cards in hand cout:{}", _player_id, _cards.size());
+		DEBUG("player_id:{} has cards in hand cout:{}", _player_id, _cards.size());
 		return false;
 	}
 
@@ -2046,7 +2046,7 @@ bool Player::CheckPengPai(const Asset::PaiElement& pai)
 	//
 	//朝阳特殊玩法：如果不是明飘，不能手把一
 	//
-	if (_cards.size() == 4)
+	if (GetCardCount() == 4)
 	{
 		for (auto cards : _cards_outhand)
 		{
@@ -2055,6 +2055,8 @@ bool Player::CheckPengPai(const Asset::PaiElement& pai)
 				auto first_value = *it;
 				auto second_value = *(it + 1);
 				auto third_value = *(it + 2);
+				
+				DEBUG("player_id:{} first_value:{} second_value:{} third_value:{}", _player_id, first_value, second_value, third_value);
 
 				if (first_value != second_value || first_value != third_value || second_value != third_value) return false;
 			}
@@ -2962,6 +2964,18 @@ void Player::SayHi()
 	message.set_heart_count(_heart_count);
 
 	SendProtocol(message);
+}
+	
+int32_t Player::GetCardCount()
+{
+	int32_t total_size = 0;
+
+	for (auto cards : _cards)
+	{
+		total_size += cards.second.size();
+	}
+
+	return total_size;
 }
 
 /////////////////////////////////////////////////////

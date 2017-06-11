@@ -803,7 +803,7 @@ void Game::Calculate(int64_t hupai_player_id/*胡牌玩家*/, int64_t dianpao_pl
 
 	if (baosanjia) //包三家
 	{
-		DEBUG("dianpao_player_id:{} 包三家积分或者钻石、欢乐豆", dianpao_player_id);
+		DEBUG("dianpao_player_id:{} 包三家积分、钻石或者欢乐豆", dianpao_player_id);
 
 		auto it_dianpao = get_record(dianpao_player_id);
 		if (it_dianpao == message.mutable_record()->mutable_list()->end()) 
@@ -811,6 +811,8 @@ void Game::Calculate(int64_t hupai_player_id/*胡牌玩家*/, int64_t dianpao_pl
 			DEBUG_ASSERT(false && "dianpao_player_id has not found"); //理论不会出现
 			return;
 		}
+
+		int32_t baofen_total = 0; //包积分
 
 		for (auto player : _players)
 		{
@@ -831,10 +833,15 @@ void Game::Calculate(int64_t hupai_player_id/*胡牌玩家*/, int64_t dianpao_pl
 				continue;
 			}
 
-			//点炮玩家付钱
-			it_dianpao->set_score(it_player->score() + it_dianpao->score());
+			baofen_total += it_player->score();
+
+			it_dianpao->set_score(it_player->score() + it_dianpao->score()); //点炮玩家付钱
 			it_player->set_score(0);
 		}
+			
+		auto detail = it_dianpao->mutable_details()->Add();
+		detail->set_fan_type(Asset::FAN_TYPE_BAOSANJIA);
+		detail->set_score(baofen_total);
 	}
 	
 	message.PrintDebugString();
@@ -1017,7 +1024,7 @@ bool Game::CheckLiuJu()
 
 	auto next_player_index = (_curr_player_index + 1) % MAX_PLAYER_COUNT;
 
-	for (int32_t i = next_player_index; i < MAX_PLAYER_COUNT - 1 + next_player_index; ++i)
+	for (int32_t i = next_player_index; i < MAX_PLAYER_COUNT + next_player_index; ++i)
 	{
 		auto cur_index = i % MAX_PLAYER_COUNT;
 
@@ -1034,8 +1041,8 @@ bool Game::CheckLiuJu()
 		auto card = GameInstance.GetCard(cards[0]); //玩家待抓的牌
 
 		auto ju_element = message.mutable_elements()->Add();
-		ju_element->mutable_pai()->CopyFrom(card);
-		ju_element->set_player_id(player->GetID());
+		ju_element->mutable_pai()->CopyFrom(card); //分牌
+		ju_element->set_player_id(player->GetID()); //玩家角色ID
 
 		if (player->CheckHuPai(card)) 
 		{

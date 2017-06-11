@@ -319,6 +319,8 @@ public:
 	//是否//设置服务器托管状态
 	bool HasTuoGuan() { return _tuoguan_server; }
 	void SetTuoGuan() { _tuoguan_server = true; }
+	//获取当前玩家手中牌数
+	int32_t GetCardCount();
 };
 
 /////////////////////////////////////////////////////
