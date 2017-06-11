@@ -149,6 +149,16 @@ void WorldSession::InitializeHandler(const boost::system::error_code error, cons
 				if (redis->GetGuestAccount(account)) login->set_account(account);
 				SendProtocol(login); 
 			}
+			else if (Asset::META_TYPE_C2S_RECONNECT == meta.type_t()) //断线重连
+			{
+				Asset::ReConnect* connect = dynamic_cast<Asset::ReConnect*>(message);
+				if (!connect) return; 
+
+				g_player = PlayerInstance.Get(connect->player_id());
+				if (!g_player) return;
+
+				g_player->OnEnterGame();
+			}
 			/*
 			else if (Asset::META_TYPE_SHARE_CREATE_PLAYER == meta.type_t()) //创建角色
 			{
@@ -174,7 +184,7 @@ void WorldSession::InitializeHandler(const boost::system::error_code error, cons
 
 				if (_player_list.find(enter_game->player_id()) == _player_list.end())
 				{
-					ERROR("player_id:{} has not found, maybe it is cheated.", enter_game->player_id());
+					LOG(ERROR, "player_id:{} has not found in username:{}, maybe it is cheated.", enter_game->player_id(), _account.username());
 					return; //账号下没有该角色数据
 				}
 
@@ -196,7 +206,7 @@ void WorldSession::InitializeHandler(const boost::system::error_code error, cons
 				//
 				//加载数据
 				//
-				if (g_player->OnEnterGame())
+				if (g_player->OnEnterGame()) //理论上不会出现
 				{
 					Asset::AlertMessage alert;
 					alert.set_error_type(Asset::ERROR_TYPE_NORMAL);
@@ -232,13 +242,13 @@ void WorldSession::KillOutPlayer()
 {
 	if (g_player) //网络断开
 	{
-		WorldSessionInstance.Erase(g_player->GetID());
+		//WorldSessionInstance.Erase(g_player->GetID()); //玩家自行处理对象管理
 
 		//提示Client
 		Asset::KillOut message;
 		message.set_player_id(g_player->GetID());
 		message.set_out_reason(Asset::KILL_OUT_REASON_OTHER_LOGIN);
-		SendProtocol(message);
+		SendProtocol(message); //有可能发送失败，因为此时玩家已经断开网络连接
 
 		//玩家退出登陆
 		g_player->OnLogout(nullptr);

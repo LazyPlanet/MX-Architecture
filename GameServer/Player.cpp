@@ -133,11 +133,7 @@ int32_t Player::OnLogout(pb::Message* message)
 		}
 		else
 		{
-			Asset::GameOperation game_operate;
-			game_operate.set_source_player_id(_player_id); 
-			game_operate.set_oper_type(Asset::GAME_OPER_TYPE_LEAVE); //离开游戏，退出房间
-
-			_room->OnPlayerOperate(shared_from_this(), &game_operate); //广播给其他玩家
+			_room->Remove(_player_id); //退出房间
 		}
 	}
 
@@ -936,6 +932,7 @@ void Player::OnLeaveRoom()
 	_player_prop.clear_game_oper_state(); //玩家操作状态
 
 	_room.reset();
+	_room = nullptr;
 }
 	
 void Player::BroadCast(Asset::MsgItem& item) 
@@ -1909,18 +1906,58 @@ bool Player::CheckHuPai(const Asset::PaiElement& pai, std::vector<Asset::FAN_TYP
 	
 	return true;
 }
+	
+//
+//朝阳特殊玩法
+//
+//如果不是明飘，不能手把一，即单调一张牌
+//
+bool Player::CheckMingPiao(const Asset::PAI_OPER_TYPE& oper_type)
+{
+	auto curr_count = GetCardCount();
+
+	if (curr_count > 4) return true; //当前超过4张牌，显然不可能手把一
+
+	switch (oper_type)
+	{
+		case Asset::PAI_OPER_TYPE_CHIPAI: //吃牌
+		{
+			return false;
+		}
+		break;
+		
+		case Asset::PAI_OPER_TYPE_PENGPAI: //碰牌
+		case Asset::PAI_OPER_TYPE_GANGPAI: //杠牌
+		{
+			for (auto cards : _cards_outhand)
+			{
+				for (auto it = cards.second.begin(); it != cards.second.end(); it += 3)
+				{
+					auto first_value = *it;
+					auto second_value = *(it + 1);
+					auto third_value = *(it + 2);
+					
+					if (first_value != second_value || first_value != third_value || second_value != third_value) return false;
+				}
+			}
+		}
+		break;
+
+		default:
+		{
+			return true;
+		}
+		break;
+	}
+
+	return true;
+}
 
 bool Player::CheckChiPai(const Asset::PaiElement& pai)
 {
 	if (_has_ting) return false; //已经听牌，不再提示
-	//
-	//朝阳特殊玩法：如果不是明飘，不能手把一
-	//
-	if (GetCardCount() == 4)
-	{
-		DEBUG("player_id:{} has cards in hand cout:{}", _player_id, _cards.size());
-		return false;
-	}
+
+	if (!CheckMingPiao(Asset::PAI_OPER_TYPE_CHIPAI)) return false; //明飘检查
 
 	auto it = _cards.find(pai.card_type());
 	if (it == _cards.end()) return false;
@@ -2043,25 +2080,8 @@ void Player::OnChiPai(const Asset::PaiElement& pai, pb::Message* message)
 bool Player::CheckPengPai(const Asset::PaiElement& pai)
 {
 	if (_has_ting) return false; //已经听牌，不再提示
-	//
-	//朝阳特殊玩法：如果不是明飘，不能手把一
-	//
-	if (GetCardCount() == 4)
-	{
-		for (auto cards : _cards_outhand)
-		{
-			for (auto it = cards.second.begin(); it != cards.second.end(); it += 3)
-			{
-				auto first_value = *it;
-				auto second_value = *(it + 1);
-				auto third_value = *(it + 2);
-				
-				DEBUG("player_id:{} first_value:{} second_value:{} third_value:{}", _player_id, first_value, second_value, third_value);
-
-				if (first_value != second_value || first_value != third_value || second_value != third_value) return false;
-			}
-		}
-	}
+	
+	if (!CheckMingPiao(Asset::PAI_OPER_TYPE_PENGPAI)) return false; //明飘检查
 
 	auto it = _cards.find(pai.card_type());
 	if (it == _cards.end()) return false;
@@ -2135,6 +2155,8 @@ void Player::OnPengPai(const Asset::PaiElement& pai)
 
 bool Player::CheckGangPai(const Asset::PaiElement& pai, int64_t from_player_id)
 {
+	if (!CheckMingPiao(Asset::PAI_OPER_TYPE_GANGPAI)) return false; //明飘检查
+
 	auto it = _cards.find(pai.card_type());
 	int32_t card_value = pai.card_value();
 
@@ -2166,6 +2188,8 @@ bool Player::CheckGangPai(const Asset::PaiElement& pai, int64_t from_player_id)
 
 bool Player::CheckAllGangPai(::google::protobuf::RepeatedField<Asset::PaiOperationAlert_AlertElement>& gang_list)
 {
+	if (!CheckMingPiao(Asset::PAI_OPER_TYPE_GANGPAI)) return false; //明飘检查
+
 	/////手里有4张牌，即暗杠检查
 	for (auto cards : _cards)
 	{

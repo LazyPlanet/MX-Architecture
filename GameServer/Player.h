@@ -294,9 +294,12 @@ public:
 	bool IsKaimen() { return _cards_outhand.size() != 0 || _minggang.size() != 0; } //是否开门
 	bool IsBimen() { return _cards_outhand.size() == 0 && _minggang.size() == 0; } //是否闭门
 
+	bool CheckMingPiao(const Asset::PAI_OPER_TYPE& oper_type);
+
 	bool IsTingPai() { return _has_ting; } //是否听牌
 	bool HasTingPai() { return _has_ting; } //是否听牌
-	void OnTingPai();
+
+	void OnTingPai(); //听牌响应
 
 	int32_t GetMingGangCount() { return _minggang.size(); } //明杠数量
 	int32_t GetAnGangCount() { return _angang.size(); } //暗杠数量
