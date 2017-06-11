@@ -94,6 +94,10 @@ void WorldSession::InitializeHandler(const boost::system::error_code error, cons
 
 					int64_t player_id = redis->CreatePlayer(); //如果账号下没有角色，创建一个给Client
 
+					int32_t server_id = ConfigInstance.GetInt("ServerID", 1); //服务器ID
+
+					player_id = (server_id << 16) + player_id; //角色ID带有服务器ID，每个服务器含有65536个角色
+
 					if (player_id == 0) 
 					{
 						LOG(ERROR, "create player failed, username:{}", login->account().username());
@@ -134,6 +138,16 @@ void WorldSession::InitializeHandler(const boost::system::error_code error, cons
 				if (!logout) return; 
 
 				OnLogout();
+			}
+			else if (Asset::META_TYPE_SHARE_GUEST_LOGIN == meta.type_t()) //游客登陆
+			{
+				Asset::GuestLogin* login = dynamic_cast<Asset::GuestLogin*>(message);
+				if (!login) return; 
+				
+				std::string account;
+			 	auto redis = std::make_shared<Redis>();
+				if (redis->GetGuestAccount(account)) login->set_account(account);
+				SendProtocol(login); 
 			}
 			/*
 			else if (Asset::META_TYPE_SHARE_CREATE_PLAYER == meta.type_t()) //创建角色

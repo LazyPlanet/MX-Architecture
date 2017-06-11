@@ -149,6 +149,20 @@ public:
 		
 		return true;
 	}
+	
+	bool GetGuestAccount(std::string& account)
+	{
+		redisReply* reply = (redisReply*)redisCommand(_client, "Incr guest_counter");
+		if (!reply) return false;
+
+		if (reply->type != REDIS_REPLY_INTEGER) return false;
+		
+		int64_t guest_id = reply->integer;
+		freeReplyObject(reply);
+		
+		account = "guest_" + std::to_string(guest_id);
+		return true;
+	}
 };
 
 }
