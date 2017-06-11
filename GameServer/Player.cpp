@@ -1229,17 +1229,6 @@ std::vector<Asset::PAI_OPER_TYPE> Player::CheckPai(const Asset::PaiElement& pai,
 		DEBUG("玩家{}可以碰牌.", _player_id);
 		rtn_check.push_back(Asset::PAI_OPER_TYPE_PENGPAI);
 	}
-	/*
-	if (from_player_id == _player_id)
-	{
-		for (auto xf : _xf_gang)
-		{
-			DEBUG("玩家{}可以进行旋风杠.", _player_id);
-			rtn_check.push_back(Asset::PAI_OPER_TYPE(xf));
-		}
-		_xf_gang.clear(); //只进行一次检查
-	}
-	*/
 	if (CheckChiPai(pai)) 
 	{
 		DEBUG("玩家{}可以吃.", _player_id);
@@ -1923,10 +1912,14 @@ bool Player::CheckHuPai(const Asset::PaiElement& pai, std::vector<Asset::FAN_TYP
 
 bool Player::CheckChiPai(const Asset::PaiElement& pai)
 {
-	if (_has_ting) 
+	if (_has_ting) return false; //已经听牌，不再提示
+	//
+	//朝阳特殊玩法：如果不是明飘，不能手把一
+	//
+	if (_cards.size() == 4)
 	{
-		DEBUG("player_id:{} has tinged", _player_id);
-		return false; //已经听牌，不再提示
+		TRACE("player_id:{} has cards in hand cout:{}", _player_id, _cards.size());
+		return false;
 	}
 
 	auto it = _cards.find(pai.card_type());
@@ -2050,6 +2043,23 @@ void Player::OnChiPai(const Asset::PaiElement& pai, pb::Message* message)
 bool Player::CheckPengPai(const Asset::PaiElement& pai)
 {
 	if (_has_ting) return false; //已经听牌，不再提示
+	//
+	//朝阳特殊玩法：如果不是明飘，不能手把一
+	//
+	if (_cards.size() == 4)
+	{
+		for (auto cards : _cards_outhand)
+		{
+			for (auto it = cards.second.begin(); it != cards.second.end(); it += 3)
+			{
+				auto first_value = *it;
+				auto second_value = *(it + 1);
+				auto third_value = *(it + 2);
+
+				if (first_value != second_value || first_value != third_value || second_value != third_value) return false;
+			}
+		}
+	}
 
 	auto it = _cards.find(pai.card_type());
 	if (it == _cards.end()) return false;
@@ -2830,7 +2840,10 @@ int32_t Player::OnFaPai(std::vector<int32_t>& cards)
 		}
 	}
 	
-	SendProtocol(notify); //发送牌给玩家：发牌
+	auto remain_count = _game->GetRemainCount();
+	notify.set_cards_remain(remain_count); //当前剩余牌数量
+	
+	SendProtocol(notify); //发牌给玩家
 
 	notify.mutable_pais()->Clear(); notify.mutable_pai()->Clear(); //其他玩家不能知道具体发了什么牌
 	Send2Roomers(notify, _player_id); //广播玩家抓牌行为

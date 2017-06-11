@@ -84,6 +84,8 @@ public:
 	bool HasBaopai() { return _baopai.card_type() != 0 && _baopai.card_value() != 0; } //当前局是否含有宝牌
 	//流局检查
 	bool CheckLiuJu();
+	//当前剩余牌数量
+	int32_t GetRemainCount() { return _cards.size(); }
 };
 
 /////////////////////////////////////////////////////
