@@ -29,9 +29,15 @@ class CommonUtil
 public:
 	static int32_t Random(int32_t min, int32_t max) //[min, max]
 	{
+		/*
 		static std::default_random_engine _generator;
 		std::uniform_int_distribution<int> distribution(min, max);
 		return distribution(_generator);
+		*/
+		static std::random_device rd;
+		std::mt19937 gen(rd());
+		std::uniform_int_distribution<> dis(min, max);
+		return dis(gen);
 	}
 
 	template<class IT, class WEIGHT>
