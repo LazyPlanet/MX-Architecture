@@ -82,6 +82,7 @@ bool ClientSession::InnerProcess(const Asset::InnerMeta& meta)
 
 			message.set_room_id(room_ptr->GetID());
 			message.set_error_code(Asset::COMMAND_ERROR_CODE_SUCCESS); //成功创建
+			message.set_server_id(ConfigInstance.GetInt("ServerID", 1));
 			SendProtocol(message); //发送给GTM服务器
 		}
 		break;
