@@ -568,12 +568,35 @@ void Game::Calculate(int64_t hupai_player_id/*胡牌玩家*/, int64_t dianpao_pl
 	int32_t base_score = 1;
 	fan_list.push_back(Asset::FAN_TYPE_PINGHU); //平胡，1积分
 
+	//
 	//玩家角色性检查(比如，庄家胡牌)
+	//
 	if (IsBanker(hupai_player_id)) 
 	{
 		fan_list.push_back(Asset::FAN_TYPE_ZHUANG);
 	}
 	
+	//
+	//是否三家闭门
+	//
+	bool sanjiabi = true;
+
+	for (int i = 0; i < MAX_PLAYER_COUNT; ++i)
+	{
+		auto player = _players[i];
+		if (!player) 
+		{
+			sanjiabi = false;
+			break;
+		}
+
+		if (!player->IsBimen()) 
+		{
+			sanjiabi = false;
+			break;
+		}
+	}
+		
 	Asset::GameCalculate message;
 	//
 	//胡牌积分，三部分
@@ -629,6 +652,20 @@ void Game::Calculate(int64_t hupai_player_id/*胡牌玩家*/, int64_t dianpao_pl
 			auto detail = record->mutable_details()->Add();
 			detail->set_fan_type(Asset::FAN_TYPE_DIAN_PAO);
 			detail->set_score(-score);
+
+			//
+			//杠后流泪
+			//
+			//胡别人补杠后打出的牌
+			//
+			if (player->IsGangOperation()) //流泪
+			{
+				score *= get_multiple(Asset::FAN_TYPE_LIU_LEI); 
+				
+				auto detail = record->mutable_details()->Add();
+				detail->set_fan_type(Asset::FAN_TYPE_LIU_LEI);
+				detail->set_score(-score);
+			}
 			
 			DEBUG("player_id:{} fan:{} score:{}", player_id, Asset::FAN_TYPE_DIAN_PAO, -score);
 		}
@@ -642,6 +679,28 @@ void Game::Calculate(int64_t hupai_player_id/*胡牌玩家*/, int64_t dianpao_pl
 			detail->set_score(-score);
 			
 			DEBUG("player_id:{} fan:{} score:{}", player_id, Asset::FAN_TYPE_BIMEN, -score);
+		}
+		
+		if (player->IsMingPiao()) 
+		{
+			score *= get_multiple(Asset::FAN_TYPE_PIAO_WEIHU); //明飘未胡
+			
+			auto detail = record->mutable_details()->Add();
+			detail->set_fan_type(Asset::FAN_TYPE_PIAO_WEIHU);
+			detail->set_score(-score);
+			
+			DEBUG("player_id:{} fan:{} score:{}", player_id, Asset::FAN_TYPE_PIAO_WEIHU, -score);
+		}
+		
+		if (sanjiabi) 
+		{
+			score *= get_multiple(Asset::FAN_TYPE_SAN_JIA_BI_MEN); //三家闭门
+			
+			auto detail = record->mutable_details()->Add();
+			detail->set_fan_type(Asset::FAN_TYPE_SAN_JIA_BI_MEN);
+			detail->set_score(-score);
+			
+			DEBUG("player_id:{} fan:{} score:{}", player_id, Asset::FAN_TYPE_SAN_JIA_BI_MEN, -score);
 		}
 
 		record->set_score(-score); //玩家所输积分
@@ -971,7 +1030,7 @@ bool Game::CheckPai(const Asset::PaiElement& pai, int64_t from_player_id)
 
 		if (from_player_id == player->GetID()) continue; //自己不能对自己的牌进行操作
 
-		auto rtn_check = player->CheckPai(pai, from_player_id);
+		auto rtn_check = player->CheckPai(pai, from_player_id); //不能包括宝胡
 		if (rtn_check.size() == 0) continue; //不能吃、碰、杠和胡牌
 
 		for (auto value : rtn_check)
@@ -1041,7 +1100,7 @@ bool Game::CheckLiuJu()
 		auto card = GameInstance.GetCard(cards[0]); //玩家待抓的牌
 
 		auto ju_element = message.mutable_elements()->Add();
-		ju_element->mutable_pai()->CopyFrom(card); //分牌
+		ju_element->mutable_pai()->CopyFrom(card); //玩家分的牌
 		ju_element->set_player_id(player->GetID()); //玩家角色ID
 
 		if (player->CheckHuPai(card)) 

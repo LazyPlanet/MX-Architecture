@@ -225,6 +225,7 @@ private:
 
 	std::vector<Asset::PAI_OPER_TYPE> _xf_gang; //旋风杠所有操作
 	std::vector<std::tuple<bool, bool, bool>> _hu_result;
+	Asset::PAI_OPER_TYPE _oper_type; //玩家上次操作类型，主要用于处理杠上开的番次
 public:
 	//玩家操作
 	virtual int32_t CmdGameOperate(pb::Message* message); //游戏操作
@@ -301,29 +302,28 @@ public:
 
 	void OnTingPai(); //听牌响应
 
+	bool IsMingPiao(); //是否明飘
+	bool IsSiGuiYi(); //是否四归一 
+
 	int32_t GetMingGangCount() { return _minggang.size(); } //明杠数量
 	int32_t GetAnGangCount() { return _angang.size(); } //暗杠数量
 	int32_t GetXuanFengCount() { return _jiangang + _fenggang; } //旋风杠数量
-	//发牌前置检查
-	void PreCheckOnFaPai(); 
-	//是否已经在准备状态 
-	bool IsReady() { return _player_prop.game_oper_state() == Asset::GAME_OPER_TYPE_START; } 
+
+	void PreCheckOnFaPai(); //发牌前置检查
+	bool IsReady() { return _player_prop.game_oper_state() == Asset::GAME_OPER_TYPE_START; } //是否已经在准备状态 
 	//获取//设置玩家座次
 	Asset::POSITION_TYPE GetPosition() { return _player_prop.position(); }
 	void SetPosition(Asset::POSITION_TYPE position) { _player_prop.set_position(position); }
-	//打印牌玩家当前牌
-	void PrintPai(); 
-	//同步玩家牌给Client
-	void SynchronizePai(); 
-	//删除玩家牌(包括手里牌、墙外牌)
-	void ClearCards(); 
-	//游戏结束
-	void OnGameOver();
+	
+	void PrintPai(); //打印牌玩家当前牌
+	void SynchronizePai(); //同步玩家牌给Client
+	void ClearCards(); //删除玩家牌(包括手里牌、墙外牌)
+	void OnGameOver(); //游戏结束
 	//是否//设置服务器托管状态
 	bool HasTuoGuan() { return _tuoguan_server; }
 	void SetTuoGuan() { _tuoguan_server = true; }
-	//获取当前玩家手中牌数
-	int32_t GetCardCount();
+	int32_t GetCardCount();	//获取当前玩家手中牌数
+	bool IsGangOperation(); //上次牌是否杠操作
 };
 
 /////////////////////////////////////////////////////

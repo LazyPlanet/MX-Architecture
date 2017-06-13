@@ -532,6 +532,8 @@ int32_t Player::CmdPaiOperate(pb::Message* message)
 
 	++_oper_count;
 
+	if (pai_operate->oper_type() != Asset::PAI_OPER_TYPE_HUPAI) _oper_type = pai_operate->oper_type(); //记录上次牌操作
+
 	return 0;
 }
 	
@@ -1723,7 +1725,7 @@ bool Player::CheckHuPai(const Asset::PaiElement& pai, std::vector<Asset::FAN_TYP
 		return false;
 	}
 
-	////////是否可以宝胡:单独处理
+	////////是否可以宝胡：单独处理
 
 	////////////////////////////////////////////////////////////////////////////是否可以满足胡牌的要求
 	
@@ -1901,10 +1903,67 @@ bool Player::CheckHuPai(const Asset::PaiElement& pai, std::vector<Asset::FAN_TYP
 	}
 	if (_game->IsBaopai(pai)) //搂宝
 	{
-		fan_list.push_back(Asset::FAN_TYPE_LOU_BAO);
+		fan_list.push_back(Asset::FAN_TYPE_LOU_BAO); //自摸宝牌
+
+		//
+		//进宝（朝阳特有）
+		//
+		//当胡牌与宝牌相同时加一番
+		//
+		if (CheckHuPai(pai)) fan_list.push_back(Asset::FAN_TYPE_JIN_BAO);
+	}
+	if (IsGangOperation()) //杠上开
+	{
+		fan_list.push_back(Asset::FAN_TYPE_GANG_SHANG_KAI);
+	}
+	if (_game->IsLiuJu()) //海底捞月
+	{
+		fan_list.push_back(Asset::FAN_TYPE_HAI_DI_LAO);
+	}
+	if (IsMingPiao()) //明飘
+	{
+		fan_list.push_back(Asset::FAN_TYPE_MING_PIAO);
 	}
 	
 	return true;
+}
+	
+bool Player::IsMingPiao()
+{
+	auto curr_count = GetCardCount();
+	return curr_count == 1;
+}
+	
+//
+//是否四归一 
+//
+//胡牌时，非杠牌可以组成4张相同牌
+//
+//比如牌里面有一万、二万、二万、二万、二万、三万，凑成一万、二万、三万一顺，二万、二万、二万一刻，这时候就是四归一了
+//
+bool Player::IsSiGuiYi()
+{
+	auto cards = _cards;
+	for (const auto& crds : _cards_outhand) 
+		cards[crds.first].insert(cards[crds.first].end(), crds.second.begin(), crds.second.end());
+
+	for (const auto& crds : cards)
+	{
+		for (auto card_value : crds.second)
+		{
+			auto count = std::count(crds.second.begin(), crds.second.end(), card_value);
+			if (count == 4) return true;
+		}
+	}
+
+	return false;
+}
+	
+bool Player::IsGangOperation()
+{
+	if (_oper_type == Asset::PAI_OPER_TYPE_GANGPAI || _oper_type == Asset::PAI_OPER_TYPE_ANGANGPAI || _oper_type == Asset::PAI_OPER_TYPE_XUANFENG_FENG) 
+		return true;
+	return false;
 }
 	
 //
@@ -2967,6 +3026,8 @@ void Player::OnGameOver()
 	_oper_count_tingpai = _oper_count = 0; //操作次数
 
 	_has_ting = _tuoguan_server = false;
+
+	_oper_type = Asset::PAI_OPER_TYPE_BEGIN;
 }
 
 int32_t Player::CmdSayHi(pb::Message* message)
