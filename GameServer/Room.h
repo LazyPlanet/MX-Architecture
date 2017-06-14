@@ -18,14 +18,14 @@ const int32_t MAX_PLAYER_COUNT = 4;
 
 class Room : public std::enable_shared_from_this<Room>
 {
-	int32_t _banker_index = 0; //庄家索引
-	int64_t _banker = 0; //庄家：玩家ID
-
-	std::mutex _mutex;
-
 private:
+	int32_t _banker_index = 0; //庄家索引
+	int64_t _banker = 0; //庄家//玩家ID
+	int32_t _expired_time = 0; //过期时间
+private:
+	std::mutex _mutex;
 	std::shared_ptr<Asset::Room> _stuff; //数据
-	std::vector<std::shared_ptr<Game>> _games;
+	std::vector<std::shared_ptr<Game>> _games; //游戏列表
 	std::vector<std::shared_ptr<Player>> _players; //房间中的玩家：按照进房间的顺序，东南西北
 public:
 	explicit Room(Asset::Room room) {  _stuff = std::make_shared<Asset::Room>(room); }
@@ -38,10 +38,11 @@ public:
 		return _stuff; //数据
 	}
 	
-	//额外番型
-	const Asset::RoomOptions& GetOptions() { return _stuff->options(); }
+	const Asset::RoomOptions& GetOptions() { return _stuff->options(); } //额外番型
 	void SetOption(const Asset::RoomOptions& options) {	_stuff->mutable_options()->CopyFrom(options);}
 
+	int32_t GetTime() { return _expired_time; } //获取过期时间
+	void SetTime(int32_t expired_time) { _expired_time = expired_time; }
 public:
 	Asset::ERROR_CODE TryEnter(std::shared_ptr<Player> player);
 	bool Enter(std::shared_ptr<Player> player);
@@ -50,7 +51,8 @@ public:
 
 	void OnCreated(); 
 
-	bool IsFull() { return _players.size() >= (size_t)MAX_PLAYER_COUNT; } //房间是否已满
+	bool IsFull() { return _players.size() >= (size_t)MAX_PLAYER_COUNT; } //是否已满
+	bool IsEmpty() { return _players.size() == 0; } //是否没人
 
 	bool CanStarGame(); //能否开启游戏
 
@@ -77,6 +79,7 @@ public:
 	int64_t GetBanker() { return _banker; } //获取庄家
 	int32_t GetBankerIndex() { return _banker_index; } //庄家索引
 	bool IsBanker(int64_t player_id){ return _banker == player_id; } //是否是庄家
+	bool IsExpired(); //是否过期
 };
 
 /////////////////////////////////////////////////////
@@ -104,18 +107,13 @@ public:
 		return _instance;
 	}
 	
-	//创建房间：获取房间全局ID
-	int64_t CreateRoom();
-	//通过配置创建房间
-	std::shared_ptr<Room> CreateRoom(const Asset::Room& room);
-	//进入房间回调
-	bool OnCreateRoom(std::shared_ptr<Room> room);
-	//获取房间
-	std::shared_ptr<Room> Get(int64_t room_id);
-	//获取可入房间
-	std::shared_ptr<Room> GetAvailableRoom();
-	//密码检查
-	bool CheckPassword(int64_t room_id, std::string password);
+	int64_t CreateRoom(); //创建房间：获取房间全局ID
+	std::shared_ptr<Room> CreateRoom(const Asset::Room& room); //通过配置创建房间
+	bool OnCreateRoom(std::shared_ptr<Room> room); //进入房间回调
+	std::shared_ptr<Room> Get(int64_t room_id); //获取房间
+	std::shared_ptr<Room> GetAvailableRoom(); //获取可入房间
+	bool CheckPassword(int64_t room_id, std::string password); //密码检查
+	void Update(int32_t diff); //心跳
 };
 
 #define RoomInstance RoomManager::Instance()

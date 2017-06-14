@@ -162,7 +162,7 @@ int32_t Player::CmdEnterGame(pb::Message* message)
 }
 */
 	
-int64_t Player::ConsumeRoomCard(int64_t count)
+int64_t Player::ConsumeRoomCard(Asset::ROOM_CARD_CHANGED_TYPE changed_type, int64_t count)
 {
 	if (count <= 0) return 0;
 
@@ -175,7 +175,7 @@ int64_t Player::ConsumeRoomCard(int64_t count)
 	return count;
 }
 
-int64_t Player::GainRoomCard(int64_t count) 
+int64_t Player::GainRoomCard(Asset::ROOM_CARD_CHANGED_TYPE changed_type, int64_t count) 
 {
 	if (count <= 0) return 0;
 
@@ -197,7 +197,7 @@ int64_t Player::GetRoomCard()
 	return _stuff.common_prop().room_card_count();
 }
 
-int64_t Player::ConsumeHuanledou(int64_t count)
+int64_t Player::ConsumeHuanledou(Asset::HUANLEDOU_CHANGED_TYPE changed_type, int64_t count)
 {
 	if (count <= 0) return 0;
 
@@ -210,7 +210,7 @@ int64_t Player::ConsumeHuanledou(int64_t count)
 	return count;
 }
 
-int64_t Player::GainHuanledou(int64_t count)
+int64_t Player::GainHuanledou(Asset::HUANLEDOU_CHANGED_TYPE changed_type, int64_t count)
 {
 	if (count <= 0) return 0;
 
@@ -237,7 +237,7 @@ int64_t Player::GetDiamond()
 	return _stuff.common_prop().diamond(); 
 }
 
-int64_t Player::ConsumeDiamond(int64_t count)
+int64_t Player::ConsumeDiamond(Asset::DIAMOND_CHANGED_TYPE changed_type, int64_t count)
 {
 	if (count <= 0) return 0;
 
@@ -250,7 +250,7 @@ int64_t Player::ConsumeDiamond(int64_t count)
 	return count;
 }
 
-int64_t Player::GainDiamond(int64_t count)
+int64_t Player::GainDiamond(Asset::DIAMOND_CHANGED_TYPE changed_type, int64_t count)
 {
 	if (count <= 0) return 0;
 

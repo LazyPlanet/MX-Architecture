@@ -8,9 +8,12 @@
 #include "MXLog.h"
 #include "CommonUtil.h"
 #include "RedisManager.h"
+#include "Timer.h"
 
 namespace Adoter
 {
+
+extern const Asset::CommonConst* g_const;
 
 /////////////////////////////////////////////////////
 //房间
@@ -102,7 +105,9 @@ void Room::OnPlayerOperate(std::shared_ptr<Player> player, pb::Message* message)
 
 			game->Start(_players); //开始游戏
 
-			GameInstance.OnCreateGame(game);
+			_games.push_back(game); //游戏
+
+			//GameInstance.OnCreateGame(game);
 		}
 		break;
 
@@ -191,7 +196,8 @@ void Room::SyncRoom()
 
 void Room::OnCreated() 
 { 
-	//RoomInstance.OnCreateRoom(shared_from_this()); 
+	auto curr_time = CommonTimerInstance.GetTime();
+	SetTime(curr_time + g_const->room_last_time());
 }
 	
 bool Room::CanStarGame()
@@ -204,6 +210,12 @@ bool Room::CanStarGame()
 	}
 
 	return true;
+}
+	
+bool Room::IsExpired()
+{
+	auto curr_time = CommonTimerInstance.GetTime();
+	return _expired_time < curr_time;
 }
 	
 /////////////////////////////////////////////////////
@@ -269,6 +281,23 @@ std::shared_ptr<Room> RoomManager::GetAvailableRoom()
 	}
 
 	return nullptr;
+}
+	
+void RoomManager::Update(int32_t diff)
+{
+	for (auto it = _rooms.begin(); it != _rooms.end(); )
+	{
+		if (it->second->IsExpired() && it->second->IsEmpty())
+		{
+			LOG(INFO, "Remove room_id:{} for empty and expired.", it->second->GetID());
+
+			it = _rooms.erase(it);
+		}
+		else
+		{
+			++it;
+		}
+	}
 }
 
 }

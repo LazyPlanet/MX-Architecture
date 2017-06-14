@@ -62,8 +62,11 @@ private:
 public:
 	Player();
 	Player(int64_t player_id, std::shared_ptr<WorldSession> session);
-	//协议处理默认调用函数
-	int32_t DefaultMethod(pb::Message*);
+	
+	const std::shared_ptr<WorldSession> GetSession() { return _session;	}
+	bool Connected() { if (!_session) return false; return _session->IsConnect(); }
+
+	int32_t DefaultMethod(pb::Message*); //协议处理默认调用函数
 	
 	void AddHandler(Asset::META_TYPE message_type, CallBack callback)
 	{
@@ -79,14 +82,13 @@ public:
 		return it->second;
 	}
 
-	//获取玩家数据
-	Asset::Player& Get() { return _stuff; }
+	Asset::Player& Get() { return _stuff; } //获取玩家数据
 	//获取基础属性
 	const Asset::CommonProp& CommonProp() { return _stuff.common_prop(); }
 	const Asset::CommonProp& GetCommonProp() { return _stuff.common_prop(); }
 	Asset::CommonProp* MutableCommonProp() { return _stuff.mutable_common_prop(); }
-	//获取ID
-	virtual int64_t GetID() { return _stuff.common_prop().player_id(); }
+
+	virtual int64_t GetID() { return _stuff.common_prop().player_id(); } //获取ID
 	virtual void SetID(int64_t player_id) { 
 		_player_id = player_id; //缓存
 		_stuff.mutable_common_prop()->set_player_id(player_id); 
@@ -151,47 +153,45 @@ public:
 	void SayHi();
 public:
 	//获取所有包裹
-	const Asset::Inventory& GetInventory()
-	{
-		return _stuff.inventory();
-	}
+	const Asset::Inventory& GetInventory() { return _stuff.inventory();	}
 
 	//获取指定包裹
-	const Asset::Inventory_Element& GetInventory(Asset::INVENTORY_TYPE type)
-	{
-		return _stuff.inventory().inventory(type);
-	}	
-	
-	Asset::Inventory_Element* GetMutableInventory(Asset::INVENTORY_TYPE type)
-	{
-		return _stuff.mutable_inventory()->mutable_inventory(type);
-	}	
+	const Asset::Inventory_Element& GetInventory(Asset::INVENTORY_TYPE type) { return _stuff.inventory().inventory(type); }	
+	Asset::Inventory_Element* GetMutableInventory(Asset::INVENTORY_TYPE type) { return _stuff.mutable_inventory()->mutable_inventory(type);	}	
 	
 	//获取物品
 	bool GainItem(Item* item, int32_t count = 1);
 	bool GainItem(int64_t global_item_id, int32_t count = 1);
-	//存放物品
-	bool PushBackItem(Asset::INVENTORY_TYPE inventory_type, Item* item);
+	bool PushBackItem(Asset::INVENTORY_TYPE inventory_type, Item* item); //存放物品
 
-	const std::shared_ptr<WorldSession> GetSession() { return _session;	}
-	bool Connected() { if (!_session) return false; return _session->IsConnect(); }
-
+	//通用错误码提示
 	void AlertMessage(Asset::ERROR_CODE error_code, Asset::ERROR_TYPE error_type = Asset::ERROR_TYPE_NORMAL, Asset::ERROR_SHOW_TYPE error_show_type = Asset::ERROR_SHOW_TYPE_CHAT);
 
-	int64_t ConsumeHuanledou(int64_t count); //消费欢乐豆(返回实际消耗的欢乐豆数)
-	int64_t GainHuanledou(int64_t count); //增加欢乐豆
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	//
+	// 欢乐豆相关
+	//
+	int64_t ConsumeHuanledou(Asset::HUANLEDOU_CHANGED_TYPE changed_type, int64_t count); //消费欢乐豆(返回实际消耗的欢乐豆数)
+	int64_t GainHuanledou(Asset::HUANLEDOU_CHANGED_TYPE changed_type, int64_t count); //增加欢乐豆
 	bool CheckHuanledou(int64_t count); //欢乐豆是否足够
 	int64_t GetHuanledou(); //获取欢乐豆数量
 
-	int64_t ConsumeDiamond(int64_t count); //消费钻石(返回实际消耗的钻石数)
-	int64_t GainDiamond(int64_t count); //增加钻石
+	//
+	// 钻石相关
+	//
+	int64_t ConsumeDiamond(Asset::DIAMOND_CHANGED_TYPE changed_type, int64_t count); //消费钻石(返回实际消耗的钻石数)
+	int64_t GainDiamond(Asset::DIAMOND_CHANGED_TYPE changed_type, int64_t count); //增加钻石
 	bool CheckDiamond(int64_t count); //钻石是否足够
 	int64_t GetDiamond(); //获取钻石数量
 	
-	int64_t ConsumeRoomCard(int64_t count); //消费房卡(返回实际消耗的房卡数)
-	int64_t GainRoomCard(int64_t count); //增加房卡
+	//
+	// 房卡相关
+	//
+	int64_t ConsumeRoomCard(Asset::ROOM_CARD_CHANGED_TYPE changed_type, int64_t count); //消费房卡(返回实际消耗的房卡数)
+	int64_t GainRoomCard(Asset::ROOM_CARD_CHANGED_TYPE changed_type, int64_t count); //增加房卡
 	bool CheckRoomCard(int64_t count); //房卡是否足够
 	int64_t GetRoomCard(); //获取房卡数量
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 	//通用限制
 	const Asset::PlayerCommonLimit& GetCommonLimit() { return _stuff.common_limit(); }

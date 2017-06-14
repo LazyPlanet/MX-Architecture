@@ -16,13 +16,13 @@ bool World::Load()
 	//协议初始化：必须最先初始化
 	if (!ProtocolInstance.Load()) 
 	{
-		//LOG(ERROR, "ProtocolInstance load error.");
+		ERROR("ProtocolInstance load error.");
 		return false;
 	}
 	//数据初始化：必须最先初始化
 	if (!AssetInstance.Load()) 
 	{
-		//LOG(ERROR, "AssetInstance load error.");
+		ERROR("AssetInstance load error.");
 		return false;
 	}
 //////////////////////////////////////////////////
@@ -62,6 +62,8 @@ void World::Update(int32_t diff)
 	++_heart_count;
 
 	MatchInstance.Update(diff);
+
+	RoomInstance.Update(diff);
 }
 	
 

@@ -554,6 +554,8 @@ void Game::Calculate(int64_t hupai_player_id/*胡牌玩家*/, int64_t dianpao_pl
 {
 	if (!_room) return;
 	
+	const auto options = _room->GetOptions();
+	
 	const auto fan_asset = dynamic_cast<const Asset::RoomFan*>(AssetInstance.Get(g_const->fan_id()));
 	if (!fan_asset) return;
 
@@ -603,6 +605,9 @@ void Game::Calculate(int64_t hupai_player_id/*胡牌玩家*/, int64_t dianpao_pl
 	//
 	//1.各个玩家输牌积分
 	//
+	
+	int32_t top_mutiple = options.top_mutiple(); //封顶番数
+
 	for (int i = 0; i < MAX_PLAYER_COUNT; ++i)
 	{
 		auto player = _players[i];
@@ -702,6 +707,11 @@ void Game::Calculate(int64_t hupai_player_id/*胡牌玩家*/, int64_t dianpao_pl
 			
 			DEBUG("player_id:{} fan:{} score:{}", player_id, Asset::FAN_TYPE_SAN_JIA_BI_MEN, -score);
 		}
+
+		//
+		//输牌玩家番数上限封底
+		//
+		if (top_mutiple > 0) score = std::min(top_mutiple, score); //封顶
 
 		record->set_score(-score); //玩家所输积分
 			
@@ -856,7 +866,6 @@ void Game::Calculate(int64_t hupai_player_id/*胡牌玩家*/, int64_t dianpao_pl
 	//
 	//4.点炮包三家
 	//
-	const auto options = _room->GetOptions();
 	auto it_baosanjia = std::find(options.extend_type().begin(), options.extend_type().end(), Asset::ROOM_EXTEND_TYPE_BAOSANJIA);
 	auto baosanjia = (it_baosanjia != options.extend_type().end()); //是否支持包三家
 

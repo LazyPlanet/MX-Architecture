@@ -155,19 +155,19 @@ Asset::COMMAND_ERROR_CODE ClientSession::OnCommandProcess(const Asset::Command& 
 	{
 		case Asset::COMMAND_TYPE_RECHARGE:
 		{
-			player_ptr->GainDiamond(command.count());
+			player_ptr->GainDiamond(Asset::DIAMOND_CHANGED_TYPE_GMT, command.count());
 		}
 		break;
 		
 		case Asset::COMMAND_TYPE_ROOM_CARD:
 		{
-			player_ptr->GainRoomCard(command.count());   
+			player_ptr->GainRoomCard(Asset::ROOM_CARD_CHANGED_TYPE_GMT, command.count());   
 		}
 		break;
 		
 		case Asset::COMMAND_TYPE_HUANLEDOU:
 		{
-			player_ptr->GainHuanledou(command.count());
+			player_ptr->GainHuanledou(Asset::HUANLEDOU_CHANGED_TYPE_GMT, command.count());
 		}
 		break;
 		

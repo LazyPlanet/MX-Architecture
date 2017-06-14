@@ -49,13 +49,13 @@ public:
 					return Asset::ERROR_DIAMOND_NOT_ENOUGH; //钻石不足
 				}
 
-				player->ConsumeDiamond(diamond);
+				player->ConsumeDiamond(Asset::DIAMOND_CHANGED_TYPE_MALL, diamond);
 
-				player->GainHuanledou(mall->count());
+				player->GainHuanledou(Asset::HUANLEDOU_CHANGED_TYPE_MALL, mall->count());
 			}
 			break;
 			
-			case Asset::Mall_GOODS_TYPE_GOODS_TYPE_NORMAL_ITEM: //普通商品
+			case Asset::Mall_GOODS_TYPE_GOODS_TYPE_NORMAL_ITEM: //购买普通商品
 			{
 				int32_t diamond = mall->diamond();
 
@@ -71,8 +71,9 @@ public:
 					return Asset::ERROR_BEANS_NOT_ENOUGH; //欢乐豆不足
 				}
 				
-				player->ConsumeDiamond(diamond); //消耗钻石
-				player->ConsumeHuanledou(huanledou); //消耗欢乐豆
+				player->ConsumeDiamond(Asset::DIAMOND_CHANGED_TYPE_MALL, diamond); //消耗钻石
+
+				player->ConsumeHuanledou(Asset::HUANLEDOU_CHANGED_TYPE_MALL, huanledou); //消耗欢乐豆
 
 				player->GainItem(mall->item_id(), mall->count()); //获取物品
 			}
