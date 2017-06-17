@@ -68,7 +68,7 @@ public:
 
 				if (huanledou <= 0 || huanledou < player->GetHuanledou())
 				{
-					return Asset::ERROR_BEANS_NOT_ENOUGH; //欢乐豆不足
+					return Asset::ERROR_HUANLEDOU_NOT_ENOUGH; //欢乐豆不足
 				}
 				
 				player->ConsumeDiamond(Asset::DIAMOND_CHANGED_TYPE_MALL, diamond); //消耗钻石

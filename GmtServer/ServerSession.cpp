@@ -6,6 +6,17 @@
 namespace Adoter
 {
 
+#define RETURN(x) \
+	auto response = command; \
+	response.set_error_code(x); \
+	if (x) { \
+		LOG(ERR, "command excute failed for:{} command:{}", x, command.ShortDebugString()); \
+	} else { \
+		LOG(TRACE, "command excute success for:{} command:{}", x, command.ShortDebugString()); \
+	} \
+	SendProtocol(response); \
+	return x; \
+
 ServerSession::ServerSession(boost::asio::ip::tcp::socket&& socket) : Socket(std::move(socket))
 {
 	_remote_endpoint = _socket.remote_endpoint();
@@ -142,6 +153,15 @@ bool ServerSession::InnerProcess(const Asset::InnerMeta& meta)
 		}
 		break;
 
+		case Asset::INNER_TYPE_SEND_MAIL: //发送邮件
+		{
+			Asset::SendMail message;
+			auto result = message.ParseFromString(meta.stuff());
+			if (!result) return false;
+
+			OnSendMail(message);
+		}
+
 		default:
 		{
 			WARN("Receive message:{} from server has no process type:{}", meta.ShortDebugString(), meta.type_t());
@@ -153,17 +173,6 @@ bool ServerSession::InnerProcess(const Asset::InnerMeta& meta)
 			
 Asset::COMMAND_ERROR_CODE ServerSession::OnCommandProcess(const Asset::Command& command)
 {
-#define RETURN(x) \
-	auto response = command; \
-	response.set_error_code(x); \
-	if (x) { \
-		LOG(ERR, "command excute failed for:{} command:{}", x, command.ShortDebugString()); \
-	} else { \
-		LOG(TRACE, "command excute success for:{} command:{}", x, command.ShortDebugString()); \
-	} \
-	SendProtocol(response); \
-	return x; \
-
 	auto redis = make_unique<Redis>();
 
 	/*
@@ -341,8 +350,11 @@ Asset::COMMAND_ERROR_CODE ServerSession::OnCommandProcess(const Asset::Command& 
 	redis->SavePlayer(player_id, player);
 
 	RETURN(Asset::COMMAND_ERROR_CODE_SUCCESS); //成功执行
+}
 
-#undef RETURN
+Asset::COMMAND_ERROR_CODE ServerSession::OnSendMail(const Asset::SendMail& command)
+{
+	RETURN(Asset::COMMAND_ERROR_CODE_SUCCESS); //成功执行
 }
 
 void ServerSession::Start()
@@ -426,5 +438,7 @@ bool ServerSessionManager::StartNetwork(boost::asio::io_service& io_service, con
 	_acceptor->AsyncAcceptWithCallback<&OnSocketAccept>();    
 	return true;
 }
+
+#undef RETURN
 
 }

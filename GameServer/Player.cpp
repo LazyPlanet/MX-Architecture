@@ -1547,7 +1547,7 @@ bool Player::CheckHuPai(std::vector<Asset::FAN_TYPE>& fan_list)
 
 bool Player::CheckHuPai(const Asset::PaiElement& pai, std::vector<Asset::FAN_TYPE>& fan_list)
 {
-	DEBUG("{} player_id:{} card_type:{} card_value:{}", __func__, _player_id, pai.card_type(), pai.card_value());
+	//DEBUG("{} player_id:{} card_type:{} card_value:{}", __func__, _player_id, pai.card_type(), pai.card_value());
 
 	if (!_room || !_game) 
 	{

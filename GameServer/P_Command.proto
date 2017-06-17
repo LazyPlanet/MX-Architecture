@@ -13,6 +13,8 @@ enum INNER_TYPE {
 	INNER_TYPE_REGISTER = 1; //注册服务器
 	INNER_TYPE_COMMAND = 2; //GMT指令
 	INNER_TYPE_OPEN_ROOM = 3; //代开房间
+	INNER_TYPE_SEND_MAIL = 4; //发送邮件
+	INNER_TYPE_SYSTEM_BROADCAST = 5; //系统广播
 	INNER_TYPE_COUNT = 100; //协议最大数量
 }
 
@@ -68,4 +70,36 @@ message OpenRoom {
 	optional COMMAND_ERROR_CODE error_code = 2; //返回码
 	optional int64 server_id = 3 [default = 1]; //游戏服务器ID
 	optional int64 room_id = 4; //房间ID，如果非0则证明开放成功
+}
+
+//附件
+enum SEND_ATTACHMENT_TYPE {
+	SEND_ATTACHMENT_TYPE_DIAMOND = 1; //钻石
+	SEND_ATTACHMENT_TYPE_HUANLEDOU = 2; //欢乐豆
+	SEND_ATTACHMENT_TYPE_ROOM_CARD = 3; //房卡
+}
+
+//发送邮件
+message SendMail {
+	optional INNER_TYPE type_t = 1 [default = INNER_TYPE_SEND_MAIL];
+	optional COMMAND_ERROR_CODE error_code = 2; //返回码
+	optional int64 player_id = 3; //向玩家发送邮件
+	optional int64 mail_id = 4; //邮件ID[SystemMail]数据，如果不填，则为定制邮件
+	optional bytes title = 5; //标题
+	optional bytes content = 6; //内容
+//奖励
+	optional SEND_ATTACHMENT_TYPE diamond_type = 7 [ default = SEND_ATTACHMENT_TYPE_DIAMOND]; //钻石
+	optional int32 diamond_count = 8; //数量
+	optional SEND_ATTACHMENT_TYPE huanledou_type = 9 [ default = SEND_ATTACHMENT_TYPE_HUANLEDOU]; //欢乐豆
+	optional int32 huanledou_count = 10; //数量
+	optional SEND_ATTACHMENT_TYPE room_card_type = 11 [ default = SEND_ATTACHMENT_TYPE_ROOM_CARD]; //房卡
+	optional int32 room_card_count = 12; //数量
+}
+
+//系统广播
+message SystemBroadcast {
+	optional INNER_TYPE type_t = 1 [default = INNER_TYPE_SYSTEM_BROADCAST];
+	optional COMMAND_ERROR_CODE error_code = 2; //返回码
+	optional int64 server_id = 3; //服务器ID，如果为0则为全服广播
+	optional bytes content = 4; //内容
 }
