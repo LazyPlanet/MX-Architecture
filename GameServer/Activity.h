@@ -99,6 +99,20 @@ public:
 			PlayerInstance.BroadCast(message); //广播所有玩家
 		}
 	}
+	
+	//
+	//GMT命令控制活动的开启时间和结束时间
+	//
+	Asset::COMMAND_ERROR_CODE OnActivityControl(const Asset::ActivityControl& command)
+	{
+		auto it = _activity.find(command.activity_id());
+		if (it == _activity.end()) return Asset::COMMAND_ERROR_CODE_PARA;
+
+		it->second->set_start_time(command.start_time());
+		it->second->set_stop_time(command.stop_time());
+
+		return Asset::COMMAND_ERROR_CODE_SUCCESS;
+	}
 
 };
 

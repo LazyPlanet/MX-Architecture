@@ -5,6 +5,7 @@
 #include "Room.h"
 #include "Config.h"
 #include "Timer.h"
+#include "Activity.h"
 
 namespace Adoter
 {
@@ -117,6 +118,15 @@ bool ClientSession::InnerProcess(const Asset::InnerMeta& meta)
 			OnSystemBroadcast(message);
 		}
 
+		case Asset::INNER_TYPE_ACTIVITY_CONTROL: //活动控制
+		{
+			Asset::ActivityControl message;
+			auto result = message.ParseFromString(meta.stuff());
+			if (!result) return false;
+
+			OnActivityControl(message);
+		}
+
 		default:
 		{
 			WARN("Receive message:{} from server has no process type:{}", meta.ShortDebugString(), meta.type_t());
@@ -124,6 +134,12 @@ bool ClientSession::InnerProcess(const Asset::InnerMeta& meta)
 		break;
 	}
 	return true;
+}
+	
+Asset::COMMAND_ERROR_CODE ClientSession::OnActivityControl(const Asset::ActivityControl& command)
+{
+	auto ret = ActivityInstance.OnActivityControl(command);
+	RETURN(ret)
 }
 
 Asset::COMMAND_ERROR_CODE ClientSession::OnSendMail(const Asset::SendMail& command)

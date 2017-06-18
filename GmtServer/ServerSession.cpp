@@ -182,7 +182,27 @@ bool ServerSession::InnerProcess(const Asset::InnerMeta& meta)
 			auto result = message.ParseFromString(meta.stuff());
 			if (!result) return false;
 
-			OnSystemBroadcast(message);
+			LOG(TRACE, "Receive command:{} from server:{}", message.ShortDebugString(), _ip_address);
+
+			if (ServerSessionInstance.IsGmtServer(shared_from_this())) //处理GMT服务器发送的数据
+			{
+				OnSystemBroadcast(message);
+			}
+		}
+		break;
+		
+		case Asset::INNER_TYPE_ACTIVITY_CONTROL: //活动控制
+		{
+			Asset::ActivityControl message;
+			auto result = message.ParseFromString(meta.stuff());
+			if (!result) return false;
+
+			LOG(TRACE, "Receive command:{} from server:{}", message.ShortDebugString(), _ip_address);
+
+			if (ServerSessionInstance.IsGmtServer(shared_from_this())) //处理GMT服务器发送的数据
+			{
+				OnActivityControl(message);
+			}
 		}
 		break;
 
@@ -193,6 +213,13 @@ bool ServerSession::InnerProcess(const Asset::InnerMeta& meta)
 		break;
 	}
 	return true;
+}
+	
+Asset::COMMAND_ERROR_CODE ServerSession::OnActivityControl(const Asset::ActivityControl& command)
+{
+	ServerSessionInstance.BroadCastProtocol(command);
+
+	RETURN(Asset::COMMAND_ERROR_CODE_SUCCESS); //成功执行
 }
 			
 Asset::COMMAND_ERROR_CODE ServerSession::OnCommandProcess(const Asset::Command& command)
