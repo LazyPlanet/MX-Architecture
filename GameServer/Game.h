@@ -58,25 +58,18 @@ public:
 	bool SendCheckRtn();
 	bool CheckPai(const Asset::PaiElement& pai, int64_t from_player_id); //检查牌形：返回待操作的玩家ID
 	
-	//获取下家
-	std::shared_ptr<Player> GetNextPlayer(int64_t player_id);
-	//获取玩家
-	std::shared_ptr<Player> GetPlayer(int64_t player_id);
+	std::shared_ptr<Player> GetNextPlayer(int64_t player_id); //获取下家
+	std::shared_ptr<Player> GetPlayer(int64_t player_id); //获取玩家
 	std::shared_ptr<Player> GetPlayerByOrder(int32_t player_index);
-	//获取玩家的顺序
-	int32_t GetPlayerOrder(int32_t player_id);
-	//设置房间
-	void SetRoom(std::shared_ptr<Room> room) {	_room = room; }
-	//是否庄家
-	bool IsBanker(int64_t player_id);
+	int32_t GetPlayerOrder(int32_t player_id); //获取玩家的顺序
+	void SetRoom(std::shared_ptr<Room> room) {	_room = room; } //设置房间
+	bool IsBanker(int64_t player_id); //是否庄家
 
 	void BroadCast(pb::Message* message, int64_t exclude_player_id = 0);
 	void BroadCast(pb::Message& message, int64_t exclude_player_id = 0);
 
 	void Calculate(int64_t hupai_player_id/*胡牌玩家*/, int64_t dianpao_player_id/*点炮玩家*/, std::vector<Asset::FAN_TYPE>& fan_list/*基础分*/);
-	//增加听牌玩家
-	void AddTingPlayer(int64_t player_id) {	_ting_players.push_back(player_id);	}
-	//设置//获取宝牌
+	void AddTingPlayer(int64_t player_id) {	_ting_players.push_back(player_id);	} //增加听牌玩家
 	Asset::PaiElement GetBaopai(int32_t tail_index); //随机宝牌
 	void SetBaoPai(const Asset::PaiElement& pai) { _baopai = pai; } //设置宝牌
 	const Asset::PaiElement& GetBaoPai() { return _baopai; } //获取当前宝牌
@@ -84,8 +77,8 @@ public:
 	bool HasBaopai() { return _baopai.card_type() != 0 && _baopai.card_value() != 0; } //当前局是否含有宝牌
 	bool CheckLiuJu(); //流局检查
 	bool IsLiuJu() { return _liuju; } //是否流局
-	//当前剩余牌数量
-	int32_t GetRemainCount() { return _cards.size(); }
+	int32_t GetRemainCount() { return _cards.size(); } //当前剩余牌数量
+	void SetCurrPlayerIndex(int64_t curr_player_index) { _curr_player_index = curr_player_index; } //设置当前可操作的玩家
 };
 
 /////////////////////////////////////////////////////

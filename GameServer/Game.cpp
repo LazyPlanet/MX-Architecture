@@ -27,12 +27,6 @@ void Game::Init(std::shared_ptr<Room> room)
 
 	_cards = std::list<int32_t>(cards.begin(), cards.end());
 
-	/*
-	auto log = make_unique<Asset::LogMessage>();
-	log->set_type(Asset::GAME_CARDS);
-	for (auto card : _cards) log->mutable_cards()->Add(card);
-	LOG(INFO, log.get()); 
-	*/
 	_room = room;
 }
 
@@ -173,7 +167,7 @@ bool Game::CanPaiOperate(std::shared_ptr<Player> player)
 		return true; //轮到该玩家
 	}
 
-	CRITICAL("curr_player_index:{} player_index:{} player_id:{} oper_limit_player_id:{}", _curr_player_index, player_index, 
+	LOG(ERROR, "curr_player_index:{} player_index:{} player_id:{} oper_limit_player_id:{}", _curr_player_index, player_index, 
 			player->GetID(), _oper_limit.player_id());
 	return false;
 }
@@ -205,7 +199,9 @@ void Game::OnPaiOperate(std::shared_ptr<Player> player, pb::Message* message)
 	//const auto& pai = _oper_limit.pai(); //缓存的牌
 	const auto& pai = pai_operate->pai(); //玩家发上来的牌
 
+	//
 	//一个人打牌之后，要检查其余每个玩家手中的牌，且等待他们的操作，直到超时
+	//
 	switch (pai_operate->oper_type())
 	{
 		case Asset::PAI_OPER_TYPE_DAPAI: //打牌
@@ -421,10 +417,8 @@ void Game::OnPaiOperate(std::shared_ptr<Player> player, pb::Message* message)
 			{
 				player->OnChiPai(pai, message);
 
-				////////听牌检查
 				std::vector<Asset::PaiElement> pais;
-
-				if (player->CheckTingPai(pais))
+				if (player->CheckTingPai(pais)) //听牌检查
 				{
 					Asset::PaiOperationAlert alert;
 
@@ -464,7 +458,9 @@ void Game::OnPaiOperate(std::shared_ptr<Player> player, pb::Message* message)
 
 			Asset::PaiOperationAlert alert;
 
+			//
 			//胡牌检查
+			//
 			if (player_next->CheckHuPai(card)) //自摸
 			{
 				auto pai_perator = alert.mutable_pais()->Add();
@@ -480,9 +476,8 @@ void Game::OnPaiOperate(std::shared_ptr<Player> player, pb::Message* message)
 
 			player_next->OnFaPai(cards); //放入玩家牌里面
 			
-			////////听牌检查
 			std::vector<Asset::PaiElement> ting_list;
-			if (player_next->CheckTingPai(ting_list))
+			if (player_next->CheckTingPai(ting_list)) //听牌检查
 			{
 				for (auto pai : ting_list) 
 				{
@@ -492,9 +487,8 @@ void Game::OnPaiOperate(std::shared_ptr<Player> player, pb::Message* message)
 				}
 			}
 			
-			///////杠检查：明杠和暗杠
 			::google::protobuf::RepeatedField<Asset::PaiOperationAlert_AlertElement> gang_list;
-			if (player_next->CheckAllGangPai(gang_list)) 
+			if (player_next->CheckAllGangPai(gang_list)) //杠检查(明杠和暗杠)
 			{
 				for (auto gang : gang_list) 
 				{
@@ -503,9 +497,13 @@ void Game::OnPaiOperate(std::shared_ptr<Player> player, pb::Message* message)
 				}
 			}
 
-			if (_oper_limit.player_id() == player_next->GetID()) 
+			//
+			//开局状态，当前玩家拥有中发白白，上家打了白板
+			//
+			//当前玩家选择放弃，此时要提示当前玩家旋风杠.
+			//
+			if (_oper_limit.player_id() == player_next->GetID() || player->GetID() == player_next->GetID()/*当前操作玩家还是自己*/) //旋风杠检查
 			{
-				//旋风杠检查
 				auto xf_gang = player->CheckXuanFeng();
 				if (xf_gang)
 				{
@@ -546,7 +544,7 @@ void Game::OnPaiOperate(std::shared_ptr<Player> player, pb::Message* message)
 
 void Game::ClearOperation()
 {
-	//DEBUG("%s:line:%d player_id:%ld\n", __func__, __LINE__, _oper_limit.player_id());
+	DEBUG("_oper_limit:{}", _oper_limit.DebugString());
 	_oper_limit.Clear(); //清理状态
 }
 	
