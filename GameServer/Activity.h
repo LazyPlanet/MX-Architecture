@@ -96,7 +96,7 @@ public:
 				activity->set_open(it->second);
 			}
 
-			PlayerInstance.BroadCast(message);
+			PlayerInstance.BroadCast(message); //广播所有玩家
 		}
 	}
 

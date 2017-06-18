@@ -61,9 +61,6 @@ public:
 private:
 	boost::asio::ip::tcp::endpoint _remote_endpoint;
 	std::string _ip_address;
-
-	std::string _account; //账号信息
-	int64_t _plyaer_id = 0; //角色信息
 };
 
 class ServerSessionManager : public SocketManager<ServerSession> 
