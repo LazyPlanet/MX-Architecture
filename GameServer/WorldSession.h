@@ -47,8 +47,8 @@ public:
 
 	void InitializeHandler(const boost::system::error_code error, const std::size_t bytes_transferred);
 
-	void SendProtocol(pb::Message& message);
-	void SendProtocol(pb::Message* message);
+	void SendProtocol(const pb::Message& message);
+	void SendProtocol(const pb::Message* message);
 	void KillOutPlayer();
 	void OnLogout();
 	boost::asio::ip::tcp::endpoint GetRemotePoint() { return _remote_endpoint; }

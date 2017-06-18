@@ -718,14 +718,17 @@ void Player::SendMessage(Asset::MsgItem& item)
 	DispatcherInstance.SendMessage(item);
 }	
 
-void Player::SendProtocol(pb::Message* message)
+void Player::SendProtocol(const pb::Message* message)
 {
 	SendProtocol(*message);
 }
 
-void Player::SendProtocol(pb::Message& message)
+void Player::SendProtocol(const pb::Message& message)
 {
-	if (!Connected()) { DEBUG_ASSERT(false); }
+	if (!Connected()) { 
+		DEBUG_ASSERT(false); 
+		return;
+	}
 
 	GetSession()->SendProtocol(message);
 
@@ -1205,7 +1208,7 @@ int32_t Player::CmdSaizi(pb::Message* message)
 /////////////////////////////////////////////////////
 std::vector<Asset::PAI_OPER_TYPE> Player::CheckPai(const Asset::PaiElement& pai, int64_t from_player_id)
 {
-	DEBUG("{} player_id:{} from_player_id:{} card_type:{} card_value:{}", __func__, _player_id, from_player_id, pai.card_type(), pai.card_value());
+	//DEBUG("{} player_id:{} from_player_id:{} card_type:{} card_value:{}", __func__, _player_id, from_player_id, pai.card_type(), pai.card_value());
 
 	std::vector<Asset::PAI_OPER_TYPE> rtn_check;
 
@@ -3100,6 +3103,17 @@ void PlayerManager::Erase(std::shared_ptr<Player> player)
 	//std::lock_guard<std::mutex> lock(_mutex);
 	if (!player) return;
 	_players.erase(player->GetID());
+}
+	
+void PlayerManager::BroadCast(pb::Message& message)
+{
+	for (auto it = _players.begin(); it != _players.end(); ++it)
+	{
+		auto player = it->second;
+		if (!player) continue;
+
+		player->SendProtocol(message);
+	}
 }
 
 }

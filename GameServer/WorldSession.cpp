@@ -290,12 +290,12 @@ void WorldSession::OnClose()
 	KillOutPlayer();
 }
 
-void WorldSession::SendProtocol(pb::Message* message)
+void WorldSession::SendProtocol(const pb::Message* message)
 {
 	SendProtocol(*message);
 }
 
-void WorldSession::SendProtocol(pb::Message& message)
+void WorldSession::SendProtocol(const pb::Message& message)
 {
 	const pb::FieldDescriptor* field = message.GetDescriptor()->FindFieldByName("type_t");
 	if (!field) return;

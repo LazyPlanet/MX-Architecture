@@ -5,6 +5,7 @@
 #include "PlayerMatch.h"
 #include "PlayerName.h"
 #include "MXLog.h"
+#include "Activity.h"
 
 namespace Adoter
 {
@@ -31,13 +32,13 @@ bool World::Load()
 	//游戏初始化
 	if (!GameInstance.Load()) 
 	{
-		//LOG(ERROR, "GameInstance load error.");
+		ERROR("GameInstance load error.");
 		return false;
 	}
 
 	if (!NameInstance.Load())
 	{
-		//DEBUG("%s:line:%d NameInstance.Load Failed\n", __func__, __LINE__);
+		ERROR("NameInstance load error.");
 		return false;
 	}
 
@@ -52,6 +53,12 @@ bool World::Load()
 
 	//玩家匹配
 	MatchInstance.DoMatch();
+	
+	if (!ActivityInstance.Load())
+	{
+		ERROR("ActivityInstance load error.");
+		return false;
+	}
 
 	return true;
 }
@@ -64,6 +71,8 @@ void World::Update(int32_t diff)
 	MatchInstance.Update(diff);
 
 	RoomInstance.Update(diff);
+	
+	ActivityInstance.Update(diff);
 }
 	
 

@@ -110,8 +110,8 @@ public:
 	virtual void BroadCastCommonProp(Asset::MSG_TYPE type); //向房间里的玩家发送公共数据       
 	//协议处理(Protocol Buffer)
 	virtual bool HandleProtocol(int32_t type_t, pb::Message* message);
-	virtual void SendProtocol(pb::Message& message);
-	virtual void SendProtocol(pb::Message* message);
+	virtual void SendProtocol(const pb::Message& message);
+	virtual void SendProtocol(const pb::Message* message);
 	virtual void Send2Roomers(pb::Message& message, int64_t exclude_player_id = 0); //向房间里玩家发送协议数据，发送到Client
 	virtual void Send2Roomers(pb::Message* message, int64_t exclude_player_id = 0); //向房间里玩家发送协议数据，发送到Client
 	virtual void BroadCast(Asset::MsgItem& item);
@@ -351,6 +351,8 @@ public:
 	bool Has(int64_t player_id);
 	std::shared_ptr<Player> GetPlayer(int64_t player_id);
 	std::shared_ptr<Player> Get(int64_t player_id);
+	
+	virtual void BroadCast(pb::Message& message);
 };
 
 #define PlayerInstance PlayerManager::Instance()
