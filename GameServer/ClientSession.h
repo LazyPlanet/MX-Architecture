@@ -29,6 +29,7 @@ public:
 	const boost::asio::ip::tcp::endpoint GetRemotePoint() { return _remote_endpoint; }
 	bool InnerProcess(const Asset::InnerMeta& meta); //内部协议处理
 	Asset::COMMAND_ERROR_CODE OnCommandProcess(const Asset::Command& command);
+	Asset::COMMAND_ERROR_CODE OnSendMail(const Asset::SendMail& command);
     
 	virtual void OnConnected(); //连接上服务器
 	virtual void OnReceived(const Asset::InnerMeta& message); //处理服务器的数据

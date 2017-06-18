@@ -4,9 +4,20 @@
 #include "Player.h"
 #include "Room.h"
 #include "Config.h"
+#include "Timer.h"
 
 namespace Adoter
 {
+#define RETURN(x) \
+	auto response = command; \
+	response.set_error_code(x); \
+	if (x) { \
+		LOG(ERR, "command excute failed for:{} command:{}", x, command.ShortDebugString()); \
+	} else { \
+		LOG(TRACE, "command excute success for:{} command:{}", x, command.ShortDebugString()); \
+	} \
+	SendProtocol(response); \
+	return x; \
 
 ClientSession::ClientSession(boost::asio::io_service& io_service, const boost::asio::ip::tcp::endpoint& endpoint) : 
 	ClientSocket(io_service, endpoint)
@@ -86,6 +97,16 @@ bool ClientSession::InnerProcess(const Asset::InnerMeta& meta)
 			SendProtocol(message); //发送给GTM服务器
 		}
 		break;
+		
+		case Asset::INNER_TYPE_SEND_MAIL: //发送邮件
+		{
+			Asset::SendMail message;
+			auto result = message.ParseFromString(meta.stuff());
+			if (!result) return false;
+
+			OnSendMail(message);
+		}
+		break;
 
 		default:
 		{
@@ -95,20 +116,68 @@ bool ClientSession::InnerProcess(const Asset::InnerMeta& meta)
 	}
 	return true;
 }
+
+Asset::COMMAND_ERROR_CODE ClientSession::OnSendMail(const Asset::SendMail& command)
+{
+	const auto player_id = command.player_id(); 
+
+	if (player_id != 0) //玩家定向邮件
+	{
+		auto player_ptr = PlayerInstance.Get(player_id);
+		//
+		//理论上玩家应该在线，但是没有查到该玩家，原因
+		//
+		//1.玩家已经下线; 2.玩家在其他服务器上;
+		//
+		if (!player_ptr) 
+		{
+			RETURN(Asset::COMMAND_ERROR_CODE_PLAYER_OFFLINE); //玩家目前不在线
+		}
+
+		auto& player = player_ptr->Get();
+
+		auto mail_id = command.mail_id();
+
+		if (mail_id > 0)
+		{
+			player.mutable_mail_list_system()->Add(mail_id);
+		}
+		else
+		{
+			auto mail = player.mutable_mail_list_customized()->Add();
+			mail->set_title(command.title());
+			mail->set_content(command.content());
+			mail->set_send_time(CommonTimerInstance.GetTime());
+
+			//钻石
+			auto attachment = mail->mutable_attachments()->Add();
+			attachment->set_attachment_type(Asset::ATTACHMENT_TYPE_DIAMOND);
+			attachment->set_count(command.diamond_count());
+			
+			//欢乐豆
+			attachment = mail->mutable_attachments()->Add();
+			attachment->set_attachment_type(Asset::ATTACHMENT_TYPE_HUANLEDOU);
+			attachment->set_count(command.huanledou_count());
+			
+			//房卡
+			attachment = mail->mutable_attachments()->Add();
+			attachment->set_attachment_type(Asset::ATTACHMENT_TYPE_ROOM_CARD);
+			attachment->set_count(command.room_card_count());
+		}
+
+		//存盘
+		player_ptr->Save();
+	}
+	else //全服邮件
+	{
+
+	}
+	
+	RETURN(Asset::COMMAND_ERROR_CODE_SUCCESS); //成功执行
+}
 			
 Asset::COMMAND_ERROR_CODE ClientSession::OnCommandProcess(const Asset::Command& command)
 {
-#define RETURN(x) \
-	auto response = command; \
-	response.set_error_code(x); \
-	if (x) { \
-		LOG(ERR, "command excute failed for:{} command:{}", x, command.ShortDebugString()); \
-	} else { \
-		LOG(TRACE, "command excute success for:{} command:{}", x, command.ShortDebugString()); \
-	} \
-	SendProtocol(response); \
-	return x; \
-
 	auto redis = make_unique<Redis>();
 
 	/*
@@ -181,8 +250,6 @@ Asset::COMMAND_ERROR_CODE ClientSession::OnCommandProcess(const Asset::Command& 
 	player_ptr->Save();
 
 	RETURN(Asset::COMMAND_ERROR_CODE_SUCCESS); //玩家目前在线
-
-#undef RETURN
 }
 
 void ClientSession::SendProtocol(pb::Message* message)
@@ -319,4 +386,5 @@ void ClientSession::OnReadSome(const boost::system::error_code& error, std::size
 	AsynyReadSome(); //继续下一次数据接收
 }
 
+#undef RETURN
 }

@@ -2,6 +2,7 @@
 #include "RedisManager.h"
 #include "MXLog.h"
 #include "Asset.h"
+#include "Timer.h"
 
 namespace Adoter
 {
@@ -161,6 +162,7 @@ bool ServerSession::InnerProcess(const Asset::InnerMeta& meta)
 
 			OnSendMail(message);
 		}
+		break;
 
 		default:
 		{
@@ -354,6 +356,73 @@ Asset::COMMAND_ERROR_CODE ServerSession::OnCommandProcess(const Asset::Command& 
 
 Asset::COMMAND_ERROR_CODE ServerSession::OnSendMail(const Asset::SendMail& command)
 {
+	const auto player_id = command.player_id(); 
+
+	if (player_id != 0) //玩家定向邮件
+	{
+		Asset::Player player; //玩家数据
+
+		auto redis = make_unique<Redis>();
+		auto success = redis->GetPlayer(player_id, player);
+		if (!success)
+		{
+			RETURN(Asset::COMMAND_ERROR_CODE_PARA); //数据错误
+		}
+
+		if (player.logout_time() == 0 && player.login_time() != 0) //玩家目前在线
+		{
+			auto server_id = player.server_id(); //直接发给玩家所在服务器
+
+			auto game_server = ServerSessionInstance.Get(server_id);
+			if (!game_server) 
+			{
+				RETURN(Asset::COMMAND_ERROR_CODE_SERVER_NOT_FOUND); //未能找到服务器
+			}
+			else
+			{
+				game_server->SendProtocol(command);
+			}
+		}
+		else
+		{
+			auto mail_id = command.mail_id();
+
+			if (mail_id > 0)
+			{
+				player.mutable_mail_list_system()->Add(mail_id);
+			}
+			else
+			{
+				auto mail = player.mutable_mail_list_customized()->Add();
+				mail->set_title(command.title());
+				mail->set_content(command.content());
+				mail->set_send_time(CommonTimerInstance.GetTime());
+
+				//钻石
+				auto attachment = mail->mutable_attachments()->Add();
+				attachment->set_attachment_type(Asset::ATTACHMENT_TYPE_DIAMOND);
+				attachment->set_count(command.diamond_count());
+				
+				//欢乐豆
+				attachment = mail->mutable_attachments()->Add();
+				attachment->set_attachment_type(Asset::ATTACHMENT_TYPE_HUANLEDOU);
+				attachment->set_count(command.huanledou_count());
+				
+				//房卡
+				attachment = mail->mutable_attachments()->Add();
+				attachment->set_attachment_type(Asset::ATTACHMENT_TYPE_ROOM_CARD);
+				attachment->set_count(command.room_card_count());
+			}
+
+			//存盘
+			redis->SavePlayer(player_id, player);
+		}
+	}
+	else //全服邮件
+	{
+		ServerSessionInstance.BroadCastProtocol(command);
+	}
+	
 	RETURN(Asset::COMMAND_ERROR_CODE_SUCCESS); //成功执行
 }
 

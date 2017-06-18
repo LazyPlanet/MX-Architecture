@@ -19,21 +19,21 @@ public:
 		return _instance;
 	}
 
-	bool DeliverReward(std::shared_ptr<Player> player, int64_t global_id)
+	Asset::ERROR_CODE DeliverReward(std::shared_ptr<Player> player, int64_t global_id)
 	{
-		if (!player || global_id <= 0) return false;
+		if (!player || global_id <= 0) return Asset::ERROR_COMMON_REWARD_DATA;
 
 		const auto message = AssetInstance.Get(global_id);
-		if (!message) return false;
+		if (!message) return Asset::ERROR_COMMON_REWARD_DATA;
 
 		const auto common_reward = dynamic_cast<const Asset::CommonReward*>(message);
-		if (!common_reward) return false;
+		if (!common_reward) return Asset::ERROR_COMMON_REWARD_DATA;
+
+		int64_t common_limit_id = common_reward->common_limit_id();
+		if (player->IsCommonLimit(common_limit_id)) return Asset::ERROR_COMMON_REWARD_HAS_GOT; //该奖励已经超过领取限制
 
 		for (const auto& reward : common_reward->rewards())
 		{
-			int64_t common_limit_id = reward.common_limit_id();
-			if (player->IsCommonLimit(common_limit_id)) return false; //该奖励已经超过领取限制
-
 			int32_t count = reward.count();
 
 			switch (reward.reward_type())
@@ -64,10 +64,11 @@ public:
 			}
 
 			LOG(INFO, "player_id:{} global_id:{} common_limit_id:{} reward_type:{}", player->GetID(), global_id, common_limit_id, reward.reward_type());
-
-			player->AddCommonLimit(common_limit_id); 
 		}
-		return true;
+
+		player->AddCommonLimit(common_limit_id); 
+
+		return Asset::ERROR_SUCCESS;
 	}
 
 };

@@ -83,10 +83,14 @@ public:
 	}
 
 	Asset::Player& Get() { return _stuff; } //获取玩家数据
+
 	//获取基础属性
 	const Asset::CommonProp& CommonProp() { return _stuff.common_prop(); }
 	const Asset::CommonProp& GetCommonProp() { return _stuff.common_prop(); }
 	Asset::CommonProp* MutableCommonProp() { return _stuff.mutable_common_prop(); }
+	
+	int32_t GetLocalServer() { return _stuff.server_id(); } //玩家当前所在服务器
+	void SetLocalServer(int32_t server_id) { return _stuff.set_server_id(server_id); }
 
 	virtual int64_t GetID() { return _stuff.common_prop().player_id(); } //获取ID
 	virtual void SetID(int64_t player_id) { 
@@ -201,7 +205,7 @@ public:
 	bool CommonLimitUpdate();
 	void SyncCommonLimit();
 	//通用奖励
-	bool DeliverReward(int64_t global_id);
+	Asset::ERROR_CODE DeliverReward(int64_t global_id);
 	void SyncCommonReward(int64_t common_reward_id);
 ///////游戏逻辑定义
 private:

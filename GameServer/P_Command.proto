@@ -72,13 +72,6 @@ message OpenRoom {
 	optional int64 room_id = 4; //房间ID，如果非0则证明开放成功
 }
 
-//附件
-enum SEND_ATTACHMENT_TYPE {
-	SEND_ATTACHMENT_TYPE_DIAMOND = 1; //钻石
-	SEND_ATTACHMENT_TYPE_HUANLEDOU = 2; //欢乐豆
-	SEND_ATTACHMENT_TYPE_ROOM_CARD = 3; //房卡
-}
-
 //发送邮件
 message SendMail {
 	optional INNER_TYPE type_t = 1 [default = INNER_TYPE_SEND_MAIL];
@@ -87,13 +80,9 @@ message SendMail {
 	optional int64 mail_id = 4; //邮件ID[SystemMail]数据，如果不填，则为定制邮件
 	optional bytes title = 5; //标题
 	optional bytes content = 6; //内容
-//奖励
-	optional SEND_ATTACHMENT_TYPE diamond_type = 7 [ default = SEND_ATTACHMENT_TYPE_DIAMOND]; //钻石
-	optional int32 diamond_count = 8; //数量
-	optional SEND_ATTACHMENT_TYPE huanledou_type = 9 [ default = SEND_ATTACHMENT_TYPE_HUANLEDOU]; //欢乐豆
-	optional int32 huanledou_count = 10; //数量
-	optional SEND_ATTACHMENT_TYPE room_card_type = 11 [ default = SEND_ATTACHMENT_TYPE_ROOM_CARD]; //房卡
-	optional int32 room_card_count = 12; //数量
+	optional int32 diamond_count = 7; //钻石数量
+	optional int32 huanledou_count = 8; //欢乐豆数量
+	optional int32 room_card_count = 9; //房卡数量
 }
 
 //系统广播

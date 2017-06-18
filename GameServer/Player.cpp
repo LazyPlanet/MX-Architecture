@@ -283,6 +283,13 @@ int32_t Player::OnEnterGame()
 	WorldSessionInstance.Emplace(_player_id, _session); //网络会话数据
 	PlayerInstance.Emplace(_player_id, shared_from_this()); //玩家管理
 
+	//
+	//设置玩家所在服务器，每次进入场景均调用此
+	//
+	//对于MMORPG游戏，可以是任意一个场景或副本ID，此处记录为解决全球唯一服，通过Redis进行进程间通信，获取玩家所在服务器ID.
+	//
+	SetLocalServer(ConfigInstance.GetInt("ServerID", 1));
+
 	return 0;
 }
 
@@ -752,16 +759,23 @@ void Player::Send2Roomers(pb::Message* message, int64_t exclude_player_id)
 	_room->BroadCast(message, exclude_player_id);
 }
 
-//玩家心跳周期为10MS，如果该函数返回FALSE则表示掉线
+//
+//玩家心跳周期为10MS
+//
+//如果该函数返回FALSE则表示掉线
+//
 bool Player::Update()
 {
 	++_heart_count; //心跳
 	
+	if (_heart_count % 100 == 0) //1s
+	{
+		CommonLimitUpdate(); //通用限制,定时更新
+	}
+	
 	if (_heart_count % 1000 == 0) //10s
 	{
 		if (_dirty) Save(); //触发存盘
-
-		CommonLimitUpdate(); //通用限制,定时更新
 	}
 	
 	if (_heart_count % 3000 == 0) //30s
@@ -982,10 +996,10 @@ void Player::SyncCommonLimit()
 	SendProtocol(proto);
 }
 
-bool Player::DeliverReward(int64_t global_id)
+Asset::ERROR_CODE Player::DeliverReward(int64_t global_id)
 {
-	bool delivered = CommonRewardInstance.DeliverReward(shared_from_this(), global_id);
-	if (delivered) SyncCommonReward(global_id);
+	auto delivered = CommonRewardInstance.DeliverReward(shared_from_this(), global_id);
+	if (delivered == Asset::ERROR_SUCCESS) SyncCommonReward(global_id);
 	
 	return delivered;
 }
@@ -1019,17 +1033,8 @@ int32_t Player::CmdGetReward(pb::Message* message)
 			auto bonus = dynamic_cast<Asset::DailyBonus*>(message);
 			if (!bonus) return 5;
 
-			int64_t common_limit_id = bonus->common_limit_id();
-			if (IsCommonLimit(common_limit_id)) 
-			{
-				AlertMessage(Asset::ERROR_REWARD_HAS_GOT);
-				return 6;
-			}
-			
-			bool ret = DeliverReward(bonus->common_reward_id()); //发奖
-			if (!ret) return 7;
-		
-			AddCommonLimit(common_limit_id);
+			auto ret = DeliverReward(bonus->common_reward_id()); //发奖
+			AlertMessage(ret);
 		}
 		break;
 		
@@ -1051,17 +1056,8 @@ int32_t Player::CmdGetReward(pb::Message* message)
 				return 8;
 			}
 
-			int64_t common_limit_id = allowance->common_limit_id();
-			if (IsCommonLimit(common_limit_id)) 
-			{
-				AlertMessage(Asset::ERROR_REWARD_HAS_GOT);
-				return 6;
-			}
-			
-			bool ret = DeliverReward(allowance->common_reward_id()); //发奖
-			if (!ret) return 7;
-		
-			AddCommonLimit(common_limit_id);
+			auto ret = DeliverReward(allowance->common_reward_id()); //发奖
+			AlertMessage(ret);
 		}
 		break;
 
