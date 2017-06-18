@@ -15,6 +15,7 @@ enum INNER_TYPE {
 	INNER_TYPE_OPEN_ROOM = 3; //代开房间
 	INNER_TYPE_SEND_MAIL = 4; //发送邮件
 	INNER_TYPE_SYSTEM_BROADCAST = 5; //系统广播
+	INNER_TYPE_ACTIVITY_CONTROL = 6; //活动控制
 	INNER_TYPE_COUNT = 100; //协议最大数量
 }
 
@@ -89,6 +90,14 @@ message SendMail {
 message SystemBroadcast {
 	optional INNER_TYPE type_t = 1 [default = INNER_TYPE_SYSTEM_BROADCAST];
 	optional COMMAND_ERROR_CODE error_code = 2; //返回码
-	optional int64 server_id = 3; //服务器ID，如果为0则为全服广播
-	optional bytes content = 4; //内容
+	optional bytes content = 3; //内容
+}
+
+//活动控制
+message ActivityControl {
+	optional INNER_TYPE type_t = 1 [default = INNER_TYPE_ACTIVITY_CONTROL];
+	optional COMMAND_ERROR_CODE error_code = 2; //返回码
+	optional int64 activity_id = 3; //活动ID
+	optional bytes start_time = 4; //开始时间(示例：2017-01-20 20:00:00)
+	optional bytes stop_time = 5; //结束时间(示例：2017-02-20 20:00:00)
 }

@@ -30,6 +30,7 @@ public:
 	bool InnerProcess(const Asset::InnerMeta& meta); //内部协议处理
 	Asset::COMMAND_ERROR_CODE OnCommandProcess(const Asset::Command& command);
 	Asset::COMMAND_ERROR_CODE OnSendMail(const Asset::SendMail& command);
+	Asset::COMMAND_ERROR_CODE OnSystemBroadcast(const Asset::SystemBroadcast& command);
     
 	virtual void OnConnected(); //连接上服务器
 	virtual void OnReceived(const Asset::InnerMeta& message); //处理服务器的数据

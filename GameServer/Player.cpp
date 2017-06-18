@@ -3105,7 +3105,7 @@ void PlayerManager::Erase(std::shared_ptr<Player> player)
 	_players.erase(player->GetID());
 }
 	
-void PlayerManager::BroadCast(pb::Message& message)
+void PlayerManager::BroadCast(const pb::Message& message)
 {
 	for (auto it = _players.begin(); it != _players.end(); ++it)
 	{

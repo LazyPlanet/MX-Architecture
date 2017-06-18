@@ -34,7 +34,7 @@ public:
 
 		for (auto it = messages.begin(); it != messages.end(); ++it)
 		{
-			const auto activity = dynamic_cast<const Asset::Activity*>(*it);
+			auto activity = dynamic_cast<Asset::Activity*>(*it);
 			if (!activity) return false;
 
 			_activity.emplace(activity->common_prop().global_id(), activity);

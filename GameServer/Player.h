@@ -352,7 +352,7 @@ public:
 	std::shared_ptr<Player> GetPlayer(int64_t player_id);
 	std::shared_ptr<Player> Get(int64_t player_id);
 	
-	virtual void BroadCast(pb::Message& message);
+	virtual void BroadCast(const pb::Message& message);
 };
 
 #define PlayerInstance PlayerManager::Instance()

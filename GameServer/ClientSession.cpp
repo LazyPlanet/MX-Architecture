@@ -107,6 +107,15 @@ bool ClientSession::InnerProcess(const Asset::InnerMeta& meta)
 			OnSendMail(message);
 		}
 		break;
+		
+		case Asset::INNER_TYPE_SYSTEM_BROADCAST: //系统广播
+		{
+			Asset::SystemBroadcast message;
+			auto result = message.ParseFromString(meta.stuff());
+			if (!result) return false;
+
+			OnSystemBroadcast(message);
+		}
 
 		default:
 		{
@@ -170,7 +179,7 @@ Asset::COMMAND_ERROR_CODE ClientSession::OnSendMail(const Asset::SendMail& comma
 	}
 	else //全服邮件
 	{
-
+		WARN("收到了全服邮件数据，目前不支持.");
 	}
 	
 	RETURN(Asset::COMMAND_ERROR_CODE_SUCCESS); //成功执行
@@ -250,6 +259,16 @@ Asset::COMMAND_ERROR_CODE ClientSession::OnCommandProcess(const Asset::Command& 
 	player_ptr->Save();
 
 	RETURN(Asset::COMMAND_ERROR_CODE_SUCCESS); //玩家目前在线
+}
+
+Asset::COMMAND_ERROR_CODE ClientSession::OnSystemBroadcast(const Asset::SystemBroadcast& command)
+{
+	Asset::SystemBroadcasting message;
+	message.set_content(command.content());
+
+	PlayerInstance.BroadCast(message);
+
+	return Asset::COMMAND_ERROR_CODE_SUCCESS; //直接返回，不用回复给GMT服务器
 }
 
 void ClientSession::SendProtocol(pb::Message* message)
