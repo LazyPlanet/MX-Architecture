@@ -82,7 +82,7 @@ int32_t Player::Load()
 			TRACE("player_id:{} add inventory:{}", _player_id, enum_value->name());
 		}
 	} while(false);
-
+	
 	return 0;
 }
 
@@ -689,6 +689,7 @@ int32_t Player::CmdEnterRoom(pb::Message* message)
 
 bool Player::OnEnterRoom(int64_t room_id)
 {
+	/*
 	_room = RoomInstance.Get(room_id);
 
 	if (!_room) 
@@ -700,6 +701,7 @@ bool Player::OnEnterRoom(int64_t room_id)
 	_room->OnCreated();
 
 	_room->Enter(shared_from_this()); //玩家进入房间
+	*/
 
 	return true;
 }
@@ -1114,8 +1116,6 @@ int32_t Player::CmdLoadScene(pb::Message* message)
 				return 2;
 			}
 
-			SendPlayer(); //发送数据给客户端
-
 			auto room_id = _player_prop.room_id();
 			
 			auto locate_room = RoomInstance.Get(room_id);
@@ -1146,6 +1146,8 @@ int32_t Player::CmdLoadScene(pb::Message* message)
 			
 			_player_prop.clear_load_type(); 
 			_player_prop.clear_room_id(); 
+			
+			OnEnterScene(); //进入房间//场景回调
 		}
 		break;
 		
@@ -1161,7 +1163,7 @@ int32_t Player::CmdLoadScene(pb::Message* message)
 
 void Player::OnEnterScene()
 {
-	SendPlayer(); //发送数据给客户端
+	SendPlayer(); //发送数据给Client
 }
 
 int32_t Player::CmdLuckyPlate(pb::Message* message)
@@ -1346,6 +1348,12 @@ bool Player::CheckHuPai(const std::map<int32_t, std::vector<int32_t>>& cards_inh
 		const Asset::PaiElement& pai) //胡牌
 {
 	//DEBUG("player_id:{} card_type:{} card_value:{}", _player_id, pai.card_type(), pai.card_value());
+	
+	if (!_room || !_game) 
+	{
+		DEBUG_ASSERT(false);
+		return false;
+	}
 
 	auto cards = cards_inhand;
 
@@ -1757,7 +1765,7 @@ bool Player::CheckHuPai(const Asset::PaiElement& pai, std::vector<Asset::FAN_TYP
 			std::sort(card.second.begin(), card.second.end(), [](int x, int y){ return x < y; }); //由小到大，排序
 	
 		std::vector<Card_t> card_list;
-		for (auto crds : cards) //胡牌逻辑检查
+		for (auto crds : cards_inhand_check) //玩家牌内胡牌逻辑检查
 		{
 			for (auto value : crds.second)
 				card_list.push_back(Card_t(crds.first, value));
@@ -2979,16 +2987,14 @@ void Player::SynchronizePai()
 
 void Player::PrintPai()
 {
-	return;
-
 	for (const auto& pai : _minggang)
 	{
-		DEBUG("[明杠] player_id:{} card_type:{} card_value:{}", _player_id, pai.card_type(), pai.card_value());
+		LOG(INFO, "[明杠] player_id:{} card_type:{} card_value:{}", _player_id, pai.card_type(), pai.card_value());
 	}
 	
 	for (auto pai : _angang)
 	{
-		DEBUG("[暗杠] player_id:{} card_type:{} card_value:{}", _player_id, pai.card_type(), pai.card_value());
+		 LOG(INFO, "[暗杠] player_id:{} card_type:{} card_value:{}", _player_id, pai.card_type(), pai.card_value());
 	}
 	
 	for (const auto& pai : _cards_outhand)
@@ -2997,7 +3003,7 @@ void Player::PrintPai()
 		for (auto card_value : pai.second) 
 			card_value_list << card_value << " ";
 
-		DEBUG("[牌外] player_id:{} card_type:{} card_value:{}", _player_id, pai.first, card_value_list.str());
+		LOG(INFO, "[牌外] player_id:{} card_type:{} card_value:{}", _player_id, pai.first, card_value_list.str());
 	}
 
 	for (const auto& pai : _cards)
@@ -3006,7 +3012,7 @@ void Player::PrintPai()
 		for (auto card_value : pai.second) 
 			card_value_list << card_value << " ";
 
-		DEBUG("[牌内] player_id:{} card_type:{} card_value:{}", _player_id, pai.first, card_value_list.str());
+		LOG(INFO, "[牌内] player_id:{} card_type:{} card_value:{}", _player_id, pai.first, card_value_list.str());
 	}
 }
 
@@ -3066,6 +3072,30 @@ int32_t Player::GetCardCount()
 	}
 
 	return total_size;
+}
+	
+void Player::DebugCommand()
+{
+	_cards_outhand = {
+		{ 1, { 3, 4, 5, 8, 8, 8} },
+	}; 
+
+	_cards = {
+		{ 1, { 6, 7} },
+		{ 2, { 1, 2, 3} },
+		{ 3, { 6, 6, 6} },
+		{ 4, {} },
+	};
+
+	bool can_hu = CheckHuPai();	
+	if (can_hu)
+	{
+		WARN("竟然可以胡牌");
+	}
+	else
+	{
+		WARN("不可以胡牌");
+	}
 }
 
 /////////////////////////////////////////////////////

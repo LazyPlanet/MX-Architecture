@@ -230,6 +230,8 @@ private:
 	std::vector<Asset::PAI_OPER_TYPE> _xf_gang; //旋风杠所有操作
 	std::vector<std::tuple<bool, bool, bool>> _hu_result;
 	Asset::PAI_OPER_TYPE _oper_type; //玩家上次操作类型，主要用于处理杠上开的番次
+
+	void DebugCommand();
 public:
 	//玩家操作
 	virtual int32_t CmdGameOperate(pb::Message* message); //游戏操作
