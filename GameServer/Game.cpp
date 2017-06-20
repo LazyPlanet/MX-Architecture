@@ -137,8 +137,14 @@ bool Game::OnOver()
 	}
 	
 	_baopai.Clear();
+
 	_oper_limit.Clear();
+
 	_oper_list.clear();
+
+	_cards_pool.clear();
+	
+	_liuju = false;
 
 	return true;
 }
@@ -207,6 +213,8 @@ void Game::OnPaiOperate(std::shared_ptr<Player> player, pb::Message* message)
 		case Asset::PAI_OPER_TYPE_DAPAI: //打牌
 		case Asset::PAI_OPER_TYPE_TINGPAI: //听牌
 		{
+			_cards_pool.push_back(pai); //牌池缓存
+
 			//
 			//(1) 检查各个玩家手里的牌是否满足胡、杠、碰、吃
 			//
@@ -249,14 +257,20 @@ void Game::OnPaiOperate(std::shared_ptr<Player> player, pb::Message* message)
 					pai_perator->mutable_pai()->CopyFrom(card);
 					pai_perator->mutable_oper_list()->Add(Asset::PAI_OPER_TYPE_HUPAI);
 				}
-				else if (player_next->CheckBaoHu(card)) //自摸宝胡
+
+				player_next->OnFaPai(cards); //放入玩家牌里面
+				
+				//
+				//玩家摇色子，摸宝在OnFaPai进行处理
+				//
+				//此时可以解决，玩家摸宝之后进行抓牌正好抓到宝胡
+				//
+				if (player_next->CheckBaoHu(card)) //宝胡
 				{
 					auto pai_perator = alert.mutable_pais()->Add();
 					pai_perator->mutable_pai()->CopyFrom(card);
 					pai_perator->mutable_oper_list()->Add(Asset::PAI_OPER_TYPE_HUPAI);
 				}
-
-				player_next->OnFaPai(cards); //放入玩家牌里面
 
 				//听牌检查
 				std::vector<Asset::PaiElement> ting_list;
@@ -458,16 +472,8 @@ void Game::OnPaiOperate(std::shared_ptr<Player> player, pb::Message* message)
 
 			Asset::PaiOperationAlert alert;
 
-			//
 			//胡牌检查
-			//
 			if (player_next->CheckHuPai(card)) //自摸
-			{
-				auto pai_perator = alert.mutable_pais()->Add();
-				pai_perator->mutable_pai()->CopyFrom(card);
-				pai_perator->mutable_oper_list()->Add(Asset::PAI_OPER_TYPE_HUPAI);
-			}
-			else if (player_next->CheckBaoHu(card)) //自摸宝胡
 			{
 				auto pai_perator = alert.mutable_pais()->Add();
 				pai_perator->mutable_pai()->CopyFrom(card);
@@ -475,6 +481,18 @@ void Game::OnPaiOperate(std::shared_ptr<Player> player, pb::Message* message)
 			}
 
 			player_next->OnFaPai(cards); //放入玩家牌里面
+
+			//
+			//玩家摇色子，摸宝在OnFaPai进行处理
+			//
+			//此时可以解决，玩家摸宝之后进行抓牌正好抓到宝胡
+			//
+			if (player_next->CheckBaoHu(card)) //宝胡
+			{
+				auto pai_perator = alert.mutable_pais()->Add();
+				pai_perator->mutable_pai()->CopyFrom(card);
+				pai_perator->mutable_oper_list()->Add(Asset::PAI_OPER_TYPE_HUPAI);
+			}
 			
 			std::vector<Asset::PaiElement> ting_list;
 			if (player_next->CheckTingPai(ting_list)) //听牌检查
@@ -1208,6 +1226,28 @@ Asset::PaiElement Game::GetBaopai(int32_t tail_index)
 	auto card_index = list.size() - tail_index + 1; 
 
 	return GameInstance.GetCard(list[card_index]);
+}
+
+int32_t Game::GetRemainBaopai()
+{
+	auto count = std::count_if(_cards_pool.begin(), _cards_pool.end(), [&](const Asset::PaiElement& pai){
+			return _baopai.card_type() == pai.card_type() && _baopai.card_value() == pai.card_value();
+			});
+	return 3 - count; //墙上一张
+}
+	
+void Game::RefreshBaopai(int64_t player_id, int32_t random_result)
+{
+	Asset::RandomSaizi proto;
+	proto.set_reason_type(Asset::RandomSaizi_REASON_TYPE_REASON_TYPE_TINGPAI);
+	proto.set_player_id(player_id); //进行随机的玩家
+	proto.mutable_pai()->CopyFrom(_baopai);
+
+	for (auto player : _players)
+	{
+		if (!player || !player->IsTingPai()) continue;
+		player->SendProtocol(proto); 
+	}
 }
 
 /////////////////////////////////////////////////////

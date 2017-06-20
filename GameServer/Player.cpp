@@ -2914,9 +2914,11 @@ int32_t Player::OnFaPai(std::vector<int32_t>& cards)
 				_game->SetBaoPai(baopai);
 
 				proto.mutable_pai()->CopyFrom(baopai);
+				SendProtocol(proto); //通知玩家宝牌数据
 
-				//宝牌
-				_game->BroadCast(proto);
+				//宝牌，只能自己看
+				proto.mutable_pai()->Clear();
+				_game->BroadCast(proto, _player_id);
 			}
 		}
 
@@ -2958,6 +2960,21 @@ void Player::OnTingPai()
 	_oper_count_tingpai = 1;
 
 	_game->AddTingPlayer(_player_id);
+
+	//
+	//宝牌没有则重新进行随机
+	//
+	while(true)
+	{
+		if (_game->GetRemainBaopai() > 0) break;
+
+		int32_t result = CommonUtil::Random(1, 6);
+
+		auto baopai = _game->GetBaopai(result);
+		_game->SetBaoPai(baopai);
+
+		_game->RefreshBaopai(_player_id, result);
+	}
 }
 	
 void Player::SynchronizePai()

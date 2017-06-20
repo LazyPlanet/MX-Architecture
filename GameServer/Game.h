@@ -41,7 +41,8 @@ private:
 
 	std::shared_ptr<Player> _players[MAX_PLAYER_COUNT]; //玩家数据：按照进房间的顺序，0->1->2->3...主要用于控制发牌和出牌顺序
 
-	bool _liuju = false;
+	bool _liuju = false; //是否流局
+	std::vector<Asset::PaiElement> _cards_pool; //牌池，玩家已经打的牌缓存
 public:
 	virtual void Init(std::shared_ptr<Room> room); //初始化
 	virtual bool Start(std::vector<std::shared_ptr<Player>> players); //开始游戏
@@ -79,6 +80,8 @@ public:
 	bool IsLiuJu() { return _liuju; } //是否流局
 	int32_t GetRemainCount() { return _cards.size(); } //当前剩余牌数量
 	void SetCurrPlayerIndex(int64_t curr_player_index) { _curr_player_index = curr_player_index; } //设置当前可操作的玩家
+	int32_t GetRemainBaopai(); //剩余宝牌数量
+	void RefreshBaopai(int64_t player_id, int32_t random_result); //刷新宝牌
 };
 
 /////////////////////////////////////////////////////
