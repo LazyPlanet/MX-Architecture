@@ -2920,6 +2920,7 @@ int32_t Player::OnFaPai(std::vector<int32_t>& cards)
 				_game->SetBaoPai(baopai);
 
 				proto.mutable_pai()->CopyFrom(baopai);
+
 				SendProtocol(proto); //通知玩家宝牌数据
 
 				//宝牌，只能自己看
@@ -2972,7 +2973,18 @@ void Player::OnTingPai()
 	//
 	while(true)
 	{
-		if (_game->GetRemainBaopai() > 0) break;
+		if (_game->GetRemainBaopai() > 0) 
+		{
+			Asset::RandomSaizi proto;
+			proto.set_reason_type(Asset::RandomSaizi_REASON_TYPE_REASON_TYPE_TINGPAI);
+			proto.set_player_id(_player_id);
+
+			auto baopai = _game->GetBaoPai();
+			proto.mutable_pai()->CopyFrom(baopai);
+
+			SendProtocol(proto); //通知玩家宝牌数据
+			break;
+		}
 
 		int32_t result = CommonUtil::Random(1, 6);
 
