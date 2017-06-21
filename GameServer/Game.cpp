@@ -125,6 +125,8 @@ void Game::OnStart()
 
 bool Game::OnOver()
 {
+	Asset::PaiPushDown proto;
+
 	for (int i = 0; i < MAX_PLAYER_COUNT; ++i)
 	{
 		auto player = _players[i];
@@ -133,8 +135,28 @@ bool Game::OnOver()
 			ERROR("player_index:{} has not found, maybe it has disconneced.", i);
 			continue;
 		}
+
+		auto player_info = proto.mutable_player_list()->Add();
+		player_info->set_player_id(player->GetID());
+
+		const auto& cards = player->GetCardsInhand();
+
+		for (auto it = cards.begin(); it != cards.end(); ++it)
+		{
+			auto pai = player_info->mutable_pai_list()->Add();
+
+			pai->set_card_type((Asset::CARD_TYPE)it->first); //牌类型
+
+			for (auto card_value : it->second)
+			{
+				pai->mutable_cards()->Add(card_value); //牌值
+			}
+		}
+
 		player->OnGameOver();
 	}
+
+	BroadCast(proto);
 	
 	_baopai.Clear();
 

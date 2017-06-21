@@ -323,11 +323,16 @@ public:
 	
 	void PrintPai(); //打印牌玩家当前牌
 	void SynchronizePai(); //同步玩家牌给Client
+
+	const std::map<int32_t, std::vector<int32_t>>& GetCardsInhand() { return _cards; }
+
 	void ClearCards(); //删除玩家牌(包括手里牌、墙外牌)
 	void OnGameOver(); //游戏结束
+
 	//是否//设置服务器托管状态
 	bool HasTuoGuan() { return _tuoguan_server; }
 	void SetTuoGuan() { _tuoguan_server = true; }
+
 	int32_t GetCardCount();	//获取当前玩家手中牌数
 	bool IsGangOperation(); //上次牌是否杠操作
 };
