@@ -312,6 +312,12 @@ int32_t Player::CmdCreateRoom(pb::Message* message)
 	Asset::CreateRoom* create_room = dynamic_cast<Asset::CreateRoom*>(message);
 	if (!create_room) return 1;
 
+	auto activity_id = g_const->room_card_limit_free_activity_id();
+	if (ActivityInstance.IsOpen(activity_id))
+	{
+		WARN("当前活动:{}开启，玩家ID:{}", activity_id, _player_id);
+	}
+
 	int64_t room_id = RoomInstance.CreateRoom();
 	if (!room_id) return 2;
 

@@ -46,7 +46,7 @@ public:
 	bool IsOpen(int64_t global_id)
 	{
 		auto it = _state.find(global_id);
-		if (it == _state.end()) return false; //如果没有，则认为是关闭状态
+		if (it == _state.end()) return true; //如果没有，则认为不限制，是开启状态
 
 		return it->second;
 	}
@@ -59,29 +59,85 @@ public:
 
 		for (auto it = _activity.begin(); it != _activity.end(); ++it)
 		{
-			boost::posix_time::ptime start_time(boost::posix_time::time_from_string(it->second->start_time()));
-			auto start_time_t = boost::posix_time::to_time_t(start_time);
-
-			boost::posix_time::ptime stop_time(boost::posix_time::time_from_string(it->second->stop_time()));
-			auto stop_time_t = boost::posix_time::to_time_t(stop_time);
-			
-			std::time_t cur_t = CommonTimerInstance.GetTime();
-
-			if (cur_t < start_time_t || cur_t > stop_time_t) 
+			switch (it->second->activity_type())
 			{
-				if (_state[it->first])
+				case Asset::ACTIVITY_CYCLE_TYPE_DIALY: //每日
 				{
-					has_changed = true; //状态变化
-					_state[it->first] = false;
+					boost::posix_time::ptime start_date(boost::posix_time::time_from_string(it->second->start_date() + " 00::00::00"));
+					boost::posix_time::ptime stop_date(boost::posix_time::time_from_string(it->second->start_date() + " 00::00::00"));
+						
+					boost::posix_time::time_duration start_time_duration(boost::posix_time::duration_from_string(it->second->start_time()));
+					boost::posix_time::time_duration stop_time_duration(boost::posix_time::duration_from_string(it->second->stop_time()));
+					
+					std::time_t cur_t = CommonTimerInstance.GetTime();
+					boost::posix_time::ptime curr_time = boost::posix_time::from_time_t(cur_t);
+
+					if (curr_time.date() >= start_date.date() || curr_time.date() <= stop_date.date()) //日期满足
+					{
+						auto curr_time_duration = curr_time.time_of_day(); //19:00:00
+
+						if (curr_time_duration >= start_time_duration || curr_time_duration <= stop_time_duration) //时间满足
+						{
+							if (!_state[it->first])
+							{
+								has_changed = true; //状态变化
+								_state[it->first] = true;
+							}
+						}
+						else
+						{
+							if (_state[it->first])
+							{
+								has_changed = true; //状态变化
+								_state[it->first] = false;
+							}
+						}
+					}
+					else
+					{
+						if (_state[it->first])
+						{
+							has_changed = true; //状态变化
+							_state[it->first] = false;
+						}
+					}
 				}
-			}
-			else
-			{
-				if (!_state[it->first])
+				break;
+				
+				case Asset::ACTIVITY_CYCLE_TYPE_DURATION: //时间断
 				{
-					has_changed = true; //状态变化
-					_state[it->first] = true;
+					boost::posix_time::ptime start_time(boost::posix_time::time_from_string(it->second->start_date() + " " + it->second->start_time()));
+					auto start_time_t = boost::posix_time::to_time_t(start_time);
+
+					boost::posix_time::ptime stop_time(boost::posix_time::time_from_string(it->second->start_date() + " " + it->second->stop_time()));
+					auto stop_time_t = boost::posix_time::to_time_t(stop_time);
+					
+					std::time_t cur_t = CommonTimerInstance.GetTime();
+
+					if (cur_t < start_time_t || cur_t > stop_time_t) 
+					{
+						if (_state[it->first])
+						{
+							has_changed = true; //状态变化
+							_state[it->first] = false;
+						}
+					}
+					else
+					{
+						if (!_state[it->first])
+						{
+							has_changed = true; //状态变化
+							_state[it->first] = true;
+						}
+					}
 				}
+				break;
+
+				default:
+				{
+
+				}
+				break;
 			}
 		}
 

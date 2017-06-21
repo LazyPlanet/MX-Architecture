@@ -20,7 +20,9 @@ public:
 		return _instance;
 	}
 
+	//
 	//获取前服务器启动时间(单位：毫秒)
+	//
 	inline int32_t GetStartTime()
 	{
 		using namespace std::chrono;
@@ -28,7 +30,9 @@ public:
 		return int32_t(duration_cast<milliseconds>(system_clock::now() - start_time).count());
 	}
 
+	//
 	//获取当前系统时间(单位：秒)
+	//
 	inline std::time_t GetTime()
 	{
 		boost::posix_time::ptime ptime(boost::posix_time::second_clock::local_time()); //universal_time: Get the UTC time.

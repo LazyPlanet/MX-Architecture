@@ -138,6 +138,7 @@ bool Game::OnOver()
 
 		auto player_info = proto.mutable_player_list()->Add();
 		player_info->set_player_id(player->GetID());
+		player_info->set_position(player->GetPosition());
 
 		const auto& cards = player->GetCardsInhand();
 
