@@ -36,6 +36,7 @@ private:
 
 	Asset::PaiOperationLimit _oper_limit; //牌操作限制
 	Asset::PaiElement _baopai; //宝牌
+	int32_t _random_result = 0; //宝牌随机
 	
 	std::vector<Asset::PaiOperationList> _oper_list; //可操作列表
 
@@ -70,17 +71,25 @@ public:
 	void BroadCast(pb::Message& message, int64_t exclude_player_id = 0);
 
 	void Calculate(int64_t hupai_player_id/*胡牌玩家*/, int64_t dianpao_player_id/*点炮玩家*/, std::vector<Asset::FAN_TYPE>& fan_list/*基础分*/);
+
 	void AddTingPlayer(int64_t player_id) {	_ting_players.push_back(player_id);	} //增加听牌玩家
-	Asset::PaiElement GetBaopai(int32_t tail_index); //随机宝牌
+
+	Asset::PaiElement GetBaoPai(int32_t tail_index); //随机宝牌
 	void SetBaoPai(const Asset::PaiElement& pai) { _baopai = pai; } //设置宝牌
 	const Asset::PaiElement& GetBaoPai() { return _baopai; } //获取当前宝牌
 	bool IsBaopai(const Asset::PaiElement& pai) { return pai.card_type() == _baopai.card_type() && pai.card_value() == _baopai.card_value(); } //是否宝牌
 	bool HasBaopai() { return _baopai.card_type() != 0 && _baopai.card_value() != 0; } //当前局是否含有宝牌
+	int32_t GetRemainBaopai(); //剩余宝牌数量
+
+	void SetRandResult(int32_t random_result) { _random_result = random_result; }
+	int32_t GetRandResult() { return _random_result; }
+
 	bool CheckLiuJu(); //流局检查
 	bool IsLiuJu() { return _liuju; } //是否流局
+
 	int32_t GetRemainCount() { return _cards.size(); } //当前剩余牌数量
+
 	void SetCurrPlayerIndex(int64_t curr_player_index) { _curr_player_index = curr_player_index; } //设置当前可操作的玩家
-	int32_t GetRemainBaopai(); //剩余宝牌数量
 	void RefreshBaopai(int64_t player_id, int32_t random_result); //刷新宝牌
 };
 

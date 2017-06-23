@@ -38,6 +38,7 @@ Player::Player()
 	AddHandler(Asset::META_TYPE_SHARE_RANDOM_SAIZI, std::bind(&Player::CmdSaizi, this, std::placeholders::_1));
 	AddHandler(Asset::META_TYPE_SHARE_COMMON_PROPERTY, std::bind(&Player::CmdGetCommonProperty, this, std::placeholders::_1));
 	AddHandler(Asset::META_TYPE_SHARE_SAY_HI, std::bind(&Player::CmdSayHi, this, std::placeholders::_1));
+	AddHandler(Asset::META_TYPE_SHARE_GAME_SETTING, std::bind(&Player::CmdGameSetting, this, std::placeholders::_1));
 
 	//AddHandler(Asset::META_TYPE_C2S_LOGIN, std::bind(&Player::CmdLogin, this, std::placeholders::_1));
 	//AddHandler(Asset::META_TYPE_C2S_ENTER_GAME, std::bind(&Player::CmdEnterGame, this, std::placeholders::_1));
@@ -2912,12 +2913,14 @@ int32_t Player::OnFaPai(std::vector<int32_t>& cards)
 				Asset::RandomSaizi proto;
 				proto.set_reason_type(Asset::RandomSaizi_REASON_TYPE_REASON_TYPE_TINGPAI);
 				proto.set_player_id(_player_id);
+				proto.set_has_rand_saizi(true);
 
 				int32_t result = CommonUtil::Random(1, 6);
 				proto.mutable_random_result()->Add(result);
 
-				auto baopai = _game->GetBaopai(result);
+				auto baopai = _game->GetBaoPai(result);
 				_game->SetBaoPai(baopai);
+				_game->SetRandResult(result);
 
 				proto.mutable_pai()->CopyFrom(baopai);
 
@@ -2978,6 +2981,7 @@ void Player::OnTingPai()
 			Asset::RandomSaizi proto;
 			proto.set_reason_type(Asset::RandomSaizi_REASON_TYPE_REASON_TYPE_TINGPAI);
 			proto.set_player_id(_player_id);
+			proto.mutable_random_result()->Add(_game->GetRandResult());
 
 			auto baopai = _game->GetBaoPai();
 			proto.mutable_pai()->CopyFrom(baopai);
@@ -2988,7 +2992,7 @@ void Player::OnTingPai()
 
 		int32_t result = CommonUtil::Random(1, 6);
 
-		auto baopai = _game->GetBaopai(result);
+		auto baopai = _game->GetBaoPai(result);
 		_game->SetBaoPai(baopai);
 
 		_game->RefreshBaopai(_player_id, result);
@@ -3095,6 +3099,20 @@ void Player::SayHi()
 	message.set_heart_count(_heart_count);
 
 	SendProtocol(message);
+}
+	
+int32_t Player::CmdGameSetting(pb::Message* message)
+{
+	auto game_setting = dynamic_cast<const Asset::GameSetting*>(message);
+	if (!game_setting) return 1;
+
+	SetDirty();
+
+	_stuff.mutable_game_setting()->CopyFrom(game_setting->game_setting());
+
+	SendProtocol(game_setting); //设置成功
+
+	return 0;
 }
 	
 int32_t Player::GetCardCount()

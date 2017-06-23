@@ -155,6 +155,8 @@ public:
 	//离线状态实时监测
 	virtual int32_t CmdSayHi(pb::Message* message);
 	void SayHi();
+	//游戏设置
+	virtual int32_t CmdGameSetting(pb::Message* message);
 public:
 	//获取所有包裹
 	const Asset::Inventory& GetInventory() { return _stuff.inventory();	}

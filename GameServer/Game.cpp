@@ -1242,7 +1242,7 @@ bool Game::IsBanker(int64_t player_id)
 	return _room->IsBanker(player_id); 
 }
 
-Asset::PaiElement Game::GetBaopai(int32_t tail_index)
+Asset::PaiElement Game::GetBaoPai(int32_t tail_index)
 {
 	std::vector<int32_t> list(_cards.begin(), _cards.end());
 
@@ -1264,6 +1264,7 @@ void Game::RefreshBaopai(int64_t player_id, int32_t random_result)
 	Asset::RandomSaizi proto;
 	proto.set_reason_type(Asset::RandomSaizi_REASON_TYPE_REASON_TYPE_TINGPAI);
 	proto.set_player_id(player_id); //进行随机的玩家
+	proto.set_has_rand_saizi(true);
 	proto.mutable_pai()->CopyFrom(_baopai);
 
 	for (auto player : _players)
