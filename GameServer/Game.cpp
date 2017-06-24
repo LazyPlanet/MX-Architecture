@@ -184,6 +184,8 @@ bool Game::OnOver()
 	
 bool Game::CanPaiOperate(std::shared_ptr<Player> player)
 {
+	if (!player) return false;
+
 	if (/*_oper_limit.time_out() < CommonTimerInstance.GetTime() && 超时检查*/_oper_limit.player_id() == player->GetID()) 
 	{
 		return true; //玩家操作：碰、杠、胡牌
@@ -195,7 +197,7 @@ bool Game::CanPaiOperate(std::shared_ptr<Player> player)
 	{
 		return true; //轮到该玩家
 	}
-
+	
 	LOG(ERROR, "curr_player_index:{} player_index:{} player_id:{} oper_limit_player_id:{}", _curr_player_index, player_index, 
 			player->GetID(), _oper_limit.player_id());
 	return false;
@@ -284,7 +286,11 @@ void Game::OnPaiOperate(std::shared_ptr<Player> player, pb::Message* message)
 					pai_perator->mutable_oper_list()->Add(Asset::PAI_OPER_TYPE_HUPAI);
 				}
 
+				if (player_next->HasTuoGuan()) _curr_player_index = next_player_index; //托管检查
+
 				player_next->OnFaPai(cards); //放入玩家牌里面
+
+				if (player_next->HasTuoGuan()) return; //托管检查，防止递归
 				
 				//
 				//玩家摇色子，摸宝在OnFaPai进行处理
@@ -913,8 +919,6 @@ void Game::Calculate(int64_t hupai_player_id/*胡牌玩家*/, int64_t dianpao_pl
 
 	if (baosanjia) //包三家
 	{
-		DEBUG("dianpao_player_id:{} 包三家积分、钻石或者欢乐豆", dianpao_player_id);
-
 		auto it_dianpao = get_record(dianpao_player_id);
 		if (it_dianpao == message.mutable_record()->mutable_list()->end()) 
 		{
@@ -952,6 +956,8 @@ void Game::Calculate(int64_t hupai_player_id/*胡牌玩家*/, int64_t dianpao_pl
 		auto detail = it_dianpao->mutable_details()->Add();
 		detail->set_fan_type(Asset::FAN_TYPE_BAOSANJIA);
 		detail->set_score(baofen_total);
+
+		it_dianpao->set_score(baofen_total); //总积分
 	}
 	
 	message.PrintDebugString();
@@ -1266,14 +1272,40 @@ void Game::RefreshBaopai(int64_t player_id, int32_t random_result)
 {
 	Asset::RandomSaizi proto;
 	proto.set_reason_type(Asset::RandomSaizi_REASON_TYPE_REASON_TYPE_TINGPAI);
-	proto.set_player_id(player_id); //进行随机的玩家
 	proto.set_has_rand_saizi(true);
 	proto.mutable_pai()->CopyFrom(_baopai);
 
 	for (auto player : _players)
 	{
 		if (!player || !player->IsTingPai()) continue;
+
+		proto.set_player_id(player->GetID()); 
+
 		player->SendProtocol(proto); 
+	}
+}
+	
+void Game::OnTingPai(std::shared_ptr<Player> player)
+{
+	if (!player) return;
+
+	_random_result = CommonUtil::Random(1, 6);
+	_baopai = GetBaoPai(_random_result);
+
+	for (auto _player : _players)
+	{
+		if (!_player) continue;
+
+		Asset::RandomSaizi proto;
+		proto.set_reason_type(Asset::RandomSaizi_REASON_TYPE_REASON_TYPE_TINGPAI);
+		proto.set_player_id(_player->GetID());
+		proto.mutable_random_result()->Add(_random_result);
+		proto.set_has_rand_saizi(true);
+
+		if (_player->IsTingPai()) 
+			proto.mutable_pai()->CopyFrom(_baopai);
+
+		_player->SendProtocol(proto); 
 	}
 }
 

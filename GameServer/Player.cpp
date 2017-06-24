@@ -124,14 +124,44 @@ int32_t Player::OnLogin(pb::Message* message)
 	return 0;
 }
 
-int32_t Player::OnLogout(pb::Message* message)
+int32_t Player::Logout(pb::Message* message)
 {
+	//
+	//如果玩家正在进行玩牌，则不允许立即退出
+	//
+	//(1) 处理非操作玩家退出的状态;
+	//
+	//(2) 处理操作玩家退出的状态，即刚好轮到该玩家进行操作的时候，玩家逃跑;
+	//
 	if (_room) 
 	{
 		if (_game) //游戏中
 		{
-			SetTuoGuan(); //服务器托管
-			LOG(ERROR, "player_id:{} logout game when in room:{}", _player_id, _room->GetID());
+			LOG(ERROR, "player_id:{} logout game when in room:{}", _player_id, _room->GetID()); //玩家逃跑
+
+			_tuoguan_server = true; //服务器托管
+
+			if (_tuoguan_server && _game->CanPaiOperate(shared_from_this())) //轮到该玩家操作
+			{
+				Asset::PaiElement pai;
+
+				for (auto it = _cards_inhand.begin(); it != _cards_inhand.end(); ++it)
+				{
+					if (it->second.size())
+					{
+						pai.set_card_type((Asset::CARD_TYPE)it->first);
+						pai.set_card_value(it->second[0]); //随便选取一个
+						break;
+					}
+				}
+
+				Asset::PaiOperation pai_operation; 
+				pai_operation.set_oper_type(Asset::PAI_OPER_TYPE_DAPAI);
+				pai_operation.set_position(GetPosition());
+				pai_operation.mutable_pai()->CopyFrom(pai);
+
+				CmdPaiOperate(&pai_operation);
+			}
 		}
 		else
 		{
@@ -139,13 +169,21 @@ int32_t Player::OnLogout(pb::Message* message)
 		}
 	}
 
+	OnLogout();
+	
+	return 0;
+}
+	
+int32_t Player::OnLogout()
+{
 	this->_stuff.set_login_time(0);
 	this->_stuff.set_logout_time(CommonTimerInstance.GetTime());
-	Save();	//存档数据库
 	
+	Save();	//存档数据库
+
 	WorldSessionInstance.Erase(_player_id); //网络会话数据
 	PlayerInstance.Erase(_player_id); //玩家管理
-	
+
 	return 0;
 }
 	
@@ -417,7 +455,7 @@ int32_t Player::CmdPaiOperate(pb::Message* message)
 		{
 			const auto& pai = pai_operate->pai(); 
 
-			auto& pais = _cards[pai.card_type()]; //获取该类型的牌
+			auto& pais = _cards_inhand[pai.card_type()]; //获取该类型的牌
 			
 			auto it = std::find(pais.begin(), pais.end(), pai.card_value()); //查找第一个满足条件的牌即可
 			if (it == pais.end()) 
@@ -453,7 +491,7 @@ int32_t Player::CmdPaiOperate(pb::Message* message)
 			//检查玩家是否真的有这些牌
 			for (const auto& pai : pai_operate->pais()) 
 			{
-				const auto& pais = _cards[pai.card_type()];
+				const auto& pais = _cards_inhand[pai.card_type()];
 
 				auto it = std::find(pais.begin(), pais.end(), pai.card_value());
 				if (it == pais.end()) return 4; //没有这张牌
@@ -497,7 +535,7 @@ int32_t Player::CmdPaiOperate(pb::Message* message)
 		{
 			const auto& pai = pai_operate->pai();
 
-			auto& pais = _cards[pai.card_type()]; //获取该类型的牌
+			auto& pais = _cards_inhand[pai.card_type()]; //获取该类型的牌
 
 			auto it = std::find(pais.begin(), pais.end(), pai.card_value()); //查找第一个满足条件的牌即可
 			if (it == pais.end()) 
@@ -1550,6 +1588,8 @@ bool Player::CheckHuPai(const std::map<int32_t, std::vector<int32_t>>& cards_inh
 
 bool Player::CheckHuPai()
 {
+	if (_tuoguan_server) return false;
+
 	Asset::PaiElement pai;
 	return CheckHuPai(pai);
 }
@@ -1582,7 +1622,7 @@ bool Player::CheckHuPai(const Asset::PaiElement& pai, std::vector<Asset::FAN_TYP
 		{
 			_hu_result.clear();
 
-			cards = _cards; //复制当前牌
+			cards = _cards_inhand; //复制当前牌
 		}
 		else
 		{
@@ -1766,7 +1806,7 @@ bool Player::CheckHuPai(const Asset::PaiElement& pai, std::vector<Asset::FAN_TYP
 	 * So，这里对牌内牌进行胡牌检查
 	 * */
 	{
-		auto cards_inhand_check = _cards;
+		auto cards_inhand_check = _cards_inhand;
 		if (pai.card_type() && pai.card_value()) cards_inhand_check[pai.card_type()].push_back(pai.card_value()); //放入可以操作的牌
 			
 		for (auto& card : cards_inhand_check)
@@ -1960,7 +2000,7 @@ bool Player::IsMingPiao()
 //
 bool Player::IsSiGuiYi()
 {
-	auto cards = _cards;
+	auto cards = _cards_inhand;
 	for (const auto& crds : _cards_outhand) 
 		cards[crds.first].insert(cards[crds.first].end(), crds.second.begin(), crds.second.end());
 
@@ -2031,12 +2071,12 @@ bool Player::CheckMingPiao(const Asset::PAI_OPER_TYPE& oper_type)
 
 bool Player::CheckChiPai(const Asset::PaiElement& pai)
 {
-	if (_has_ting) return false; //已经听牌，不再提示
+	if (_has_ting || _tuoguan_server) return false; //已经听牌，不再提示
 
 	if (!CheckMingPiao(Asset::PAI_OPER_TYPE_CHIPAI)) return false; //明飘检查
 
-	auto it = _cards.find(pai.card_type());
-	if (it == _cards.end()) return false;
+	auto it = _cards_inhand.find(pai.card_type());
+	if (it == _cards_inhand.end()) return false;
 
 	if (pai.card_type() != Asset::CARD_TYPE_WANZI && pai.card_type() != Asset::CARD_TYPE_BINGZI &&
 			pai.card_type() != Asset::CARD_TYPE_TIAOZI) return false; //万子牌、饼子牌和条子牌才能吃牌
@@ -2080,8 +2120,8 @@ void Player::OnChiPai(const Asset::PaiElement& pai, pb::Message* message)
 		return; 
 	}
 	
-	auto it = _cards.find(pai.card_type());
-	if (it == _cards.end()) return;
+	auto it = _cards_inhand.find(pai.card_type());
+	if (it == _cards_inhand.end()) return;
 		
 	for (const auto& p : pai_operate->pais())	
 	{
@@ -2155,12 +2195,12 @@ void Player::OnChiPai(const Asset::PaiElement& pai, pb::Message* message)
 
 bool Player::CheckPengPai(const Asset::PaiElement& pai)
 {
-	if (_has_ting) return false; //已经听牌，不再提示
+	if (_has_ting || _tuoguan_server) return false; //已经听牌，不再提示
 	
 	if (!CheckMingPiao(Asset::PAI_OPER_TYPE_PENGPAI)) return false; //明飘检查
 
-	auto it = _cards.find(pai.card_type());
-	if (it == _cards.end()) return false;
+	auto it = _cards_inhand.find(pai.card_type());
+	if (it == _cards_inhand.end()) return false;
 
 	int32_t card_value = pai.card_value();
 	int32_t count = std::count_if(it->second.begin(), it->second.end(), [card_value](int32_t value) { return card_value == value; });
@@ -2178,8 +2218,8 @@ void Player::OnPengPai(const Asset::PaiElement& pai)
 		return;
 	}
 	
-	auto it = _cards.find(pai.card_type());
-	if (it == _cards.end()) return; //理论上不会如此
+	auto it = _cards_inhand.find(pai.card_type());
+	if (it == _cards_inhand.end()) return; //理论上不会如此
 	
 	try {
 		std::unique_lock<std::mutex> lock(_card_lock, std::defer_lock);
@@ -2231,12 +2271,14 @@ void Player::OnPengPai(const Asset::PaiElement& pai)
 
 bool Player::CheckGangPai(const Asset::PaiElement& pai, int64_t from_player_id)
 {
+	if (_tuoguan_server) return false;
+
 	if (!CheckMingPiao(Asset::PAI_OPER_TYPE_GANGPAI)) return false; //明飘检查
 
-	auto it = _cards.find(pai.card_type());
+	auto it = _cards_inhand.find(pai.card_type());
 	int32_t card_value = pai.card_value();
 
-	if (it != _cards.end()) 
+	if (it != _cards_inhand.end()) 
 	{
 		int32_t count = std::count(it->second.begin(), it->second.end(), card_value);
 		if (count == 3 /*牌是来自其他玩家*/ || count == 4 /*牌是玩家自己抓的*/) return true;  //玩家手里需要有3|4张牌
@@ -2267,7 +2309,7 @@ bool Player::CheckAllGangPai(::google::protobuf::RepeatedField<Asset::PaiOperati
 	if (!CheckMingPiao(Asset::PAI_OPER_TYPE_GANGPAI)) return false; //明飘检查
 
 	/////手里有4张牌，即暗杠检查
-	for (auto cards : _cards)
+	for (auto cards : _cards_inhand)
 	{
 		auto card_type = cards.first;
 
@@ -2307,8 +2349,8 @@ bool Player::CheckAllGangPai(::google::protobuf::RepeatedField<Asset::PaiOperati
 
 			if ((card_value != cards.second.at(i + 1)) || (card_value != cards.second.at(i + 2))) continue; //外面是否碰了3张
 
-			auto it = _cards.find(card_type);
-			if (it == _cards.end()) continue;
+			auto it = _cards_inhand.find(card_type);
+			if (it == _cards_inhand.end()) continue;
 			
 			auto iit = std::find(it->second.begin(), it->second.end(), card_value);
 			if (iit == it->second.end()) continue; //手里有一张才满足
@@ -2340,8 +2382,8 @@ void Player::OnGangPai(const Asset::PaiElement& pai, int64_t from_player_id)
 
 	/////////////////////////////////////////////////////////////////////////////手里满足杠牌
 
-	auto it = _cards.find(card_type);
-	if (it == _cards.end()) 
+	auto it = _cards_inhand.find(card_type);
+	if (it == _cards_inhand.end()) 
 	{
 		DEBUG_ASSERT(false);
 		return; //理论上不会如此
@@ -2414,14 +2456,14 @@ bool Player::CheckFengGangPai()
 { 
 	//if (_oper_count >= 1) return false;
 
-	return CheckFengGangPai(_cards); 
+	return CheckFengGangPai(_cards_inhand); 
 }
 
 bool Player::CheckJianGangPai() 
 { 
 	//if (_oper_count >= 1) return false;
 
-	return CheckJianGangPai(_cards); 
+	return CheckJianGangPai(_cards_inhand); 
 }
 	
 int32_t Player::CheckXuanFeng()
@@ -2471,7 +2513,7 @@ bool Player::CanTingPai(const Asset::PaiElement& pai)
 
 		if (lock.try_lock())
 		{
-			cards_inhand = _cards; //玩家手里牌
+			cards_inhand = _cards_inhand; //玩家手里牌
 			cards_outhand = _cards_outhand; //玩家墙外牌
 			minggang = _minggang; //明杠
 			angang = _angang; //暗杠
@@ -2546,7 +2588,7 @@ bool Player::CheckTingPai(std::vector<Asset::PaiElement>& pais)
 {
 	TRACE("player_id:{}", _player_id);
 
-	if (_has_ting) return false; //已经听牌，不再提示
+	if (_has_ting || _tuoguan_server) return false; //已经听牌，不再提示
 
 	auto options = _room->GetOptions();
 	
@@ -2561,7 +2603,7 @@ bool Player::CheckTingPai(std::vector<Asset::PaiElement>& pais)
 	int32_t fenggang = 0; //旋风杠，本质是暗杠
 	
 	try {
-		cards_inhand = _cards; //玩家手里牌
+		cards_inhand = _cards_inhand; //玩家手里牌
 		cards_outhand = _cards_outhand; //玩家墙外牌
 		minggang = _minggang; //明杠
 		angang = _angang; //暗杠
@@ -2669,14 +2711,14 @@ bool Player::CheckFengGangPai(std::map<int32_t/*麻将牌类型*/, std::vector<i
 
 void Player::OnGangFengPai()
 {
-	if (!CheckFengGangPai(_cards)) 
+	if (!CheckFengGangPai(_cards_inhand)) 
 	{
 		DEBUG_ASSERT(false);
 		return;
 	}
 	
-	auto it = _cards.find(Asset::CARD_TYPE_FENG);
-	if (it == _cards.end()) return;
+	auto it = _cards_inhand.find(Asset::CARD_TYPE_FENG);
+	if (it == _cards_inhand.end()) return;
 
 	try {
 		std::unique_lock<std::mutex> lock(_card_lock, std::defer_lock);
@@ -2740,14 +2782,14 @@ bool Player::CheckJianGangPai(std::map<int32_t/*麻将牌类型*/, std::vector<i
 
 void Player::OnGangJianPai()
 {
-	if (!CheckJianGangPai(_cards)) return;
+	if (!CheckJianGangPai(_cards_inhand)) return;
 	
 	try {
 		std::unique_lock<std::mutex> lock(_card_lock, std::defer_lock);
 
 		if (lock.try_lock())
 		{
-			auto it = _cards.find(Asset::CARD_TYPE_JIAN);
+			auto it = _cards_inhand.find(Asset::CARD_TYPE_JIAN);
 			for (auto card_value = 1; card_value <= 3; ++card_value) //中发白
 			{
 				auto it_if = std::find(it->second.begin(), it->second.end(), card_value);
@@ -2795,16 +2837,15 @@ int32_t Player::OnFaPai(std::vector<int32_t>& cards)
 
 		if (lock.try_lock())
 		{
-			//发牌到玩家手里
-			for (auto card_index : cards)
+			for (auto card_index : cards) //发牌到玩家手里
 			{
 				auto card = GameInstance.GetCard(card_index);
 				if (card.card_type() == 0 || card.card_value() == 0) return 2; //数据有误
 
-				_cards[card.card_type()].push_back(card.card_value()); //插入玩家手牌
+				_cards_inhand[card.card_type()].push_back(card.card_value()); //插入玩家手牌
 			}
 
-			for (auto& cards : _cards) //整理牌
+			for (auto& cards : _cards_inhand) //整理牌
 			{
 				std::sort(cards.second.begin(), cards.second.end(), [](int x, int y){ return x < y; }); //由小到大
 			}
@@ -2826,7 +2867,7 @@ int32_t Player::OnFaPai(std::vector<int32_t>& cards)
 
 	if (cards.size() > 1) //开局
 	{
-		for (auto pai : _cards)
+		for (auto pai : _cards_inhand)
 		{
 			auto pais = notify.mutable_pais()->Add();
 
@@ -2840,7 +2881,7 @@ int32_t Player::OnFaPai(std::vector<int32_t>& cards)
 		
 ////////////////////////////////////////////////////旋风杠检查
 // 缓存旋风杠给玩家
-		auto xf_card = _cards;
+		auto xf_card = _cards_inhand;
 
 		//风牌检查
 		while (CheckFengGangPai(xf_card))
@@ -2911,25 +2952,7 @@ int32_t Player::OnFaPai(std::vector<int32_t>& cards)
 		{
 			if (_oper_count_tingpai == 1) //听牌后第一次抓牌
 			{
-				Asset::RandomSaizi proto;
-				proto.set_reason_type(Asset::RandomSaizi_REASON_TYPE_REASON_TYPE_TINGPAI);
-				proto.set_player_id(_player_id);
-				proto.set_has_rand_saizi(true);
-
-				int32_t result = CommonUtil::Random(1, 6);
-				proto.mutable_random_result()->Add(result);
-
-				auto baopai = _game->GetBaoPai(result);
-				_game->SetBaoPai(baopai);
-				_game->SetRandResult(result);
-
-				proto.mutable_pai()->CopyFrom(baopai);
-
-				SendProtocol(proto); //通知玩家宝牌数据
-
-				//宝牌，只能自己看
-				proto.mutable_pai()->Clear();
-				_game->BroadCast(proto, _player_id);
+				_game->OnTingPai(shared_from_this());
 			}
 		}
 
@@ -2948,8 +2971,6 @@ int32_t Player::OnFaPai(std::vector<int32_t>& cards)
 			pai_operation.mutable_pai()->CopyFrom(card);
 
 			CmdPaiOperate(&pai_operation);
-
-			WARN("player_id:{} 已经在托管状态，进行的牌操作:{}", _player_id, pai_operation.ShortDebugString());
 		}
 	}
 	
@@ -3008,7 +3029,7 @@ void Player::SynchronizePai()
 
 	Asset::PaiNotify notify; /////玩家当前牌数据发给Client
 
-	for (auto pai : _cards)
+	for (auto pai : _cards_inhand)
 	{
 		auto pais = notify.mutable_pais()->Add();
 
@@ -3050,7 +3071,7 @@ void Player::PrintPai()
 		card_value_list << "[牌外]" << " card_type:" << pai.first << " card_value:" << outhand_list.str();
 	}
 
-	for (const auto& pai : _cards)
+	for (const auto& pai : _cards_inhand)
 	{
 		std::stringstream inhand_list;
 		for (auto card_value : pai.second) 
@@ -3064,7 +3085,7 @@ void Player::PrintPai()
 
 void Player::ClearCards() 
 {
-	_cards.clear();	//清理手里牌
+	_cards_inhand.clear();	//清理手里牌
 	_cards_outhand.clear(); //清理墙外牌
  
  	_minggang.clear(); //清理杠牌
@@ -3126,7 +3147,7 @@ int32_t Player::GetCardCount()
 {
 	int32_t total_size = 0;
 
-	for (auto cards : _cards)
+	for (auto cards : _cards_inhand)
 	{
 		total_size += cards.second.size();
 	}
@@ -3140,7 +3161,7 @@ void Player::DebugCommand()
 		{ 1, { 3, 4, 5, 8, 8, 8} },
 	}; 
 
-	_cards = {
+	_cards_inhand = {
 		{ 1, { 6, 7} },
 		{ 2, { 1, 2, 3} },
 		{ 3, { 6, 6, 6} },

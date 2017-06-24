@@ -251,7 +251,7 @@ void WorldSession::KillOutPlayer()
 		SendProtocol(message); //有可能发送失败，因为此时玩家已经断开网络连接
 
 		//玩家退出登陆
-		g_player->OnLogout(nullptr);
+		g_player->Logout(nullptr);
 		g_player.reset();
 		g_player = nullptr;
 	}
@@ -262,7 +262,7 @@ void WorldSession::OnLogout()
 	if (g_player) 
 	{
 		WARN("player_id:{}", g_player->GetID())
-		g_player->OnLogout(nullptr);
+		g_player->Logout(nullptr);
 	}
 }
 

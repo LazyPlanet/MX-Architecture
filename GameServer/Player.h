@@ -128,7 +128,8 @@ public:
 	//玩家登录
 	virtual int32_t OnLogin(pb::Message* message);
 	//玩家登出
-	virtual int32_t OnLogout(pb::Message* message);
+	virtual int32_t Logout(pb::Message* message);
+	virtual int32_t OnLogout();
 	//离开房间
 	virtual int32_t CmdLeaveRoom(pb::Message* message);
 	virtual void OnLeaveRoom();
@@ -216,7 +217,7 @@ private:
 	std::shared_ptr<Game> _game = nullptr; //当前游戏
 
 	//玩家牌数据
-	std::map<int32_t/*麻将牌类型*/, std::vector<int32_t>/*牌值*/> _cards; //玩家手里的牌
+	std::map<int32_t/*麻将牌类型*/, std::vector<int32_t>/*牌值*/> _cards_inhand; //玩家手里的牌
 	std::map<int32_t/*麻将牌类型*/, std::vector<int32_t>/*牌值*/> _cards_outhand; //玩家墙外牌
 	std::vector<Asset::PaiElement> _minggang; //明杠
 	std::vector<Asset::PaiElement> _angang; //暗杠
@@ -326,7 +327,7 @@ public:
 	void PrintPai(); //打印牌玩家当前牌
 	void SynchronizePai(); //同步玩家牌给Client
 
-	const std::map<int32_t, std::vector<int32_t>>& GetCardsInhand() { return _cards; }
+	const std::map<int32_t, std::vector<int32_t>>& GetCardsInhand() { return _cards_inhand; }
 
 	void ClearCards(); //删除玩家牌(包括手里牌、墙外牌)
 	void OnGameOver(); //游戏结束
