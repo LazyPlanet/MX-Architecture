@@ -265,7 +265,11 @@ std::shared_ptr<Room> RoomManager::CreateRoom(const Asset::Room& room)
 
 bool RoomManager::OnCreateRoom(std::shared_ptr<Room> room)
 {
-	if (_rooms.find(room->GetID()) != _rooms.end()) return false;
+	if (_rooms.find(room->GetID()) != _rooms.end()) 
+	{
+		ERROR("room:{} has exist.", room->GetID());
+		return false;
+	}
 
 	_rooms.emplace(room->GetID(), room);
 	return true;

@@ -715,7 +715,7 @@ int32_t Player::CmdEnterRoom(pb::Message* message)
 			if (result != Asset::ERROR_SUCCESS) //不允许进入
 			{
 				AlertMessage(result);
-				return result;
+				//return result;
 			}
 
 			//进入匹配
@@ -3004,7 +3004,6 @@ void Player::OnTingPai()
 		{
 			Asset::RandomSaizi proto;
 			proto.set_reason_type(Asset::RandomSaizi_REASON_TYPE_REASON_TYPE_TINGPAI);
-			proto.set_player_id(_player_id);
 			proto.mutable_random_result()->Add(_game->GetRandResult());
 
 			auto baopai = _game->GetBaoPai();

@@ -8,7 +8,7 @@ template<class T>
 class LockedQueue
 {
 private:
-    	std::mutex _lock;
+   	std::mutex _lock;
 	bool _canceled;
 	std::queue<T> _queue;
 public:    

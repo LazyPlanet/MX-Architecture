@@ -6,18 +6,26 @@ message InnerMeta {
 }
 
 /////////////////////////////////////////////////////
-//服务器之间通用协议类型
+//
+// 服务器之间通用协议类型
+//
 /////////////////////////////////////////////////////
+
 enum INNER_TYPE {
 	INNER_TYPE_BEGIN = 0; //开始协议
 	INNER_TYPE_REGISTER = 1; //注册服务器
-	INNER_TYPE_COMMAND = 2; //GMT指令
-	INNER_TYPE_OPEN_ROOM = 3; //代开房间
-	INNER_TYPE_SEND_MAIL = 4; //发送邮件
-	INNER_TYPE_SYSTEM_BROADCAST = 5; //系统广播
-	INNER_TYPE_ACTIVITY_CONTROL = 6; //活动控制
-	INNER_TYPE_COUNT = 100; //协议最大数量
+	INNER_TYPE_COMMAND = 2; //GMT指令-钻石//房卡//欢乐豆
+	INNER_TYPE_OPEN_ROOM = 3; //GMT指令-代开房间
+	INNER_TYPE_SEND_MAIL = 4; //GMT指令-发送邮件
+	INNER_TYPE_SYSTEM_BROADCAST = 5; //GMT指令-系统广播
+	INNER_TYPE_ACTIVITY_CONTROL = 6; //GMT指令-活动控制
+////游戏服务器内部通信协议定义
+	//INNER_TYPE_ = 51; //GMT指令-活动控制
 }
+
+/////////////////////////////////////////////////////
+// 通用数据定义区
+/////////////////////////////////////////////////////
 
 //操作类型
 enum COMMAND_TYPE {
@@ -40,6 +48,13 @@ enum COMMAND_ERROR_CODE {
 	COMMAND_ERROR_CODE_ASSET_NOT_FOUND = 9; //未能找到相关数据，由于策划配置造成
 }
 
+/////////////////////////////////////////////////////
+//
+// 服务器与WEB工具通信协议定义区
+//
+/////////////////////////////////////////////////////
+
+//服务器类型
 enum SERVER_TYPE {
 	SERVER_TYPE_BEGIN = 0;
 	SERVER_TYPE_GMT = 1; //GMT服务器
@@ -101,3 +116,10 @@ message ActivityControl {
 	optional bytes start_time = 4; //开始时间(示例：2017-01-20 20:00:00)
 	optional bytes stop_time = 5; //结束时间(示例：2017-02-20 20:00:00)
 }
+
+/////////////////////////////////////////////////////
+//
+// 各种服务器相互通信协议定义区
+//
+/////////////////////////////////////////////////////
+

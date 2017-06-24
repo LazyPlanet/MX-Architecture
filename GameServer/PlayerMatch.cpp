@@ -24,88 +24,55 @@ void PlayerMatch::Join(std::shared_ptr<Player> player, pb::Message* message)
 	if (!enter_room) return;
 
 	Asset::ROOM_TYPE room_type = enter_room->room().room_type();
+	if (room_type == Asset::ROOM_TYPE_FRIEND) return; //好友房不能进入匹配
 	
-	auto enter_type = enter_room->enter_type();
-		
-	switch (room_type)
+	auto& match_list = _match_list[room_type];
+
+	if (enter_room->enter_type() == Asset::EnterRoom_ENTER_TYPE_ENTER_TYPE_ENTER)
 	{
-		case Asset::ROOM_TYPE_XINSHOU:
-		{
-			if (enter_type == Asset::EnterRoom_ENTER_TYPE_ENTER_TYPE_ENTER)
-			{
-				_xinshou.emplace(player_id, player);
-			}
-			else
-			{
-				_xinshou.erase(player_id);
-			}
-		}
-		break;
-		
-		case Asset::ROOM_TYPE_GAOSHOU:
-		{
-			if (enter_type == Asset::EnterRoom_ENTER_TYPE_ENTER_TYPE_ENTER)
-			{
-				_gaoshou.emplace(player_id, player);
-			}
-			else
-			{
-				_gaoshou.erase(player_id);
-			}
-		}
-		break;
-		
-		case Asset::ROOM_TYPE_DASHI:
-		{
-			if (enter_type == Asset::EnterRoom_ENTER_TYPE_ENTER_TYPE_ENTER)
-			{
-				_dashi.emplace(player_id, player);
-			}
-			else
-			{
-				_dashi.erase(player_id);
-			}
-		}
-		break;
-
-		default:
-		{
-			/*
-			auto log = make_unique<Asset::LogMessage>();
-			log->set_player_id(player_id);
-			log->set_type(Asset::PLAYER_MATCH);
-
-			LOG(ERROR, log.get())
-			*/
-		}
-		break;
+		match_list.emplace(player_id, player);
+	}
+	else
+	{
+		match_list.erase(player_id);
 	}
 }
 	
 void PlayerMatch::DoMatch()
 {
-	auto match = [this](std::unordered_map<int64_t, std::shared_ptr<Player>>& player_list) {
+	DEBUG("Start match");
 
-		_scheduler.Schedule(std::chrono::seconds(3), [&](TaskContext task) {
+	_scheduler.Schedule(std::chrono::seconds(3), [this](TaskContext task) {
 			
-			if (player_list.size() < 4) return;
+		for (auto it = _match_list.begin(); it != _match_list.end(); ++it)
+		{
+			auto& player_list = it->second; 
+	
+			DEBUG("room_type:{} player_size:{}", it->first, it->second.size());
+		
+			if (player_list.size() < 4) continue;
 				
 			auto room_id = RoomInstance.CreateRoom();
-			if (room_id <= 0) return;
+			if (room_id <= 0) continue;
 
 			Asset::Room room;
 			room.set_room_id(room_id);
-			room.set_room_type(Asset::ROOM_TYPE_XINSHOU);
+			room.set_room_type((Asset::ROOM_TYPE)it->first);
 
 			auto local_room = RoomInstance.CreateRoom(room);
-			if (!local_room) return;
+			if (!local_room) continue;
 
 			Asset::EnterRoom enter_room;
 			enter_room.mutable_room()->CopyFrom(room);
 			enter_room.set_enter_type(Asset::EnterRoom_ENTER_TYPE_ENTER_TYPE_ENTER); //进入房间
 
+			DEBUG("预创建房间数据:{}", enter_room.ShortDebugString());
+
 			bool match_success = true;
 
+			//
+			//检查是否满足创建房间条件
+			//
 			for (auto it = player_list.begin(); it != std::next(player_list.begin(), 4); ++it)
 			{
 				auto ret = local_room->TryEnter(it->second); //玩家进入房间
@@ -118,28 +85,23 @@ void PlayerMatch::DoMatch()
 				{
 					match_success = false; //理论上不应该出现，TODO：如果该玩家一直进不去，可能会导致后面玩家都进不去，需要处理
 
-					/*
-					auto log = make_unique<Asset::LogMessage>();
-					log->set_player_id(it->second->GetID());
-					log->set_type(Asset::PLAYER_MATCH);
-					LOG(ERROR, log.get())
-					*/
+					LOG(ERROR, "player_id:{} enter room:{} failed for ret:{}", it->second->GetID(), room_id, ret);
 				}
 			}
 
+			//
+			//成功创建，删除匹配玩家
+			//
 			if (match_success)
 			{
-				for (auto it = player_list.begin(); it != std::next(player_list.begin(), 4); ++it) player_list.erase(it); //删除队列中该几位玩家
+				auto erase_end_it = player_list.begin();
+				std::advance(erase_end_it, 4);
+				for (auto it = player_list.begin(); it != erase_end_it; ) it = player_list.erase(it); //删除队列中该几位玩家
 			}
-			
-			task.Repeat(std::chrono::seconds(3)); //持续匹配
-		});
-	
-	};
-
-	match(_xinshou); //新手匹配
-	match(_gaoshou); //高手匹配
-	match(_dashi); //大师匹配
+		}
+		
+		task.Repeat(std::chrono::milliseconds(300)); //持续匹配
+	});
 }
 
 }

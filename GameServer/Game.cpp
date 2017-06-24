@@ -113,7 +113,6 @@ void Game::OnStart()
 	//开局股子广播
 	Asset::RandomSaizi saizi;
 	saizi.set_reason_type(Asset::RandomSaizi_REASON_TYPE_REASON_TYPE_START);
-	saizi.set_player_id(_banker_player_id); //庄家打股
 
 	for (int i = 0; i < 2; ++i)
 	{
@@ -1279,8 +1278,6 @@ void Game::RefreshBaopai(int64_t player_id, int32_t random_result)
 	{
 		if (!player || !player->IsTingPai()) continue;
 
-		proto.set_player_id(player->GetID()); 
-
 		player->SendProtocol(proto); 
 	}
 }
@@ -1298,7 +1295,6 @@ void Game::OnTingPai(std::shared_ptr<Player> player)
 
 		Asset::RandomSaizi proto;
 		proto.set_reason_type(Asset::RandomSaizi_REASON_TYPE_REASON_TYPE_TINGPAI);
-		proto.set_player_id(_player->GetID());
 		proto.mutable_random_result()->Add(_random_result);
 		proto.set_has_rand_saizi(true);
 
