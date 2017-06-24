@@ -208,7 +208,10 @@ void Game::OnPaiOperate(std::shared_ptr<Player> player, pb::Message* message)
 	Asset::PaiOperation* pai_operate = dynamic_cast<Asset::PaiOperation*>(message);
 	if (!pai_operate) return; 
 	
-	DEBUG("player_id:{} server saved infomation from_player_id:{} card_type:{} card_value:{} oper_type:{}, while client sentd to card_type:{} card_value:{} oper_type:{}", player->GetID(), _oper_limit.from_player_id(), _oper_limit.pai().card_type(), _oper_limit.pai().card_value(), _oper_limit.oper_type(), pai_operate->pai().card_type(), pai_operate->pai().card_value(), pai_operate->oper_type());
+	auto player_index = GetPlayerOrder(player->GetID());
+
+	DEBUG("当前操作玩家ID:{} 所在的位置索引:{} 进行的操作:{} 服务器记录的当前可操作玩家索引:{} 服务器缓存玩家操作:{}", player->GetID(), player_index, 
+			pai_operate->ShortDebugString(), _curr_player_index, _oper_limit.ShortDebugString());
 
 	if (!CanPaiOperate(player)) 
 	{
@@ -221,7 +224,7 @@ void Game::OnPaiOperate(std::shared_ptr<Player> player, pb::Message* message)
 	//如果不是放弃，才是当前玩家的操作
 	if (Asset::PAI_OPER_TYPE_GIVEUP != pai_operate->oper_type())
 	{
-		_curr_player_index = GetPlayerOrder(player->GetID()); //上面检查过，就说明当前该玩家可操作
+		_curr_player_index = player_index; //上面检查过，就说明当前该玩家可操作
 		BroadCast(message); //广播玩家操作，玩家放弃操作不能广播
 	}
 

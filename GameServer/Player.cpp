@@ -131,6 +131,7 @@ int32_t Player::OnLogout(pb::Message* message)
 		if (_game) //游戏中
 		{
 			SetTuoGuan(); //服务器托管
+			LOG(ERROR, "player_id:{} logout game when in room:{}", _player_id, _room->GetID());
 		}
 		else
 		{
@@ -2947,6 +2948,8 @@ int32_t Player::OnFaPai(std::vector<int32_t>& cards)
 			pai_operation.mutable_pai()->CopyFrom(card);
 
 			CmdPaiOperate(&pai_operation);
+
+			WARN("player_id:{} 已经在托管状态，进行的牌操作:{}", _player_id, pai_operation.ShortDebugString());
 		}
 	}
 	
@@ -2972,9 +2975,9 @@ void Player::OnTingPai()
 	_game->AddTingPlayer(_player_id);
 
 	//
-	//宝牌没有则重新进行随机
+	//宝牌没有剩余数量则重新进行随机
 	//
-	while(true)
+	while(_game->HasBaopai())
 	{
 		if (_game->GetRemainBaopai() > 0) 
 		{
@@ -3026,33 +3029,37 @@ void Player::SynchronizePai()
 
 void Player::PrintPai()
 {
+	std::stringstream card_value_list;
+
 	for (const auto& pai : _minggang)
 	{
-		LOG(INFO, "[明杠] player_id:{} card_type:{} card_value:{}", _player_id, pai.card_type(), pai.card_value());
+		card_value_list << "[明杠]"	<< " card_type:" << pai.card_type() << " card_value:" << pai.card_value();
 	}
 	
 	for (auto pai : _angang)
 	{
-		 LOG(INFO, "[暗杠] player_id:{} card_type:{} card_value:{}", _player_id, pai.card_type(), pai.card_value());
+		card_value_list << "[暗杠]" << " card_type:" << pai.card_type() << " card_value:" << pai.card_value();
 	}
 	
 	for (const auto& pai : _cards_outhand)
 	{
-		std::stringstream card_value_list;
+		std::stringstream outhand_list;
 		for (auto card_value : pai.second) 
-			card_value_list << card_value << " ";
+			outhand_list << card_value << " ";
 
-		LOG(INFO, "[牌外] player_id:{} card_type:{} card_value:{}", _player_id, pai.first, card_value_list.str());
+		card_value_list << "[牌外]" << " card_type:" << pai.first << " card_value:" << outhand_list.str();
 	}
 
 	for (const auto& pai : _cards)
 	{
-		std::stringstream card_value_list;
+		std::stringstream inhand_list;
 		for (auto card_value : pai.second) 
-			card_value_list << card_value << " ";
+			inhand_list << card_value << " ";
 
-		LOG(INFO, "[牌内] player_id:{} card_type:{} card_value:{}", _player_id, pai.first, card_value_list.str());
+		card_value_list << "[牌内]"	<< " card_type:" << pai.first << " card_value:" << inhand_list.str();
 	}
+		
+	LOG(INFO, "player_id:{} has cards:{}", _player_id, card_value_list.str());
 }
 
 void Player::ClearCards() 
