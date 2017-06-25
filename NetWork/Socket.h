@@ -14,6 +14,7 @@
 
 #include "AsyncAcceptor.h"
 #include "NetThread.h"
+#include "MXLog.h"
 
 namespace Adoter
 {
@@ -30,7 +31,7 @@ public:
 	{
 		if (_closed) 
 		{
-			spdlog::get("console")->error("{0} Line:{1} client_id:{2} has closed.", __func__, __LINE__, _socket.remote_endpoint().address().to_string().c_str());
+			ERROR("{} has closed", _socket.remote_endpoint().address().to_string().c_str());
 			return false;
 		}
 
@@ -83,7 +84,7 @@ public:
 	}
 	virtual void OnSend(const boost::system::error_code& error, std::size_t bytes_transferred)
 	{
-		std::cout << __func__ << ":bytes_transferred:" << bytes_transferred << " has error:" << error << std::endl;
+		DEBUG("bytes_transferred:{} result:{}", bytes_transferred, error.message());
 	}
 
 	bool AsyncProcessQueue()    
@@ -109,7 +110,7 @@ public:
 		unsigned short body_size = content.size();
 		if (body_size >= 4096) 
 		{
-			spdlog::get("console")->error("{0} Line:{1} has extend max size:{}.", __func__, __LINE__, body_size);
+			LOG(ERROR, "protocol has extend max size:{}", body_size);
 			return;
 		}
 		unsigned char header[2] = { 0 };
@@ -148,7 +149,7 @@ public:
 
 		if (error == boost::asio::error::would_block || error == boost::asio::error::try_again)
 		{
-			spdlog::get("console")->error("{0} Line:{1} bytes_to_send:{2} bytes_sent:{3}", __func__, __LINE__, bytes_to_send, bytes_sent);
+			ERROR("bytes_to_send:{} bytes_sent:{}", bytes_to_send, bytes_sent);
 			return AsyncProcessQueue();
 
 			_write_queue.pop();
@@ -159,7 +160,7 @@ public:
 		}
 		else if (bytes_sent == 0)
 		{
-			spdlog::get("console")->error("{0} Line:{1} bytes_to_send:{2} bytes_sent:{3}", __func__, __LINE__, bytes_to_send, bytes_sent);
+			ERROR("bytes_to_send:{} bytes_sent:{}", bytes_to_send, bytes_sent);
 
 			_write_queue.pop();
 
@@ -169,11 +170,11 @@ public:
 		}
 		else if (bytes_sent < bytes_to_send) //一般不会出现这个情况，重新发送，记个ERROR
 		{
-			spdlog::get("console")->error("{0} Line:{1} bytes_to_send:{2} bytes_sent:{3}", __func__, __LINE__, bytes_to_send, bytes_sent);
+			ERROR("bytes_to_send:{} bytes_sent:{}", bytes_to_send, bytes_sent);
 			return AsyncProcessQueue();
 		}
 
-		spdlog::get("console")->debug("{0} Line:{1} bytes_to_send:{2} bytes_sent:{3}", __func__, __LINE__, bytes_to_send, bytes_sent);
+		DEBUG("bytes_to_send:{} bytes_sent:{}", bytes_to_send, bytes_sent);
 		_write_queue.pop();
 
 		if (_closing && _write_queue.empty()) Close();
@@ -214,7 +215,7 @@ public:
 		}
 		catch (const boost::system::system_error& error)
 		{
-			std::cout << __func__ << ":Start Server IP:" << bind_ip << " PORT:" << port << " Error:" << error.what() << std::endl;
+			ERROR("Start Server IP:{}-{} bytes_sent:{}", bind_ip, port, error.what());
 			return false;
 		}
 
@@ -262,7 +263,7 @@ public:
 		}        
 		catch (const boost::system::system_error& error)        
 		{            
-			spdlog::get("console")->critical("{0} Line:{1} error:{2}", __func__, __LINE__, error.what());
+			ERROR("system error:{}", error.what());
 		}
 	}
 	

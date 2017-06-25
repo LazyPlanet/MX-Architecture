@@ -155,24 +155,6 @@ void WorldSession::InitializeHandler(const boost::system::error_code error, cons
 
 				g_player->OnEnterGame();
 			}
-			/*
-			else if (Asset::META_TYPE_SHARE_CREATE_PLAYER == meta.type_t()) //创建角色
-			{
-				Asset::CreatePlayer* create_player = dynamic_cast<Asset::CreatePlayer*>(message);
-				if (!create_player) return; 
-				
-			 	std::shared_ptr<Redis> redis = std::make_shared<Redis>();
-				int64_t player_id = redis->CreatePlayer();
-				if (player_id == 0) return; //创建失败
-
-				g_player = std::make_shared<Player>(player_id, shared_from_this());
-				g_player->Save(); //存盘，防止数据库无数据
-				
-				//返回结果
-				create_player->set_player_id(player_id);
-				g_player->SendProtocol(create_player);
-			}
-			*/
 			else if (Asset::META_TYPE_C2S_ENTER_GAME == meta.type_t()) //进入游戏
 			{
 				const Asset::EnterGame* enter_game = dynamic_cast<Asset::EnterGame*>(message);

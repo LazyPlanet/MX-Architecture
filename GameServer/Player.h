@@ -61,6 +61,7 @@ private:
 	std::shared_ptr<WorldSession> _session = nullptr;	//网络连接
 public:
 	Player();
+	Player(int64_t player_id);
 	Player(int64_t player_id, std::shared_ptr<WorldSession> session);
 	
 	const std::shared_ptr<WorldSession> GetSession() { return _session;	}

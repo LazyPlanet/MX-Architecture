@@ -128,15 +128,15 @@ public:
 		}
 		catch (const boost::system::system_error& error)
 		{
-			spdlog::get("console")->error("{0} Line:{1} error:{2}", __func__, __LINE__, error.what());
+			spdlog::get("console")->error("{} Line:{} error:{}", __func__, __LINE__, error.what());
 		}
 	}
 protected:
 	virtual void SocketAdded(std::shared_ptr<SOCKET_TYPE> socket) { 
-		spdlog::get("console")->warn("{0} Line:{1} client_id:{2} has connected.", __func__, __LINE__, socket->GetRemoteAddress());
+		spdlog::get("console")->warn("{} Line:{} client_id:{} has connected.", __func__, __LINE__, socket->GetRemoteAddress());
 	}    
 	virtual void SocketRemoved(std::shared_ptr<SOCKET_TYPE> socket) { 
-		spdlog::get("console")->warn("{0} Line:{1} client_id:{2} has closed.", __func__, __LINE__, socket->GetRemoteAddress());
+		spdlog::get("console")->warn("{} Line:{} client_id:{} has closed.", __func__, __LINE__, socket->GetRemoteAddress());
 	}
 private:
 	std::vector<std::shared_ptr<SOCKET_TYPE>> _socket_list; //连接的SOCKET列表

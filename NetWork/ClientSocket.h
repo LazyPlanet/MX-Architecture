@@ -12,6 +12,8 @@
 #include <boost/asio.hpp>
 #include <spdlog/spdlog.h>
 
+#include "MXLog.h"
+
 namespace Adoter 
 {
 
@@ -43,6 +45,8 @@ public:
 
         if (error == boost::asio::error::operation_aborted) return;
 
+		ERROR("服务器内部连接超时失败，必须处理解决，错误码:{}", error.message());
+		
         Close("connect timeout");
     }
     
@@ -51,7 +55,7 @@ public:
 		boost::system::error_code error;
 		_socket.shutdown(boost::asio::ip::tcp::socket::shutdown_both, error);
 
-		std::cout << __func__ << " Line:" << __LINE__ << " reason:" << reason << " error:" << error << std::endl;
+		ERROR("服务器内部连接超时失败，必须处理解决，错误码:{} 原因:{}", error.message(), reason);
 
 		OnClose();
     }
