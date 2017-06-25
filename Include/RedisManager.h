@@ -5,6 +5,7 @@
 #include <iostream>
 
 #include "MXLog.h" 
+#include "Config.h" 
 
 /*
  * 数据库管理
@@ -56,7 +57,13 @@ public:
 		int64_t player_id = reply->integer;
 		freeReplyObject(reply);
 		
-		LOG(TRACE, "create player_id:{} success", player_id);
+		//
+		//角色ID带有服务器ID
+		//
+		//每个服务器含有65536个角色，从游戏角度数量足够
+		//
+		int32_t server_id = ConfigInstance.GetInt("ServerID", 1); //服务器ID
+		player_id = (server_id << 16) + player_id; 
 
 		return player_id;
 	}
@@ -108,6 +115,14 @@ public:
 		
 		int64_t room_id = reply->integer;
 		freeReplyObject(reply);
+		
+		//
+		//房间ID带有服务器ID
+		//
+		//每个服务器上限65536个房间，玩家通过房间ID即可获取当前房间所在服务器
+		//
+		int32_t server_id = ConfigInstance.GetInt("ServerID", 1); //服务器ID
+		room_id = (server_id << 16) + room_id;
 		
 		return room_id;
 	}

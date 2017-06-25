@@ -9,7 +9,6 @@
 #include "Game.h"
 #include "Timer.h"
 #include "Mall.h"
-#include "Player.h"
 #include "Protocol.h"
 #include "CommonUtil.h"
 #include "RedisManager.h"

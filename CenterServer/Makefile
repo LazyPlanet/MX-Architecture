@@ -1,6 +1,6 @@
 CXX=g++
 
-INCPATH=-I. -I.. -I../Include -IItem -I../NetWork -I$(BEHAVIORPATH) -I$(PROTOBUF_DIR)/include -I$(BOOST_ROOT) -I ../ThirdParty/hiredis -I ../ThirdParty/spdlog/include
+INCPATH=-I. -I.. -I../Include -IItem -I../NetWork -I$(BEHAVIORPATH) -I$(PROTOBUF_DIR)/include -I$(BOOST_ROOT) -I ../ThirdParty/hiredis -I ../ThirdParty/spdlog/include -I ../ThirdParty/pbjson/src
 CXXFLAGS += $(OPT) -pipe -Wno-unused-local-typedefs -Wno-unused-but-set-variable -Wno-literal-suffix -Wall -std=c++11 -ggdb -fPIC -D_GNU_SOURCE -D__STDC_LIMIT_MACROS $(INCPATH)
 
 LIBRARY=$(PROTOBUF_DIR)/lib/libprotobuf.a -L$(BOOST_ROOT)/stage/lib/ ../ThirdParty/hiredis/libhiredis.so
@@ -10,7 +10,7 @@ PROTO_SRC=P_Command.proto P_Server.proto P_Asset.proto P_Protocol.proto
 PROTO_OBJ=$(patsubst %.proto,%.pb.o,$(PROTO_SRC))
 PROTO_OPTIONS=--proto_path=. --proto_path=$(PROTOBUF_DIR)/include
 
-BASE_OBJ=ServerSession.o Config.o Asset.o
+BASE_OBJ=WorldSession.o Config.o Asset.o Player.o Protocol.o pbjson.o World.o 
 
 BIN=CenterServer
 

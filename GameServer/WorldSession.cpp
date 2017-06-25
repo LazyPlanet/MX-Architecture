@@ -94,10 +94,6 @@ void WorldSession::InitializeHandler(const boost::system::error_code error, cons
 
 					int64_t player_id = redis->CreatePlayer(); //如果账号下没有角色，创建一个给Client
 
-					int32_t server_id = ConfigInstance.GetInt("ServerID", 1); //服务器ID
-
-					player_id = (server_id << 16) + player_id; //角色ID带有服务器ID，每个服务器含有65536个角色
-
 					if (player_id == 0) 
 					{
 						LOG(ERROR, "create player failed, username:{}", login->account().username());

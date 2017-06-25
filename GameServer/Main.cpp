@@ -134,12 +134,12 @@ int main(int argc, const char* argv[])
 
 		WorldSessionInstance.StartNetwork(_io_service, server_ip, server_port, thread_count);
 
-		//GMT服 Client 连接
+		//GMT服Client连接
 		boost::asio::ip::tcp::endpoint gmt_endpoint(boost::asio::ip::address::from_string("0.0.0.0"), 50003);
 		auto _gmt_client = std::make_shared<ClientSession>(_io_service, gmt_endpoint);
 		_gmt_client->AsyncConnect();
 		
-		//中心器 Client 连接
+		//中心器Client连接
 		boost::asio::ip::tcp::endpoint center_endpoint(boost::asio::ip::address::from_string("0.0.0.0"), 50004);
 		auto _center_client = std::make_shared<CenterSession>(_io_service, center_endpoint);
 		_center_client->AsyncConnect();

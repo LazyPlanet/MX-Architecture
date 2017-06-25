@@ -19,8 +19,6 @@ enum INNER_TYPE {
 	INNER_TYPE_SEND_MAIL = 4; //GMT指令-发送邮件
 	INNER_TYPE_SYSTEM_BROADCAST = 5; //GMT指令-系统广播
 	INNER_TYPE_ACTIVITY_CONTROL = 6; //GMT指令-活动控制
-////游戏服务器内部通信协议定义
-	//INNER_TYPE_ = 51; //GMT指令-活动控制
 }
 
 /////////////////////////////////////////////////////
