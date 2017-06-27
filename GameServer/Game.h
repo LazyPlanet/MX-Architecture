@@ -103,7 +103,7 @@ class GameManager
 {
 private:
 	std::unordered_map<int32_t/*牌索引*/, Asset::PaiElement/*牌值*/> _cards;
-	std::vector<shared_ptr<Game>> _games;
+	std::vector<std::shared_ptr<Game>> _games;
 public:
 	static GameManager& Instance()
 	{

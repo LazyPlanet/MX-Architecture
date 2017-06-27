@@ -19,7 +19,7 @@
 #include "Config.h"
 #include "ClientSession.h"
 #include "CenterSession.h"
-#include "WorldSession.h"
+#include "Player.h"
 
 const int const_world_sleep = 50;
 
@@ -31,7 +31,8 @@ const int const_world_sleep = 50;
 using namespace Adoter;
 
 boost::asio::io_service _io_service;
-std::shared_ptr<boost::asio::io_service::work> _io_service_work;
+std::shared_ptr<boost::asio::io_service::work> _io_service_work = nullptr;
+std::shared_ptr<CenterSession> g_center_session = nullptr;
 
 void SignalHandler(const boost::system::error_code& error, int)
 {    
@@ -80,13 +81,6 @@ void ShutdownThreadPool(std::vector<std::shared_ptr<std::thread>>& threads)
  * */
 int main(int argc, const char* argv[])
 {
-		/*	
-		Asset::Item_Potion* message = new Asset::Item_Potion();
-		message->mutable_item_common_prop()->set_quality(5);
-		Item* item = new Item(message);	
-		bool re = item->CanUse();
-		Item* item_potion = new Item_Potion(message);	
-		*/
 	if (argc != 2) return 2; //参数不对
 
 	try 
@@ -132,17 +126,21 @@ int main(int argc, const char* argv[])
 		int32_t thread_count = ConfigInstance.GetInt("ThreadCount", 5);
 		if (thread_count <= 0) return 6;
 
-		WorldSessionInstance.StartNetwork(_io_service, server_ip, server_port, thread_count);
+		//WorldSessionInstance.StartNetwork(_io_service, server_ip, server_port, thread_count);
 
-		//GMT服Client连接
+		//
+		//连接GMT服
+		//
 		boost::asio::ip::tcp::endpoint gmt_endpoint(boost::asio::ip::address::from_string("0.0.0.0"), 50003);
 		auto _gmt_client = std::make_shared<ClientSession>(_io_service, gmt_endpoint);
 		_gmt_client->AsyncConnect();
 		
-		//中心器Client连接
-		boost::asio::ip::tcp::endpoint center_endpoint(boost::asio::ip::address::from_string("0.0.0.0"), 50004);
-		auto _center_client = std::make_shared<CenterSession>(_io_service, center_endpoint);
-		_center_client->AsyncConnect();
+		//
+		//连接中心服
+		//
+		boost::asio::ip::tcp::endpoint center_endpoint(boost::asio::ip::address::from_string("0.0.0.0"), 50000);
+		Adoter::g_center_session = std::make_shared<CenterSession>(_io_service, center_endpoint);
+		Adoter::g_center_session->AsyncConnect();
 
 		//世界循环
 		WorldUpdateLoop();

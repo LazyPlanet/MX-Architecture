@@ -47,7 +47,7 @@ public:
 
 		ERROR("服务器内部连接超时失败，必须处理解决，错误码:{}", error.message());
 		
-        Close("connect timeout");
+        Close("超时");
     }
     
     void Close(const std::string& reason)

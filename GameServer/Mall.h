@@ -28,7 +28,7 @@ public:
 		return _instance;
 	}
 
-	Asset::ERROR_CODE BuySomething(shared_ptr<Player> player, int64_t global_id)
+	Asset::ERROR_CODE BuySomething(std::shared_ptr<Player> player, int64_t global_id)
 	{
 		auto message = AssetInstance.Get(global_id);
 		if (!message) return Asset::ERROR_MALL_NOT_FOUND;

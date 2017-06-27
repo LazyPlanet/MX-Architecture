@@ -10,8 +10,8 @@
 #include "P_Header.h"
 #include "Item.h"
 #include "Asset.h"
-#include "WorldSession.h"
 #include "MessageDispatcher.h"
+#include "CenterSession.h"
 
 namespace Adoter
 {
@@ -43,6 +43,9 @@ public:
 	}
 };
 
+extern const Asset::CommonConst* g_const;
+extern std::shared_ptr<CenterSession> g_center_session;
+
 class Player : public std::enable_shared_from_this<Player>
 {
 	typedef std::function<int32_t(pb::Message*)> CallBack;
@@ -58,14 +61,14 @@ private:
 
 //协议处理回调函数
 	CallBack _method;
-	std::shared_ptr<WorldSession> _session = nullptr;	//网络连接
+	//std::shared_ptr<WorldSession> _session = nullptr;	//网络连接
 public:
 	Player();
 	Player(int64_t player_id);
-	Player(int64_t player_id, std::shared_ptr<WorldSession> session);
+	//Player(int64_t player_id, std::shared_ptr<WorldSession> session);
 	
-	const std::shared_ptr<WorldSession> GetSession() { return _session;	}
-	bool Connected() { if (!_session) return false; return _session->IsConnect(); }
+	//const std::shared_ptr<WorldSession> GetSession() { return _session;	}
+	//bool Connected() { if (!_session) return false; return _session->IsConnect(); }
 
 	int32_t DefaultMethod(pb::Message*); //协议处理默认调用函数
 	
@@ -356,10 +359,15 @@ public:
 		return _instance;
 	}
 
+	void Update(int32_t diff);
+
 	void Remove(int64_t player_id);
 	void Remove(std::shared_ptr<Player> player);
+
 	void Emplace(int64_t player_id, std::shared_ptr<Player> player);
+
 	bool Has(int64_t player_id);
+
 	std::shared_ptr<Player> GetPlayer(int64_t player_id);
 	std::shared_ptr<Player> Get(int64_t player_id);
 	

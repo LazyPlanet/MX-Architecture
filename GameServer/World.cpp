@@ -6,6 +6,7 @@
 #include "PlayerName.h"
 #include "MXLog.h"
 #include "Activity.h"
+#include "CenterSession.h"
 
 namespace Adoter
 {
@@ -14,22 +15,28 @@ const Asset::CommonConst* g_const = nullptr;
 
 bool World::Load()
 {
+	//
 	//协议初始化：必须最先初始化
+	//
 	if (!ProtocolInstance.Load()) 
 	{
 		ERROR("ProtocolInstance load error.");
 		return false;
 	}
+
+	//
 	//数据初始化：必须最先初始化
+	//
 	if (!AssetInstance.Load()) 
 	{
 		ERROR("AssetInstance load error.");
 		return false;
 	}
-//////////////////////////////////////////////////
-//不依赖顺序的数据初始化
-//////////////////////////////////////////////////
-	//游戏初始化
+
+	//
+	//不依赖顺序的数据初始化
+	//
+	
 	if (!GameInstance.Load()) 
 	{
 		ERROR("GameInstance load error.");
@@ -42,17 +49,15 @@ bool World::Load()
 		return false;
 	}
 
-//////////////////////////////////////////////////
-//游戏内初始化
-//////////////////////////////////////////////////
+	//
+	//游戏内初始化
+	//
 
-	//特殊ID定义表
-	pb::Message* message = AssetInstance.Get(458753); 
+	pb::Message* message = AssetInstance.Get(458753); //特殊ID定义表
 	g_const = dynamic_cast<const Asset::CommonConst*>(message); 
 	if (!g_const) return false; //如果没有起不来
 
-	//玩家匹配
-	MatchInstance.DoMatch();
+	MatchInstance.DoMatch(); //玩家匹配
 	
 	if (!ActivityInstance.Load())
 	{
@@ -63,7 +68,9 @@ bool World::Load()
 	return true;
 }
 
+//
 //世界中所有刷新都在此(比如刷怪，拍卖行更新...)，当前周期为50MS.
+//
 void World::Update(int32_t diff)
 {
 	++_heart_count;
@@ -73,6 +80,8 @@ void World::Update(int32_t diff)
 	RoomInstance.Update(diff);
 	
 	ActivityInstance.Update(diff);
+	
+	PlayerInstance.Update(diff);
 }
 	
 

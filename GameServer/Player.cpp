@@ -20,7 +20,8 @@ namespace Adoter
 {
 
 namespace spd = spdlog;
-extern const Asset::CommonConst* g_const;
+
+std::shared_ptr<CenterSession> g_center_session = nullptr;
 
 Player::Player()
 {
@@ -50,11 +51,13 @@ Player::Player(int64_t player_id) : Player()/*委派构造函数*/
 	SetID(player_id);	
 }
 
-Player::Player(int64_t player_id, std::shared_ptr<WorldSession> session) : Player()/*委派构造函数*/
+/*
+Player::Player(int64_t player_id, std::shared_ptr<WorldSession> session) : Player()
 {
 	SetID(player_id);	
-	_session = session; //地址拷贝
+	//_session = session; //地址拷贝
 }
+*/
 
 int32_t Player::Load()
 {
@@ -185,7 +188,7 @@ int32_t Player::OnLogout()
 	
 	Save();	//存档数据库
 
-	WorldSessionInstance.Erase(_player_id); //网络会话数据
+	//WorldSessionInstance.Erase(_player_id); //网络会话数据
 	PlayerInstance.Remove(_player_id); //玩家管理
 
 	return 0;
@@ -324,7 +327,7 @@ int32_t Player::OnEnterGame()
 
 	PLAYER(_stuff);	//BI日志
 
-	WorldSessionInstance.Emplace(_player_id, _session); //网络会话数据
+	//WorldSessionInstance.Emplace(_player_id, _session); //网络会话数据
 	PlayerInstance.Emplace(_player_id, shared_from_this()); //玩家管理
 
 	//
@@ -776,21 +779,26 @@ void Player::SendProtocol(const pb::Message* message)
 
 void Player::SendProtocol(const pb::Message& message)
 {
-	if (!Connected()) { 
-		DEBUG_ASSERT(false); 
-		return;
-	}
+	if (!g_center_session) return; //尚未建立网络连接
 
-	GetSession()->SendProtocol(message);
-
-	//调试
 	const pb::FieldDescriptor* field = message.GetDescriptor()->FindFieldByName("type_t");
 	if (!field) return;
+	
+	int type_t = field->default_value_enum()->number();
+	if (!Asset::INNER_TYPE_IsValid(type_t)) return;	//如果不合法，不检查会宕线
+	
+	Asset::Meta meta;
+	meta.set_type_t((Asset::META_TYPE)type_t);
+	meta.set_stuff(message.SerializeAsString());
+	meta.set_player_id(_player_id);
 
-	const pb::EnumValueDescriptor* enum_value = message.GetReflection()->GetEnum(message, field);
-	if (!enum_value) return;
+	std::string content = meta.SerializeAsString();
 
-	TRACE("send protocol to player_id:{} protocol_name:{} content:{}", _player_id, enum_value->name().c_str(), message.ShortDebugString().c_str());
+	if (content.empty()) return;
+
+	g_center_session->AsyncSendMessage(content);
+
+	TRACE("send protocol to player_id:{} content:{}", _player_id, message.ShortDebugString().c_str());
 }
 
 void Player::Send2Roomers(pb::Message& message, int64_t exclude_player_id) 
@@ -3179,20 +3187,23 @@ void Player::DebugCommand()
 	}
 }
 
-/////////////////////////////////////////////////////
-//玩家通用管理类
-/////////////////////////////////////////////////////
+void PlayerManager::Update(int32_t diff)
+{
+	for (auto it = _players.begin(); it != _players.end(); ++it)
+	{
+		it->second->Update();
+	}
+}
+
 void PlayerManager::Emplace(int64_t player_id, std::shared_ptr<Player> player)
 {
-	//std::lock_guard<std::mutex> lock(_mutex);
 	if (!player) return;
-	if (_players.find(player_id) == _players.end())
-		_players.emplace(player_id, player);
+
+	if (_players.find(player_id) == _players.end()) _players.emplace(player_id, player);
 }
 
 std::shared_ptr<Player> PlayerManager::GetPlayer(int64_t player_id)
 {
-	//std::lock_guard<std::mutex> lock(_mutex);
 	return _players[player_id];
 }
 
@@ -3204,6 +3215,7 @@ std::shared_ptr<Player> PlayerManager::Get(int64_t player_id)
 bool PlayerManager::Has(int64_t player_id)
 {
 	auto player = GetPlayer(player_id);
+
 	return player != nullptr;
 }
 
@@ -3215,6 +3227,7 @@ void PlayerManager::Remove(int64_t player_id)
 void PlayerManager::Remove(std::shared_ptr<Player> player)
 {
 	if (!player) return;
+
 	_players.erase(player->GetID());
 }
 	

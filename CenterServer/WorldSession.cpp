@@ -40,7 +40,7 @@ void WorldSession::InitializeHandler(const boost::system::error_code error, cons
 			pb::Message* msg = ProtocolInstance.GetMessage(meta.type_t());	
 			if (!msg) 
 			{
-				TRACE("Could not found message of type:{}", meta.type_t());
+				ERROR("Could not found message of type:{}", meta.type_t());
 				return;		//非法协议
 			}
 

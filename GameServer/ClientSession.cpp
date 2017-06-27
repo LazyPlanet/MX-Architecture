@@ -52,7 +52,7 @@ bool ClientSession::InnerProcess(const Asset::InnerMeta& meta)
 	{
 		case Asset::INNER_TYPE_REGISTER: //注册服务器成功
 		{
-			TRACE("Register gameserver to gmtserver success.");
+			TRACE("逻辑服务器注册到GMT服务器成功.");
 		}
 		break;
 

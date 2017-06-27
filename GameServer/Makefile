@@ -10,7 +10,7 @@ PROTO_SRC=P_Asset.proto P_Protocol.proto P_Command.proto P_Server.proto
 PROTO_OBJ=$(patsubst %.proto,%.pb.o,$(PROTO_SRC))
 PROTO_OPTIONS=--proto_path=. --proto_path=$(PROTOBUF_DIR)/include
 
-BASE_OBJ=WorldSession.o MessageDispatcher.o Protocol.o Player.o World.o Asset.o Room.o Game.o Config.o TaskScheduler.o PlayerMatch.o pbjson.o ClientSession.o CenterSession.o
+BASE_OBJ=MessageDispatcher.o Protocol.o Player.o World.o Asset.o Room.o Game.o Config.o TaskScheduler.o PlayerMatch.o pbjson.o ClientSession.o CenterSession.o
 SUB_OBJ=Item/*.o
 
 BIN=GameServer
