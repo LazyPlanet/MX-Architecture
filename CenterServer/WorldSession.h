@@ -37,10 +37,13 @@ public:
 
 	void InitializeHandler(const boost::system::error_code error, const std::size_t bytes_transferred);
 
+	void SendMeta(const Asset::Meta& meta);
 	void SendProtocol(const pb::Message& message);
 	void SendProtocol(const pb::Message* message);
+
 	void KillOutPlayer();
 	void OnLogout();
+
 	boost::asio::ip::tcp::endpoint GetRemotePoint() { return _remote_endpoint; }
 	std::string GetRemoteAddress() {return _remote_endpoint.address().to_string(); }
 
@@ -84,10 +87,10 @@ public:
 
 	void AddPlayer(int64_t player_id, std::shared_ptr<WorldSession> session) { _client_list.emplace(player_id, session); }
 	void RemovePlayer(int64_t player_id) { _client_list.erase(player_id); }
-	std::shared_ptr<WorldSession> GetPlayer(int64_t player_id) { return _client_list[player_id]; }
+	std::shared_ptr<WorldSession> GetPlayerSession(int64_t player_id) { return _client_list[player_id]; }
 
 	void AddServer(int64_t server_id, std::shared_ptr<WorldSession> session) {	_server_list.emplace(server_id, session);}	
-	std::shared_ptr<WorldSession> GetServer(int64_t server_id) { return _server_list[server_id]; }
+	std::shared_ptr<WorldSession> GetServerSession(int64_t server_id) { return _server_list[server_id]; }
 	std::shared_ptr<WorldSession> RandomServer(); //随机选择游戏逻辑服务器
 
 	void SetPlayerSession(int64_t player_id, std::shared_ptr<WorldSession> session) { _player_gs[player_id] = session; }

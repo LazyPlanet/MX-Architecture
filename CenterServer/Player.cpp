@@ -293,10 +293,7 @@ void Player::SendProtocol(const pb::Message* message)
 
 void Player::SendProtocol(const pb::Message& message)
 {
-	if (!Connected()) { 
-		DEBUG_ASSERT(false); 
-		return;
-	}
+	if (!Connected()) return;
 
 	GetSession()->SendProtocol(message);
 
@@ -308,6 +305,11 @@ void Player::SendProtocol(const pb::Message& message)
 	if (!enum_value) return;
 
 	TRACE("send protocol to player_id:{} protocol_name:{} content:{}", _player_id, enum_value->name().c_str(), message.ShortDebugString().c_str());
+}
+	
+void Player::SendMeta(const Asset::Meta& meta)
+{
+	GetSession()->SendMeta(meta);
 }
 	
 bool Player::SendProtocol2GameServer(const pb::Message& message)

@@ -82,6 +82,7 @@ public:
 	virtual bool HandleProtocol(int32_t type_t, pb::Message* message);
 	virtual void SendProtocol(const pb::Message& message);
 	virtual void SendProtocol(const pb::Message* message);
+	virtual void SendMeta(const Asset::Meta& meta);
 	
 	virtual bool SendProtocol2GameServer(const pb::Message& message);
 	virtual bool SendProtocol2GameServer(const pb::Message* message);

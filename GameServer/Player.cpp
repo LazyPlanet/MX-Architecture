@@ -186,7 +186,7 @@ int32_t Player::OnLogout()
 	Save();	//存档数据库
 
 	WorldSessionInstance.Erase(_player_id); //网络会话数据
-	PlayerInstance.Erase(_player_id); //玩家管理
+	PlayerInstance.Remove(_player_id); //玩家管理
 
 	return 0;
 }
@@ -3207,15 +3207,13 @@ bool PlayerManager::Has(int64_t player_id)
 	return player != nullptr;
 }
 
-void PlayerManager::Erase(int64_t player_id)
+void PlayerManager::Remove(int64_t player_id)
 {
-	//std::lock_guard<std::mutex> lock(_mutex);
 	_players.erase(player_id);
 }
 
-void PlayerManager::Erase(std::shared_ptr<Player> player)
+void PlayerManager::Remove(std::shared_ptr<Player> player)
 {
-	//std::lock_guard<std::mutex> lock(_mutex);
 	if (!player) return;
 	_players.erase(player->GetID());
 }

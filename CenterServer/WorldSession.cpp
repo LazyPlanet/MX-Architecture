@@ -170,7 +170,7 @@ void WorldSession::InitializeHandler(const boost::system::error_code error, cons
 					//
 					// 对于已经进入游戏内操作的玩家进行托管
 					//
-					auto session = WorldSessionInstance.GetPlayer(g_player->GetID());
+					auto session = WorldSessionInstance.GetPlayerSession(g_player->GetID());
 					if (session) //已经在线
 					{
 						session->KillOutPlayer();
@@ -205,7 +205,7 @@ void WorldSession::InitializeHandler(const boost::system::error_code error, cons
 					auto room_id = enter_room->room().room_id();
 					auto server_id = room_id >> 16;
 
-					auto game_server = WorldSessionInstance.GetServer(server_id);
+					auto game_server = WorldSessionInstance.GetServerSession(server_id);
 					if (!game_server) return;
 
 					WorldSessionInstance.SetPlayerSession(g_player->GetID(), game_server);
@@ -307,11 +307,16 @@ void WorldSession::SendProtocol(const pb::Message& message)
 
 	std::string content = meta.SerializeAsString();
 
-	if (content.empty()) 
-	{
-		ERROR("player_id:{} send nothing.");
-		return;
-	}
+	if (content.empty()) return;
+
+	EnterQueue(std::move(content));
+}
+
+void WorldSession::SendMeta(const Asset::Meta& meta)
+{
+	std::string content = meta.SerializeAsString();
+
+	if (content.empty()) return;
 
 	EnterQueue(std::move(content));
 }

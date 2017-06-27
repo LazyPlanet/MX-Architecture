@@ -28,7 +28,11 @@ bool WorldSession::OnInnerProcess(const Asset::Meta& meta)
 		
 		default:
 		{
-			WARN("Receive message:{} from server has no process type:{}", meta.ShortDebugString(), meta.type_t());
+			WARN("接收逻辑服务器协议:{} 类型:{} 直接进行转发", meta.ShortDebugString(), meta.type_t());
+			auto player_session = WorldSessionInstance.GetPlayerSession(meta.player_id());
+
+			if (!player_session) return false;
+			player_session->SendMeta(meta);
 		}
 		break;
 	}
