@@ -50,11 +50,13 @@ public:
 				}
 				break;
 				
+				/*
 				case Asset::CommonReward_REWARD_TYPE_REWARD_TYPE_ITEM:
 				{
 					player->GainItem(reward.item_id(), count);
 				}
 				break;
+				*/
 
 				default:
 				{

@@ -9,6 +9,7 @@
 #include "Timer.h"
 #include "P_Header.h"
 #include "Asset.h"
+#include "Player.h"
 
 namespace Adoter
 {

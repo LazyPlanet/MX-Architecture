@@ -55,6 +55,7 @@ public:
 			}
 			break;
 			
+			/*
 			case Asset::Mall_GOODS_TYPE_GOODS_TYPE_NORMAL_ITEM: //购买普通商品
 			{
 				int32_t diamond = mall->diamond();
@@ -78,7 +79,8 @@ public:
 				player->GainItem(mall->item_id(), mall->count()); //获取物品
 			}
 			break;
-			
+			*/
+
 			default:
 			{
 				return Asset::ERROR_CLIENT_DATA; //Client数据错误
