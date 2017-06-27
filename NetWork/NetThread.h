@@ -119,8 +119,8 @@ public:
 				if (!socket->Update())
 				{
 					if (socket->IsOpen()) socket->Close();
-					this->SocketRemoved(socket);
-					--this->_connections;
+					SocketRemoved(socket);
+					--_connections;
 					return true;
 				}
 				return false;
@@ -133,10 +133,10 @@ public:
 	}
 protected:
 	virtual void SocketAdded(std::shared_ptr<SOCKET_TYPE> socket) { 
-		spdlog::get("console")->warn("{} Line:{} client_id:{} has connected.", __func__, __LINE__, socket->GetRemoteAddress());
+		if (!socket) return;
 	}    
 	virtual void SocketRemoved(std::shared_ptr<SOCKET_TYPE> socket) { 
-		spdlog::get("console")->warn("{} Line:{} client_id:{} has closed.", __func__, __LINE__, socket->GetRemoteAddress());
+		if (!socket) return;
 	}
 private:
 	std::vector<std::shared_ptr<SOCKET_TYPE>> _socket_list; //连接的SOCKET列表
