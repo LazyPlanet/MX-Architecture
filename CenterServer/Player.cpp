@@ -407,7 +407,6 @@ bool Player::HandleProtocol(int32_t type_t, pb::Message* message)
 	if (it == _callbacks.end()) 
 	{
 		if (!_gs_session) _gs_session = WorldSessionInstance.RandomServer();
-		WorldSessionInstance.SetPlayerSession(_player_id, _gs_session);
 
 		if (!_gs_session) 
 		{
@@ -415,6 +414,7 @@ bool Player::HandleProtocol(int32_t type_t, pb::Message* message)
 			return false;
 		}
 		
+		WorldSessionInstance.SetPlayerSession(_player_id, _gs_session);
 		SendProtocol2GameServer(message); //转发给游戏逻辑服务器进行处理
 		return true;
 	}

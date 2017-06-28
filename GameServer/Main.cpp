@@ -32,7 +32,6 @@ using namespace Adoter;
 
 boost::asio::io_service _io_service;
 std::shared_ptr<boost::asio::io_service::work> _io_service_work = nullptr;
-std::shared_ptr<CenterSession> g_center_session = nullptr;
 
 void SignalHandler(const boost::system::error_code& error, int)
 {    
@@ -87,19 +86,25 @@ int main(int argc, const char* argv[])
 	{
 		std::srand(std::time(0)); //random_shuffle不是真随机：http://stackoverflow.com/questions/13459953/random-shuffle-not-really-random
 
+		//
 		//系统配置读取
+		//
 		if (!ConfigInstance.LoadInitial(argv[1]))
 		{
 			std::cout << "Load file error, please check the file, name:" << argv[1] << std::endl;; //控制台的日志可以直接用该函数
 			return 3;
 		}
 	
+		//
 		//日志系统配置
+		//
 		MXLogInstance.Load();
 	
-/////////////////////////////////////////////////////游戏逻辑初始化
-
-		//世界初始化，涵盖所有....
+		//
+		//世界初始化，涵盖所有
+		//
+		//游戏内相关逻辑均在此初始化
+		//
 		if (!WorldInstance.Load()) return 1;
 
 		//网络初始化
@@ -131,16 +136,16 @@ int main(int argc, const char* argv[])
 		//
 		//连接GMT服
 		//
-		boost::asio::ip::tcp::endpoint gmt_endpoint(boost::asio::ip::address::from_string("0.0.0.0"), 50003);
-		auto _gmt_client = std::make_shared<ClientSession>(_io_service, gmt_endpoint);
-		_gmt_client->AsyncConnect();
+		//boost::asio::ip::tcp::endpoint gmt_endpoint(boost::asio::ip::address::from_string("0.0.0.0"), 50003);
+		//auto _gmt_client = std::make_shared<ClientSession>(_io_service, gmt_endpoint);
+		//_gmt_client->AsyncConnect();
 		
 		//
 		//连接中心服
 		//
 		boost::asio::ip::tcp::endpoint center_endpoint(boost::asio::ip::address::from_string("0.0.0.0"), 50000);
-		Adoter::g_center_session = std::make_shared<CenterSession>(_io_service, center_endpoint);
-		Adoter::g_center_session->AsyncConnect();
+		g_center_session = std::make_shared<CenterSession>(_io_service, center_endpoint);
+		g_center_session->AsyncConnect();
 
 		//世界循环
 		WorldUpdateLoop();

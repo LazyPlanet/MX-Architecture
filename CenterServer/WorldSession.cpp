@@ -52,6 +52,8 @@ void WorldSession::InitializeHandler(const boost::system::error_code error, cons
 				DEBUG_ASSERT(false);
 				return;		//非法协议
 			}
+
+			DEBUG("中心服务器接收到协议:{} 内容:{}", meta.type_t(), message->ShortDebugString());
 			
 			if (Asset::META_TYPE_C2S_COUNT <= meta.type_t()) 
 			{

@@ -785,7 +785,7 @@ void Player::SendProtocol(const pb::Message& message)
 	if (!field) return;
 	
 	int type_t = field->default_value_enum()->number();
-	if (!Asset::INNER_TYPE_IsValid(type_t)) return;	//如果不合法，不检查会宕线
+	if (!Asset::META_TYPE_IsValid(type_t)) return;	//如果不合法，不检查会宕线
 	
 	Asset::Meta meta;
 	meta.set_type_t((Asset::META_TYPE)type_t);

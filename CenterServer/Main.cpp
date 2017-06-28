@@ -6,6 +6,7 @@
 #include <boost/asio.hpp>
 #include <boost/bind.hpp>
 
+#include "World.h"
 #include "Timer.h"
 #include "Config.h"
 #include "Asset.h"
@@ -47,22 +48,26 @@ int main(int argc, const char* argv[])
 
 	try 
 	{
+		//
 		//系统配置读取
+		//
 		if (!ConfigInstance.LoadInitial(argv[1]))
 		{
 			printf("Load %s error, please check the file.", argv[1]); //控制台的日志可以直接用该函数
 			return 3;
 		}
 		
+		//
 		//日志系统配置
+		//
 		MXLogInstance.Load();
 
-		//数据初始化
-		if (!AssetInstance.Load())
-		{
-			printf("Load asset error, please check the file."); //控制台的日志可以直接用该函数
-			return 4;
-		}
+		//
+		//世界初始化，涵盖所有
+		//
+		//游戏内相关逻辑均在此初始化
+		//
+		if (!WorldInstance.Load()) return 1;
 	
 		//网络初始化
 		_io_service_work = std::make_shared<boost::asio::io_service::work>(_io_service);
@@ -83,7 +88,7 @@ int main(int argc, const char* argv[])
 		std::string server_ip = ConfigInstance.GetString("ServerIP", "0.0.0.0");
 		if (server_ip.empty()) return 4;
 		
-		int32_t server_port = ConfigInstance.GetInt("ServerPort", 50003);
+		int32_t server_port = ConfigInstance.GetInt("ServerPort", 50000);
 		if (server_port <= 0 || server_port > 0xffff) return 5;
 		
 		int32_t thread_count = ConfigInstance.GetInt("ThreadCount", 5);
