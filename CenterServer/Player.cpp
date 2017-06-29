@@ -309,11 +309,15 @@ void Player::SendProtocol(const pb::Message& message)
 	
 void Player::SendMeta(const Asset::Meta& meta)
 {
+	if (!Connected()) return;
+
 	GetSession()->SendMeta(meta);
 }
 	
 bool Player::SendProtocol2GameServer(const pb::Message& message)
 {
+	if (!_gs_session) return false;
+
 	const pb::FieldDescriptor* field = message.GetDescriptor()->FindFieldByName("type_t");
 	if (!field) return false;
 	
@@ -325,17 +329,7 @@ bool Player::SendProtocol2GameServer(const pb::Message& message)
 	meta.set_stuff(message.SerializeAsString());
 	meta.set_player_id(_player_id); 
 
-	std::string content = meta.SerializeAsString();
-
-	if (content.empty()) 
-	{
-		ERROR("player_id:{} send nothing.");
-		return false;
-	}
-
-	if (!_gs_session) return false;
-
-	_gs_session->SendProtocol(message); 
+	_gs_session->SendMeta(meta); 
 
 	return true;
 }
@@ -344,7 +338,7 @@ bool Player::SendProtocol2GameServer(const pb::Message* message)
 {
 	if (!_gs_session || !message) return false;
 
-	_gs_session->SendProtocol(message); 
+	SendProtocol2GameServer(*message); 
 	
 	return true;
 }

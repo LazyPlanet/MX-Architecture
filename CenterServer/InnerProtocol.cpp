@@ -10,7 +10,7 @@ namespace spd = spdlog;
 
 bool WorldSession::OnInnerProcess(const Asset::Meta& meta)
 {
-	DEBUG("接收逻辑服务器数据:{}", meta.type_t());
+	//DEBUG("接收逻辑服务器数据:{}", meta.type_t());
 
 	switch (meta.type_t())
 	{
@@ -19,8 +19,6 @@ bool WorldSession::OnInnerProcess(const Asset::Meta& meta)
 			Asset::RegisterServer message;
 			auto result = message.ParseFromString(meta.stuff());
 			if (!result) return false;
-
-			DEBUG("接收逻辑服务器注册:{}", message.global_id());
 
 			SetID(message.global_id());
 			SetRoleType(Asset::ROLE_TYPE_GAME_SERVER);
@@ -32,7 +30,7 @@ bool WorldSession::OnInnerProcess(const Asset::Meta& meta)
 		
 		default:
 		{
-			WARN("接收逻辑服务器协议:{} 类型:{} 直接进行转发", meta.ShortDebugString(), meta.type_t());
+			WARN("接收逻辑服务器协议:{}, 类型:{}, 直接进行转发", meta.ShortDebugString(), meta.type_t());
 			auto player_session = WorldSessionInstance.GetPlayerSession(meta.player_id());
 
 			if (!player_session) return false;
