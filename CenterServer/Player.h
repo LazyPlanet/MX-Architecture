@@ -22,7 +22,6 @@ class Player : public std::enable_shared_from_this<Player>
 private:
 	int64_t _player_id = 0; //玩家ID
 	Asset::Player _stuff; //玩家数据，存盘数据
-	Asset::PlayerProp _player_prop; //玩家临时状态，不进行存盘
 
 	int64_t _heart_count = 0; //心跳次数
 	int32_t _hi_time = 0; 

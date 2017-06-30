@@ -53,7 +53,16 @@ void WorldSession::InitializeHandler(const boost::system::error_code error, cons
 				return;		//非法协议
 			}
 
-			DEBUG("中心服务器接收到协议:{} 内容:{}", meta.type_t(), message->ShortDebugString());
+			DEBUG("中心服务器接收玩家:{} 协议:{} 内容:{}", meta.player_id(), meta.type_t(), message->ShortDebugString());
+
+			//
+			// C2S协议可能存在两种情况：
+			//
+			// 1.Client发送上来的数据;
+			//
+			// 2.转发到游戏逻辑服务器，经过逻辑服务器处理的结果返回;
+			//
+			//
 			
 			if (Asset::META_TYPE_C2S_COUNT <= meta.type_t()) 
 			{
@@ -61,14 +70,28 @@ void WorldSession::InitializeHandler(const boost::system::error_code error, cons
 				//游戏服务器内部协议处理
 				//
 				OnInnerProcess(meta); //内部处理
+
+				DEBUG("1.中心服务器接收游戏服务器内部协议");
 			}
-			else
+			else if (meta.player_id() > 0)
+			{
+				auto player = PlayerInstance.Get(meta.player_id());
+				if (!player) return;
+				player->SendProtocol(message);
+
+				DEBUG("2.中心服务器接收游戏服务器玩家[{}]协议", meta.player_id());
+			}
+			else //if (meta.player_id() == 0)
 			{
 				//
 				//游戏逻辑处理流程
 				//
+				//特别注意：不能传入player_id在Meta数据当中
+				//
 				//来自Client协议均在此处理，逻辑程序员请勿在此后添加代码
 				//
+				
+				DEBUG("3.中心服务器接收来自Client的协议");
 				
 				if (Asset::META_TYPE_C2S_LOGIN == meta.type_t()) //账号登陆
 				{
@@ -210,9 +233,10 @@ void WorldSession::InitializeHandler(const boost::system::error_code error, cons
 					auto game_server = WorldSessionInstance.GetServerSession(server_id);
 					if (!game_server) return;
 
-					WorldSessionInstance.SetPlayerSession(g_player->GetID(), game_server);
-
+					g_player->SetGameServer(game_server);
 					g_player->SendProtocol2GameServer(enter_room); //转发
+
+					WorldSessionInstance.SetPlayerSession(g_player->GetID(), game_server);
 				}
 				else
 				{

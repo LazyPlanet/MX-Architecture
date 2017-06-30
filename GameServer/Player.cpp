@@ -373,7 +373,7 @@ int32_t Player::CmdCreateRoom(pb::Message* message)
 	
 	SendProtocol(create_room); 
 	
-	OnCreateRoom(create_room); //创建房间成功，直接将玩家设置到该房间
+	OnCreateRoom(create_room); //创建房间成功，直接将玩家设置到该房间，TODO:感觉设计有问题，客户端应该走通用进入房间逻辑
 
 	LOG(ACTION, "player_id:{} create room_id:{}", _player_id, room_id);
 
@@ -822,7 +822,7 @@ void Player::Send2Roomers(pb::Message* message, int64_t exclude_player_id)
 }
 
 //
-//玩家心跳周期为10MS
+//玩家心跳周期为50MS
 //
 //如果该函数返回FALSE则表示掉线
 //
@@ -3189,8 +3189,20 @@ void Player::DebugCommand()
 
 void PlayerManager::Update(int32_t diff)
 {
-	for (auto it = _players.begin(); it != _players.end(); ++it)
+	WARN("当前玩家数量:{}", _players.size());
+
+	for (auto it = _players.begin(); it != _players.end();)
 	{
+		if (!it->second) 
+		{
+			it = _players.erase(it);
+			continue;
+		}
+		else
+		{
+			++it;
+		}
+
 		it->second->Update();
 	}
 }

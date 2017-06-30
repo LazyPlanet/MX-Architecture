@@ -160,7 +160,7 @@ public:
 		}
 		else if (bytes_sent == 0)
 		{
-			ERROR("bytes_to_send:{} bytes_sent:{}", bytes_to_send, bytes_sent);
+			ERROR("bytes_to_send:{} bytes_sent:{} error:{}", bytes_to_send, bytes_sent, error.message());
 
 			_write_queue.pop();
 
