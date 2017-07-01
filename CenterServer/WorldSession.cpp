@@ -71,7 +71,7 @@ void WorldSession::InitializeHandler(const boost::system::error_code error, cons
 				//
 				OnInnerProcess(meta); //内部处理
 
-				DEBUG("1.中心服务器接收游戏服务器内部协议");
+				DEBUG("1.中心服务器接收游戏服务器内部协议:{}", meta.ShortDebugString());
 			}
 			else if (meta.player_id() > 0)
 			{
@@ -79,7 +79,7 @@ void WorldSession::InitializeHandler(const boost::system::error_code error, cons
 				if (!player) return;
 				player->SendProtocol(message);
 
-				DEBUG("2.中心服务器接收游戏服务器玩家[{}]协议", meta.player_id());
+				DEBUG("2.中心服务器接收游戏服务器玩家[{}]协议:{}", meta.player_id(), meta.ShortDebugString());
 			}
 			else //if (meta.player_id() == 0)
 			{
@@ -91,7 +91,7 @@ void WorldSession::InitializeHandler(const boost::system::error_code error, cons
 				//来自Client协议均在此处理，逻辑程序员请勿在此后添加代码
 				//
 				
-				DEBUG("3.中心服务器接收来自Client的协议");
+				DEBUG("3.中心服务器接收来自Client的协议:{}", meta.ShortDebugString());
 				
 				if (Asset::META_TYPE_C2S_LOGIN == meta.type_t()) //账号登陆
 				{

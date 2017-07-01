@@ -2,6 +2,7 @@
 
 #include "WorldSession.h"
 #include "MXLog.h"
+#include "Player.h"
 
 namespace Adoter
 {
@@ -31,10 +32,14 @@ bool WorldSession::OnInnerProcess(const Asset::Meta& meta)
 		default:
 		{
 			WARN("接收逻辑服务器协议:{}, 类型:{}, 直接进行转发", meta.ShortDebugString(), meta.type_t());
-			auto player_session = WorldSessionInstance.GetPlayerSession(meta.player_id());
+			auto player = PlayerInstance.Get(meta.player_id());
 
-			if (!player_session) return false;
-			player_session->SendMeta(meta);
+			if (!player) 
+			{
+				ERROR("未能找到玩家:{}", meta.player_id());
+				return false;
+			}
+			player->SendMeta(meta);
 		}
 		break;
 	}

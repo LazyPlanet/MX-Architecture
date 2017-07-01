@@ -558,7 +558,15 @@ void Game::OnPaiOperate(std::shared_ptr<Player> player, pb::Message* message)
 				{
 					auto pai_perator = alert.mutable_pais()->Add();
 					pai_perator->mutable_oper_list()->Add((Asset::PAI_OPER_TYPE)xf_gang);
-					player->SendProtocol(alert); //提示Client
+					//player->SendProtocol(alert); //提示Client
+				}
+				if (alert.pais().size()) 
+				{
+					player_next->SendProtocol(alert); //提示Client
+
+					_oper_limit.set_player_id(player_next->GetID()); //当前可操作玩家
+					_oper_limit.set_from_player_id((player_next->GetID())); //当前牌来自玩家，自己抓牌，所以是自己
+					_oper_limit.set_time_out(CommonTimerInstance.GetTime() + 30); //8秒后超时
 				}
 				else
 				{

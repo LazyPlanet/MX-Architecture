@@ -159,12 +159,14 @@ void Room::GameOver(int64_t player_id)
 void Room::BroadCast(pb::Message* message, int64_t exclude_player_id)
 {
 	if (!message) return;
+			
+	DEBUG("房间内广播协议:{}", message->ShortDebugString());
 
 	for (auto player : _players)
 	{
 		if (!player) 
 		{
-			//DEBUG_ASSERT(false);
+			ERROR("玩家已经掉线");
 			continue; //可能已经释放
 		}
 

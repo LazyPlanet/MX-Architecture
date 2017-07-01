@@ -44,7 +44,7 @@ public:
     
     virtual void OnReadSome(const boost::system::error_code& error, std::size_t bytes_transferred);
 
-	void AsyncSendMessage(std::string message);
+	virtual void AsyncSendMessage(std::string message);
     virtual void OnWriteSome(const boost::system::error_code& error, std::size_t bytes_transferred);  
 private:
 	std::deque<std::string> _send_list;

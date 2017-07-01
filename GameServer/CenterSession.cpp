@@ -51,8 +51,10 @@ bool CenterSession::InnerProcess(const Asset::Meta& meta)
 			auto result = message.ParseFromString(meta.stuff());
 			if (!result) return false;
 
-			auto player = PlayerInstance.Get(meta.player_id());
+			//auto player = PlayerInstance.Get(meta.player_id());
+			auto player = _players[meta.player_id()];
 			if (!player) player = std::make_shared<Player>(meta.player_id());
+			_players[meta.player_id()] = player;
 
 			if (player->OnLogin()) 
 			{
@@ -134,32 +136,34 @@ bool CenterSession::StartSend()
 {
 	bool started = false;
 
-	while (IsConnected())
-	{
-		if (_send_list.size())
-		{
-			auto& message = _send_list.front();
-			AsyncWriteSome(message.c_str(), message.size());
-			_send_list.pop_front();
+	_mutex.lock();
+	std::deque<std::string> send_list;
+	send_list.swap(_send_list);
+	_mutex.unlock();
 
-			started = true;
-		}
-		else
-		{
-			break;
-		}
+	while (IsConnected() && send_list.size())
+	{
+		const auto& message = send_list.front();
+		AsyncWriteSome(message.c_str(), message.size());
+		send_list.pop_front();
+
+		started = true;
 	}
 	return started;
 }
 
+/*
 void CenterSession::AsyncSendMessage(std::string message)
 {
 	if (IsClosed()) return;
 
+	_mutex.lock();
 	_send_list.push_back(message);
+	_mutex.unlock();
 
 	StartSend();
 }
+*/
 
 void CenterSession::OnWriteSome(const boost::system::error_code& error, std::size_t bytes_transferred)
 {
@@ -220,8 +224,10 @@ void CenterSession::OnReadSome(const boost::system::error_code& error, std::size
 	AsynyReadSome(); //继续下一次数据接收
 }
 	
-void CenterSession::Update()
+bool CenterSession::Update()
 {
+	ClientSocket::Update();
+
 	for (auto it = _players.begin(); it != _players.end(); ++it)
 	{
 		/*
@@ -236,8 +242,9 @@ void CenterSession::Update()
 			++it;
 		}
 		*/
-		it->second->Update();
+		//it->second->Update();
 	}
+	return true;
 }
 
 #undef RETURN

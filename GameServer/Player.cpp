@@ -775,7 +775,11 @@ void Player::SendProtocol(const pb::Message* message)
 
 void Player::SendProtocol(const pb::Message& message)
 {
-	if (!g_center_session) return; //尚未建立网络连接
+	if (!g_center_session) 
+	{
+		ERROR("玩家{}尚未建立连接", _player_id);
+		return; //尚未建立网络连接
+	}
 
 	const pb::FieldDescriptor* field = message.GetDescriptor()->FindFieldByName("type_t");
 	if (!field) return;
@@ -794,7 +798,7 @@ void Player::SendProtocol(const pb::Message& message)
 
 	g_center_session->AsyncSendMessage(content);
 
-	TRACE("send protocol to player_id:{} content:{}", _player_id, message.ShortDebugString().c_str());
+	TRACE("玩家:{} 发送协议内容:{}", _player_id, message.ShortDebugString());
 }
 
 void Player::Send2Roomers(pb::Message& message, int64_t exclude_player_id) 

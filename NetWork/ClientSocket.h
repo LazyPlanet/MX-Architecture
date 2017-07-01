@@ -21,15 +21,32 @@ class ClientSocket : public std::enable_shared_from_this<ClientSocket>
 {
 public:
 	ClientSocket(boost::asio::io_service& io_service, const boost::asio::ip::tcp::endpoint& endpoint) : 
-		_timer(io_service), _socket(io_service), _remote_endpoint(endpoint)
+		_timer(io_service), _socket(io_service), _remote_endpoint(endpoint), _closed(false), _closing(false)
 	{
 
+	}
+	
+	virtual bool Update() 
+	{
+		if (_closed) 
+		{
+			ERROR("{} has closed", _socket.remote_endpoint().address().to_string().c_str());
+			return false;
+		}
+
+		//发送可以放到消息队列里面处理
+		if (_is_writing_async || (_write_queue.empty() && !_closing)) 
+		{
+			return true;
+		}
+
+		for (; HandleQueue(); ) {}
+
+		return true;
 	}
 
     virtual void AsyncConnect()
     {
-        _status = STATUS_CONNECTING;
-
         _socket.async_connect(_remote_endpoint, std::bind(&ClientSocket::OnConnect, shared_from_this(), std::placeholders::_1));
 
         if (_connect_timeout > 0) 
@@ -41,13 +58,11 @@ public:
     
 	virtual void OnConnectTimeout(const boost::system::error_code& error) 
     {
-        if (_status != STATUS_CONNECTING) return;
-
         if (error == boost::asio::error::operation_aborted) return;
 
 		ERROR("服务器内部连接超时失败，必须处理解决，错误码:{}", error.message());
 		
-        Close("超时");
+        //Close("超时");
     }
     
     void Close(const std::string& reason)
@@ -65,10 +80,93 @@ public:
         _socket.async_read_some(boost::asio::buffer(_buffer), std::bind(&ClientSocket::OnReadSome, shared_from_this(), std::placeholders::_1, std::placeholders::_2));
     }
 
+	void EnterQueue(std::string&& meta)
+	{
+		_mutex.lock();
+		_write_queue.push(std::move(meta));
+		_mutex.unlock();
+	}
+	
+	void AsyncSendMessage(std::string message)
+	{
+		_mutex.lock();
+		_write_queue.push(message);
+		_mutex.unlock();
+	}
+
     void AsyncWriteSome(const char* data, size_t size)
     {
-        _socket.async_write_some(boost::asio::buffer(data, size), std::bind(&ClientSocket::OnWriteSome, shared_from_this(), std::placeholders::_1, std::placeholders::_2));
+		_mutex.lock();
+		_write_queue.push(std::string(data, size));
+		_mutex.unlock();
     }
+	
+	bool AsyncProcessQueue()    
+	{
+		if (_is_writing_async) return false;
+		_is_writing_async = true;
+
+		_socket.async_write_some(boost::asio::null_buffers(), std::bind(&ClientSocket::OnWriteSome, shared_from_this(), std::placeholders::_1, std::placeholders::_2));
+		return false;
+	}
+
+	bool HandleQueue()
+	{
+		if (!_socket.is_open()) 
+		{
+			ERROR("网络已断开连接.");
+			return false;
+		}
+		if (_write_queue.empty()) return false;
+
+		_mutex.lock();
+		std::string& meta = _write_queue.front();  //其实是META数据
+		_mutex.unlock();
+
+		std::size_t bytes_to_send = meta.size();
+
+		boost::system::error_code error;
+		std::size_t bytes_sent = _socket.write_some(boost::asio::buffer(meta.c_str(), bytes_to_send), error);
+
+		if (error == boost::asio::error::would_block || error == boost::asio::error::try_again)
+		{
+			ERROR("bytes_to_send:{} bytes_sent:{}", bytes_to_send, bytes_sent);
+			return AsyncProcessQueue();
+
+			_write_queue.pop();
+
+			if (_closing && _write_queue.empty()) Close("关闭");
+
+			return false;
+		}
+		else if (bytes_sent == 0)
+		{
+			ERROR("bytes_to_send:{} bytes_sent:{} error:{}", bytes_to_send, bytes_sent, error.message());
+
+			_write_queue.pop();
+
+			if (_closing && _write_queue.empty()) Close("关闭");
+
+			return false;
+		}
+		else if (bytes_sent < bytes_to_send) //一般不会出现这个情况，重新发送，记个ERROR
+		{
+			ERROR("bytes_to_send:{} bytes_sent:{}", bytes_to_send, bytes_sent);
+			return AsyncProcessQueue();
+		}
+
+		DEBUG("bytes_to_send:{} bytes_sent:{}", bytes_to_send, bytes_sent);
+		_write_queue.pop();
+
+		if (_closing && _write_queue.empty()) Close("关闭");
+
+		return !_write_queue.empty();
+	}
+
+	virtual void DelayedClose() { _closing = true; } //发送队列为空时再进行关闭
+	virtual bool IsConnected() { return _socket.is_open(); }
+	virtual bool IsOpen() const { return !_closed && !_closing; }
+	virtual bool IsClosed() const { return _closed || _closing; }
 
     virtual void OnClose() { }
     virtual void OnConnected() { }
@@ -89,18 +187,8 @@ protected:
     
     int64_t _connect_timeout = 10;
 
-    enum {
-        STATUS_INIT       = 0,
-        STATUS_CONNECTING = 1,
-        STATUS_CONNECTED  = 2,
-        STATUS_CLOSED     = 3,
-    };
-    volatile int _status = STATUS_INIT;
-    
 	virtual void OnConnect(const boost::system::error_code& error)
     {
-        if (_status != STATUS_CONNECTING) return;
-
         if (error)
         {
             Close("init stream failed: " + error.message());
@@ -124,7 +212,6 @@ protected:
             return;
         }
 
-        _status = STATUS_CONNECTED;
         _timer.cancel();
 
 		OnConnected();
@@ -133,13 +220,14 @@ protected:
         StartSend(); //开始发送数据
     }
     
-	//网络状态查询
-    bool IsConnecting() const { return _status == STATUS_CONNECTING; }
-    bool IsConnected() const { return _status == STATUS_CONNECTED; }
-    bool IsClosed() const { return _status == STATUS_CLOSED; }
-
 	virtual bool StartSend() { return true; }
 	virtual bool StartReceive() { return true; }
+private:
+	std::atomic<bool> _closed;    
+	std::atomic<bool> _closing;
+	bool _is_writing_async = false;
+	std::queue<std::string> _write_queue;
+	std::mutex _mutex;
 };	
 
 }

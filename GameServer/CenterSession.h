@@ -44,16 +44,17 @@ public:
     
     virtual void OnReadSome(const boost::system::error_code& error, std::size_t bytes_transferred);
 
-	void AsyncSendMessage(std::string message);
+	//void AsyncSendMessage(std::string message);
     virtual void OnWriteSome(const boost::system::error_code& error, std::size_t bytes_transferred);  
 
-	void Update();
+	virtual bool Update() override;
 private:
 	std::deque<std::string> _send_list;
 	std::deque<Asset::Meta> _receive_list;
 	boost::asio::ip::tcp::endpoint _remote_endpoint;
 	std::string _ip_address;
 	std::unordered_map<int64_t, std::shared_ptr<Player>> _players; //实体为智能指针，不要传入引用
+	std::mutex _mutex;
 };
 
 }
