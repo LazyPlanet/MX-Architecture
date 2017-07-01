@@ -21,8 +21,6 @@ namespace Adoter
 
 namespace spd = spdlog;
 
-std::shared_ptr<CenterSession> g_center_session = nullptr;
-
 Player::Player()
 {
 	//协议默认处理函数
@@ -3189,13 +3187,12 @@ void Player::DebugCommand()
 
 void PlayerManager::Update(int32_t diff)
 {
-	WARN("当前玩家数量:{}", _players.size());
-
 	for (auto it = _players.begin(); it != _players.end();)
 	{
 		if (!it->second) 
 		{
 			it = _players.erase(it);
+			WARN("删除空指针玩家，当前玩家数量:{}", _players.size());
 			continue;
 		}
 		else

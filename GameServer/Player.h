@@ -11,7 +11,7 @@
 #include "Item.h"
 #include "Asset.h"
 #include "MessageDispatcher.h"
-#include "CenterSession.h"
+#include "World.h"
 
 namespace Adoter
 {

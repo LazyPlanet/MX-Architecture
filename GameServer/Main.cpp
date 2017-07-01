@@ -19,7 +19,6 @@
 #include "Config.h"
 #include "ClientSession.h"
 #include "CenterSession.h"
-#include "Player.h"
 
 const int const_world_sleep = 50;
 

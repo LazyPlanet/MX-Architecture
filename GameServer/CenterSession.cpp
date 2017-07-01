@@ -66,7 +66,7 @@ bool CenterSession::InnerProcess(const Asset::Meta& meta)
 		default:
 		{
 			WARN("Receive message:{} from server has no process type:{}", meta.ShortDebugString(), meta.type_t());
-			auto player = PlayerInstance.Get(meta.player_id());
+			std::shared_ptr<Player> player = PlayerInstance.Get(meta.player_id());
 			if (!player) 
 			{
 				WARN("游戏逻辑服务器未能找到玩家:{}", meta.player_id());

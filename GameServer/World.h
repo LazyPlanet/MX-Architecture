@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Asset.h"
+#include "CenterSession.h"
 
 #include <memory>
 
@@ -19,6 +20,7 @@ namespace Adoter
  * */
 
 extern const Asset::CommonConst* g_const;
+extern std::shared_ptr<CenterSession> g_center_session;
 
 class World : public std::enable_shared_from_this<World>
 {
