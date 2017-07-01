@@ -84,7 +84,7 @@ void World::Update(int32_t diff)
 	
 	ActivityInstance.Update(diff);
 	
-	PlayerInstance.Update(diff);
+	g_center_session->Update();
 }
 	
 

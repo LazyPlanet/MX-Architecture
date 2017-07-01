@@ -34,8 +34,8 @@ bool ProtocolManager::Load()
 		const pb::FieldDescriptor* field = descriptor->FindFieldByNumber(1);	//所有MESSAGE的第一个变量必须是类型
 		if(!field || field->enum_type() != meta_type) continue;
 
-		int type_t = field->default_value_enum()->number();
-		if (type_t > Asset::META_TYPE_C2S_COUNT && type_t < Asset::META_TYPE_S2C_COUNT) continue; 	//只加载C2S的协议处理
+		//int type_t = field->default_value_enum()->number();
+		//if (type_t > Asset::META_TYPE_C2S_COUNT && type_t < Asset::META_TYPE_S2C_COUNT) continue; 	//只加载C2S的协议处理
 		
 		const pb::Message* msg = pb::MessageFactory::generated_factory()->GetPrototype(descriptor);
 		pb::Message* message = msg->New();

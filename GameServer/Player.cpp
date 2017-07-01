@@ -116,16 +116,14 @@ std::string Player::GetString()
 }
 */
 
-int32_t Player::OnLogin(pb::Message* message)
+int32_t Player::OnLogin()
 {
-	/*
 	if (Load()) return 1;
-
-	SendPlayer(); //发送数据给Client
 	
-	this->_stuff.set_login_time(CommonTimerInstance.GetTime());
-	this->_stuff.set_logout_time(0);
-	*/
+	PlayerInstance.Emplace(_player_id, shared_from_this()); //玩家管理
+
+	SetLocalServer(ConfigInstance.GetInt("ServerID", 1));
+
 	return 0;
 }
 

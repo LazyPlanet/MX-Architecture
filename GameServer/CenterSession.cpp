@@ -1,7 +1,6 @@
 #include "CenterSession.h"
 #include "RedisManager.h"
 #include "MXLog.h"
-#include "Player.h"
 #include "Room.h"
 #include "Config.h"
 #include "Timer.h"
@@ -55,7 +54,7 @@ bool CenterSession::InnerProcess(const Asset::Meta& meta)
 			auto player = PlayerInstance.Get(meta.player_id());
 			if (!player) player = std::make_shared<Player>(meta.player_id());
 
-			if (player->OnEnterGame()) 
+			if (player->OnLogin()) 
 			{
 				ERROR("玩家{}进入游戏失败", meta.player_id());
 			}
@@ -66,16 +65,18 @@ bool CenterSession::InnerProcess(const Asset::Meta& meta)
 		default:
 		{
 			WARN("Receive message:{} from server has no process type:{}", meta.ShortDebugString(), meta.type_t());
-			std::shared_ptr<Player> player = PlayerInstance.Get(meta.player_id());
+			//std::shared_ptr<Player> player = PlayerInstance.Get(meta.player_id());
+			auto player = _players[meta.player_id()];
 			if (!player) 
 			{
 				WARN("游戏逻辑服务器未能找到玩家:{}", meta.player_id());
 				player = std::make_shared<Player>(meta.player_id());
-				if (player->OnEnterGame()) 
+				if (player->OnLogin()) 
 				{
 					ERROR("玩家{}进入游戏失败", meta.player_id());
 				}
-				return false;
+				_players[meta.player_id()] = player;
+				//return false;
 			}
 
 			pb::Message* msg = ProtocolInstance.GetMessage(meta.type_t());	
@@ -217,6 +218,26 @@ void CenterSession::OnReadSome(const boost::system::error_code& error, std::size
 	}
 	
 	AsynyReadSome(); //继续下一次数据接收
+}
+	
+void CenterSession::Update()
+{
+	for (auto it = _players.begin(); it != _players.end(); ++it)
+	{
+		/*
+		if (!it->second) 
+		{
+			it = _players.erase(it);
+			WARN("删除空指针玩家，当前玩家数量:{}", _players.size());
+			continue;
+		}
+		else
+		{
+			++it;
+		}
+		*/
+		it->second->Update();
+	}
 }
 
 #undef RETURN

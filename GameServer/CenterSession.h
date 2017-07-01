@@ -6,6 +6,7 @@
 #include <memory>
 #include <iostream>
 #include <deque>
+#include <unordered_map>
 
 #include <boost/asio.hpp>
 
@@ -17,6 +18,8 @@ namespace Adoter
 
 using namespace google::protobuf;
 namespace pb = google::protobuf;
+
+class Player;
 
 class CenterSession : public ClientSocket
 {
@@ -43,11 +46,14 @@ public:
 
 	void AsyncSendMessage(std::string message);
     virtual void OnWriteSome(const boost::system::error_code& error, std::size_t bytes_transferred);  
+
+	void Update();
 private:
 	std::deque<std::string> _send_list;
 	std::deque<Asset::Meta> _receive_list;
 	boost::asio::ip::tcp::endpoint _remote_endpoint;
 	std::string _ip_address;
+	std::unordered_map<int64_t, std::shared_ptr<Player>> _players; //实体为智能指针，不要传入引用
 };
 
 }

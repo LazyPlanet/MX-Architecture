@@ -44,7 +44,7 @@ public:
 };
 
 extern const Asset::CommonConst* g_const;
-extern std::shared_ptr<CenterSession> g_center_session;
+//extern std::shared_ptr<CenterSession> g_center_session;
 
 class Player : public std::enable_shared_from_this<Player>
 {
@@ -130,7 +130,7 @@ public:
 	virtual int32_t CmdEnterRoom(pb::Message* message);
 	virtual bool OnEnterRoom(int64_t room_id = 0);
 	//玩家登录
-	virtual int32_t OnLogin(pb::Message* message);
+	virtual int32_t OnLogin();
 	//玩家登出
 	virtual int32_t Logout(pb::Message* message);
 	virtual int32_t OnLogout();
