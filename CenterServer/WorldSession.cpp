@@ -35,7 +35,11 @@ void WorldSession::InitializeHandler(const boost::system::error_code error, cons
 			Asset::Meta meta;
 			bool result = meta.ParseFromArray(_buffer.data(), bytes_transferred);
 
-			if (!result) return;		//非法协议
+			if (!result) 
+			{
+				DEBUG_ASSERT(false);
+				return;		//非法协议
+			}
 			
 			pb::Message* msg = ProtocolInstance.GetMessage(meta.type_t());	
 			if (!msg) 
@@ -53,7 +57,15 @@ void WorldSession::InitializeHandler(const boost::system::error_code error, cons
 				return;		//非法协议
 			}
 
-			DEBUG("中心服务器接收玩家:{} 协议:{} 内容:{}", meta.player_id(), meta.type_t(), message->ShortDebugString());
+			//调试
+			const pb::FieldDescriptor* field = message->GetDescriptor()->FindFieldByName("type_t");
+			if (!field) return;
+
+			const pb::EnumValueDescriptor* enum_value = message->GetReflection()->GetEnum(*message, field);
+			if (!enum_value) return;
+
+
+			WARN("中心服务器接收数据, 玩家:{} 协议:{} {} 内容:{}", meta.player_id(), meta.type_t(), enum_value->name(), message->ShortDebugString());
 
 			//
 			// C2S协议可能存在两种情况：
@@ -75,11 +87,15 @@ void WorldSession::InitializeHandler(const boost::system::error_code error, cons
 			}
 			else if (meta.player_id() > 0)
 			{
-				auto player = PlayerInstance.Get(meta.player_id());
-				if (!player) return;
-				player->SendProtocol(message);
+				DEBUG("2.中心服务器接收游戏服务器数据, 玩家:{} 协议:{}", meta.player_id(), meta.ShortDebugString());
 
-				DEBUG("2.中心服务器接收游戏服务器玩家[{}]协议:{}", meta.player_id(), meta.ShortDebugString());
+				auto player = PlayerInstance.Get(meta.player_id());
+				if (!player) 
+				{
+					ERROR("未能找到玩家:{}", meta.player_id());
+					return;
+				}
+				player->SendProtocol(message);
 			}
 			else //if (meta.player_id() == 0)
 			{

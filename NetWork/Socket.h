@@ -127,17 +127,14 @@ public:
 		for (int i = 0; i < 2; ++i) buffer[i] = header[i];
 		for (int i = 0; i < body_size; ++i) buffer[i + 2] = body[i];
 
-		//std::lock_guard<std::mutex> lock(_mutex);
 		_write_queue.push(std::string(buffer, body_size + 2));
 	}
 
 	bool HandleQueue()
 	{
-		//std::lock_guard<std::mutex> lock(_mutex);
-
 		if (!_socket.is_open()) 
 		{
-			spdlog::get("console")->error("{0} Line:{1} has disconnected from server.", __func__, __LINE__);
+			ERROR("Disconnected from server.");
 			return false;
 		}
 
@@ -190,7 +187,7 @@ protected:
 	std::atomic<bool> _closed;    
 	std::atomic<bool> _closing;
 	bool _is_writing_async = false;
-	//std::mutex _mutex;
+	std::mutex _mutex;
 	//接收缓存
 	std::array<unsigned char, 4096> _buffer;
 	//发送队列
