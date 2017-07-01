@@ -82,24 +82,18 @@ public:
 
 	void EnterQueue(std::string&& meta)
 	{
-		DEBUG("准备发送数据:{} 队列大小:{}", meta, _write_queue.size());
 		_write_queue.push(std::move(meta));
-		DEBUG("放入后发送数据:{} 队列大小:{}", meta, _write_queue.size());
 	}
 	
 	void AsyncSendMessage(std::string meta)
 	{
-		DEBUG("准备发送数据:{} 队列大小:{}", meta, _write_queue.size());
 		_write_queue.push(meta);
-		DEBUG("放入后发送数据:{} 队列大小:{}", meta, _write_queue.size());
 	}
 
     void AsyncWriteSome(const char* data, size_t size)
     {
 		std::string meta(data, size);
-		DEBUG("准备发送数据:{} 队列大小:{}", meta, _write_queue.size());
 		_write_queue.push(meta);
-		DEBUG("放入后发送数据:{} 队列大小:{}", meta, _write_queue.size());
     }
 	
 	bool AsyncProcessQueue()    
@@ -121,7 +115,6 @@ public:
 		if (_write_queue.empty()) return false;
 
 		std::string& meta = _write_queue.front();  //其实是META数据
-		DEBUG("+++++++++++++++准备发送数据:{} 队列大小:{}", meta, _write_queue.size());
 
 		std::size_t bytes_to_send = meta.size();
 
@@ -155,9 +148,7 @@ public:
 			return AsyncProcessQueue();
 		}
 
-		DEBUG("bytes_to_send:{} bytes_sent:{}", bytes_to_send, bytes_sent);
 		_write_queue.pop();
-		DEBUG("+++++++++++++++发送结束数据:{} 队列大小:{}", meta, _write_queue.size());
 
 		if (_closing && _write_queue.empty()) Close("关闭");
 
