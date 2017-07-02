@@ -108,21 +108,27 @@ public:
 	void EnterQueue(std::string&& meta)    
 	{        
 		auto content = std::move(meta);
-		//////////////////////////////////////////////////////数据包头
+		//
+		//数据包头
+		//
 		unsigned short body_size = content.size();
 		if (body_size >= 4096) 
 		{
 			LOG(ERROR, "protocol has extend max size:{}", body_size);
 			return;
 		}
+
 		unsigned char header[2] = { 0 };
 
 		header[0] = (body_size >> 8) & 0xff;
 		header[1] = body_size & 0xff;
-		//////////////////////////////////////////////////////包数据体
+
+		//
+		//包数据体
+		//
 		auto body = content.c_str(); 
 
-		//////////////////////////////////////////////////////数据整理发送
+		//数据整理发送
 		char buffer[4096] = { 0 }; //发送数据缓存
 		for (int i = 0; i < 2; ++i) buffer[i] = header[i];
 		for (int i = 0; i < body_size; ++i) buffer[i + 2] = body[i];
@@ -173,7 +179,7 @@ public:
 			return AsyncProcessQueue();
 		}
 
-		DEBUG("bytes_to_send:{} bytes_sent:{}", bytes_to_send, bytes_sent);
+		DEBUG("server bytes_to_send:{} bytes_sent:{}", bytes_to_send, bytes_sent);
 		_write_queue.pop();
 
 		if (_closing && _write_queue.empty()) Close();

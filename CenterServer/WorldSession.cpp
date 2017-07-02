@@ -23,6 +23,11 @@ void WorldSession::InitializeHandler(const boost::system::error_code error, cons
 {
 	try
 	{
+		std::stringstream str;
+		for (std::size_t i = 0; i < bytes_transferred; ++i)
+			str << (int)_buffer[i] << " ";
+		DEBUG("中心服务器接收数据:{} 当前缓存数量大小:{} 本次接收数据大小:{}", str.str(), _buffer.size(), bytes_transferred);
+
 		if (error)
 		{
 			WARN("Remote client disconnect, remote_ip:{}, player_id:{}", _ip_address, g_player ? g_player->GetID() : 0);
@@ -32,238 +37,37 @@ void WorldSession::InitializeHandler(const boost::system::error_code error, cons
 		}
 		else
 		{
-			Asset::Meta meta;
-			bool result = meta.ParseFromArray(_buffer.data(), bytes_transferred);
-
-			if (!result) 
 			{
-				DEBUG_ASSERT(false);
-				return;		//非法协议
-			}
-			
-			pb::Message* msg = ProtocolInstance.GetMessage(meta.type_t());	
-			if (!msg) 
-			{
-				ERROR("Could not found message of type:{}", meta.type_t());
-				return;		//非法协议
+				Asset::Meta meta;
+				bool result = meta.ParseFromArray(_buffer.data(), bytes_transferred);
+				if (result)
+				{
+					DEBUG("看看他是啥:{}", meta.ShortDebugString());
+				}
 			}
 
-			auto message = msg->New();
-			
-			result = message->ParseFromArray(meta.stuff().c_str(), meta.stuff().size());
-			if (!result) 
+			for (size_t index = 0; index < bytes_transferred;)
 			{
-				DEBUG_ASSERT(false);
-				return;		//非法协议
-			}
-
-			//调试
-			const pb::FieldDescriptor* field = message->GetDescriptor()->FindFieldByName("type_t");
-			if (!field) return;
-
-			const pb::EnumValueDescriptor* enum_value = message->GetReflection()->GetEnum(*message, field);
-			if (!enum_value) return;
-
-
-			WARN("中心服务器接收数据, 玩家:{} 协议:{} {} 内容:{}", meta.player_id(), meta.type_t(), enum_value->name(), message->ShortDebugString());
-
-			//
-			// C2S协议可能存在两种情况：
-			//
-			// 1.Client发送上来的数据;
-			//
-			// 2.转发到游戏逻辑服务器，经过逻辑服务器处理的结果返回;
-			//
-			//
-			
-			if (Asset::META_TYPE_C2S_COUNT <= meta.type_t()) 
-			{
-				//
-				//游戏服务器内部协议处理
-				//
-				OnInnerProcess(meta); //内部处理
-
-				DEBUG("1.中心服务器接收游戏服务器内部协议:{}", meta.ShortDebugString());
-			}
-			else if (meta.player_id() > 0)
-			{
-				DEBUG("2.中心服务器接收游戏服务器数据, 玩家:{} 协议:{}", meta.player_id(), meta.ShortDebugString());
-
-				auto player = PlayerInstance.Get(meta.player_id());
-				if (!player) 
-				{
-					ERROR("未能找到玩家:{}", meta.player_id());
-					return;
-				}
-				player->SendProtocol(message);
-			}
-			else //if (meta.player_id() == 0)
-			{
-				//
-				//游戏逻辑处理流程
-				//
-				//特别注意：不能传入player_id在Meta数据当中
-				//
-				//来自Client协议均在此处理，逻辑程序员请勿在此后添加代码
-				//
-				
-				DEBUG("3.中心服务器接收来自Client的协议:{}", meta.ShortDebugString());
-				
-				if (Asset::META_TYPE_C2S_LOGIN == meta.type_t()) //账号登陆
-				{
-					Asset::Login* login = dynamic_cast<Asset::Login*>(message);
-					if (!login) return; 
+				unsigned short body_size = _buffer[index] * 256 + _buffer[1 + index];
 					
-					_player_list.clear(); //账号下玩家列表，对于棋牌游戏，只有一个玩家
-				
-					Asset::User user;
-					
-					auto redis = std::make_shared<Redis>();
-					auto success = redis->GetUser(login->account().username(), user);
+				DEBUG("解析的头:{} {} 包长:{}", (int)_buffer[index] * 256, (int)_buffer[1 + index], body_size);
 
-					if (!success) //没有该用户
-					{
-						user.mutable_account()->CopyFrom(login->account());
+				char buffer[4096] = { 0 }; //数据缓存  
+				for (size_t i = 0; i < body_size; ++i) buffer[i] = _buffer[i + index + 2];  
 
-						int64_t player_id = redis->CreatePlayer(); //如果账号下没有角色，创建一个给Client
+				Asset::Meta meta;
+				bool result = meta.ParseFromArray(buffer, body_size);
 
-						if (player_id == 0) 
-						{
-							LOG(ERROR, "create player failed, username:{}", login->account().username());
-							return; //创建失败
-						}
-
-						user.mutable_player_list()->Add(player_id);
-
-						redis->SaveUser(login->account().username(), user); //账号数据存盘
-
-						g_player = std::make_shared<Player>(player_id, shared_from_this());
-						std::string player_name = NameInstance.Get();
-
-						TRACE("get player_name success, player_id:{}, player_name:{}", player_id, player_name.c_str());
-
-						g_player->SetName(player_name);
-						g_player->Save(); //存盘，防止数据库无数据
-					}
-					else
-					{
-						LOG(TRACE, "get player_name success, username:{} who has exist.", login->account().username());
-					}
-
-					_account.CopyFrom(login->account()); //账号信息
-
-					for (auto player_id : user.player_list()) _player_list.emplace(player_id); //玩家数据
-					
-					//
-					//发送当前的角色信息
-					//
-					Asset::PlayerList player_list; 
-					player_list.mutable_player_list()->CopyFrom(user.player_list());
-					SendProtocol(player_list); 
-				}
-				else if (Asset::META_TYPE_C2S_LOGOUT == meta.type_t()) //账号登出
+				if (!result) 
 				{
-					Asset::Logout* logout = dynamic_cast<Asset::Logout*>(message);
-					if (!logout) return; 
-
-					OnLogout();
+					//DEBUG_ASSERT(false);
+					ERROR("转换不了协议数据");
+					return;		//非法协议
 				}
-				else if (Asset::META_TYPE_SHARE_GUEST_LOGIN == meta.type_t()) //游客登陆
-				{
-					Asset::GuestLogin* login = dynamic_cast<Asset::GuestLogin*>(message);
-					if (!login) return; 
-					
-					std::string account;
-					auto redis = std::make_shared<Redis>();
-					if (redis->GetGuestAccount(account)) login->set_account(account);
-					SendProtocol(login); 
-				}
-				else if (Asset::META_TYPE_C2S_RECONNECT == meta.type_t()) //断线重连
-				{
-					Asset::ReConnect* connect = dynamic_cast<Asset::ReConnect*>(message);
-					if (!connect) return; 
 
-					g_player = PlayerInstance.Get(connect->player_id());
-					if (!g_player) return;
+				OnProcessMessage(meta);
 
-					g_player->OnEnterGame();
-				}
-				else if (Asset::META_TYPE_C2S_ENTER_GAME == meta.type_t()) //进入游戏
-				{
-					const Asset::EnterGame* enter_game = dynamic_cast<Asset::EnterGame*>(message);
-					if (!enter_game) return; 
-
-					if (_player_list.find(enter_game->player_id()) == _player_list.end())
-					{
-						LOG(ERROR, "player_id:{} has not found in username:{}, maybe it is cheated.", enter_game->player_id(), _account.username());
-						return; //账号下没有该角色数据
-					}
-
-					if (!g_player) 
-					{
-						g_player = std::make_shared<Player>(enter_game->player_id(), shared_from_this());
-
-						SetID(g_player->GetID());
-						SetRoleType(Asset::ROLE_TYPE_PLAYER);
-					}
-					//
-					// 已经在线玩家检查
-					//
-					// 对于已经进入游戏内操作的玩家进行托管
-					//
-					auto session = WorldSessionInstance.GetPlayerSession(g_player->GetID());
-					if (session) //已经在线
-					{
-						session->KillOutPlayer();
-					}
-					WorldSessionInstance.AddPlayer(g_player->GetID(), shared_from_this()); //在线玩家
-					
-					//
-					//此时才可以真正进入游戏大厅
-					//
-					//加载数据
-					//
-					if (g_player->OnEnterGame()) //理论上不会出现
-					{
-						Asset::AlertMessage alert;
-						alert.set_error_type(Asset::ERROR_TYPE_NORMAL);
-						alert.set_error_show_type(Asset::ERROR_SHOW_TYPE_CHAT);
-						alert.set_error_code(Asset::ERROR_DATABASE); //数据库错误
-
-						SendProtocol(alert);
-					}
-				}
-				else if (Asset::META_TYPE_SHARE_ENTER_ROOM == meta.type_t()) //进入房间：进入游戏逻辑服务器的入口
-				{
-					//
-					//进入房间根据房间号选择房间所在逻辑服务器进行会话选择
-					//
-					if (!g_player) return;
-
-					Asset::EnterRoom* enter_room = dynamic_cast<Asset::EnterRoom*>(message);
-					if (!enter_room) return; 
-
-					auto room_id = enter_room->room().room_id();
-					auto server_id = room_id >> 16;
-
-					auto game_server = WorldSessionInstance.GetServerSession(server_id);
-					if (!game_server) return;
-
-					g_player->SetGameServer(game_server);
-					g_player->SendProtocol2GameServer(enter_room); //转发
-
-					WorldSessionInstance.SetPlayerSession(g_player->GetID(), game_server);
-				}
-				else
-				{
-					if (!g_player) 
-					{
-						LOG(ERROR, "Player has not inited.");
-						return; //尚未初始化
-					}
-					//协议处理
-					g_player->HandleProtocol(meta.type_t(), message);
-				}
+				index += (body_size + 2); //下个包的起始位置
 			}
 		}
 	}
@@ -274,8 +78,237 @@ void WorldSession::InitializeHandler(const boost::system::error_code error, cons
 		return;
 	}
 
+	WARN("中心服务器接收数据之后, 当前缓存数量大小:{} 本次接收数据大小:{}", _buffer.size(), bytes_transferred);
 	//递归持续接收	
 	AsyncReceiveWithCallback(&WorldSession::InitializeHandler);
+}
+			
+void WorldSession::OnProcessMessage(const Asset::Meta& meta)
+{
+	pb::Message* msg = ProtocolInstance.GetMessage(meta.type_t());	
+	if (!msg) 
+	{
+		ERROR("Could not found message of type:{}", meta.type_t());
+		return;		//非法协议
+	}
+
+	auto message = msg->New();
+	
+	auto result = message->ParseFromArray(meta.stuff().c_str(), meta.stuff().size());
+	if (!result) 
+	{
+		DEBUG_ASSERT(false);
+		return;		//非法协议
+	}
+
+	//调试
+	const pb::FieldDescriptor* field = message->GetDescriptor()->FindFieldByName("type_t");
+	if (!field) return;
+
+	const pb::EnumValueDescriptor* enum_value = message->GetReflection()->GetEnum(*message, field);
+	if (!enum_value) return;
+
+
+	WARN("中心服务器接收数据, 玩家:{} 协议:{} {} 内容:{}", meta.player_id(), meta.type_t(), enum_value->name(), message->ShortDebugString());
+
+	//
+	// C2S协议可能存在两种情况：
+	//
+	// 1.Client发送上来的数据;
+	//
+	// 2.转发到游戏逻辑服务器，经过逻辑服务器处理的结果返回;
+	//
+	//
+	
+	if (Asset::META_TYPE_C2S_COUNT <= meta.type_t()) 
+	{
+		//
+		//游戏服务器内部协议处理
+		//
+		OnInnerProcess(meta); //内部处理
+
+		DEBUG("1.中心服务器接收游戏服务器内部协议:{}", meta.ShortDebugString());
+	}
+	else if (meta.player_id() > 0)
+	{
+		DEBUG("2.中心服务器接收游戏服务器数据, 玩家:{} 协议:{}", meta.player_id(), meta.ShortDebugString());
+
+		auto player = PlayerInstance.Get(meta.player_id());
+		if (!player) 
+		{
+			ERROR("未能找到玩家:{}", meta.player_id());
+			return;
+		}
+		player->SendProtocol(message);
+	}
+	else //if (meta.player_id() == 0)
+	{
+		//
+		//游戏逻辑处理流程
+		//
+		//特别注意：不能传入player_id在Meta数据当中
+		//
+		//来自Client协议均在此处理，逻辑程序员请勿在此后添加代码
+		//
+		
+		DEBUG("3.中心服务器接收来自Client的协议:{}", meta.ShortDebugString());
+		
+		if (Asset::META_TYPE_C2S_LOGIN == meta.type_t()) //账号登陆
+		{
+			Asset::Login* login = dynamic_cast<Asset::Login*>(message);
+			if (!login) return; 
+			
+			_player_list.clear(); //账号下玩家列表，对于棋牌游戏，只有一个玩家
+		
+			Asset::User user;
+			
+			auto redis = std::make_shared<Redis>();
+			auto success = redis->GetUser(login->account().username(), user);
+
+			if (!success) //没有该用户
+			{
+				user.mutable_account()->CopyFrom(login->account());
+
+				int64_t player_id = redis->CreatePlayer(); //如果账号下没有角色，创建一个给Client
+
+				if (player_id == 0) 
+				{
+					LOG(ERROR, "create player failed, username:{}", login->account().username());
+					return; //创建失败
+				}
+
+				user.mutable_player_list()->Add(player_id);
+
+				redis->SaveUser(login->account().username(), user); //账号数据存盘
+
+				g_player = std::make_shared<Player>(player_id, shared_from_this());
+				std::string player_name = NameInstance.Get();
+
+				TRACE("get player_name success, player_id:{}, player_name:{}", player_id, player_name.c_str());
+
+				g_player->SetName(player_name);
+				g_player->Save(); //存盘，防止数据库无数据
+			}
+			else
+			{
+				LOG(TRACE, "get player_name success, username:{} who has exist.", login->account().username());
+			}
+
+			_account.CopyFrom(login->account()); //账号信息
+
+			for (auto player_id : user.player_list()) _player_list.emplace(player_id); //玩家数据
+			
+			//
+			//发送当前的角色信息
+			//
+			Asset::PlayerList player_list; 
+			player_list.mutable_player_list()->CopyFrom(user.player_list());
+			SendProtocol(player_list); 
+		}
+		else if (Asset::META_TYPE_C2S_LOGOUT == meta.type_t()) //账号登出
+		{
+			Asset::Logout* logout = dynamic_cast<Asset::Logout*>(message);
+			if (!logout) return; 
+
+			OnLogout();
+		}
+		else if (Asset::META_TYPE_SHARE_GUEST_LOGIN == meta.type_t()) //游客登陆
+		{
+			Asset::GuestLogin* login = dynamic_cast<Asset::GuestLogin*>(message);
+			if (!login) return; 
+			
+			std::string account;
+			auto redis = std::make_shared<Redis>();
+			if (redis->GetGuestAccount(account)) login->set_account(account);
+			SendProtocol(login); 
+		}
+		else if (Asset::META_TYPE_C2S_RECONNECT == meta.type_t()) //断线重连
+		{
+			Asset::ReConnect* connect = dynamic_cast<Asset::ReConnect*>(message);
+			if (!connect) return; 
+
+			g_player = PlayerInstance.Get(connect->player_id());
+			if (!g_player) return;
+
+			g_player->OnEnterGame();
+		}
+		else if (Asset::META_TYPE_C2S_ENTER_GAME == meta.type_t()) //进入游戏
+		{
+			const Asset::EnterGame* enter_game = dynamic_cast<Asset::EnterGame*>(message);
+			if (!enter_game) return; 
+
+			if (_player_list.find(enter_game->player_id()) == _player_list.end())
+			{
+				LOG(ERROR, "player_id:{} has not found in username:{}, maybe it is cheated.", enter_game->player_id(), _account.username());
+				return; //账号下没有该角色数据
+			}
+
+			if (!g_player) 
+			{
+				g_player = std::make_shared<Player>(enter_game->player_id(), shared_from_this());
+
+				SetID(g_player->GetID());
+				SetRoleType(Asset::ROLE_TYPE_PLAYER);
+			}
+			//
+			// 已经在线玩家检查
+			//
+			// 对于已经进入游戏内操作的玩家进行托管
+			//
+			auto session = WorldSessionInstance.GetPlayerSession(g_player->GetID());
+			if (session) //已经在线
+			{
+				session->KillOutPlayer();
+			}
+			WorldSessionInstance.AddPlayer(g_player->GetID(), shared_from_this()); //在线玩家
+			
+			//
+			//此时才可以真正进入游戏大厅
+			//
+			//加载数据
+			//
+			if (g_player->OnEnterGame()) //理论上不会出现
+			{
+				Asset::AlertMessage alert;
+				alert.set_error_type(Asset::ERROR_TYPE_NORMAL);
+				alert.set_error_show_type(Asset::ERROR_SHOW_TYPE_CHAT);
+				alert.set_error_code(Asset::ERROR_DATABASE); //数据库错误
+
+				SendProtocol(alert);
+			}
+		}
+		else if (Asset::META_TYPE_SHARE_ENTER_ROOM == meta.type_t()) //进入房间：进入游戏逻辑服务器的入口
+		{
+			//
+			//进入房间根据房间号选择房间所在逻辑服务器进行会话选择
+			//
+			if (!g_player) return;
+
+			Asset::EnterRoom* enter_room = dynamic_cast<Asset::EnterRoom*>(message);
+			if (!enter_room) return; 
+
+			auto room_id = enter_room->room().room_id();
+			auto server_id = room_id >> 16;
+
+			auto game_server = WorldSessionInstance.GetServerSession(server_id);
+			if (!game_server) return;
+
+			g_player->SetGameServer(game_server);
+			g_player->SendProtocol2GameServer(enter_room); //转发
+
+			WorldSessionInstance.SetPlayerSession(g_player->GetID(), game_server);
+		}
+		else
+		{
+			if (!g_player) 
+			{
+				LOG(ERROR, "Player has not inited.");
+				return; //尚未初始化
+			}
+			//协议处理
+			g_player->HandleProtocol(meta.type_t(), message);
+		}
+	}
 }
 
 void WorldSession::KillOutPlayer()

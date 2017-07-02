@@ -48,6 +48,7 @@ public:
 	std::string GetRemoteAddress() {return _remote_endpoint.address().to_string(); }
 
 	bool OnInnerProcess(const Asset::Meta& meta);
+	void OnProcessMessage(const Asset::Meta& meta);
 
 	int64_t GetID() { return _global_id; }
 	void SetID(int64_t global_id) { _global_id = global_id; }

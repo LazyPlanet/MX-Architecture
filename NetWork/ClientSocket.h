@@ -82,18 +82,44 @@ public:
 
 	void EnterQueue(std::string&& meta)
 	{
-		_write_queue.push(std::move(meta));
+		auto content = std::move(meta);
+		//
+		//数据包头
+		//
+		unsigned short body_size = content.size();
+		if (body_size >= 4096) 
+		{
+			LOG(ERROR, "protocol has extend max size:{}", body_size);
+			return;
+		}
+
+		unsigned char header[2] = { 0 };
+
+		header[0] = (body_size >> 8) & 0xff;
+		header[1] = body_size & 0xff;
+
+		//
+		//包数据体
+		//
+		auto body = content.c_str(); 
+
+		//数据整理发送
+		char buffer[4096] = { 0 }; //发送数据缓存
+		for (int i = 0; i < 2; ++i) buffer[i] = header[i];
+		for (int i = 0; i < body_size; ++i) buffer[i + 2] = body[i];
+
+		_write_queue.push(std::string(buffer, body_size + 2));
 	}
 	
 	void AsyncSendMessage(std::string meta)
 	{
-		_write_queue.push(meta);
+		EnterQueue(std::move(meta));
 	}
 
     void AsyncWriteSome(const char* data, size_t size)
     {
 		std::string meta(data, size);
-		_write_queue.push(meta);
+		EnterQueue(std::move(meta));
     }
 	
 	bool AsyncProcessQueue()    
@@ -120,6 +146,14 @@ public:
 
 		boost::system::error_code error;
 		std::size_t bytes_sent = _socket.write_some(boost::asio::buffer(meta.c_str(), bytes_to_send), error);
+
+		std::stringstream str;
+		const char* c = meta.c_str();
+		for (std::size_t i = 0; i < bytes_to_send; ++i)
+		{
+			str << (int)c[i] << " ";
+		}
+		DEBUG("游戏逻辑服务器发送数据:{}", str.str());
 
 		if (error == boost::asio::error::would_block || error == boost::asio::error::try_again)
 		{
@@ -148,6 +182,7 @@ public:
 			return AsyncProcessQueue();
 		}
 
+		DEBUG("client bytes_to_send:{} bytes_sent:{}", bytes_to_send, bytes_sent);
 		_write_queue.pop();
 
 		if (_closing && _write_queue.empty()) Close("关闭");
