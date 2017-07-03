@@ -973,7 +973,23 @@ void Game::Calculate(int64_t hupai_player_id/*胡牌玩家*/, int64_t dianpao_pl
 
 		it_dianpao->set_score(baofen_total); //总积分
 	}
-	
+
+	//取最大番数
+	auto max_fan_it = std::max_element(fan_list.begin(), fan_list.end(), [&](const Asset::FAN_TYPE& fan1, const Asset::FAN_TYPE& fan2){
+			return get_multiple(fan1) > get_multiple(fan2);
+			});
+	if (max_fan_it != fan_list.end()) message.set_max_fan_type(*max_fan_it);
+
+	//
+	//记录本次积分
+	//
+	for (auto player : _players)
+	{
+		if (!player) continue;
+
+		player->AddGameRecord(message.record());
+	}
+
 	message.PrintDebugString();
 		
 	BroadCast(message);

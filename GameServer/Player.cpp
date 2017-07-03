@@ -1261,6 +1261,36 @@ int32_t Player::CmdSaizi(pb::Message* message)
 	SendProtocol(saizi);
 	return 0;
 }
+	
+bool Player::AddGameRecord(const Asset::GameRecord& record)
+{
+	if (!_room) return false;
+
+	int64_t room_id = _room->GetID();
+
+	Asset::RoomHistory* room_history = nullptr;
+
+	for (int32_t i = _stuff.room_history().size() - 1; i >= 0; --i)
+	{
+		if (_stuff.room_history(i).room_id() == room_id)
+		{
+			room_history = _stuff.mutable_room_history(i);
+		}
+	}
+
+	if (!room_history)
+	{
+		room_history = _stuff.mutable_room_history()->Add();
+		room_history->set_room_id(_room->GetID());
+	}
+
+	auto list = room_history->mutable_list()->Add();
+	list->CopyFrom(record);
+
+	DEBUG("player_id:{} add game record:{}", _player_id, record.ShortDebugString());
+
+	return true;
+}
 
 /////////////////////////////////////////////////////
 /////游戏逻辑定义
