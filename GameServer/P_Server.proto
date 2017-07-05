@@ -8,14 +8,18 @@ package Adoter.Asset;
 //
 /////////////////////////////////////////////////////
 
+//
 //消息类型
+//
 enum MSG_TYPE {
 	MSG_TYPE_BEGIN = 1;
 	MSG_TYPE_AOI_ENTER = 2;
 	MSG_TYPE_AOI_LEAVE = 3;
 	MSG_TYPE_AOI_MOVE = 4;
 }
+//
 //消息队列
+//
 message MsgItem {
 	optional int64 message_id = 1; //消息ID
 	optional int32 type = 2; //消息类型
@@ -26,15 +30,18 @@ message MsgItem {
 	optional int32 delay = 7; //发送延时(s)
 	optional bytes content = 8; //具体内容
 }
-//消息队列，可以用于存盘
+//
+//消息队列
+//
+//可以用于存盘
+//
 message MsgItems {
 	repeated MsgItem items = 1;
 }
 
-/////////////////////////////////////////////////////
+//
 //玩家名称
 //
-/////////////////////////////////////////////////////
 message FamilyName {
 	repeated bytes name = 1;
 }
@@ -45,5 +52,25 @@ message WomanName {
 
 message ManName {
 	repeated bytes name = 1;
+}
+
+//
+//服务器配置数据
+//
+message SeverConfig {
+	optional int32 zone_id = 1;
+	optional bytes description = 2;
+
+	message SeverElement { //服务器信息
+		optional int32 server_id = 1; //全局唯一
+		optional bytes name = 2; //名称
+		optional bytes ip_address = 3 [ default = "0.0.0.0" ]; //地址
+		optional int32 port = 4; //端口
+		optional int32 thread_count = 5; //线程数
+	}
+	optional SeverElement local_server = 3; //逻辑服务器
+	optional SeverElement center_server = 4; //中心服务器
+	optional SeverElement gmt_server = 5; //Gmt服务器
+	optional SeverElement game_server = 6; //逻辑服务器
 }
 

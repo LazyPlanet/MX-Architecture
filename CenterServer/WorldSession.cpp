@@ -52,6 +52,12 @@ void WorldSession::InitializeHandler(const boost::system::error_code error, cons
 					
 				DEBUG("解析的头:{} {} 包长:{}", (int)_buffer[index] * 256, (int)_buffer[1 + index], body_size);
 
+				if (body_size > 200)
+				{
+					LOG(ERROR, "接收了太大的包长:{} 丢弃.", body_size)
+					return;
+				}
+
 				char buffer[4096] = { 0 }; //数据缓存  
 				for (size_t i = 0; i < body_size; ++i) buffer[i] = _buffer[i + index + 2];  
 

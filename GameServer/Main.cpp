@@ -124,7 +124,7 @@ int main(int argc, const char* argv[])
 		std::string server_ip = ConfigInstance.GetString("ServerIP", "0.0.0.0");
 		if (server_ip.empty()) return 4;
 		
-		int32_t server_port = ConfigInstance.GetInt("ServerPort", 50000);
+		int32_t server_port = ConfigInstance.GetInt("ServerPort", 50001);
 		if (server_port <= 0 || server_port > 0xffff) return 5;
 		
 		int32_t thread_count = ConfigInstance.GetInt("ThreadCount", 5);
@@ -135,14 +135,18 @@ int main(int argc, const char* argv[])
 		//
 		//连接GMT服
 		//
-		//boost::asio::ip::tcp::endpoint gmt_endpoint(boost::asio::ip::address::from_string("0.0.0.0"), 50003);
-		//auto _gmt_client = std::make_shared<ClientSession>(_io_service, gmt_endpoint);
-		//_gmt_client->AsyncConnect();
+		std::string gmt_server_address = ConfigInstance.GetString("GMT_ServerIP", "0.0.0.0");
+		int32_t gmt_server_port = ConfigInstance.GetInt("GMT_ServerPort", 50003); 
+		boost::asio::ip::tcp::endpoint gmt_endpoint(boost::asio::ip::address::from_string(gmt_server_address), gmt_server_port);
+		auto _gmt_client = std::make_shared<ClientSession>(_io_service, gmt_endpoint);
+		_gmt_client->AsyncConnect();
 		
 		//
 		//连接中心服
 		//
-		boost::asio::ip::tcp::endpoint center_endpoint(boost::asio::ip::address::from_string("0.0.0.0"), 50000);
+		std::string center_server_address = ConfigInstance.GetString("Center_ServerIP", "0.0.0.0");
+		int32_t center_server_port = ConfigInstance.GetInt("Center_ServerPort", 50000); 
+		boost::asio::ip::tcp::endpoint center_endpoint(boost::asio::ip::address::from_string(center_server_address), center_server_port);
 		g_center_session = std::make_shared<CenterSession>(_io_service, center_endpoint);
 		g_center_session->AsyncConnect();
 
