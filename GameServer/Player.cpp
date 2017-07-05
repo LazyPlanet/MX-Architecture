@@ -30,17 +30,17 @@ Player::Player()
 	AddHandler(Asset::META_TYPE_SHARE_CREATE_ROOM, std::bind(&Player::CmdCreateRoom, this, std::placeholders::_1));
 	AddHandler(Asset::META_TYPE_SHARE_GAME_OPERATION, std::bind(&Player::CmdGameOperate, this, std::placeholders::_1));
 	AddHandler(Asset::META_TYPE_SHARE_PAI_OPERATION, std::bind(&Player::CmdPaiOperate, this, std::placeholders::_1));
-	//AddHandler(Asset::META_TYPE_SHARE_BUY_SOMETHING, std::bind(&Player::CmdBuySomething, this, std::placeholders::_1));
+	AddHandler(Asset::META_TYPE_SHARE_BUY_SOMETHING, std::bind(&Player::CmdBuySomething, this, std::placeholders::_1));
 	AddHandler(Asset::META_TYPE_SHARE_ENTER_ROOM, std::bind(&Player::CmdEnterRoom, this, std::placeholders::_1));
-	//AddHandler(Asset::META_TYPE_SHARE_SIGN, std::bind(&Player::CmdSign, this, std::placeholders::_1));
+	AddHandler(Asset::META_TYPE_SHARE_SIGN, std::bind(&Player::CmdSign, this, std::placeholders::_1));
 	AddHandler(Asset::META_TYPE_SHARE_RANDOM_SAIZI, std::bind(&Player::CmdSaizi, this, std::placeholders::_1));
-	//AddHandler(Asset::META_TYPE_SHARE_COMMON_PROPERTY, std::bind(&Player::CmdGetCommonProperty, this, std::placeholders::_1));
-	//AddHandler(Asset::META_TYPE_SHARE_SAY_HI, std::bind(&Player::CmdSayHi, this, std::placeholders::_1));
+	AddHandler(Asset::META_TYPE_SHARE_COMMON_PROPERTY, std::bind(&Player::CmdGetCommonProperty, this, std::placeholders::_1));
+	AddHandler(Asset::META_TYPE_SHARE_SAY_HI, std::bind(&Player::CmdSayHi, this, std::placeholders::_1));
 	AddHandler(Asset::META_TYPE_SHARE_GAME_SETTING, std::bind(&Player::CmdGameSetting, this, std::placeholders::_1));
 
 	//AddHandler(Asset::META_TYPE_C2S_LOGIN, std::bind(&Player::CmdLogin, this, std::placeholders::_1));
 	//AddHandler(Asset::META_TYPE_C2S_ENTER_GAME, std::bind(&Player::CmdEnterGame, this, std::placeholders::_1));
-	//AddHandler(Asset::META_TYPE_C2S_GET_REWARD, std::bind(&Player::CmdGetReward, this, std::placeholders::_1));
+	AddHandler(Asset::META_TYPE_C2S_GET_REWARD, std::bind(&Player::CmdGetReward, this, std::placeholders::_1));
 	AddHandler(Asset::META_TYPE_C2S_LOAD_SCENE, std::bind(&Player::CmdLoadScene, this, std::placeholders::_1));
 }
 	
@@ -355,10 +355,40 @@ int32_t Player::CmdCreateRoom(pb::Message* message)
 	Asset::CreateRoom* create_room = dynamic_cast<Asset::CreateRoom*>(message);
 	if (!create_room) return 1;
 
+	//
+	//检查是否活动限免房卡
+	//
+	//否则，检查房卡是否满足要求
+	//
 	auto activity_id = g_const->room_card_limit_free_activity_id();
 	if (ActivityInstance.IsOpen(activity_id))
 	{
 		WARN("当前活动:{}开启，玩家ID:{}", activity_id, _player_id);
+	}
+	else
+	{
+		auto open_rands = create_room->room().options().open_rands(); //局数
+
+		const Item_RoomCard* room_card = dynamic_cast<const Item_RoomCard*>(AssetInstance.Get(g_const->room_card_id()));
+		if (!room_card) return 3;
+
+		int32_t rounds = room_card->rounds(); //该张房卡可以玩多少局麻将
+		if (rounds <= 0) return 4;
+
+		int32_t consume_count = open_rands / rounds; //待消耗房卡数量
+
+		if (CheckRoomCard(consume_count)) 
+		{
+			AlertMessage(Asset::ERROR_ROOM_CARD_NOT_ENOUGH); //房卡不足
+			return 5;
+		}
+
+		auto consume_real = ConsumeRoomCard(Asset::ROOM_CARD_CHANGED_TYPE_OPEN_ROOM, consume_count); //消耗
+		if (consume_count != consume_real)
+		{
+			LOG(ERROR, "Consume room card error, consume_count:{} consume_real:{}", consume_count, consume_real);
+			return 6;
+		}
 	}
 
 	int64_t room_id = RoomInstance.CreateRoom();

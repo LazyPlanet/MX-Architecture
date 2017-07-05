@@ -74,7 +74,10 @@ public:
 	{
 		_socket.async_read_some(boost::asio::buffer(_buffer), std::bind(callback, this->shared_from_this(), std::placeholders::_1, std::placeholders::_2));
 	}
-	/*
+
+	//
+	//简单网络数据发送
+	//
 	virtual void AsyncSend(std::string& content)
 	{
 		AsyncSend(content.c_str(), content.size());
@@ -87,7 +90,6 @@ public:
 	{
 		DEBUG("bytes_transferred:{} result:{}", bytes_transferred, error.message());
 	}
-	*/
 
 	bool AsyncProcessQueue()    
 	{

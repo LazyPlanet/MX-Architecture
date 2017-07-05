@@ -523,7 +523,7 @@ void ServerSession::SendProtocol(const pb::Message& message)
 	}
 
 	TRACE("send message to server:{} message:{}", _ip_address, meta.ShortDebugString());
-	//AsyncSend(content);
+	AsyncSend(content);
 }
 	
 void ServerSessionManager::BroadCastProtocol(const pb::Message* message)
