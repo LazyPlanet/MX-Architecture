@@ -30,6 +30,34 @@ void SignalHandler(const boost::system::error_code& error, int)
 	//if (!error) World::StopNow(SHUTDOWN_EXIT_CODE);
 }
 
+void WorldUpdateLoop()
+{
+	int32_t curr_time = 0, prev_sleep_time = 0;
+	
+	int32_t prev_time = CommonTimerInstance.GetStartTime();
+
+	while (!WorldInstance.IsStopped())
+	{
+		curr_time = CommonTimerInstance.GetStartTime();
+		
+		int32_t diff = CommonTimerInstance.GetTimeDiff(prev_time, curr_time);
+		
+		WorldInstance.Update(diff);        
+		
+		prev_time = curr_time;
+		
+		if (diff <= const_world_sleep + prev_sleep_time) //50MS
+		{            
+			prev_sleep_time = const_world_sleep + prev_sleep_time - diff;            
+			std::this_thread::sleep_for(std::chrono::milliseconds(prev_sleep_time));        
+		}        
+		else    
+		{	
+			prev_sleep_time = 0;
+		}
+	}
+}
+
 void ShutdownThreadPool(std::vector<std::shared_ptr<std::thread>>& threads)
 {
 	_io_service.stop();
@@ -96,8 +124,10 @@ int main(int argc, const char* argv[])
 
 		WorldSessionInstance.StartNetwork(_io_service, server_ip, server_port, thread_count);
 
-		_io_service.run();
+		//_io_service.run();
 
+		//世界循环
+		WorldUpdateLoop();
 		std::cout << "Service stop..." << std::endl;
 
 		ShutdownThreadPool(_threads);

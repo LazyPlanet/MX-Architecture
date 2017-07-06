@@ -62,7 +62,14 @@ public:
 		{
 			switch (it->second->activity_type())
 			{
-				case Asset::ACTIVITY_CYCLE_TYPE_DIALY: //每日
+				//
+				//每日活动
+				//
+				//先进行日期检查，如果日期满足，则再进行时间检查
+				//
+				//如果有变化，才重新推给Client做更新
+				//
+				case Asset::ACTIVITY_CYCLE_TYPE_DIALY: //每日活动
 				{
 					boost::posix_time::ptime start_date(boost::posix_time::time_from_string(it->second->start_date() + " 00::00::00"));
 					boost::posix_time::ptime stop_date(boost::posix_time::time_from_string(it->second->start_date() + " 00::00::00"));
@@ -73,11 +80,11 @@ public:
 					std::time_t cur_t = CommonTimerInstance.GetTime();
 					boost::posix_time::ptime curr_time = boost::posix_time::from_time_t(cur_t);
 
-					if (curr_time.date() >= start_date.date() || curr_time.date() <= stop_date.date()) //日期满足
+					if (curr_time.date() >= start_date.date() && curr_time.date() <= stop_date.date()) //日期满足
 					{
 						auto curr_time_duration = curr_time.time_of_day(); //19:00:00
 
-						if (curr_time_duration >= start_time_duration || curr_time_duration <= stop_time_duration) //时间满足
+						if (curr_time_duration >= start_time_duration && curr_time_duration <= stop_time_duration) //时间满足
 						{
 							if (!_state[it->first])
 							{
@@ -105,7 +112,14 @@ public:
 				}
 				break;
 				
-				case Asset::ACTIVITY_CYCLE_TYPE_DURATION: //时间断
+				//
+				//时间段活动
+				//
+				//在某个时间内，进行活动检查，比如 2017-07-07 10:00:00 ~ 2017-08-07 10:00:00 
+				//
+				//直接判断当前时间是否在该时间段内即可
+				//
+				case Asset::ACTIVITY_CYCLE_TYPE_DURATION: //时间段
 				{
 					boost::posix_time::ptime start_time(boost::posix_time::time_from_string(it->second->start_date() + " " + it->second->start_time()));
 					auto start_time_t = boost::posix_time::to_time_t(start_time);
@@ -115,7 +129,7 @@ public:
 					
 					std::time_t cur_t = CommonTimerInstance.GetTime();
 
-					if (cur_t < start_time_t || cur_t > stop_time_t) 
+					if (cur_t < start_time_t || cur_t > stop_time_t) //不在时间段内
 					{
 						if (_state[it->first])
 						{
@@ -142,6 +156,9 @@ public:
 			}
 		}
 
+		//
+		//如果有一个任务状态发生了变化，则更新所有任务数据
+		//
 		if (has_changed)
 		{
 			Asset::SyncActivity message; //数据变化

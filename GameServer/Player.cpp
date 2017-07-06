@@ -369,7 +369,7 @@ int32_t Player::CmdCreateRoom(pb::Message* message)
 	{
 		auto open_rands = create_room->room().options().open_rands(); //局数
 
-		const Item_RoomCard* room_card = dynamic_cast<const Item_RoomCard*>(AssetInstance.Get(g_const->room_card_id()));
+		const Asset::Item_RoomCard* room_card = dynamic_cast<const Asset::Item_RoomCard*>(AssetInstance.Get(g_const->room_card_id()));
 		if (!room_card) return 3;
 
 		int32_t rounds = room_card->rounds(); //该张房卡可以玩多少局麻将
