@@ -26,7 +26,7 @@ void WorldSession::InitializeHandler(const boost::system::error_code error, cons
 		if (error)
 		{
 			WARN("Remote client disconnect, remote_ip:{}, player_id:{}", _ip_address, g_player ? g_player->GetID() : 0);
-			KillOutPlayer();
+			KickOutPlayer();
 			//Close(); ////断开网络连接，不要显示的关闭网络连接
 			return;
 		}
@@ -175,7 +175,7 @@ void WorldSession::InitializeHandler(const boost::system::error_code error, cons
 				auto session = WorldSessionInstance.Get(g_player->GetID());
 				if (session) //已经在线
 				{
-					session->KillOutPlayer();
+					session->KickOutPlayer();
 				}
 				WorldSessionInstance.Emplace(g_player->GetID(), shared_from_this()); //在线玩家
 				
@@ -216,16 +216,16 @@ void WorldSession::InitializeHandler(const boost::system::error_code error, cons
 	AsyncReceiveWithCallback(&WorldSession::InitializeHandler);
 }
 
-void WorldSession::KillOutPlayer()
+void WorldSession::KickOutPlayer()
 {
 	if (g_player) //网络断开
 	{
 		//WorldSessionInstance.Erase(g_player->GetID()); //玩家自行处理对象管理
 
 		//提示Client
-		Asset::KillOut message;
+		Asset::KickOut message;
 		message.set_player_id(g_player->GetID());
-		message.set_out_reason(Asset::KILL_OUT_REASON_OTHER_LOGIN);
+		message.set_out_reason(Asset::KICK_OUT_REASON_OTHER_LOGIN);
 		SendProtocol(message); //有可能发送失败，因为此时玩家已经断开网络连接
 
 		//玩家退出登陆
@@ -265,7 +265,7 @@ bool WorldSession::Update()
 
 void WorldSession::OnClose()
 {
-	KillOutPlayer();
+	KickOutPlayer();
 }
 
 void WorldSession::SendProtocol(const pb::Message* message)

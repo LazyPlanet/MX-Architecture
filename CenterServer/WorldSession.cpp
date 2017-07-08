@@ -23,14 +23,15 @@ void WorldSession::InitializeHandler(const boost::system::error_code error, cons
 {
 	try
 	{
+		/*
 		std::stringstream str;
 		for (std::size_t i = 0; i < bytes_transferred; ++i)
 			str << (int)_buffer[i] << " ";
 		DEBUG("中心服务器接收数据:{} 当前缓存数量大小:{} 本次接收数据大小:{}", str.str(), _buffer.size(), bytes_transferred);
-
+		*/
 		if (error)
 		{
-			WARN("Remote client disconnect, remote_ip:{}, player_id:{}", _ip_address, g_player ? g_player->GetID() : 0);
+			WARN("Remote client disconnect, remote_ip:{} port:{}, player_id:{}", _ip_address, _remote_endpoint.port(), g_player ? g_player->GetID() : 0);
 			KillOutPlayer();
 			//Close(); ////断开网络连接，不要显示的关闭网络连接
 			return;
@@ -42,7 +43,7 @@ void WorldSession::InitializeHandler(const boost::system::error_code error, cons
 				bool result = meta.ParseFromArray(_buffer.data(), bytes_transferred);
 				if (result)
 				{
-					DEBUG("看看他是啥:{}", meta.ShortDebugString());
+					LOG(ERROR, "收到非法协议数据:{} 地址:{} 端口:{}", meta.ShortDebugString(), _ip_address, _remote_endpoint.port());
 				}
 			}
 
@@ -54,7 +55,7 @@ void WorldSession::InitializeHandler(const boost::system::error_code error, cons
 
 				if (body_size > 200)
 				{
-					LOG(ERROR, "接收了太大的包长:{} 丢弃.", body_size)
+					LOG(ERROR, "接收来自地址:{} 端口:{} 太大的包长:{} 丢弃.", _ip_address, _remote_endpoint.port(), body_size)
 					return;
 				}
 
@@ -323,16 +324,7 @@ void WorldSession::KillOutPlayer()
 	{
 		//WorldSessionInstance.Erase(g_player->GetID()); //玩家自行处理对象管理
 
-		//提示Client
-		Asset::KillOut message;
-		message.set_player_id(g_player->GetID());
-		message.set_out_reason(Asset::KILL_OUT_REASON_OTHER_LOGIN);
-		SendProtocol(message); //有可能发送失败，因为此时玩家已经断开网络连接
-
-		//玩家退出登陆
-		g_player->Logout(nullptr);
-		g_player.reset();
-		g_player = nullptr;
+		g_player->OnKickOut(Asset::KICK_OUT_REASON_OTHER_LOGIN); //玩家退出登陆
 	}
 }
 	

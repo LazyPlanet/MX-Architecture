@@ -63,26 +63,31 @@ public:
 			switch (it->second->activity_type())
 			{
 				//
-				//每日活动
+				//每日活动，每天固定时间内满足条件
 				//
-				//先进行日期检查，如果日期满足，则再进行时间检查
+				//先进行日期检查，再进行时间检查
 				//
 				//如果有变化，才重新推给Client做更新
 				//
 				case Asset::ACTIVITY_CYCLE_TYPE_DIALY: //每日活动
 				{
 					boost::posix_time::ptime start_date(boost::posix_time::time_from_string(it->second->start_date() + " 00::00::00"));
-					boost::posix_time::ptime stop_date(boost::posix_time::time_from_string(it->second->start_date() + " 00::00::00"));
+					boost::posix_time::ptime stop_date(boost::posix_time::time_from_string(it->second->stop_date() + " 23::59::59"));
 						
 					boost::posix_time::time_duration start_time_duration(boost::posix_time::duration_from_string(it->second->start_time()));
 					boost::posix_time::time_duration stop_time_duration(boost::posix_time::duration_from_string(it->second->stop_time()));
 					
 					std::time_t cur_t = CommonTimerInstance.GetTime();
 					boost::posix_time::ptime curr_time = boost::posix_time::from_time_t(cur_t);
+					auto curr_time_duration = curr_time.time_of_day(); //19:00:00
+
+					//DEBUG("start_date:{} stop_date:{} curr_time:{}", boost::posix_time::to_simple_string(start_date), 
+					//		boost::posix_time::to_simple_string(stop_date), boost::posix_time::to_simple_string(curr_time));
 
 					if (curr_time.date() >= start_date.date() && curr_time.date() <= stop_date.date()) //日期满足
 					{
-						auto curr_time_duration = curr_time.time_of_day(); //19:00:00
+						//DEBUG("start_time_duration:{} stop_time_duration:{} curr_time_duration:{}", boost::posix_time::to_simple_string(start_time_duration), 
+						//		boost::posix_time::to_simple_string(stop_time_duration), boost::posix_time::to_simple_string(curr_time_duration));
 
 						if (curr_time_duration >= start_time_duration && curr_time_duration <= stop_time_duration) //时间满足
 						{

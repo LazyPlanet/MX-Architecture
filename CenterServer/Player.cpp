@@ -618,6 +618,21 @@ int32_t Player::CmdGameSetting(pb::Message* message)
 	return 0;
 }
 	
+void Player::OnKickOut(Asset::KICK_OUT_REASON reason)
+{
+	Asset::KickOut kickout; //提示Client
+	kickout.set_player_id(_player_id);
+	kickout.set_kick_reason(reason);
+	SendProtocol(kickout); 
+
+	Asset::KickOutPlayer kickout_player; //通知游戏逻辑服务器退出
+	kickout_player.set_player_id(_player_id);
+	kickout_player.set_kick_reason(reason);
+	SendProtocol2GameServer(kickout_player); 
+
+	Logout(nullptr);
+}
+	
 void PlayerManager::Emplace(int64_t player_id, std::shared_ptr<Player> player)
 {
 	if (!player) return;

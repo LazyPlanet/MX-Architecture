@@ -42,6 +42,9 @@ Player::Player()
 	//AddHandler(Asset::META_TYPE_C2S_ENTER_GAME, std::bind(&Player::CmdEnterGame, this, std::placeholders::_1));
 	AddHandler(Asset::META_TYPE_C2S_GET_REWARD, std::bind(&Player::CmdGetReward, this, std::placeholders::_1));
 	AddHandler(Asset::META_TYPE_C2S_LOAD_SCENE, std::bind(&Player::CmdLoadScene, this, std::placeholders::_1));
+	
+	//中心服务器协议处理
+	AddHandler(Asset::META_TYPE_S2S_KICKOUT_PLAYER, std::bind(&Player::OnKickOut, this, std::placeholders::_1));
 }
 	
 Player::Player(int64_t player_id) : Player()/*委派构造函数*/
@@ -1312,6 +1315,7 @@ bool Player::AddGameRecord(const Asset::GameRecord& record)
 	{
 		room_history = _stuff.mutable_room_history()->Add();
 		room_history->set_room_id(_room->GetID());
+		room_history->set_create_time(CommonTimerInstance.GetTime()); //创建时间
 	}
 
 	auto list = room_history->mutable_list()->Add();
@@ -3207,6 +3211,18 @@ int32_t Player::CmdGameSetting(pb::Message* message)
 	_stuff.mutable_game_setting()->CopyFrom(game_setting->game_setting());
 
 	SendProtocol(game_setting); //设置成功
+
+	return 0;
+}
+	
+int32_t Player::OnKickOut(pb::Message* message)
+{
+	const auto kick_out = dynamic_cast<const Asset::KickOutPlayer*>(message);
+	if (!kick_out) return 1;
+	
+	LOG(TRACE, "player_id:{} has been kickout for:{}", _player_id, kick_out.reason());
+
+	Logout(nullptr);
 
 	return 0;
 }

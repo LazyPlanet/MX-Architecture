@@ -49,7 +49,7 @@ public:
 
 	void SendProtocol(const pb::Message& message);
 	void SendProtocol(const pb::Message* message);
-	void KillOutPlayer();
+	void KickOutPlayer();
 	void OnLogout();
 	boost::asio::ip::tcp::endpoint GetRemotePoint() { return _remote_endpoint; }
 	std::string GetRemoteAddress() {return _remote_endpoint.address().to_string(); }

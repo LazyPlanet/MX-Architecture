@@ -270,7 +270,7 @@ Asset::COMMAND_ERROR_CODE ServerSession::OnCommandProcess(const Asset::Command& 
 		
 	if (command.count() <= 0) //不可能是负数
 	{
-		RETURN(Asset::COMMAND_ERROR_CODE_PARA); //数据错误
+		RETURN(Asset::COMMAND_ERROR_CODE_NO_PLAYER); //数据错误
 	}
 
 	switch(command.command_type())

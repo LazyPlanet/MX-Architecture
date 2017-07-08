@@ -162,6 +162,9 @@ public:
 	void SayHi();
 	//游戏设置
 	virtual int32_t CmdGameSetting(pb::Message* message);
+
+	//踢下线
+	virtual int32_t OnKickOut(pb::Message* message);
 public:
 	//获取所有包裹
 	const Asset::Inventory& GetInventory() { return _stuff.inventory();	}
