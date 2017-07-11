@@ -355,6 +355,16 @@ int32_t WorldSession::OnThirdPartyLogin(const pb::Message* message)
 
 	switch (login->account_type())
 	{
+		case Asset::ACCOUNT_TYPE_8HERE: //官方平台
+		{
+		}
+		break;
+		
+		case Asset::ACCOUNT_TYPE_QQ: //QQ平台
+		{
+		}
+		break;
+
 		case Asset::ACCOUNT_TYPE_WECHAT: //微信平台
 		{
 			const auto& access_code = login->access_code();
@@ -404,6 +414,10 @@ int32_t WorldSession::OnThirdPartyLogin(const pb::Message* message)
 					{
 						std::cout << ret << std::endl;
 					}
+
+					Asset::WeChatInfo proto;
+					proto.mutable_wechat()->CopyFrom(union_info);
+					SendProtocol(proto); //同步Client
 				}
 				else
 				{

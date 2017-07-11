@@ -182,8 +182,11 @@ int32_t Player::Logout(pb::Message* message)
 	
 int32_t Player::OnLogout()
 {
-	this->_stuff.set_login_time(0);
-	this->_stuff.set_logout_time(CommonTimerInstance.GetTime());
+	_stuff.set_login_time(0);
+	_stuff.set_logout_time(CommonTimerInstance.GetTime());
+
+	if (_game) _game.reset();
+	if (_room) _room.reset();
 	
 	Save();	//存档数据库
 
@@ -688,8 +691,8 @@ int32_t Player::CmdEnterRoom(pb::Message* message)
 
 	if (_room) 
 	{
-		DEBUG_ASSERT(false);
-		return 2; //已经在房间
+		LOG(ERROR, "player_id:{} has been in room:{} enter_room:{}", _player_id, _room->GetID(), enter_room->ShortDebugString());
+		//return 2; //已经在房间
 	}
 
 	Asset::ROOM_TYPE room_type = enter_room->room().room_type();
@@ -3175,6 +3178,8 @@ void Player::ClearCards()
 void Player::OnGameOver()
 {
 	ClearCards();
+	
+	if (_tuoguan_server) OnLogout();
 
 	_player_prop.clear_game_oper_state();
 
