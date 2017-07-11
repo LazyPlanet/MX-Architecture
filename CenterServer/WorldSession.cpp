@@ -8,6 +8,7 @@
 #include "Protocol.h"
 #include "Player.h"
 #include "PlayerName.h"
+#include "Timer.h"
 
 namespace Adoter
 {
@@ -369,16 +370,57 @@ int32_t WorldSession::OnThirdPartyLogin(const pb::Message* message)
 					return 2;
 				}
 
-				std::string reques = "https://api.weixin.qq.com/sns/oauth2/access_token?appid=wx5763b38a2613f9fb&secret=f9128ba451c51ce44fdd3bddf2fa45e7&code=" + access_code +"&grant_type=authorization_code";
+				std::string request = "https://api.weixin.qq.com/sns/oauth2/access_token?appid=wx5763b38a2613f9fb&secret=f9128ba451c51ce44fdd3bddf2fa45e7&code=" + access_code +"&grant_type=authorization_code";
 				const char *html = 0;
-				html = http.quickGetStr(reques.c_str());
+				html = http.quickGetStr(request.c_str());
 				std::cout << html << "\r\n";
 
 				Asset::WeChatAccessToken access_token;
-				access_token.ParseFromString(std::string(html));
 
+				std::string err;
+				int ret = pbjson::json2pb(html, &access_token, err);
+				if (ret)
+				{
+					std::cout << ret << std::endl;
+				}
+
+				auto curr_time = CommonTimerInstance.GetTime();
 				auto expires_in = access_token.expires_in();
-				auto refresh_token = access_token.refresh_token();
+
+				if (curr_time < expires_in) //尚未过期
+				{
+					auto openid = access_token.openid();
+
+					auto refresh_token = access_token.refresh_token();
+					request = "https://api.weixin.qq.com/sns/userinfo?access_token=" + refresh_token + "&openid=" + openid;
+					html = http.quickGetStr(request.c_str());
+					std::cout << html << "\r\n";
+
+					Asset::WechatUnion union_info;
+
+					std::string err;
+					int ret = pbjson::json2pb(html, &union_info, err);
+					if (ret)
+					{
+						std::cout << ret << std::endl;
+					}
+				}
+				else
+				{
+					auto refresh_token = access_token.refresh_token();
+					request = "https://api.weixin.qq.com/sns/oauth2/refresh_token?appid=wx5763b38a2613f9fb&grant_type=refresh_token&refresh_token=" + refresh_token;
+					html = http.quickGetStr(request.c_str());
+					std::cout << html << "\r\n";
+
+					Asset::WeChatRefresh refresh;
+
+					std::string err;
+					int ret = pbjson::json2pb(html, &refresh, err);
+					if (ret)
+					{
+						std::cout << ret << std::endl;
+					}
+				}
 			}
 		}
 		break;
