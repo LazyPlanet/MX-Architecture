@@ -124,6 +124,8 @@ void Game::OnStart()
 
 bool Game::OnOver()
 {
+	if (!_room) return false;
+
 	Asset::PaiPushDown proto;
 
 	for (int i = 0; i < MAX_PLAYER_COUNT; ++i)
@@ -158,6 +160,21 @@ bool Game::OnOver()
 
 	BroadCast(proto);
 	
+	ClearState();
+
+	if (GetRemainGameCount() == 0)
+	{
+		Asset::GamesFull message;
+		message.set_rounds(_room->GetGamesCount());
+
+		BroadCast(message);
+	}
+
+	return true;
+}
+	
+void Game::ClearState()
+{
 	_baopai.Clear();
 
 	_oper_limit.Clear();
@@ -167,10 +184,14 @@ bool Game::OnOver()
 	_cards_pool.clear();
 	
 	_liuju = false;
-
-	return true;
 }
 
+int32_t Game::GetRemainGameCount() 
+{ 
+	if (!_room) return 0;
+
+	return _room->GetRemainCount();
+}
 /////////////////////////////////////////////////////
 //
 //玩家可操作的状态只有2种，顺序不可变：

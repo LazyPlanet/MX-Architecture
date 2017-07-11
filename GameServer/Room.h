@@ -55,6 +55,8 @@ public:
 	bool IsEmpty() { return _players.size() == 0; } //是否没人
 
 	bool CanStarGame(); //能否开启游戏
+	int32_t GetRemainCount(); //剩余游戏次数
+	int32_t GetGamesCount() { return _games.size(); }
 
 	void OnPlayerOperate(std::shared_ptr<Player> player, pb::Message* message);
 
@@ -79,6 +81,7 @@ public:
 	int64_t GetBanker() { return _banker; } //获取庄家
 	int32_t GetBankerIndex() { return _banker_index; } //庄家索引
 	bool IsBanker(int64_t player_id){ return _banker == player_id; } //是否是庄家
+
 	bool IsExpired(); //是否过期
 };
 

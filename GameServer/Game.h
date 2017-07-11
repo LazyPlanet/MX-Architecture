@@ -48,7 +48,9 @@ public:
 	virtual void Init(std::shared_ptr<Room> room); //初始化
 	virtual bool Start(std::vector<std::shared_ptr<Player>> players); //开始游戏
 	virtual void OnStart(); //开始游戏回调
+
 	virtual bool OnOver(); //游戏结束
+	void ClearState(); //清理状态
 
 	virtual std::vector<int32_t> FaPai(size_t card_count); //发牌
 	virtual std::vector<int32_t> TailPai(size_t card_count); //后楼发牌
@@ -94,6 +96,7 @@ public:
 	int32_t GetRemainCount() { return _cards.size(); } //当前剩余牌数量
 
 	void SetCurrPlayerIndex(int64_t curr_player_index) { _curr_player_index = curr_player_index; } //设置当前可操作的玩家
+	int32_t GetRemainGameCount(); //当前剩余游戏局数
 };
 
 /////////////////////////////////////////////////////

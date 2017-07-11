@@ -55,6 +55,8 @@ public:
 
 	void SetRoleType(Asset::ROLE_TYPE role_type) { _role_type = role_type; }
 
+	int32_t OnThirdPartyLogin(const pb::Message* message);
+
 private:
 	Asset::Account _account;
 	std::unordered_set<int64_t> _player_list;

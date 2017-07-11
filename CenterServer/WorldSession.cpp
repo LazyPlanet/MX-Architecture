@@ -1,4 +1,5 @@
 #include <spdlog/spdlog.h>
+#include <CkHttp.h>
 
 #include "WorldSession.h"
 #include "RedisManager.h"
@@ -53,7 +54,7 @@ void WorldSession::InitializeHandler(const boost::system::error_code error, cons
 					
 				DEBUG("解析的头:{} {} 包长:{}", (int)_buffer[index] * 256, (int)_buffer[1 + index], body_size);
 
-				if (body_size > 200)
+				if (body_size > 4096)
 				{
 					LOG(ERROR, "接收来自地址:{} 端口:{} 太大的包长:{} 丢弃.", _ip_address, _remote_endpoint.port(), body_size)
 					return;
@@ -219,6 +220,13 @@ void WorldSession::OnProcessMessage(const Asset::Meta& meta)
 
 			OnLogout();
 		}
+		else if (Asset::META_TYPE_C2S_WECHAT_LOGIN == meta.type_t()) //微信登陆
+		{
+			Asset::WechatLogin* login = dynamic_cast<Asset::WechatLogin*>(message);
+			if (!login) return; 
+
+			OnThirdPartyLogin(message);
+		}
 		else if (Asset::META_TYPE_SHARE_GUEST_LOGIN == meta.type_t()) //游客登陆
 		{
 			Asset::GuestLogin* login = dynamic_cast<Asset::GuestLogin*>(message);
@@ -226,7 +234,9 @@ void WorldSession::OnProcessMessage(const Asset::Meta& meta)
 			
 			std::string account;
 			auto redis = std::make_shared<Redis>();
+
 			if (redis->GetGuestAccount(account)) login->set_account(account);
+
 			SendProtocol(login); 
 		}
 		else if (Asset::META_TYPE_C2S_RECONNECT == meta.type_t()) //断线重连
@@ -335,6 +345,46 @@ void WorldSession::OnLogout()
 		WARN("player_id:{}", g_player->GetID())
 		g_player->Logout(nullptr);
 	}
+}
+	
+int32_t WorldSession::OnThirdPartyLogin(const pb::Message* message)
+{
+	const Asset::WechatLogin* login = dynamic_cast<const Asset::WechatLogin*>(message);
+	if (!login) return 1; 
+
+	switch (login->account_type())
+	{
+		case Asset::ACCOUNT_TYPE_WECHAT: //微信平台
+		{
+			const auto& access_code = login->access_code();
+			{
+				CkHttp http;
+			
+				bool success;
+			
+				//Any string unlocks the component for the 1st 30-days.
+				success = http.UnlockComponent("Anything for 30-day trial");
+				if (success != true) {
+					std::cout << http.lastErrorText() << "\r\n";
+					return 2;
+				}
+
+				std::string reques = "https://api.weixin.qq.com/sns/oauth2/access_token?appid=wx5763b38a2613f9fb&secret=f9128ba451c51ce44fdd3bddf2fa45e7&code=" + access_code +"&grant_type=authorization_code";
+				const char *html = 0;
+				html = http.quickGetStr(reques.c_str());
+				std::cout << html << "\r\n";
+
+				Asset::WeChatAccessToken access_token;
+				access_token.ParseFromString(std::string(html));
+
+				auto expires_in = access_token.expires_in();
+				auto refresh_token = access_token.refresh_token();
+			}
+		}
+		break;
+	}
+
+	return 0;
 }
 
 void WorldSession::Start()

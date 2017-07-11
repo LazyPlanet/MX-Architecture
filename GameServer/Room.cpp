@@ -129,6 +129,13 @@ void Room::OnPlayerOperate(std::shared_ptr<Player> player, pb::Message* message)
 		break;
 	}
 }
+	
+int32_t Room::GetRemainCount() 
+{ 
+	if (!_stuff) return 0;
+
+	return _stuff->options().open_rands() - _games.size(); 
+}
 
 bool Room::Remove(int64_t player_id)
 {

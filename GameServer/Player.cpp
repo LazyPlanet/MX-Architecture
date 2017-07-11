@@ -341,7 +341,10 @@ int32_t Player::OnEnterGame()
 
 int32_t Player::CmdLeaveRoom(pb::Message* message)
 {
+	if (!message) return 1;
+
 	OnLeaveRoom(); //房间处理
+
 	return 0;
 }
 
@@ -1038,12 +1041,12 @@ void Player::OnLeaveRoom()
 {
 	if (!_room) return; 
 
-	WARN("player_id:{} leave room.", _player_id);
+	DEBUG("player_id:{} leave room:{}.", _player_id, _room->GetID());
 
 	_player_prop.clear_game_oper_state(); //玩家操作状态
 
+	_game.reset();
 	_room.reset();
-	_room = nullptr;
 }
 	
 void Player::BroadCast(Asset::MsgItem& item) 
@@ -1685,7 +1688,7 @@ bool Player::CheckHuPai(const Asset::PaiElement& pai, std::vector<Asset::FAN_TYP
 
 	PrintPai();
 
-	fan_list.clear();
+	//fan_list.clear();
 	std::map<int32_t/*麻将牌类型*/, std::vector<int32_t>/*牌值*/> cards;
 
 	try {
@@ -2661,6 +2664,8 @@ bool Player::CheckTingPai(std::vector<Asset::PaiElement>& pais)
 {
 	TRACE("player_id:{}", _player_id);
 
+	if (!_room) return false;
+
 	if (_has_ting || _tuoguan_server) return false; //已经听牌，不再提示
 
 	auto options = _room->GetOptions();
@@ -3220,7 +3225,7 @@ int32_t Player::OnKickOut(pb::Message* message)
 	const auto kick_out = dynamic_cast<const Asset::KickOutPlayer*>(message);
 	if (!kick_out) return 1;
 	
-	LOG(TRACE, "player_id:{} has been kickout for:{}", _player_id, kick_out.reason());
+	LOG(TRACE, "player_id:{} has been kickout for:{}", _player_id, kick_out->reason());
 
 	Logout(nullptr);
 
