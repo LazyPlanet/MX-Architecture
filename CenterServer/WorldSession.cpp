@@ -371,19 +371,14 @@ int32_t WorldSession::OnThirdPartyLogin(const pb::Message* message)
 			{
 				CkHttp http;
 			
-				bool success;
-			
-				//Any string unlocks the component for the 1st 30-days.
-				success = http.UnlockComponent("Anything for 30-day trial");
+				bool success = http.UnlockComponent("ARKTOSHttp_decCLPWFQXmU");
 				if (success != true) {
-					std::cout << http.lastErrorText() << "\r\n";
+					ERROR("使用开源库获取HTTP服务失败:{}", http.lastErrorText());
 					return 2;
 				}
 
 				std::string request = "https://api.weixin.qq.com/sns/oauth2/access_token?appid=wx5763b38a2613f9fb&secret=f9128ba451c51ce44fdd3bddf2fa45e7&code=" + access_code +"&grant_type=authorization_code";
-				const char *html = 0;
-				html = http.quickGetStr(request.c_str());
-				std::cout << html << "\r\n";
+				const char *html = http.quickGetStr(request.c_str());
 
 				Asset::WeChatAccessToken access_token;
 
@@ -391,29 +386,31 @@ int32_t WorldSession::OnThirdPartyLogin(const pb::Message* message)
 				int ret = pbjson::json2pb(html, &access_token, err);
 				if (ret)
 				{
-					std::cout << ret << std::endl;
+					LOG(ERROR, "json2pb ret:{} error:{} html:{}", ret, err, html);
+					return ret;
 				}
 
-				auto curr_time = CommonTimerInstance.GetTime();
+				DEBUG("微信:access_token:{}", access_token.ShortDebugString());
+
 				auto expires_in = access_token.expires_in();
 
-				if (curr_time < expires_in) //尚未过期
+				if (expires_in) //尚未过期
 				{
 					auto openid = access_token.openid();
-
 					auto refresh_token = access_token.refresh_token();
+
 					request = "https://api.weixin.qq.com/sns/userinfo?access_token=" + refresh_token + "&openid=" + openid;
 					html = http.quickGetStr(request.c_str());
-					std::cout << html << "\r\n";
 
 					Asset::WechatUnion union_info;
-
-					std::string err;
-					int ret = pbjson::json2pb(html, &union_info, err);
+					ret = pbjson::json2pb(html, &union_info, err);
 					if (ret)
 					{
-						std::cout << ret << std::endl;
+						LOG(ERROR, "json2pb ret:{} error:{} html:{}", ret, err, html);
+						return ret;
 					}
+					
+					DEBUG("微信:union_info:{}", union_info.ShortDebugString());
 
 					Asset::WeChatInfo proto;
 					proto.mutable_wechat()->CopyFrom(union_info);
@@ -424,7 +421,6 @@ int32_t WorldSession::OnThirdPartyLogin(const pb::Message* message)
 					auto refresh_token = access_token.refresh_token();
 					request = "https://api.weixin.qq.com/sns/oauth2/refresh_token?appid=wx5763b38a2613f9fb&grant_type=refresh_token&refresh_token=" + refresh_token;
 					html = http.quickGetStr(request.c_str());
-					std::cout << html << "\r\n";
 
 					Asset::WeChatRefresh refresh;
 
@@ -432,8 +428,11 @@ int32_t WorldSession::OnThirdPartyLogin(const pb::Message* message)
 					int ret = pbjson::json2pb(html, &refresh, err);
 					if (ret)
 					{
-						std::cout << ret << std::endl;
+						LOG(ERROR, "json2pb ret:{} error:{} html:{}", ret, err, html);
+						return ret;
 					}
+					
+					DEBUG("微信:refresh:{}", refresh.ShortDebugString());
 				}
 			}
 		}
