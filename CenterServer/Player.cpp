@@ -57,7 +57,11 @@ int32_t Player::Load()
 	auto success = redis->GetPlayer(_player_id, _stuff);
 	if (!success) return 1;
 		
-	DEBUG("player_id:{} load info:{}", _player_id, _stuff.ShortDebugString());
+	if (_session && _session->IsWechat())
+	{
+		_stuff.mutable_wechat()->CopyFrom(_session->GetWechat());
+		SetDirty();
+	}
 
 	return 0;
 }
@@ -67,7 +71,7 @@ int32_t Player::Save()
 	auto redis = make_unique<Redis>();
 	redis->SavePlayer(_player_id, _stuff);
 	
-	PLAYER(_stuff);	//BI日志
+	PLAYER(_stuff);	//数据日志
 		
 	return 0;
 }
@@ -364,7 +368,7 @@ bool Player::Update()
 	
 	if (_heart_count % 3000 == 0) //30s
 	{
-		//SayHi();
+		SayHi();
 	}
 
 	if (_heart_count % 6000 == 0) //1min

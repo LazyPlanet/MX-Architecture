@@ -58,10 +58,7 @@ private:
 	int64_t _heart_count = 0; //心跳次数
 	int32_t _hi_time = 0; 
 	bool _dirty = false; //脏数据
-
-//协议处理回调函数
-	CallBack _method;
-	//std::shared_ptr<WorldSession> _session = nullptr;	//网络连接
+	CallBack _method; //协议处理回调函数
 public:
 	Player();
 	Player(int64_t player_id);
@@ -92,7 +89,8 @@ public:
 	const Asset::CommonProp& CommonProp() { return _stuff.common_prop(); }
 	const Asset::CommonProp& GetCommonProp() { return _stuff.common_prop(); }
 	Asset::CommonProp* MutableCommonProp() { return _stuff.mutable_common_prop(); }
-	
+	const Asset::WechatUnion& GetWechat() { return _stuff.wechat(); }
+
 	int32_t GetLocalServer() { return _stuff.server_id(); } //玩家当前所在服务器
 	void SetLocalServer(int32_t server_id) { return _stuff.set_server_id(server_id); }
 

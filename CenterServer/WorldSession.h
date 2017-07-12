@@ -53,11 +53,16 @@ public:
 	int64_t GetID() { return _global_id; }
 	void SetID(int64_t global_id) { _global_id = global_id; }
 
-	void SetRoleType(Asset::ROLE_TYPE role_type) { _role_type = role_type; }
+	void SetRoleType(Asset::ROLE_TYPE role_type, int64_t global_id) { 
+		_role_type = role_type; 
+		_global_id = global_id;
+	}
 
-	int32_t OnThirdPartyLogin(const pb::Message* message);
-
+	int32_t OnWechatLogin(const pb::Message* message);
+	const Asset::WechatUnion& GetWechat() { return _user.wechat(); }
+	bool IsWechat() { return _account.account_type() == Asset::ACCOUNT_TYPE_WECHAT; }
 private:
+	Asset::User _user; //账户，主要用于存盘
 	Asset::Account _account;
 	std::unordered_set<int64_t> _player_list;
 	boost::asio::ip::tcp::endpoint _remote_endpoint;
