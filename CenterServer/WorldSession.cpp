@@ -370,6 +370,8 @@ int32_t WorldSession::OnThirdPartyLogin(const pb::Message* message)
 			const auto& access_code = login->access_code();
 			{
 				CkHttp http;
+					
+				std::string err;
 			
 				bool success = http.UnlockComponent("ARKTOSHttp_decCLPWFQXmU");
 				if (success != true) {
@@ -377,62 +379,125 @@ int32_t WorldSession::OnThirdPartyLogin(const pb::Message* message)
 					return 2;
 				}
 
+				//
+				//1.通过code获取access_token
+				//
 				std::string request = "https://api.weixin.qq.com/sns/oauth2/access_token?appid=wx5763b38a2613f9fb&secret=f9128ba451c51ce44fdd3bddf2fa45e7&code=" + access_code +"&grant_type=authorization_code";
 				const char *html = http.quickGetStr(request.c_str());
 
-				Asset::WeChatAccessToken access_token;
+				std::string response(html);
 
-				std::string err;
-				int ret = pbjson::json2pb(html, &access_token, err);
-				if (ret)
+				if (response.find("access_token") != std::string::npos)
 				{
-					LOG(ERROR, "json2pb ret:{} error:{} html:{}", ret, err, html);
-					return ret;
-				}
+					Asset::WechatAccessToken access_token;
 
-				DEBUG("微信:access_token:{}", access_token.ShortDebugString());
-
-				auto expires_in = access_token.expires_in();
-
-				if (expires_in) //尚未过期
-				{
-					auto openid = access_token.openid();
-					auto refresh_token = access_token.refresh_token();
-
-					request = "https://api.weixin.qq.com/sns/userinfo?access_token=" + refresh_token + "&openid=" + openid;
-					html = http.quickGetStr(request.c_str());
-
-					Asset::WechatUnion union_info;
-					ret = pbjson::json2pb(html, &union_info, err);
+					int ret = pbjson::json2pb(html, &access_token, err);
 					if (ret)
 					{
 						LOG(ERROR, "json2pb ret:{} error:{} html:{}", ret, err, html);
 						return ret;
 					}
-					
-					DEBUG("微信:union_info:{}", union_info.ShortDebugString());
 
+					DEBUG("微信: html:{} access_token:{}", html, access_token.ShortDebugString());
+
+					auto expires_in = access_token.expires_in();
+
+					if (expires_in) //尚未过期
+					{
+						//
+						//3.获取用户个人信息（UnionID机制）
+						//
+						auto openid = access_token.openid();
+						auto refresh_token = access_token.refresh_token();
+
+						request = "https://api.weixin.qq.com/sns/userinfo?access_token=" + refresh_token + "&openid=" + openid;
+						html = http.quickGetStr(request.c_str());
+
+						Asset::WechatUnion union_info;
+						ret = pbjson::json2pb(html, &union_info, err);
+						if (ret)
+						{
+							LOG(ERROR, "json2pb ret:{} error:{} html:{}", ret, err, html);
+							return ret;
+						}
+						
+						DEBUG("微信: html:{} union_info:{}", html, union_info.ShortDebugString());
+
+						Asset::WeChatInfo proto;
+						proto.mutable_wechat()->CopyFrom(union_info);
+						SendProtocol(proto); //同步Client
+					}
+					else
+					{
+						//
+						//2.刷新或续期access_token使用
+						//
+						auto refresh_token = access_token.refresh_token();
+						request = "https://api.weixin.qq.com/sns/oauth2/refresh_token?appid=wx5763b38a2613f9fb&grant_type=refresh_token&refresh_token=" + refresh_token;
+						html = http.quickGetStr(request.c_str());
+						std::string response(html);
+
+						int ret = pbjson::json2pb(html, &access_token, err);
+						if (ret)
+						{
+							LOG(ERROR, "json2pb ret:{} error:{} html:{}", ret, err, html);
+							return ret;
+						}
+				
+						if (response.find("errcode") != std::string::npos) //刷新失败
+						{
+							Asset::WechatError wechat_error;
+							int ret = pbjson::json2pb(html, &wechat_error, err);
+							if (ret)
+							{
+								LOG(ERROR, "json2pb ret:{} error:{} html:{}", ret, err, html);
+								return ret;
+							}
+							Asset::WeChatInfo proto;
+							proto.mutable_wechat_error()->CopyFrom(wechat_error);
+							SendProtocol(proto); //同步Client
+						}
+						else //刷新成功
+						{
+							//
+							//3.获取用户个人信息（UnionID机制）
+							//
+							auto openid = access_token.openid();
+							auto refresh_token = access_token.refresh_token();
+
+							request = "https://api.weixin.qq.com/sns/userinfo?access_token=" + refresh_token + "&openid=" + openid;
+							html = http.quickGetStr(request.c_str());
+
+							Asset::WechatUnion union_info;
+							ret = pbjson::json2pb(html, &union_info, err);
+							if (ret)
+							{
+								LOG(ERROR, "json2pb ret:{} error:{} html:{}", ret, err, html);
+								return ret;
+							}
+							
+							DEBUG("微信: html:{} union_info:{}", html, union_info.ShortDebugString());
+
+							Asset::WeChatInfo proto;
+							proto.mutable_wechat()->CopyFrom(union_info);
+							SendProtocol(proto); //同步Client
+						}
+						
+						DEBUG("微信: html:{} refresh:{}", html, access_token.ShortDebugString());
+					}
+				}
+				else if (response.find("errcode") != std::string::npos)
+				{
+					Asset::WechatError wechat_error;
+					int ret = pbjson::json2pb(html, &wechat_error, err);
+					if (ret)
+					{
+						LOG(ERROR, "json2pb ret:{} error:{} html:{}", ret, err, html);
+						return ret;
+					}
 					Asset::WeChatInfo proto;
-					proto.mutable_wechat()->CopyFrom(union_info);
+					proto.mutable_wechat_error()->CopyFrom(wechat_error);
 					SendProtocol(proto); //同步Client
-				}
-				else
-				{
-					auto refresh_token = access_token.refresh_token();
-					request = "https://api.weixin.qq.com/sns/oauth2/refresh_token?appid=wx5763b38a2613f9fb&grant_type=refresh_token&refresh_token=" + refresh_token;
-					html = http.quickGetStr(request.c_str());
-
-					Asset::WeChatRefresh refresh;
-
-					std::string err;
-					int ret = pbjson::json2pb(html, &refresh, err);
-					if (ret)
-					{
-						LOG(ERROR, "json2pb ret:{} error:{} html:{}", ret, err, html);
-						return ret;
-					}
-					
-					DEBUG("微信:refresh:{}", refresh.ShortDebugString());
 				}
 			}
 		}
