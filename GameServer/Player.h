@@ -156,7 +156,7 @@ public:
 	virtual int32_t CmdSign(pb::Message* message);
 	//获取玩家基础属性
 	virtual int32_t CmdGetCommonProperty(pb::Message* message);
-	void SyncCommonProperty(Asset::CommonProperty_SYNC_REASON_TYPE reason = Asset::CommonProperty_SYNC_REASON_TYPE_SYNC_REASON_TYPE_SELF);
+	void SyncCommonProperty(Asset::SyncCommonProperty_SYNC_REASON_TYPE reason = Asset::SyncCommonProperty_SYNC_REASON_TYPE_SYNC_REASON_TYPE_SELF);
 	//离线状态实时监测
 	virtual int32_t CmdSayHi(pb::Message* message);
 	void SayHi();

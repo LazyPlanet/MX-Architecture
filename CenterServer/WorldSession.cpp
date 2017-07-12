@@ -407,10 +407,7 @@ int32_t WorldSession::OnThirdPartyLogin(const pb::Message* message)
 						//
 						//3.获取用户个人信息（UnionID机制）
 						//
-						auto openid = access_token.openid();
-						auto refresh_token = access_token.refresh_token();
-
-						request = "https://api.weixin.qq.com/sns/userinfo?access_token=" + refresh_token + "&openid=" + openid;
+						request = "https://api.weixin.qq.com/sns/userinfo?access_token=" + access_token.access_token() + "&openid=" + access_token.openid();
 						html = http.quickGetStr(request.c_str());
 
 						Asset::WechatUnion union_info;

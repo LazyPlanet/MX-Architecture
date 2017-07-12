@@ -666,16 +666,16 @@ int32_t Player::CmdSign(pb::Message* message)
 
 int32_t Player::CmdGetCommonProperty(pb::Message* message)
 {
-	Asset::CommonProperty* common_prop = dynamic_cast<Asset::CommonProperty*>(message);
+	Asset::SyncCommonProperty* common_prop = dynamic_cast<Asset::SyncCommonProperty*>(message);
 	if (!common_prop) return 1; 
 
-	SyncCommonProperty(Asset::CommonProperty_SYNC_REASON_TYPE_SYNC_REASON_TYPE_GET);
+	SyncCommonProperty(Asset::SyncCommonProperty_SYNC_REASON_TYPE_SYNC_REASON_TYPE_GET);
 	return 0;
 }
 	
-void Player::SyncCommonProperty(Asset::CommonProperty_SYNC_REASON_TYPE reason)
+void Player::SyncCommonProperty(Asset::SyncCommonProperty_SYNC_REASON_TYPE reason)
 {
-	Asset::CommonProperty common_prop;
+	Asset::SyncCommonProperty common_prop;
 	
 	common_prop.set_reason_type(reason);
 	common_prop.set_player_id(_player_id);
