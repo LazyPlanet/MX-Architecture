@@ -102,10 +102,10 @@ public:
 	void SetPlayerSession(int64_t player_id, std::shared_ptr<WorldSession> session) { _player_gs[player_id] = session; }
 	std::shared_ptr<WorldSession> RandomServer(); //随机选择游戏逻辑服务器
 	
-	void BroadCast2GameServer(const pb::Message& message); //广播协议给游戏逻辑服务器
+	void BroadCast2GameServer(const pb::Message& message); //游戏逻辑服务器
 	void BroadCast2GameServer(const pb::Message* message); 
 	
-	void BroadCast(const pb::Message& message); //广播协议给玩家
+	void BroadCast(const pb::Message& message); //玩家
 	void BroadCast(const pb::Message* message); 
 	
 	bool StartNetwork(boost::asio::io_service& io_service, const std::string& bind_ip, int32_t port, int thread_count = 1) override;

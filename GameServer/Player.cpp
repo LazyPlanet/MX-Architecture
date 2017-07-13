@@ -182,6 +182,8 @@ int32_t Player::Logout(pb::Message* message)
 	
 int32_t Player::OnLogout()
 {
+	LOG(TRACE, "玩家:{} 退出游戏", _player_id);
+
 	_stuff.set_login_time(0);
 	_stuff.set_logout_time(CommonTimerInstance.GetTime());
 

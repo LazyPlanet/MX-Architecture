@@ -18,13 +18,13 @@ namespace Adoter
 using namespace google::protobuf;
 namespace pb = google::protobuf;
 
-class ClientSession : public ClientSocket
+class GmtSession : public ClientSocket
 {
 public:
-	explicit ClientSession(boost::asio::io_service& io_service, const boost::asio::ip::tcp::endpoint& endpoint);
+	explicit GmtSession(boost::asio::io_service& io_service, const boost::asio::ip::tcp::endpoint& endpoint);
 
-	ClientSession(ClientSession const& right) = delete;    
-	ClientSession& operator = (ClientSession const& right) = delete;
+	GmtSession(GmtSession const& right) = delete;    
+	GmtSession& operator = (GmtSession const& right) = delete;
 	
 	const boost::asio::ip::tcp::endpoint GetRemotePoint() { return _remote_endpoint; }
 	bool InnerProcess(const Asset::InnerMeta& meta); //内部协议处理

@@ -87,7 +87,7 @@ bool ServerSession::InnerProcess(const Asset::InnerMeta& meta)
 		}
 		break;
 		
-		case Asset::INNER_TYPE_COMMAND: //发送指令
+		case Asset::INNER_TYPE_COMMAND: //发放钻石//房卡//欢乐豆
 		{
 			Asset::Command message;
 			auto result = message.ParseFromString(meta.stuff());

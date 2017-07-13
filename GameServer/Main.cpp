@@ -17,7 +17,6 @@
 #include "World.h"
 #include "MXLog.h"
 #include "Config.h"
-#include "ClientSession.h"
 #include "CenterSession.h"
 
 const int const_world_sleep = 50;
@@ -130,17 +129,6 @@ int main(int argc, const char* argv[])
 		int32_t thread_count = ConfigInstance.GetInt("ThreadCount", 5);
 		if (thread_count <= 0) return 6;
 
-		//WorldSessionInstance.StartNetwork(_io_service, server_ip, server_port, thread_count);
-
-		//
-		//连接GMT服
-		//
-		std::string gmt_server_address = ConfigInstance.GetString("GMT_ServerIP", "0.0.0.0");
-		int32_t gmt_server_port = ConfigInstance.GetInt("GMT_ServerPort", 50003); 
-		boost::asio::ip::tcp::endpoint gmt_endpoint(boost::asio::ip::address::from_string(gmt_server_address), gmt_server_port);
-		auto _gmt_client = std::make_shared<ClientSession>(_io_service, gmt_endpoint);
-		_gmt_client->AsyncConnect();
-		
 		//
 		//连接中心服
 		//
@@ -153,8 +141,6 @@ int main(int argc, const char* argv[])
 		//世界循环
 		WorldUpdateLoop();
 	
-		DEBUG("Service stop.");
-
 		ShutdownThreadPool(_threads);
 	}
 	catch (const std::exception& e)
