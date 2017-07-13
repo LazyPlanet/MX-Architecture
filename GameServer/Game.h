@@ -94,6 +94,7 @@ public:
 	bool IsLiuJu() { return _liuju; } //是否流局
 
 	int32_t GetRemainCount() { return _cards.size(); } //当前剩余牌数量
+	bool SanJiaBi(); //三家闭门
 
 	void SetCurrPlayerIndex(int64_t curr_player_index) { _curr_player_index = curr_player_index; } //设置当前可操作的玩家
 	int32_t GetRemainGameCount(); //当前剩余游戏局数

@@ -170,6 +170,8 @@ void WorldSession::OnProcessMessage(const Asset::Meta& meta)
 			_player_list.clear(); //账号下玩家列表，对于棋牌游戏，只有一个玩家
 		
 			auto redis = std::make_shared<Redis>();
+
+			Asset::User _user; 
 			auto success = redis->GetUser(login->account().username(), _user);
 
 			if (!success) //没有该用户
@@ -186,8 +188,6 @@ void WorldSession::OnProcessMessage(const Asset::Meta& meta)
 
 				_user.mutable_player_list()->Add(player_id);
 
-				redis->SaveUser(login->account().username(), _user); //账号数据存盘
-
 				g_player = std::make_shared<Player>(player_id, shared_from_this());
 				std::string player_name = NameInstance.Get();
 
@@ -203,12 +203,18 @@ void WorldSession::OnProcessMessage(const Asset::Meta& meta)
 
 			_account.CopyFrom(login->account()); //账号信息
 			for (auto player_id : _user.player_list()) _player_list.emplace(player_id); //玩家数据
+				
+			_user.mutable_wechat()->CopyFrom(_wechat); //微信数据
+			_user.mutable_wechat_token()->CopyFrom(_access_token);
+
+			redis->SaveUser(login->account().username(), _user); //账号数据存盘
 			
 			//
 			//发送当前的角色信息
 			//
 			Asset::PlayerList player_list; 
 			player_list.mutable_player_list()->CopyFrom(_user.player_list());
+			player_list.mutable_wechat()->CopyFrom(_user.wechat());
 			SendProtocol(player_list); 
 		}
 		else if (Asset::META_TYPE_C2S_LOGOUT == meta.type_t()) //账号登出
@@ -369,41 +375,36 @@ int32_t WorldSession::OnWechatLogin(const pb::Message* message)
 
 	if (response.find("access_token") != std::string::npos)
 	{
-		Asset::WechatAccessToken access_token;
-
-		int ret = pbjson::json2pb(html, &access_token, err);
+		int ret = pbjson::json2pb(html, &_access_token, err);
 		if (ret)
 		{
 			LOG(ERROR, "json2pb ret:{} error:{} html:{}", ret, err, html);
 			return ret;
 		}
 
-		DEBUG("微信: html:{} access_token:{}", html, access_token.ShortDebugString());
+		LOG(INFO, "微信: html:{} access_token:{}", html, _access_token.ShortDebugString());
 
-		auto expires_in = access_token.expires_in();
+		auto expires_in = _access_token.expires_in();
 
 		if (expires_in) //尚未过期
 		{
 			//
 			//3.获取用户个人信息（UnionID机制）
 			//
-			request = "https://api.weixin.qq.com/sns/userinfo?access_token=" + access_token.access_token() + "&openid=" + access_token.openid();
+			request = "https://api.weixin.qq.com/sns/userinfo?access_token=" + _access_token.access_token() + "&openid=" + _access_token.openid();
 			html = http.quickGetStr(request.c_str());
 
-			Asset::WechatUnion union_info;
-			ret = pbjson::json2pb(html, &union_info, err);
+			ret = pbjson::json2pb(html, &_wechat, err);
 			if (ret)
 			{
 				LOG(ERROR, "json2pb ret:{} error:{} html:{}", ret, err, html);
 				return ret;
 			}
 
-			_user.mutable_wechat_token()->CopyFrom(access_token);
-			
-			DEBUG("微信: html:{} union_info:{}", html, union_info.ShortDebugString());
+			LOG(INFO, "微信: html:{} union_info:{}", html, _wechat.ShortDebugString());
 
 			Asset::WeChatInfo proto;
-			proto.mutable_wechat()->CopyFrom(union_info);
+			proto.mutable_wechat()->CopyFrom(_wechat);
 			SendProtocol(proto); //同步Client
 		}
 		else
@@ -411,12 +412,12 @@ int32_t WorldSession::OnWechatLogin(const pb::Message* message)
 			//
 			//2.刷新或续期access_token使用
 			//
-			auto refresh_token = access_token.refresh_token();
+			auto refresh_token = _access_token.refresh_token();
 			request = "https://api.weixin.qq.com/sns/oauth2/refresh_token?appid=wx5763b38a2613f9fb&grant_type=refresh_token&refresh_token=" + refresh_token;
 			html = http.quickGetStr(request.c_str());
 			std::string response(html);
 
-			int ret = pbjson::json2pb(html, &access_token, err);
+			int ret = pbjson::json2pb(html, &_access_token, err);
 			if (ret)
 			{
 				LOG(ERROR, "json2pb ret:{} error:{} html:{}", ret, err, html);
@@ -441,30 +442,27 @@ int32_t WorldSession::OnWechatLogin(const pb::Message* message)
 				//
 				//3.获取用户个人信息（UnionID机制）
 				//
-				auto openid = access_token.openid();
-				auto refresh_token = access_token.refresh_token();
+				auto openid = _access_token.openid();
+				auto refresh_token = _access_token.refresh_token();
 
 				request = "https://api.weixin.qq.com/sns/userinfo?access_token=" + refresh_token + "&openid=" + openid;
 				html = http.quickGetStr(request.c_str());
 
-				Asset::WechatUnion union_info;
-				ret = pbjson::json2pb(html, &union_info, err);
+				ret = pbjson::json2pb(html, &_wechat, err);
 				if (ret)
 				{
 					LOG(ERROR, "json2pb ret:{} error:{} html:{}", ret, err, html);
 					return ret;
 				}
 			
-				_user.mutable_wechat()->CopyFrom(union_info);
-				
-				DEBUG("微信: html:{} union_info:{}", html, union_info.ShortDebugString());
+				LOG(INFO, "微信: html:{} _wechat:{}", html, _wechat.ShortDebugString());
 
 				Asset::WeChatInfo proto;
-				proto.mutable_wechat()->CopyFrom(union_info);
+				proto.mutable_wechat()->CopyFrom(_wechat);
 				SendProtocol(proto); //同步Client
 			}
 			
-			DEBUG("微信: html:{} refresh:{}", html, access_token.ShortDebugString());
+			LOG(INFO, "微信: html:{} refresh:{}", html, _access_token.ShortDebugString());
 		}
 	}
 	else if (response.find("errcode") != std::string::npos)

@@ -626,6 +626,17 @@ void Game::ClearOperation()
 	_oper_limit.Clear(); //清理状态
 }
 	
+bool Game::SanJiaBi()
+{
+	for (int i = 0; i < MAX_PLAYER_COUNT; ++i)
+	{
+		auto player = _players[i];
+		if (!player || !player->IsBimen()) return false;
+	}
+
+	return true;
+}
+	
 void Game::Calculate(int64_t hupai_player_id/*胡牌玩家*/, int64_t dianpao_player_id/*点炮玩家*/, std::vector<Asset::FAN_TYPE>& fan_list)
 {
 	if (!_room) return;
@@ -653,35 +664,6 @@ void Game::Calculate(int64_t hupai_player_id/*胡牌玩家*/, int64_t dianpao_pl
 		fan_list.push_back(Asset::FAN_TYPE_ZHUANG);
 	}
 
-	//
-	//如果仅仅是平胡，则显示
-	//
-	if (fan_list.size() == 0)
-	{
-		fan_list.push_back(Asset::FAN_TYPE_PINGHU); //平胡，1积分
-	}
-	
-	//
-	//是否三家闭门
-	//
-	bool sanjiabi = true;
-
-	for (int i = 0; i < MAX_PLAYER_COUNT; ++i)
-	{
-		auto player = _players[i];
-		if (!player) 
-		{
-			sanjiabi = false;
-			break;
-		}
-
-		if (!player->IsBimen()) 
-		{
-			sanjiabi = false;
-			break;
-		}
-	}
-		
 	Asset::GameCalculate message;
 	//
 	//胡牌积分，三部分
@@ -705,7 +687,9 @@ void Game::Calculate(int64_t hupai_player_id/*胡牌玩家*/, int64_t dianpao_pl
 
 		int32_t score = base_score;
 
+		//
 		//牌型基础分值计算
+		//
 		for (const auto& fan : fan_list)
 		{
 			score *= get_multiple(fan);
@@ -780,7 +764,7 @@ void Game::Calculate(int64_t hupai_player_id/*胡牌玩家*/, int64_t dianpao_pl
 			DEBUG("player_id:{} fan:{} score:{}", player_id, Asset::FAN_TYPE_PIAO_WEIHU, -score);
 		}
 		
-		if (sanjiabi) 
+		if (SanJiaBi()) 
 		{
 			score *= get_multiple(Asset::FAN_TYPE_SAN_JIA_BI_MEN); //三家闭门
 			
@@ -817,7 +801,7 @@ void Game::Calculate(int64_t hupai_player_id/*胡牌玩家*/, int64_t dianpao_pl
 	auto record = get_record(hupai_player_id); 
 	if (record == message.mutable_record()->mutable_list()->end()) 
 	{
-		ERROR("hupai_player_id:{} not found in message list", hupai_player_id);
+		LOG(ERROR, "hupai_player_id:{} not found in message list", hupai_player_id);
 		return;
 	}
 
@@ -996,10 +980,11 @@ void Game::Calculate(int64_t hupai_player_id/*胡牌玩家*/, int64_t dianpao_pl
 	}
 
 	//取最大番数
-	auto max_fan_it = std::max_element(fan_list.begin(), fan_list.end(), [&](const Asset::FAN_TYPE& fan1, const Asset::FAN_TYPE& fan2){
-			return get_multiple(fan1) > get_multiple(fan2);
+	auto max_fan_it = std::max_element(record->details().begin(), record->details().end(), 
+			[&](const Asset::GameRecord_GameElement_DetailElement& detail1, const Asset::GameRecord_GameElement_DetailElement& detail2){
+			return get_multiple(detail1.fan_type()) < get_multiple(detail2.fan_type()) ;
 			});
-	if (max_fan_it != fan_list.end()) message.set_max_fan_type(*max_fan_it);
+	if (max_fan_it != record->details().end()) message.set_max_fan_type(max_fan_it->fan_type());
 
 	//
 	//记录本次积分
@@ -1010,8 +995,18 @@ void Game::Calculate(int64_t hupai_player_id/*胡牌玩家*/, int64_t dianpao_pl
 
 		player->AddGameRecord(message.record());
 	}
+	
+	//
+	//如果仅仅是平胡，则显示
+	//
+	if (record->details().size() == 0)
+	{
+		auto pinghu = record->mutable_details()->Add();
+		pinghu->set_score(1);
+		pinghu->set_fan_type(Asset::FAN_TYPE_PINGHU); 
+	}
 
-	message.PrintDebugString();
+	LOG(INFO, "胡牌结算:{}", message.ShortDebugString());
 		
 	BroadCast(message);
 }

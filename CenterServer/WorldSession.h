@@ -59,10 +59,11 @@ public:
 	}
 
 	int32_t OnWechatLogin(const pb::Message* message);
-	const Asset::WechatUnion& GetWechat() { return _user.wechat(); }
+	const Asset::WechatUnion& GetWechat() { return _wechat; }
 	bool IsWechat() { return _account.account_type() == Asset::ACCOUNT_TYPE_WECHAT; }
 private:
-	Asset::User _user; //账户，主要用于存盘
+	Asset::WechatUnion _wechat; //微信数据
+	Asset::WechatAccessToken _access_token;
 	Asset::Account _account;
 	std::unordered_set<int64_t> _player_list;
 	boost::asio::ip::tcp::endpoint _remote_endpoint;

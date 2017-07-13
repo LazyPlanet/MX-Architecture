@@ -182,13 +182,13 @@ int32_t Player::Logout(pb::Message* message)
 	
 int32_t Player::OnLogout()
 {
-	LOG(TRACE, "玩家:{} 退出游戏", _player_id);
+	DEBUG("玩家:{} 退出游戏", _player_id);
 
 	_stuff.set_login_time(0);
 	_stuff.set_logout_time(CommonTimerInstance.GetTime());
 
-	if (_game) _game.reset();
-	if (_room) _room.reset();
+	//if (_game) _game.reset();
+	//if (_room) _room.reset();
 	
 	Save();	//存档数据库
 
@@ -2010,13 +2010,6 @@ bool Player::CheckHuPai(const Asset::PaiElement& pai, std::vector<Asset::FAN_TYP
 	if (piao) 
 	{
 		fan_list.push_back(Asset::FAN_TYPE_PIAO_HU);
-	}
-	if (xuanfenggang) //是否旋风杠
-	{
-		for (auto i = 0; i < _jiangang + _fenggang; ++i) 
-		{
-			fan_list.push_back(Asset::FAN_TYPE_XUAN_FENG_GANG);
-		}
 	}
 	if (jiahu) //夹胡积分
 	{
