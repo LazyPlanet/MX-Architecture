@@ -982,7 +982,7 @@ void Game::Calculate(int64_t hupai_player_id/*胡牌玩家*/, int64_t dianpao_pl
 	//取最大番数
 	auto max_fan_it = std::max_element(record->details().begin(), record->details().end(), 
 			[&](const Asset::GameRecord_GameElement_DetailElement& detail1, const Asset::GameRecord_GameElement_DetailElement& detail2){
-			return get_multiple(detail1.fan_type()) < get_multiple(detail2.fan_type()) ;
+				return get_multiple(detail1.fan_type()) < get_multiple(detail2.fan_type()) ;
 			});
 	if (max_fan_it != record->details().end()) message.set_max_fan_type(max_fan_it->fan_type());
 
