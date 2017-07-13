@@ -21,8 +21,7 @@ bool WorldSession::OnInnerProcess(const Asset::Meta& meta)
 			auto result = message.ParseFromString(meta.stuff());
 			if (!result) return false;
 
-			SetID(message.global_id());
-			SetRoleType(Asset::ROLE_TYPE_GAME_SERVER);
+			SetRoleType(Asset::ROLE_TYPE_GAME_SERVER, message.global_id());
 			WorldSessionInstance.AddServer(message.global_id(), shared_from_this());
 
 			SendProtocol(message);
