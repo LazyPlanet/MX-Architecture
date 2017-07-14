@@ -30,27 +30,45 @@ void ServerSession::InitializeHandler(const boost::system::error_code error, con
 	{
 		if (error)
 		{
-			WARN("Remote client disconnect, remote_ip:{}", _ip_address);
+			ERROR("Remote client disconnect, remote_ip:{}", _ip_address);
 			return;
 		}
 		else
 		{
-			TRACE("Receive message from game server:{} bytes_transferred:{}", _ip_address, bytes_transferred);
+			DEBUG("Receive message from game server:{} bytes_transferred:{}", _ip_address, bytes_transferred);
 
-			Asset::InnerMeta meta;
-			auto result = meta.ParseFromArray(_buffer.data(), bytes_transferred);
-			if (!result) 
+			for (size_t index = 0; index < bytes_transferred;)
 			{
-				LOG(ERROR, "Receive message error from server:{}", _ip_address);
-				return;
-			}
+				unsigned short body_size = _buffer[index] * 256 + _buffer[1 + index];
+					
+				DEBUG("解析的头:{} {} 包长:{}", (int)_buffer[index] * 256, (int)_buffer[1 + index], body_size);
+
+				if (body_size > 4096)
+				{
+					LOG(ERROR, "接收来自地址:{} 端口:{} 太大的包长:{} 丢弃.", _ip_address, _remote_endpoint.port(), body_size)
+					return;
+				}
+
+				char buffer[4096] = { 0 }; //数据缓存  
+				for (size_t i = 0; i < body_size; ++i) buffer[i] = _buffer[i + index + 2];  
+
+				Asset::InnerMeta meta;
+				auto result = meta.ParseFromArray(buffer, body_size);
+				if (!result) 
+				{
+					LOG(ERROR, "Receive message error from server:{}", _ip_address);
+					return;
+				}
 				
-			InnerProcess(meta);
-			LOG(INFO, "Receive message:{} from server:{}", meta.ShortDebugString(), _ip_address);
+				OnInnerProcess(meta);
+
+				index += (body_size + 2); //下个包的起始位置
+			}
 		}
 	}
 	catch (std::exception& e)
 	{
+		ERROR("Remote client disconnect, remote_ip:{}, error:{}", _ip_address, e.what());
 		return;
 	}
 	//递归持续接收	
@@ -60,7 +78,7 @@ void ServerSession::InitializeHandler(const boost::system::error_code error, con
 //
 // 处理来自GMT和游戏服务器的的消息数据
 //
-bool ServerSession::InnerProcess(const Asset::InnerMeta& meta)
+bool ServerSession::OnInnerProcess(const Asset::InnerMeta& meta)
 {
 	TRACE("Receive message:{} from server:{}", meta.ShortDebugString(), _ip_address);
 

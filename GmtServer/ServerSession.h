@@ -53,7 +53,7 @@ public:
 
 	const std::string GetRemoteAddress() { return _remote_endpoint.address().to_string(); }
 	const boost::asio::ip::tcp::endpoint GetRemotePoint() { return _remote_endpoint; }
-	bool InnerProcess(const Asset::InnerMeta& meta); //内部协议处理
+	bool OnInnerProcess(const Asset::InnerMeta& meta); //内部协议处理
 	Asset::COMMAND_ERROR_CODE OnCommandProcess(const Asset::Command& command);
 	Asset::COMMAND_ERROR_CODE OnSendMail(const Asset::SendMail& command);
 	Asset::COMMAND_ERROR_CODE OnSystemBroadcast(const Asset::SystemBroadcast& command);

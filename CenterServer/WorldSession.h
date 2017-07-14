@@ -41,7 +41,7 @@ public:
 	void SendProtocol(const pb::Message& message);
 	void SendProtocol(const pb::Message* message);
 
-	void KillOutPlayer();
+	void KickOutPlayer(Asset::KICK_OUT_REASON reason);
 	void OnLogout();
 
 	boost::asio::ip::tcp::endpoint GetRemotePoint() { return _remote_endpoint; }

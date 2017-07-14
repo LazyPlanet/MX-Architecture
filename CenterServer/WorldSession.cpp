@@ -34,21 +34,12 @@ void WorldSession::InitializeHandler(const boost::system::error_code error, cons
 		if (error)
 		{
 			WARN("Remote client disconnect, remote_ip:{} port:{}, player_id:{}", _ip_address, _remote_endpoint.port(), g_player ? g_player->GetID() : 0);
-			KillOutPlayer();
+			KickOutPlayer(Asset::KICK_OUT_REASON_DISCONNECT);
 			//Close(); ////断开网络连接，不要显示的关闭网络连接
 			return;
 		}
 		else
 		{
-			{
-				Asset::Meta meta;
-				bool result = meta.ParseFromArray(_buffer.data(), bytes_transferred);
-				if (result)
-				{
-					LOG(ERROR, "收到非法协议数据:{} 地址:{} 端口:{}", meta.ShortDebugString(), _ip_address, _remote_endpoint.port());
-				}
-			}
-
 			for (size_t index = 0; index < bytes_transferred;)
 			{
 				unsigned short body_size = _buffer[index] * 256 + _buffer[1 + index];
@@ -277,7 +268,7 @@ void WorldSession::OnProcessMessage(const Asset::Meta& meta)
 			auto session = WorldSessionInstance.GetPlayerSession(g_player->GetID());
 			if (session) //已经在线
 			{
-				session->KillOutPlayer();
+				session->KickOutPlayer(Asset::KICK_OUT_REASON_OTHER_LOGIN);
 			}
 			WorldSessionInstance.AddPlayer(g_player->GetID(), shared_from_this()); //在线玩家
 			
@@ -330,13 +321,11 @@ void WorldSession::OnProcessMessage(const Asset::Meta& meta)
 	}
 }
 
-void WorldSession::KillOutPlayer()
+void WorldSession::KickOutPlayer(Asset::KICK_OUT_REASON reason)
 {
 	if (g_player) //网络断开
 	{
-		//WorldSessionInstance.Erase(g_player->GetID()); //玩家自行处理对象管理
-
-		g_player->OnKickOut(Asset::KICK_OUT_REASON_OTHER_LOGIN); //玩家退出登陆
+		g_player->OnKickOut(reason); //玩家退出登陆
 	}
 }
 	
@@ -344,7 +333,7 @@ void WorldSession::OnLogout()
 {
 	if (g_player) 
 	{
-		WARN("player_id:{}", g_player->GetID())
+		ERROR("player_id:{} 退出登陆", g_player->GetID())
 		g_player->Logout(nullptr);
 	}
 }
@@ -503,7 +492,7 @@ bool WorldSession::Update()
 
 void WorldSession::OnClose()
 {
-	KillOutPlayer();
+	KickOutPlayer(Asset::KICK_OUT_REASON_DISCONNECT);
 }
 
 void WorldSession::SendProtocol(const pb::Message* message)
