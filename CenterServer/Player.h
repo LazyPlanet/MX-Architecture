@@ -119,6 +119,8 @@ public:
 	int32_t CmdGetReward(pb::Message* message);
 	//幸运转盘
 	int32_t CmdLuckyPlate(pb::Message* message);
+	//更新Client信息
+	int32_t CmdUpdateData(pb::Message* message);
 public:
 	//获取所有包裹
 	const Asset::Inventory& GetInventory() { return _stuff.inventory();	}

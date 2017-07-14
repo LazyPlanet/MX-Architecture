@@ -36,6 +36,7 @@ Player::Player()
 	AddHandler(Asset::META_TYPE_SHARE_SAY_HI, std::bind(&Player::CmdSayHi, this, std::placeholders::_1));
 
 	AddHandler(Asset::META_TYPE_C2S_GET_REWARD, std::bind(&Player::CmdGetReward, this, std::placeholders::_1));
+	AddHandler(Asset::META_TYPE_C2S_UPDATE_CLIENT_DATA, std::bind(&Player::CmdUpdateData, this, std::placeholders::_1));
 }
 
 Player::Player(int64_t player_id, std::shared_ptr<WorldSession> session) : Player()
@@ -543,11 +544,21 @@ int32_t Player::CmdGetReward(pb::Message* message)
 
 	return 0;
 }
+	
+int32_t Player::CmdUpdateData(pb::Message* message)
+{
+	auto client_data = dynamic_cast<Asset::UpdateClientData*>(message);
+	if (!client_data) return 1;
+
+	_stuff.mutable_client_info()->CopyFrom(client_data->client_info());
+
+	return 0;
+}
 
 bool Player::CmdBuySomething(pb::Message* message)
 {
 	auto some_thing = dynamic_cast<Asset::BuySomething*>(message);
-	if (some_thing) return false;
+	if (!some_thing) return false;
 
 	int64_t mall_id = some_thing->mall_id();
 	if (mall_id <= 0) return false;
