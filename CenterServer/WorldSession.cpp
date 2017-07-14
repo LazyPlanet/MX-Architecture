@@ -162,7 +162,6 @@ void WorldSession::OnProcessMessage(const Asset::Meta& meta)
 		
 			auto redis = std::make_shared<Redis>();
 
-			Asset::User _user; 
 			auto success = redis->GetUser(login->account().username(), _user);
 
 			if (!success) //没有该用户
@@ -194,6 +193,8 @@ void WorldSession::OnProcessMessage(const Asset::Meta& meta)
 
 			_account.CopyFrom(login->account()); //账号信息
 			for (auto player_id : _user.player_list()) _player_list.emplace(player_id); //玩家数据
+
+			LOG(INFO, "user:{} account:{} wechat:{} token:{}", _user.ShortDebugString(), _account.ShortDebugString(), _wechat.ShortDebugString(), _access_token.ShortDebugString());
 				
 			_user.mutable_wechat()->CopyFrom(_wechat); //微信数据
 			_user.mutable_wechat_token()->CopyFrom(_access_token);

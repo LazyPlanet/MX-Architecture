@@ -64,8 +64,12 @@ public:
 private:
 	Asset::WechatUnion _wechat; //微信数据
 	Asset::WechatAccessToken _access_token;
+	
+	Asset::User _user; 
 	Asset::Account _account;
+
 	std::unordered_set<int64_t> _player_list;
+
 	boost::asio::ip::tcp::endpoint _remote_endpoint;
 	std::string _ip_address;
 
