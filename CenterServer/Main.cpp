@@ -131,8 +131,8 @@ int main(int argc, const char* argv[])
 		std::string gmt_server_address = ConfigInstance.GetString("GMT_ServerIP", "0.0.0.0");
 		int32_t gmt_server_port = ConfigInstance.GetInt("GMT_ServerPort", 50003); 
 		boost::asio::ip::tcp::endpoint gmt_endpoint(boost::asio::ip::address::from_string(gmt_server_address), gmt_server_port);
-		auto _gmt_client = std::make_shared<GmtSession>(_io_service, gmt_endpoint);
-		_gmt_client->AsyncConnect();
+		g_gmt_client = std::make_shared<GmtSession>(_io_service, gmt_endpoint);
+		g_gmt_client->AsyncConnect();
 
 		//世界循环
 		WorldUpdateLoop();

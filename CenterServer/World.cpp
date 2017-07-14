@@ -8,6 +8,7 @@ namespace Adoter
 {
 
 const Asset::CommonConst* g_const = nullptr;
+std::shared_ptr<GmtSession> g_gmt_client = nullptr;
 
 bool World::Load()
 {
@@ -53,12 +54,18 @@ bool World::Load()
 	return true;
 }
 
-//世界中所有刷新都在此(比如刷怪，拍卖行更新...)，当前周期为50MS.
+//
+//世界中所有刷新都在此(比如刷怪，拍卖行更新...)
+//
+//当前周期为50MS.
+//
 void World::Update(int32_t diff)
 {
 	++_heart_count;
 
 	ActivityInstance.Update(diff);
+
+	g_gmt_client->Update();
 }
 	
 }

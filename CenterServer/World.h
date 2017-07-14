@@ -3,6 +3,7 @@
 #include <memory>
 
 #include "Asset.h"
+#include "GmtSession.h"
 
 namespace Adoter 
 {
@@ -19,6 +20,7 @@ namespace Adoter
  * */
 
 extern const Asset::CommonConst* g_const;
+extern std::shared_ptr<GmtSession> g_gmt_client;
 
 class World : public std::enable_shared_from_this<World>
 {

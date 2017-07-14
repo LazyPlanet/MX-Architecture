@@ -37,12 +37,7 @@ void GmtSession::OnConnected()
 	SendProtocol(message); //注册服务器角色
 }
 
-void GmtSession::OnReceived(const Asset::InnerMeta& message)
-{
-	InnerProcess(message);
-}
-
-bool GmtSession::InnerProcess(const Asset::InnerMeta& meta)
+bool GmtSession::OnInnerProcess(const Asset::InnerMeta& meta)
 {
 	LOG(INFO, "Receive message:{} from server:{}", meta.ShortDebugString(), _ip_address);
 
@@ -332,21 +327,6 @@ void GmtSession::OnWriteSome(const boost::system::error_code& error, std::size_t
 	}
 
 	DEBUG("server:{} send success, bytes_transferred:{}, error:{}", _ip_address, bytes_transferred, error.message());
-	/*
-	std::deque<std::string> send_messages;
-	send_messages.swap(_send_list);
-	
-	if (!IsClosed() && !send_messages.empty())
-	{
-		const std::string& message = send_messages.front();
-		AsyncWriteSome(message.c_str(), message.size()); //发送数据
-		send_messages.pop_front();
-	}
-	else
-	{
-		StartSend();
-	}
-	*/
 }
 
 bool GmtSession::StartReceive()
@@ -386,11 +366,18 @@ void GmtSession::OnReadSome(const boost::system::error_code& error, std::size_t 
 	while (!IsClosed() && !received_messages.empty())
 	{
 		const auto& message = received_messages.front();
-		OnReceived(message);
+		OnInnerProcess(message);
 		received_messages.pop_front();
 	}
 	
 	AsynyReadSome(); //继续下一次数据接收
+}
+	
+bool GmtSession::Update() 
+{
+	ClientSocket::Update();
+
+	return true;
 }
 
 #undef RETURN
