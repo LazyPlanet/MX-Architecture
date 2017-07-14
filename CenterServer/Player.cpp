@@ -34,9 +34,9 @@ Player::Player()
 	AddHandler(Asset::META_TYPE_SHARE_SIGN, std::bind(&Player::CmdSign, this, std::placeholders::_1));
 	AddHandler(Asset::META_TYPE_SHARE_COMMON_PROPERTY, std::bind(&Player::CmdGetCommonProperty, this, std::placeholders::_1));
 	AddHandler(Asset::META_TYPE_SHARE_SAY_HI, std::bind(&Player::CmdSayHi, this, std::placeholders::_1));
+	AddHandler(Asset::META_TYPE_SHARE_UPDATE_CLIENT_DATA, std::bind(&Player::CmdUpdateData, this, std::placeholders::_1));
 
 	AddHandler(Asset::META_TYPE_C2S_GET_REWARD, std::bind(&Player::CmdGetReward, this, std::placeholders::_1));
-	AddHandler(Asset::META_TYPE_C2S_UPDATE_CLIENT_DATA, std::bind(&Player::CmdUpdateData, this, std::placeholders::_1));
 }
 
 Player::Player(int64_t player_id, std::shared_ptr<WorldSession> session) : Player()
@@ -551,6 +551,15 @@ int32_t Player::CmdUpdateData(pb::Message* message)
 	if (!client_data) return 1;
 
 	_stuff.mutable_client_info()->CopyFrom(client_data->client_info());
+
+	SetDirty();
+	
+	auto redis = std::make_shared<Redis>(); //加载数据库
+
+	auto success = redis->SetLocation(_player_id, client_data->client_info().location());
+	if (!success) return 2;
+
+	SendProtocol(message);
 
 	return 0;
 }

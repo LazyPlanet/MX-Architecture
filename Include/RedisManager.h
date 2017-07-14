@@ -178,6 +178,56 @@ public:
 		account = "guest_" + std::to_string(guest_id);
 		return true;
 	}
+
+	bool SetLocation(int64_t player_id, Asset::Location location)
+	{
+		double longitude = location.longitude();
+		double latitude = location.latitude();
+
+		std::string key = "player:" + std::to_string(player_id);
+		std::string command = "geoadd players_location " + std::to_string(longitude) + " " + std::to_string(latitude) + " " + key;
+
+		redisReply* reply = (redisReply*)redisCommand(_client, command.c_str()); 
+		if (!reply) return false;
+
+		return true;
+	}
+
+	bool GetLocation(int64_t player_id, Asset::Location& location)
+	{
+		std::string key = "player:" + std::to_string(player_id);
+		std::string command = "geopos players_location " + key;
+
+		redisReply* reply = (redisReply*)redisCommand(_client, command.c_str());
+		if (!reply) return false;
+
+		if (reply->type != REDIS_REPLY_ARRAY || reply->elements != 1) return false;
+
+		if (reply->element[0]->elements != 2) return false;
+
+		if (!reply->element[0]->element[0]->str || !reply->element[0]->element[1]->str) return false;
+
+		double longitude = atof(reply->element[0]->element[0]->str);
+		double latitude = atof(reply->element[0]->element[1]->str);
+
+		location.set_longitude(longitude);
+		location.set_latitude(latitude);
+		
+		return true;
+	}
+
+	double GetDistance(int64_t player_id1, int64_t player_id2)
+	{
+		std::string command = "geodist players_location player:" + std::to_string(player_id1) + " player:" + std::to_string(player_id2);
+
+		redisReply* reply = (redisReply*)redisCommand(_client, command.c_str());
+		if (!reply) return -1.0;
+
+		if (reply->type == REDIS_REPLY_NIL || !reply->str) return -1.0;
+
+		double dist = atof(reply->str);
+		return dist;
+	}
 };
 
 }

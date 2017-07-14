@@ -107,7 +107,7 @@ void Room::OnPlayerOperate(std::shared_ptr<Player> player, pb::Message* message)
 
 			_games.push_back(game); //游戏
 
-			//GameInstance.OnCreateGame(game);
+			OnGameStart();
 		}
 		break;
 
@@ -157,6 +157,15 @@ bool Room::Remove(int64_t player_id)
 	return false;
 }
 
+void Room::OnGameStart()
+{
+	Asset::GameStart game_start;
+	game_start.set_total_rounds(_stuff->options().open_rands());
+	game_start.set_current_rounds(_games.size());
+
+	BroadCast(game_start);
+}
+
 void Room::GameOver(int64_t player_id)
 {
 	if (_banker != player_id) 
@@ -191,14 +200,26 @@ void Room::BroadCast(pb::Message& message, int64_t exclude_player_id)
 void Room::SyncRoom()
 {
 	Asset::RoomInformation message;
+
+	auto redis = std::make_shared<Redis>(); //加载数据库
 	
 	for (auto player : _players)
 	{
 		DEBUG("sync room infomation, curr_player_size:{} player_id:{} position:{}", _players.size(), player->GetID(), player->GetPosition());
 		auto p = message.mutable_player_list()->Add();
 		p->set_position(player->GetPosition());
+		p->set_oper_type(player->GetOperState());
 		p->mutable_common_prop()->CopyFrom(player->CommonProp());
 		p->mutable_wechat()->CopyFrom(player->GetWechat());
+	
+		for (auto dis_player : _players)
+		{
+			if (!dis_player || dis_player->GetID() == player->GetID()) continue;
+
+			auto dis_element = p->mutable_dis_list()->Add();
+			dis_element->set_position(dis_player->GetPosition());
+			dis_element->set_distance(redis->GetDistance(dis_player->GetID(), player->GetID()));
+		}
 	}
 
 	BroadCast(message);

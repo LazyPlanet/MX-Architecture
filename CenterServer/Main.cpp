@@ -13,6 +13,7 @@
 #include "MXLog.h"
 #include "WorldSession.h"
 #include "GmtSession.h"
+#include "RedisManager.h"
 
 const int const_world_sleep = 50;
 
@@ -74,7 +75,7 @@ void ShutdownThreadPool(std::vector<std::shared_ptr<std::thread>>& threads)
 int main(int argc, const char* argv[])
 {
 	if (argc != 2) return 2; //参数不对
-
+	
 	try 
 	{
 		//

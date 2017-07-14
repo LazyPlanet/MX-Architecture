@@ -325,6 +325,7 @@ public:
 
 	void PreCheckOnFaPai(); //发牌前置检查
 	bool IsReady() { return _player_prop.game_oper_state() == Asset::GAME_OPER_TYPE_START; } //是否已经在准备状态 
+	Asset::GAME_OPER_TYPE GetOperState() { return _player_prop.game_oper_state(); }
 	//获取//设置玩家座次
 	Asset::POSITION_TYPE GetPosition() { return _player_prop.position(); }
 	void SetPosition(Asset::POSITION_TYPE position) { _player_prop.set_position(position); }
