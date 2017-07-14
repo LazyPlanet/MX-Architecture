@@ -849,7 +849,66 @@ void Game::Calculate(int64_t hupai_player_id/*胡牌玩家*/, int64_t dianpao_pl
 	record->set_score(total_score); //胡牌玩家赢的总积分
 	
 	//
-	//杠牌积分，一个部分
+	//3.点炮包三家
+	//
+	auto it_baosanjia = std::find(options.extend_type().begin(), options.extend_type().end(), Asset::ROOM_EXTEND_TYPE_BAOSANJIA);
+	auto baosanjia = (it_baosanjia != options.extend_type().end()); //是否支持包三家
+
+	if (baosanjia) //包三家
+	{
+		auto it_dianpao = get_record(dianpao_player_id);
+		if (it_dianpao == message.mutable_record()->mutable_list()->end()) 
+		{
+			DEBUG_ASSERT(false && "dianpao_player_id has not found"); //理论不会出现
+			return;
+		}
+
+		int32_t baofen_total = 0; //包积分
+
+		for (auto player : _players)
+		{
+			if (!player)
+			{
+				DEBUG_ASSERT(false && "player in game has not found"); //理论不会出现
+				continue;
+			}
+
+			auto player_id = player->GetID();
+
+			if (player_id == hupai_player_id) continue; //和胡牌玩家无关
+
+			auto it_player = get_record(player_id);
+			if (it_player == message.mutable_record()->mutable_list()->end()) 
+			{
+				DEBUG_ASSERT(false && "player has not found"); //理论不会出现
+				continue;
+			}
+
+			baofen_total += it_player->score();
+
+			it_dianpao->set_score(it_player->score() + it_dianpao->score()); //点炮玩家付钱
+			it_player->set_score(0);
+		}
+			
+		auto detail = it_dianpao->mutable_details()->Add();
+		detail->set_fan_type(Asset::FAN_TYPE_BAOSANJIA);
+		detail->set_score(baofen_total);
+
+		it_dianpao->set_score(baofen_total); //总积分
+	}
+	
+	//
+	//如果仅仅是平胡，则显示
+	//
+	if (record->details().size() == 0)
+	{
+		auto pinghu = record->mutable_details()->Add();
+		pinghu->set_score(1);
+		pinghu->set_fan_type(Asset::FAN_TYPE_PINGHU); 
+	}
+	
+	//
+	//4.杠牌积分，一个部分
 	//
 	for (int i = 0; i < MAX_PLAYER_COUNT; ++i)
 	{
@@ -929,55 +988,7 @@ void Game::Calculate(int64_t hupai_player_id/*胡牌玩家*/, int64_t dianpao_pl
 			}
 		}
 	}
-	
-	//
-	//4.点炮包三家
-	//
-	auto it_baosanjia = std::find(options.extend_type().begin(), options.extend_type().end(), Asset::ROOM_EXTEND_TYPE_BAOSANJIA);
-	auto baosanjia = (it_baosanjia != options.extend_type().end()); //是否支持包三家
 
-	if (baosanjia) //包三家
-	{
-		auto it_dianpao = get_record(dianpao_player_id);
-		if (it_dianpao == message.mutable_record()->mutable_list()->end()) 
-		{
-			DEBUG_ASSERT(false && "dianpao_player_id has not found"); //理论不会出现
-			return;
-		}
-
-		int32_t baofen_total = 0; //包积分
-
-		for (auto player : _players)
-		{
-			if (!player)
-			{
-				DEBUG_ASSERT(false && "player in game has not found"); //理论不会出现
-				continue;
-			}
-
-			auto player_id = player->GetID();
-
-			if (player_id == hupai_player_id) continue; //和胡牌玩家无关
-
-			auto it_player = get_record(player_id);
-			if (it_player == message.mutable_record()->mutable_list()->end()) 
-			{
-				DEBUG_ASSERT(false && "player has not found"); //理论不会出现
-				continue;
-			}
-
-			baofen_total += it_player->score();
-
-			it_dianpao->set_score(it_player->score() + it_dianpao->score()); //点炮玩家付钱
-			it_player->set_score(0);
-		}
-			
-		auto detail = it_dianpao->mutable_details()->Add();
-		detail->set_fan_type(Asset::FAN_TYPE_BAOSANJIA);
-		detail->set_score(baofen_total);
-
-		it_dianpao->set_score(baofen_total); //总积分
-	}
 
 	//取最大番数
 	auto max_fan_it = std::max_element(record->details().begin(), record->details().end(), 
@@ -996,16 +1007,6 @@ void Game::Calculate(int64_t hupai_player_id/*胡牌玩家*/, int64_t dianpao_pl
 		player->AddGameRecord(message.record());
 	}
 	
-	//
-	//如果仅仅是平胡，则显示
-	//
-	if (record->details().size() == 0)
-	{
-		auto pinghu = record->mutable_details()->Add();
-		pinghu->set_score(1);
-		pinghu->set_fan_type(Asset::FAN_TYPE_PINGHU); 
-	}
-
 	LOG(INFO, "胡牌结算:{}", message.ShortDebugString());
 		
 	BroadCast(message);
