@@ -900,11 +900,14 @@ void Game::Calculate(int64_t hupai_player_id/*胡牌玩家*/, int64_t dianpao_pl
 	//
 	//如果仅仅是平胡，则显示
 	//
-	if (record->details().size() == 0)
+	for (int32_t i = 0; i < message.record().list().size(); ++i)
 	{
-		auto pinghu = record->mutable_details()->Add();
-		pinghu->set_score(1);
-		pinghu->set_fan_type(Asset::FAN_TYPE_PINGHU); 
+		if (message.record().list(i).details().size() == 0)
+		{
+			auto pinghu = message.mutable_record()->mutable_list(i)->mutable_details()->Add();
+			pinghu->set_score(1);
+			pinghu->set_fan_type(Asset::FAN_TYPE_PINGHU); 
+		}
 	}
 	
 	//
