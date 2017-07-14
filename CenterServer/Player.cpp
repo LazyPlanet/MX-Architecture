@@ -368,7 +368,7 @@ bool Player::Update()
 	
 	if (_heart_count % 3000 == 0) //30s
 	{
-		SayHi();
+		//SayHi();
 	}
 
 	if (_heart_count % 6000 == 0) //1min

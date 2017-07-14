@@ -28,7 +28,7 @@ GmtSession::GmtSession(boost::asio::io_service& io_service, const boost::asio::i
 	
 void GmtSession::OnConnected()
 {
-	DEBUG("Connected server:{} success.", _ip_address);
+	DEBUG("连接GMT服务器:{} {}成功.", _ip_address, _remote_endpoint.port());
 
 	Asset::Register message;
 	message.set_server_type(Asset::SERVER_TYPE_GAME);
@@ -284,7 +284,7 @@ void GmtSession::SendProtocol(pb::Message& message)
 		return;
 	}
 
-	TRACE("server:{} send message to gmt server, message:{}", _ip_address, meta.ShortDebugString());
+	TRACE("send message to gmt server:{} {}, message:{}", _ip_address, _remote_endpoint.port(), meta.ShortDebugString());
 	AsyncSendMessage(content);
 }
 
