@@ -27,22 +27,27 @@ private:
 	std::shared_ptr<Asset::Room> _stuff; //数据
 	std::vector<std::shared_ptr<Game>> _games; //游戏列表
 	std::vector<std::shared_ptr<Player>> _players; //房间中的玩家：按照进房间的顺序，东南西北
+	Asset::RoomHistory _history;
+	std::unordered_map<int64_t, int32_t> _hupai_players;
+	std::unordered_map<int64_t, int32_t> _dianpao_players;
+	std::unordered_map<int64_t, int32_t> _bankers;
 public:
 	explicit Room(Asset::Room room) {  _stuff = std::make_shared<Asset::Room>(room); }
 
 	virtual int64_t GetID() { return _stuff->room_id(); }
-
 	virtual void SetID(int64_t room_id) { return _stuff->set_room_id(room_id); }
-	
-	virtual std::shared_ptr<Asset::Room> Get() {
-		return _stuff; //数据
-	}
+	virtual std::shared_ptr<Asset::Room> Get() { return _stuff; } //数据
 	
 	const Asset::RoomOptions& GetOptions() { return _stuff->options(); } //额外番型
 	void SetOption(const Asset::RoomOptions& options) {	_stuff->mutable_options()->CopyFrom(options);}
 
 	int32_t GetTime() { return _expired_time; } //获取过期时间
 	void SetTime(int32_t expired_time) { _expired_time = expired_time; }
+
+	void AddGameRecord(const Asset::GameRecord& record); //记录
+	void AddHupai(int64_t player_id) { ++_hupai_players[player_id]; }
+	void AddDianpao(int64_t player_id) { ++_dianpao_players[player_id]; }
+	void AddBanker(int64_t player_id) { ++_bankers[player_id]; }
 public:
 	Asset::ERROR_CODE TryEnter(std::shared_ptr<Player> player);
 	bool Enter(std::shared_ptr<Player> player);
@@ -76,10 +81,10 @@ public:
 	//游戏开始
 	void OnGameStart();
 	//游戏结束
-	void GameOver(int64_t player_id/*胡牌玩家*/);
+	void OnGameOver(int64_t player_id/*胡牌玩家*/);
 	
 	//庄家信息
-	void SetBanker(int64_t player_id) { _banker = player_id; } //设置庄家
+	void SetBanker(int64_t player_id) { _banker = player_id; AddBanker(player_id); } //设置庄家
 	int64_t GetBanker() { return _banker; } //获取庄家
 	int32_t GetBankerIndex() { return _banker_index; } //庄家索引
 	bool IsBanker(int64_t player_id){ return _banker == player_id; } //是否是庄家

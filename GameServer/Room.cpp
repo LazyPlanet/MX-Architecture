@@ -149,7 +149,7 @@ bool Room::Remove(int64_t player_id)
 
 		OnPlayerLeave(player_id); //玩家离开房间
 		
-		WARN("player:{} leave room.", player_id);
+		DEBUG("player:{} leave room.", player_id);
 
 		return true;
 	}
@@ -166,10 +166,50 @@ void Room::OnGameStart()
 	BroadCast(game_start);
 }
 
-void Room::GameOver(int64_t player_id)
+void Room::OnGameOver(int64_t player_id)
 {
+	AddHupai(player_id); //记录
+
 	if (_banker != player_id) 
 		_banker_index = (_banker_index + 1) % MAX_PLAYER_COUNT; //下庄
+
+	if (GetRemainCount() > 0) return;
+
+	Asset::RoomCalculate message;
+
+	for (auto player : _players)
+	{
+		if (!player) continue;
+
+		auto player_id = player->GetID();
+
+		auto record = message.mutable_record()->Add();
+		record->set_player_id(player_id);
+		record->set_nickname(player->GetNickName());
+		record->set_headimgurl(player->GetHeadImag());
+
+		record->set_pk_count(_games.size());
+		record->set_banker_count(_bankers[player_id]);
+		record->set_win_count(_hupai_players[player_id]);
+		record->set_dianpao_count(_dianpao_players[player_id]);
+
+		for(int i = 0; i < _history.list().size(); ++i)
+			for (int j = 0; j < _history.list(i).list().size(); ++j)
+				if (player_id == _history.list(i).list(j).player_id())
+					record->set_score(record->score() + _history.list(i).list(j).score());
+	}
+
+	BroadCast(message);
+
+	_history.Clear();
+	_bankers.clear();
+	_hupai_players.clear();
+	_dianpao_players.clear();
+}
+
+void Room::AddGameRecord(const Asset::GameRecord& record)
+{
+	_history.mutable_list()->Add()->CopyFrom(record);
 }
 
 void Room::BroadCast(pb::Message* message, int64_t exclude_player_id)

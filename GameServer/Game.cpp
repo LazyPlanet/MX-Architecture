@@ -123,7 +123,7 @@ void Game::OnStart()
 	_room->BroadCast(saizi);
 }
 
-bool Game::OnOver()
+bool Game::OnGameOver()
 {
 	if (!_room) return false;
 
@@ -163,6 +163,7 @@ bool Game::OnOver()
 	
 	ClearState();
 
+	/*
 	if (GetRemainGameCount() == 0)
 	{
 		Asset::GamesFull message;
@@ -170,6 +171,7 @@ bool Game::OnOver()
 
 		BroadCast(message);
 	}
+	*/
 
 	return true;
 }
@@ -187,12 +189,15 @@ void Game::ClearState()
 	_liuju = false;
 }
 
+/*
 int32_t Game::GetRemainGameCount() 
 { 
 	if (!_room) return 0;
 
 	return _room->GetRemainCount();
 }
+*/
+
 /////////////////////////////////////////////////////
 //
 //玩家可操作的状态只有2种，顺序不可变：
@@ -277,7 +282,11 @@ void Game::OnPaiOperate(std::shared_ptr<Player> player, pb::Message* message)
 			}
 			else if (CheckLiuJu())
 			{
-				return;
+				_room->OnGameOver(0); //胡牌
+
+				OnGameOver(); 
+				
+				_liuju = true;
 			}
 			else
 			{
@@ -380,10 +389,9 @@ void Game::OnPaiOperate(std::shared_ptr<Player> player, pb::Message* message)
 			{
 				Calculate(player->GetID(), _oper_limit.from_player_id(), fan_list); //结算
 
-				_room->GameOver(player->GetID()); //胡牌
-				_hupai_players.push_back(player->GetID()); 
+				_room->OnGameOver(player->GetID()); //胡牌
 
-				OnOver(); //结算之后才是真正结束
+				OnGameOver(); //结算之后才是真正结束
 			}
 			else
 			{
@@ -641,6 +649,8 @@ bool Game::SanJiaBi()
 void Game::Calculate(int64_t hupai_player_id/*胡牌玩家*/, int64_t dianpao_player_id/*点炮玩家*/, std::unordered_set<int32_t>& fan_list)
 {
 	if (!_room) return;
+
+	if (hupai_player_id != dianpao_player_id) _room->AddDianpao(dianpao_player_id); //不是自摸
 	
 	const auto options = _room->GetOptions();
 	
@@ -666,6 +676,7 @@ void Game::Calculate(int64_t hupai_player_id/*胡牌玩家*/, int64_t dianpao_pl
 	}
 
 	Asset::GameCalculate message;
+	message.set_calculte_type(Asset::CALCULATE_TYPE_HUPAI);
 	//
 	//胡牌积分，三部分
 	//
@@ -683,6 +694,8 @@ void Game::Calculate(int64_t hupai_player_id/*胡牌玩家*/, int64_t dianpao_pl
 		
 		auto record = message.mutable_record()->mutable_list()->Add();
 		record->set_player_id(player_id);
+		record->set_nickname(player->GetNickName());
+		record->set_headimgurl(player->GetHeadImag());
 
 		if (hupai_player_id == player_id) continue;
 
@@ -1234,6 +1247,7 @@ bool Game::CheckLiuJu()
 	};
 
 	Asset::GameCalculate game_calculate;
+	game_calculate.set_calculte_type(Asset::CALCULATE_TYPE_LIUJU);
 
 	for (int i = 0; i < MAX_PLAYER_COUNT; ++i)
 	{
@@ -1242,6 +1256,8 @@ bool Game::CheckLiuJu()
 		
 		auto record = game_calculate.mutable_record()->mutable_list()->Add();
 		record->set_player_id(player->GetID());
+		record->set_nickname(player->GetNickName());
+		record->set_headimgurl(player->GetHeadImag());
 		
 		auto ming_count = player->GetMingGangCount(); 
 		auto an_count = player->GetAnGangCount(); 
@@ -1293,13 +1309,6 @@ bool Game::CheckLiuJu()
 
 		player->AddGameRecord(game_calculate.record());
 	}
-	
-	_room->GameOver(0); //胡牌
-	_hupai_players.push_back(0); 
-
-	OnOver(); //结算之后才是真正结束
-	
-	_liuju = true;
 
 	TRACE("curr cards count:{} liuju_count:{}", _cards.size(), g_const->liuju_count());
 	return true;

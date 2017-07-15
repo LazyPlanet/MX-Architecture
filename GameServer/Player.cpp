@@ -1338,9 +1338,23 @@ bool Player::AddGameRecord(const Asset::GameRecord& record)
 
 	return true;
 }
+	
+const std::string Player::GetNickName()
+{
+	auto wechat = GetWechat();
+
+	return wechat.nickname();
+}
+
+const std::string Player::GetHeadImag()
+{
+	auto wechat = GetWechat();
+
+	return wechat.headimgurl();
+}
 
 /////////////////////////////////////////////////////
-/////游戏逻辑定义
+//游戏逻辑定义
 /////////////////////////////////////////////////////
 std::vector<Asset::PAI_OPER_TYPE> Player::CheckPai(const Asset::PaiElement& pai, int64_t from_player_id)
 {

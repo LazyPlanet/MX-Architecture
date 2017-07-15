@@ -93,6 +93,8 @@ public:
 
 	//微信数据
 	const Asset::WechatUnion GetWechat();
+	const std::string GetNickName();
+	const std::string GetHeadImag();
 
 	int32_t GetLocalServer() { return _stuff.server_id(); } //玩家当前所在服务器
 	void SetLocalServer(int32_t server_id) { return _stuff.set_server_id(server_id); }

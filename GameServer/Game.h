@@ -29,7 +29,6 @@ class Game : public std::enable_shared_from_this<Game>
 private:
 	
 	std::list<int32_t> _cards; //随机牌,每次开局更新,索引为GameManager牌中索引
-	std::vector<int64_t> _hupai_players;
 
 	int32_t _curr_player_index = 0; //当前在操作的玩家索引
 	int64_t _banker_player_id = 0; //庄家
@@ -50,7 +49,7 @@ public:
 	virtual bool Start(std::vector<std::shared_ptr<Player>> players); //开始游戏
 	virtual void OnStart(); //开始游戏回调
 
-	virtual bool OnOver(); //游戏结束
+	virtual bool OnGameOver(); //游戏结束
 	void ClearState(); //清理状态
 
 	virtual std::vector<int32_t> FaPai(size_t card_count); //发牌
@@ -98,7 +97,7 @@ public:
 	bool SanJiaBi(); //三家闭门
 
 	void SetCurrPlayerIndex(int64_t curr_player_index) { _curr_player_index = curr_player_index; } //设置当前可操作的玩家
-	int32_t GetRemainGameCount(); //当前剩余游戏局数
+	//int32_t GetRemainGameCount(); //当前剩余游戏局数
 };
 
 /////////////////////////////////////////////////////
