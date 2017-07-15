@@ -147,6 +147,7 @@ public:
 		boost::system::error_code error;
 		std::size_t bytes_sent = _socket.write_some(boost::asio::buffer(meta.c_str(), bytes_to_send), error);
 
+		/*
 		std::stringstream str;
 		const char* c = meta.c_str();
 		for (std::size_t i = 0; i < bytes_to_send; ++i)
@@ -154,6 +155,7 @@ public:
 			str << (int)c[i] << " ";
 		}
 		DEBUG("游戏逻辑服务器发送数据:{}", str.str());
+		*/
 
 		if (error == boost::asio::error::would_block || error == boost::asio::error::try_again)
 		{
