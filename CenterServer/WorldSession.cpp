@@ -37,26 +37,19 @@ void WorldSession::InitializeHandler(const boost::system::error_code error, cons
 			{
 				unsigned short body_size = _buffer[index] * 256 + _buffer[1 + index];
 					
-				DEBUG("解析来自地址:{} {}的数据, 头:{} {} 包长:{}", (int)_buffer[index] * 256, (int)_buffer[1 + index], body_size, _ip_address, _remote_endpoint.port());
-
 				if (body_size > 4096)
 				{
 					LOG(ERROR, "接收来自地址:{} 端口:{} 太大的包长:{} 丢弃.", _ip_address, _remote_endpoint.port(), body_size)
 					return;
 				}
 
-				char buffer[4096] = { 0 }; //数据缓存  
+				char buffer[4096] = {0}; //数据缓存  
 				for (size_t i = 0; i < body_size; ++i) buffer[i] = _buffer[i + index + 2];  
 
 				Asset::Meta meta;
 				bool result = meta.ParseFromArray(buffer, body_size);
 
-				if (!result) 
-				{
-					//DEBUG_ASSERT(false);
-					ERROR("转换不了协议数据");
-					return;		//非法协议
-				}
+				if (!result) return; //非法协议
 
 				OnProcessMessage(meta);
 
@@ -71,9 +64,8 @@ void WorldSession::InitializeHandler(const boost::system::error_code error, cons
 		return;
 	}
 
-	WARN("中心服务器接收数据之后, 当前缓存数量大小:{} 本次接收数据大小:{}", _buffer.size(), bytes_transferred);
-	//递归持续接收	
-	AsyncReceiveWithCallback(&WorldSession::InitializeHandler);
+	//WARN("中心服务器接收数据之后, 当前缓存数量大小:{} 本次接收数据大小:{}", _buffer.size(), bytes_transferred);
+	AsyncReceiveWithCallback(&WorldSession::InitializeHandler); //递归持续接收	
 }
 			
 void WorldSession::OnProcessMessage(const Asset::Meta& meta)
