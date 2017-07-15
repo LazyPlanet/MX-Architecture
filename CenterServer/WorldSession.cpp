@@ -37,7 +37,7 @@ void WorldSession::InitializeHandler(const boost::system::error_code error, cons
 			{
 				unsigned short body_size = _buffer[index] * 256 + _buffer[1 + index];
 					
-				DEBUG("解析的头:{} {} 包长:{}", (int)_buffer[index] * 256, (int)_buffer[1 + index], body_size);
+				DEBUG("解析来自地址:{} {}的数据, 头:{} {} 包长:{}", (int)_buffer[index] * 256, (int)_buffer[1 + index], body_size, _ip_address, _remote_endpoint.port());
 
 				if (body_size > 4096)
 				{

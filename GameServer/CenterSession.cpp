@@ -19,8 +19,6 @@ CenterSession::CenterSession(boost::asio::io_service& io_service, const boost::a
 	
 void CenterSession::OnConnected()
 {
-	//DEBUG("游戏逻辑服务器连接到中心服务器[{} {}]成功", _ip_address, _remote_endpoint.port());
-
 	Asset::RegisterServer message;
 	message.set_role_type(Asset::ROLE_TYPE_GAME_SERVER);
 	message.set_global_id(ConfigInstance.GetInt("ServerID", 1)); //全球唯一
@@ -28,15 +26,10 @@ void CenterSession::OnConnected()
 	SendProtocol(message); //注册服务器角色
 }
 
-void CenterSession::OnReceived(const Asset::Meta& message)
+bool CenterSession::OnInnerProcess(const Asset::Meta& meta)
 {
-	InnerProcess(message);
+	DEBUG("Receive message:{} from server:{}", meta.ShortDebugString(), _ip_address);
 
-	DEBUG("Receive message:{} from server:{}", message.ShortDebugString(), _ip_address);
-}
-
-bool CenterSession::InnerProcess(const Asset::Meta& meta)
-{
 	switch (meta.type_t())
 	{
 		case Asset::META_TYPE_S2S_REGISTER: //注册服务器成功
@@ -152,19 +145,6 @@ bool CenterSession::StartSend()
 	return started;
 }
 
-/*
-void CenterSession::AsyncSendMessage(std::string message)
-{
-	if (IsClosed()) return;
-
-	_mutex.lock();
-	_send_list.push_back(message);
-	_mutex.unlock();
-
-	StartSend();
-}
-*/
-
 void CenterSession::OnWriteSome(const boost::system::error_code& error, std::size_t bytes_transferred)
 {
 	if (!IsConnected()) return;
@@ -172,7 +152,7 @@ void CenterSession::OnWriteSome(const boost::system::error_code& error, std::siz
 	if (error)
 	{
 		Close(error.message());
-		CRITICAL("server:{} send success, bytes_transferred:{}, error:{}", _ip_address, bytes_transferred, error.message());
+		LOG(ERROR, "server:{} send success, bytes_transferred:{}, error:{}", _ip_address, bytes_transferred, error.message());
 		return;
 	}
 
@@ -196,19 +176,33 @@ void CenterSession::OnReadSome(const boost::system::error_code& error, std::size
 		Close(error.message());
 		return;
 	}
-	
-	DEBUG("接收中心服务器[{} {}]数据, 长度:{}, 返回码:{}", _ip_address, _remote_endpoint.port(), bytes_transferred, error.message());
 
-	Asset::Meta meta;
-	auto result = meta.ParseFromArray(_buffer.data() + 2, bytes_transferred - 2);
-	if (!result)
+	for (size_t index = 0; index < bytes_transferred;)
 	{
-		LOG(ERROR, "Receive message error from server:{} {} cannot parse from data.", _ip_address, _remote_endpoint.port());
-		ERROR("接收中心服务器[{} {}]的协议数据, 长度:{}, 不能正确转换为Protobuff数据", _ip_address, _remote_endpoint.port(), bytes_transferred);
-		return;
-	}
+		unsigned short body_size = _buffer[index] * 256 + _buffer[1 + index];
+			
+		if (body_size > 4096)
+		{
+			LOG(ERROR, "接收来自地址:{} 端口:{} 太大的包长:{} 丢弃.", _ip_address, _remote_endpoint.port(), body_size)
+			return;
+		}
 
-	_receive_list.push_back(meta);
+		char buffer[4096] = {0}; //数据缓存  
+		for (size_t i = 0; i < body_size; ++i) buffer[i] = _buffer[i + index + 2]; //字节复制
+
+		Asset::Meta meta;
+		bool result = meta.ParseFromArray(buffer, body_size);
+
+		if (!result)
+		{
+			LOG(ERROR, "Receive message error from server:{} {} cannot parse from data.", _ip_address, _remote_endpoint.port());
+			return;
+		}
+		
+		_receive_list.push_back(meta);
+
+		index += (body_size + 2); //下个包的起始位置
+	}
 
 	std::deque<Asset::Meta> received_messages;
 	received_messages.swap(_receive_list);
@@ -217,7 +211,7 @@ void CenterSession::OnReadSome(const boost::system::error_code& error, std::size
 	while (!IsClosed() && !received_messages.empty())
 	{
 		const auto& message = received_messages.front();
-		OnReceived(message);
+		OnInnerProcess(message);
 		received_messages.pop_front();
 	}
 	

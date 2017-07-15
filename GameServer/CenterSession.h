@@ -30,11 +30,10 @@ public:
 	CenterSession& operator = (CenterSession const& right) = delete;
 	
 	const boost::asio::ip::tcp::endpoint GetRemotePoint() { return _remote_endpoint; }
-	bool InnerProcess(const Asset::Meta& meta); //内部协议处理
 	Asset::COMMAND_ERROR_CODE OnCommandProcess(const Asset::Command& command);
     
 	virtual void OnConnected(); //连接上服务器
-	virtual void OnReceived(const Asset::Meta& message); //处理服务器的数据
+	bool OnInnerProcess(const Asset::Meta& meta); //内部协议处理
 	
 	void SendProtocol(pb::Message& message);
 	void SendProtocol(pb::Message* message);
