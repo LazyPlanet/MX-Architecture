@@ -28,70 +28,57 @@ void CenterSession::OnConnected()
 
 bool CenterSession::OnInnerProcess(const Asset::Meta& meta)
 {
-	DEBUG("Receive message:{} from server:{}", meta.ShortDebugString(), _ip_address);
+	DEBUG("接收来自中心服务器:{} {}的数据:{}", _ip_address, _remote_endpoint.port(), meta.ShortDebugString());
 
-	switch (meta.type_t())
+	if (meta.type_t() == Asset::META_TYPE_S2S_REGISTER) //注册服务器成功
 	{
-		case Asset::META_TYPE_S2S_REGISTER: //注册服务器成功
+		DEBUG("游戏逻辑服务器注册到中心服成功.");
+	}
+	else if (meta.type_t() == Asset::META_TYPE_SHARE_ENTER_ROOM) //进入游戏，从中心服务器首次进入逻辑服务器通过此处
+	{
+		Asset::EnterRoom message;
+		auto result = message.ParseFromString(meta.stuff());
+		if (!result) return false;
+
+		auto player = _players[meta.player_id()];
+		if (!player) player = std::make_shared<Player>(meta.player_id());
+		_players[meta.player_id()] = player;
+
+		if (player->OnLogin()) 
 		{
-			DEBUG("游戏逻辑服务器注册到中心服成功.");
+			ERROR("玩家{}进入游戏失败", meta.player_id());
 		}
-		break;
-
-		case Asset::META_TYPE_SHARE_ENTER_ROOM:
+		player->CmdEnterRoom(&message);
+	}
+	else
+	{
+		auto player = _players[meta.player_id()];
+		if (!player) 
 		{
-			Asset::EnterRoom message;
-			auto result = message.ParseFromString(meta.stuff());
-			if (!result) return false;
-
-			//auto player = PlayerInstance.Get(meta.player_id());
-			auto player = _players[meta.player_id()];
-			if (!player) player = std::make_shared<Player>(meta.player_id());
-			_players[meta.player_id()] = player;
-
+			player = std::make_shared<Player>(meta.player_id());
 			if (player->OnLogin()) 
 			{
 				ERROR("玩家{}进入游戏失败", meta.player_id());
 			}
-			player->CmdEnterRoom(&message);
+			_players[meta.player_id()] = player;
 		}
-		break;
 
-		default:
+		pb::Message* msg = ProtocolInstance.GetMessage(meta.type_t());	
+		if (!msg) 
 		{
-			WARN("Receive message:{} from server has no process type:{}", meta.ShortDebugString(), meta.type_t());
-			//std::shared_ptr<Player> player = PlayerInstance.Get(meta.player_id());
-			auto player = _players[meta.player_id()];
-			if (!player) 
-			{
-				WARN("游戏逻辑服务器未能找到玩家:{}", meta.player_id());
-				player = std::make_shared<Player>(meta.player_id());
-				if (player->OnLogin()) 
-				{
-					ERROR("玩家{}进入游戏失败", meta.player_id());
-				}
-				_players[meta.player_id()] = player;
-				//return false;
-			}
-
-			pb::Message* msg = ProtocolInstance.GetMessage(meta.type_t());	
-			if (!msg) 
-			{
-				TRACE("Could not found message of type:%d", meta.type_t());
-				return false;		//非法协议
-			}
-
-			auto message = msg->New();
-			
-			auto result = message->ParseFromArray(meta.stuff().c_str(), meta.stuff().size());
-			if (!result) 
-			{
-				DEBUG_ASSERT(false);
-				return false;		//非法协议
-			}
-			player->HandleProtocol(meta.type_t(), message);
+			DEBUG("Could not found message of type:%d", meta.type_t());
+			return false;		//非法协议
 		}
-		break;
+
+		auto message = msg->New();
+		
+		auto result = message->ParseFromArray(meta.stuff().c_str(), meta.stuff().size());
+		if (!result) 
+		{
+			DEBUG_ASSERT(false);
+			return false;		//非法协议
+		}
+		player->HandleProtocol(meta.type_t(), message);
 	}
 	return true;
 }
