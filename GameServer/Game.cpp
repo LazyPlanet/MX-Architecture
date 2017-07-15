@@ -53,6 +53,7 @@ bool Game::Start(std::vector<std::shared_ptr<Player>> players)
 
 		player->SetRoom(_room);
 		player->SetPosition(Asset::POSITION_TYPE(player_index));
+		player->OnGameStart();
 	}
 
 	//当前庄家

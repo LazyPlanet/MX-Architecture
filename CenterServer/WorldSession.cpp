@@ -143,46 +143,52 @@ void WorldSession::OnProcessMessage(const Asset::Meta& meta)
 			Asset::Login* login = dynamic_cast<Asset::Login*>(message);
 			if (!login) return; 
 			
-			_player_list.clear(); //账号下玩家列表，对于棋牌游戏，只有一个玩家
+			_account.CopyFrom(login->account()); //账号信息
+			_player_list.clear(); //账号下玩家列表，目前只有一个玩家
 		
 			auto success = RedisInstance.GetUser(login->account().username(), _user);
 
 			if (!success) //没有该用户
 			{
 				_user.mutable_account()->CopyFrom(login->account());
-
-				int64_t player_id = RedisInstance.CreatePlayer(); //如果账号下没有角色，创建一个给Client
-
-				if (player_id == 0) 
-				{
-					LOG(ERROR, "create player failed, username:{}", login->account().username());
-					return; //创建失败
-				}
-
-				_user.mutable_player_list()->Add(player_id);
-
-				_player = std::make_shared<Player>(player_id, shared_from_this());
-				std::string player_name = NameInstance.Get();
-
-				TRACE("get player_name success, player_id:{}, player_name:{}", player_id, player_name.c_str());
-
-				_player->SetName(player_name);
-				_player->Save(); //存盘，防止数据库无数据
 			}
 			else
 			{
 				LOG(TRACE, "get player_name success, username:{} who has exist.", login->account().username());
 			}
 
-			_account.CopyFrom(login->account()); //账号信息
+			//
+			//如果账号下没有角色，则创建一个
+			//
+			//对于需要玩家自定义角色数据的游戏，此处要单独处理，比如需要选择性别
+			//
+			if (_user.player_list().size() == 0)
+			{
+				int64_t player_id = RedisInstance.CreatePlayer(); //如果账号下没有角色，创建一个给Client
+				if (player_id == 0) return;
+				
+				_player = std::make_shared<Player>(player_id, shared_from_this());
+				std::string player_name = NameInstance.Get();
+
+				TRACE("get player_name success, player_id:{}, player_name:{}", player_id, player_name.c_str());
+
+				_player->SetName(player_name);
+				_player->SetAccount(login->account().username());
+
+				_player->Save(); //存盘，防止数据库无数据
+
+				_user.mutable_player_list()->Add(player_id);
+				RedisInstance.SaveUser(_access_token.openid(), _user); //账号数据存盘
+			}
+
 			for (auto player_id : _user.player_list()) _player_list.emplace(player_id); //玩家数据
 
 			LOG(INFO, "user:{} account:{} wechat:{} token:{}", _user.ShortDebugString(), _account.ShortDebugString(), _wechat.ShortDebugString(), _access_token.ShortDebugString());
 				
-			_user.mutable_wechat()->CopyFrom(_wechat); //微信数据
-			_user.mutable_wechat_token()->CopyFrom(_access_token);
+			if (!_user.has_wechat_token()) _user.mutable_wechat_token()->CopyFrom(_access_token);
+			if (!_user.has_wechat()) _user.mutable_wechat()->CopyFrom(_wechat); //微信数据
 
-			RedisInstance.SaveUser(login->account().username(), _user); //账号数据存盘
+			if (_access_token.has_openid())	RedisInstance.SaveUser(_access_token.openid(), _user); //账号数据存盘
 			
 			//
 			//发送当前的角色信息
@@ -289,6 +295,17 @@ void WorldSession::OnProcessMessage(const Asset::Meta& meta)
 			_player->SendProtocol2GameServer(enter_room); //转发
 
 			WorldSessionInstance.SetPlayerSession(_player->GetID(), game_server);
+		}
+		else if (Asset::META_TYPE_SHARE_UPDATE_CLIENT_DATA == meta.type_t()) //Client参数数据
+		{
+			auto client_data = dynamic_cast<Asset::UpdateClientData*>(message);
+			if (!client_data) return;
+
+			_user.mutable_client_info()->CopyFrom(client_data->client_info());
+				
+			RedisInstance.SaveUser(_user.account().username(), _user); //账号数据存盘
+
+			SendProtocol(message);
 		}
 		else
 		{
@@ -450,6 +467,15 @@ int32_t WorldSession::OnWechatLogin(const pb::Message* message)
 		proto.mutable_wechat_error()->CopyFrom(wechat_error);
 		SendProtocol(proto); //同步Client
 	}
+			
+	//
+	//微信登陆之后，直接进行存盘，防止玩家此时退出
+	//
+
+	if (!_user.has_wechat_token()) _user.mutable_wechat_token()->CopyFrom(_access_token);
+	if (!_user.has_wechat()) _user.mutable_wechat()->CopyFrom(_wechat); //微信数据
+
+	if (_access_token.has_openid())	RedisInstance.SaveUser(_access_token.openid(), _user); //账号数据存盘
 
 	return 0;
 }

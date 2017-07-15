@@ -59,7 +59,7 @@ public:
 	}
 
 	int32_t OnWechatLogin(const pb::Message* message);
-	const Asset::WechatUnion& GetWechat() { return _wechat; }
+	const Asset::WechatUnion& GetWechat() { return _user.wechat(); }
 	bool IsWechat() { return _account.account_type() == Asset::ACCOUNT_TYPE_WECHAT; }
 private:
 	Asset::WechatUnion _wechat; //微信数据

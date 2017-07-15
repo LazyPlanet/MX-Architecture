@@ -89,7 +89,9 @@ public:
 	const Asset::CommonProp& CommonProp() { return _stuff.common_prop(); }
 	const Asset::CommonProp& GetCommonProp() { return _stuff.common_prop(); }
 	Asset::CommonProp* MutableCommonProp() { return _stuff.mutable_common_prop(); }
-	const Asset::WechatUnion& GetWechat() { return _stuff.wechat(); }
+
+	//微信数据
+	const Asset::WechatUnion GetWechat();
 
 	int32_t GetLocalServer() { return _stuff.server_id(); } //玩家当前所在服务器
 	void SetLocalServer(int32_t server_id) { return _stuff.set_server_id(server_id); }
@@ -315,6 +317,7 @@ public:
 	bool HasTingPai() { return _has_ting; } //是否听牌
 
 	void OnTingPai(); //听牌响应
+	void OnGameStart();
 
 	bool IsMingPiao(); //是否明飘
 	bool IsSiGuiYi(); //是否四归一 
@@ -326,6 +329,8 @@ public:
 	void PreCheckOnFaPai(); //发牌前置检查
 	bool IsReady() { return _player_prop.game_oper_state() == Asset::GAME_OPER_TYPE_START; } //是否已经在准备状态 
 	Asset::GAME_OPER_TYPE GetOperState() { return _player_prop.game_oper_state(); }
+	void SetOperState(Asset::GAME_OPER_TYPE oper_type) { return _player_prop.set_game_oper_state(oper_type); }
+
 	//获取//设置玩家座次
 	Asset::POSITION_TYPE GetPosition() { return _player_prop.position(); }
 	void SetPosition(Asset::POSITION_TYPE position) { _player_prop.set_position(position); }

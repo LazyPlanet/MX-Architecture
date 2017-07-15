@@ -181,7 +181,6 @@ public:
 			return AsyncProcessQueue();
 		}
 
-		DEBUG("server bytes_to_send:{} bytes_sent:{}", bytes_to_send, bytes_sent);
 		_write_queue.pop();
 
 		if (_closing && _write_queue.empty()) Close();

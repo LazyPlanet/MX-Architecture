@@ -471,6 +471,11 @@ int32_t Player::CmdGameOperate(pb::Message* message)
 
 	return 0;
 }
+	
+void Player::OnGameStart()
+{
+	_player_prop.clear_game_oper_state(); 
+}
 
 int32_t Player::CmdPaiOperate(pb::Message* message)
 {
@@ -691,7 +696,7 @@ int32_t Player::CmdEnterRoom(pb::Message* message)
 	if (_room) 
 	{
 		LOG(ERROR, "player_id:{} has been in room:{} enter_room:{}", _player_id, _room->GetID(), enter_room->ShortDebugString());
-		//return 2; //已经在房间
+		return 2; //已经在房间
 	}
 
 	Asset::ROOM_TYPE room_type = enter_room->room().room_type();
@@ -3263,6 +3268,14 @@ void Player::DebugCommand()
 	{
 		WARN("不可以胡牌");
 	}
+}
+	
+const Asset::WechatUnion Player::GetWechat() 
+{ 
+	Asset::User user;
+	RedisInstance.GetUser(_stuff.account(), user);
+
+	return user.wechat();
 }
 
 void PlayerManager::Update(int32_t diff)

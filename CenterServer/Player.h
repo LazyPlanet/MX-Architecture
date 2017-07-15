@@ -73,6 +73,9 @@ public:
 	//获取名字
 	virtual std::string GetName() { return _stuff.common_prop().name(); }
 	virtual void SetName(std::string name) { _stuff.mutable_common_prop()->set_name(name); } 
+	//账号
+	virtual std::string GetAccount() { return _stuff.account(); }
+	virtual void SetAccount(std::string account) { _stuff.set_account(account); } 
 	//获取级别
 	virtual int32_t GetLevel() { return _stuff.common_prop().level(); }
 	//获取性别
@@ -119,8 +122,6 @@ public:
 	int32_t CmdGetReward(pb::Message* message);
 	//幸运转盘
 	int32_t CmdLuckyPlate(pb::Message* message);
-	//更新Client信息
-	int32_t CmdUpdateData(pb::Message* message);
 public:
 	//获取所有包裹
 	const Asset::Inventory& GetInventory() { return _stuff.inventory();	}
