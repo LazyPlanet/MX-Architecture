@@ -85,14 +85,13 @@ void WorldSession::InitializeHandler(const boost::system::error_code error, cons
 			
 				Asset::User user;
 				
-			 	auto redis = std::make_shared<Redis>();
-				auto success = redis->GetUser(login->account().username(), user);
+				auto success = RedisInstance.GetUser(login->account().username(), user);
 
 				if (!success) //没有该用户
 				{
 					user.mutable_account()->CopyFrom(login->account());
 
-					int64_t player_id = redis->CreatePlayer(); //如果账号下没有角色，创建一个给Client
+					int64_t player_id = RedisInstance.CreatePlayer(); //如果账号下没有角色，创建一个给Client
 
 					if (player_id == 0) 
 					{
@@ -102,7 +101,7 @@ void WorldSession::InitializeHandler(const boost::system::error_code error, cons
 
 					user.mutable_player_list()->Add(player_id);
 
-					redis->SaveUser(login->account().username(), user); //账号数据存盘
+					RedisInstance.SaveUser(login->account().username(), user); //账号数据存盘
 
 					g_player = std::make_shared<Player>(player_id, shared_from_this());
 					std::string player_name = NameInstance.Get();
@@ -141,8 +140,7 @@ void WorldSession::InitializeHandler(const boost::system::error_code error, cons
 				if (!login) return; 
 				
 				std::string account;
-			 	auto redis = std::make_shared<Redis>();
-				if (redis->GetGuestAccount(account)) login->set_account(account);
+				if (RedisInstance.GetGuestAccount(account)) login->set_account(account);
 				SendProtocol(login); 
 			}
 			else if (Asset::META_TYPE_C2S_RECONNECT == meta.type_t()) //断线重连

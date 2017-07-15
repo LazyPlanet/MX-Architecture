@@ -1,7 +1,5 @@
 #include <iostream>
 
-#include <hiredis.h>
-
 #include <spdlog/spdlog.h>
 #include <pbjson.hpp>
 
@@ -53,9 +51,7 @@ bool Player::Connected()
 
 int32_t Player::Load()
 {
-	auto redis = std::make_shared<Redis>(); //加载数据库
-
-	auto success = redis->GetPlayer(_player_id, _stuff);
+	auto success = RedisInstance.GetPlayer(_player_id, _stuff);
 	if (!success) return 1;
 		
 	if (_session && _session->IsWechat())
@@ -69,8 +65,7 @@ int32_t Player::Load()
 
 int32_t Player::Save()
 {
-	auto redis = make_unique<Redis>();
-	redis->SavePlayer(_player_id, _stuff);
+	RedisInstance.SavePlayer(_player_id, _stuff);
 	
 	PLAYER(_stuff);	//数据日志
 		
@@ -557,9 +552,7 @@ int32_t Player::CmdUpdateData(pb::Message* message)
 
 	SetDirty();
 	
-	auto redis = std::make_shared<Redis>(); //加载数据库
-
-	auto success = redis->SetLocation(_player_id, client_data->client_info().location());
+	auto success = RedisInstance.SetLocation(_player_id, client_data->client_info().location());
 	if (!success) return 2;
 
 	SendProtocol(message);

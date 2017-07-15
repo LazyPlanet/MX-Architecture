@@ -63,9 +63,7 @@ Player::Player(int64_t player_id, std::shared_ptr<WorldSession> session) : Playe
 int32_t Player::Load()
 {
 	//加载数据库
-	std::shared_ptr<Redis> redis = std::make_shared<Redis>();
-
-	auto success = redis->GetPlayer(_player_id, _stuff);
+	auto success = RedisInstance.GetPlayer(_player_id, _stuff);
 	if (!success) return 1;
 		
 	DEBUG("player_id:{} load info:{}", _player_id, _stuff.ShortDebugString());
@@ -97,8 +95,7 @@ int32_t Player::Load()
 
 int32_t Player::Save()
 {
-	auto redis = make_unique<Redis>();
-	redis->SavePlayer(_player_id, _stuff);
+	RedisInstance.SavePlayer(_player_id, _stuff);
 	
 	PLAYER(_stuff);	//BI日志
 		

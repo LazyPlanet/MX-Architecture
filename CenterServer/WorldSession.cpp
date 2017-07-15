@@ -153,15 +153,13 @@ void WorldSession::OnProcessMessage(const Asset::Meta& meta)
 			
 			_player_list.clear(); //账号下玩家列表，对于棋牌游戏，只有一个玩家
 		
-			auto redis = std::make_shared<Redis>();
-
-			auto success = redis->GetUser(login->account().username(), _user);
+			auto success = RedisInstance.GetUser(login->account().username(), _user);
 
 			if (!success) //没有该用户
 			{
 				_user.mutable_account()->CopyFrom(login->account());
 
-				int64_t player_id = redis->CreatePlayer(); //如果账号下没有角色，创建一个给Client
+				int64_t player_id = RedisInstance.CreatePlayer(); //如果账号下没有角色，创建一个给Client
 
 				if (player_id == 0) 
 				{
@@ -192,7 +190,7 @@ void WorldSession::OnProcessMessage(const Asset::Meta& meta)
 			_user.mutable_wechat()->CopyFrom(_wechat); //微信数据
 			_user.mutable_wechat_token()->CopyFrom(_access_token);
 
-			redis->SaveUser(login->account().username(), _user); //账号数据存盘
+			RedisInstance.SaveUser(login->account().username(), _user); //账号数据存盘
 			
 			//
 			//发送当前的角色信息
@@ -222,9 +220,7 @@ void WorldSession::OnProcessMessage(const Asset::Meta& meta)
 			if (!login) return; 
 			
 			std::string account;
-			auto redis = std::make_shared<Redis>();
-
-			if (redis->GetGuestAccount(account)) login->set_account(account);
+			if (RedisInstance.GetGuestAccount(account)) login->set_account(account);
 
 			SendProtocol(login); 
 		}

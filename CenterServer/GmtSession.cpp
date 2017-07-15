@@ -182,8 +182,6 @@ Asset::COMMAND_ERROR_CODE GmtSession::OnSendMail(const Asset::SendMail& command)
 			
 Asset::COMMAND_ERROR_CODE GmtSession::OnCommandProcess(const Asset::Command& command)
 {
-	auto redis = make_unique<Redis>();
-
 	auto player_id = command.player_id();
 	if (player_id <= 0) //玩家角色校验
 	{

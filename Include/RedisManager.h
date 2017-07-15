@@ -29,6 +29,12 @@ private:
 	redisContext* _client;
 public:
 	~Redis() { redisFree(_client); }
+	
+	static Redis& Instance()
+	{
+		static Redis _instance;
+		return _instance;
+	}
 
 	Redis() 
 	{ 
@@ -242,5 +248,7 @@ public:
 		return dist;
 	}
 };
+
+#define RedisInstance Redis::Instance()
 
 }

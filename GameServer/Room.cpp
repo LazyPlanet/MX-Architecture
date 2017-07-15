@@ -201,8 +201,6 @@ void Room::SyncRoom()
 {
 	Asset::RoomInformation message;
 
-	auto redis = std::make_shared<Redis>(); //加载数据库
-	
 	for (auto player : _players)
 	{
 		DEBUG("sync room infomation, curr_player_size:{} player_id:{} position:{}", _players.size(), player->GetID(), player->GetPosition());
@@ -218,7 +216,7 @@ void Room::SyncRoom()
 
 			auto dis_element = p->mutable_dis_list()->Add();
 			dis_element->set_position(dis_player->GetPosition());
-			dis_element->set_distance(redis->GetDistance(dis_player->GetID(), player->GetID()));
+			dis_element->set_distance(RedisInstance.GetDistance(dis_player->GetID(), player->GetID()));
 		}
 	}
 
@@ -269,8 +267,7 @@ bool RoomManager::CheckPassword(int64_t room_id, std::string password)
 
 int64_t RoomManager::CreateRoom()
 {
-	std::shared_ptr<Redis> redis = std::make_shared<Redis>();
-	int64_t room_id = redis->CreateRoom();
+	int64_t room_id = RedisInstance.CreateRoom();
 	return room_id;
 }
 	
