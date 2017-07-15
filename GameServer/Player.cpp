@@ -1329,6 +1329,7 @@ bool Player::AddGameRecord(const Asset::GameRecord& record)
 		room_history = _stuff.mutable_room_history()->Add();
 		room_history->set_room_id(_room->GetID());
 		room_history->set_create_time(CommonTimerInstance.GetTime()); //创建时间
+		room_history->mutable_options()->CopyFrom(_room->GetOptions());
 	}
 
 	auto list = room_history->mutable_list()->Add();
@@ -3042,11 +3043,36 @@ int32_t Player::OnFaPai(std::vector<int32_t>& cards)
 		//
 		//听牌后第一次抓牌，产生宝牌
 		//
-		if (IsTingPai() && !_game->HasBaopai())
+		if (IsTingPai())
 		{
 			if (_oper_count_tingpai == 1) //听牌后第一次抓牌
 			{
-				_game->OnTingPai(shared_from_this());
+				Asset::RandomSaizi proto;
+
+				if (!_game->HasBaopai())
+				{
+					_game->OnTingPai(shared_from_this()); //生成宝牌
+					proto.set_has_rand_saizi(true);
+				}
+				else
+				{
+					proto.set_has_rand_saizi(false);
+				}
+					
+				auto baopai = _game->GetBaoPai();
+				proto.set_reason_type(Asset::RandomSaizi_REASON_TYPE_REASON_TYPE_TINGPAI);
+				proto.mutable_random_result()->Add(_game->GetRandResult());
+				proto.mutable_pai()->CopyFrom(baopai);
+				SendProtocol(proto); //看宝
+
+				if (CheckHuPai(baopai)) 
+				{
+					Asset::PaiOperationAlert alert;
+					auto pai_perator = alert.mutable_pais()->Add();
+					pai_perator->mutable_pai()->CopyFrom(card);
+					pai_perator->mutable_oper_list()->Add(Asset::PAI_OPER_TYPE_HUPAI);
+					SendProtocol(proto); //进宝 
+				}
 			}
 		}
 
@@ -3074,7 +3100,7 @@ int32_t Player::OnFaPai(std::vector<int32_t>& cards)
 	SendProtocol(notify); //发牌给玩家
 
 	notify.mutable_pais()->Clear(); notify.mutable_pai()->Clear(); //其他玩家不能知道具体发了什么牌
-	Send2Roomers(notify, _player_id); //广播玩家抓牌行为
+	Send2Roomers(notify, _player_id); //玩家行为
 
 	return 0;
 }
@@ -3091,6 +3117,8 @@ void Player::OnTingPai()
 
 	//
 	//宝牌没有剩余数量则重新进行随机
+	//
+	//相当于玩家一直在打股子，选择宝牌
 	//
 	while(_game->HasBaopai())
 	{

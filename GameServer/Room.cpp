@@ -87,6 +87,8 @@ std::shared_ptr<Player> Room::GetPlayer(int64_t player_id)
 void Room::OnPlayerOperate(std::shared_ptr<Player> player, pb::Message* message)
 {
 	if (!player) return;
+
+	if (GetRemainCount() <= 0) return; //已经玩完X局
 	
 	auto game_operate = dynamic_cast<Asset::GameOperation*>(message);
 	if (!game_operate) return;
