@@ -374,7 +374,7 @@ void Game::OnPaiOperate(std::shared_ptr<Player> player, pb::Message* message)
 		
 		case Asset::PAI_OPER_TYPE_HUPAI: //胡牌
 		{
-			std::vector<Asset::FAN_TYPE> fan_list;
+			std::unordered_set<int32_t> fan_list;
 
 			if (player->CheckHuPai(pai, fan_list)/*玩家点炮*/ || player->CheckHuPai(fan_list)/*自摸*/ || player->CheckBaoHu(pai)) //正常胡牌或者宝胡
 			{
@@ -638,7 +638,7 @@ bool Game::SanJiaBi()
 	return true;
 }
 	
-void Game::Calculate(int64_t hupai_player_id/*胡牌玩家*/, int64_t dianpao_player_id/*点炮玩家*/, std::vector<Asset::FAN_TYPE>& fan_list)
+void Game::Calculate(int64_t hupai_player_id/*胡牌玩家*/, int64_t dianpao_player_id/*点炮玩家*/, std::unordered_set<int32_t>& fan_list)
 {
 	if (!_room) return;
 	
@@ -647,7 +647,7 @@ void Game::Calculate(int64_t hupai_player_id/*胡牌玩家*/, int64_t dianpao_pl
 	const auto fan_asset = dynamic_cast<const Asset::RoomFan*>(AssetInstance.Get(g_const->fan_id()));
 	if (!fan_asset) return;
 
-	auto get_multiple = [&](const Asset::FAN_TYPE& fan_type)->int32_t {
+	auto get_multiple = [&](const int32_t fan_type)->int32_t {
 		auto it = std::find_if(fan_asset->fans().begin(), fan_asset->fans().end(), [fan_type](const Asset::RoomFan_FanElement& element){
 			return fan_type == element.fan_type();
 		});
@@ -662,7 +662,7 @@ void Game::Calculate(int64_t hupai_player_id/*胡牌玩家*/, int64_t dianpao_pl
 	//
 	if (IsBanker(hupai_player_id)) 
 	{
-		fan_list.push_back(Asset::FAN_TYPE_ZHUANG);
+		fan_list.emplace(Asset::FAN_TYPE_ZHUANG);
 	}
 
 	Asset::GameCalculate message;
@@ -696,7 +696,7 @@ void Game::Calculate(int64_t hupai_player_id/*胡牌玩家*/, int64_t dianpao_pl
 			score *= get_multiple(fan);
 			
 			auto detail = record->mutable_details()->Add();
-			detail->set_fan_type(fan);
+			detail->set_fan_type((Asset::FAN_TYPE)fan);
 			detail->set_score(-score);
 
 			DEBUG("player_id:{} fan:{} score:{}", player_id, fan, -score);
@@ -1224,7 +1224,7 @@ bool Game::CheckLiuJu()
 	const auto fan_asset = dynamic_cast<const Asset::RoomFan*>(AssetInstance.Get(g_const->fan_id()));
 	if (!fan_asset) return false;
 
-	auto get_multiple = [&](const Asset::FAN_TYPE& fan_type)->int32_t {
+	auto get_multiple = [&](const int32_t fan_type)->int32_t {
 		auto it = std::find_if(fan_asset->fans().begin(), fan_asset->fans().end(), [fan_type](const Asset::RoomFan_FanElement& element){
 			return fan_type == element.fan_type();
 		});

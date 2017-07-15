@@ -6,6 +6,7 @@
 #include <memory>
 #include <unordered_map>
 #include <functional>
+#include <unordered_set>
 
 #include "P_Header.h"
 #include "Item.h"
@@ -241,7 +242,6 @@ private:
 	std::vector<std::tuple<bool, bool, bool>> _hu_result;
 	Asset::PAI_OPER_TYPE _oper_type; //玩家上次操作类型，主要用于处理杠上开的番次
 
-	void DebugCommand();
 public:
 	//玩家操作
 	virtual int32_t CmdGameOperate(pb::Message* message); //游戏操作
@@ -271,8 +271,8 @@ public:
 
 	bool CheckHuPai(); //胡牌检查:玩家手里现有牌检查
 	bool CheckHuPai(const Asset::PaiElement& pai); //胡牌
-	bool CheckHuPai(std::vector<Asset::FAN_TYPE>& fan_list); //胡牌且算番数
-	bool CheckHuPai(const Asset::PaiElement& pai, std::vector<Asset::FAN_TYPE>& fan_list); //胡牌且算番数
+	bool CheckHuPai(std::unordered_set<int32_t>& fan_list); //胡牌且算番数
+	bool CheckHuPai(const Asset::PaiElement& pai, std::unordered_set<int32_t>& fan_list); //胡牌且算番数
 	bool CheckHuPai(const std::map<int32_t, std::vector<int32_t>>& cards_inhand, //玩家手里的牌
 			const std::map<int32_t, std::vector<int32_t>>& cards_outhand, //玩家墙外牌
 			const std::vector<Asset::PaiElement>& minggang, //明杠
@@ -281,8 +281,12 @@ public:
 			int32_t fenggang, //旋风杠，本质是暗杠
 			const Asset::PaiElement& pai); //胡牌
 
+	void DebugCommand();
 	bool CheckGangPai(const Asset::PaiElement& pai, int64_t from_player_id); //是否可以杠牌
-	//有玩家一直不杠牌, 每次都要提示, 比如玩家碰了7条,但是手里有7-8-9条,而选择暂时不杠
+
+	//有玩家一直不杠牌，每次都要提示
+	//
+	//比如玩家碰了7条，但是手里有7-8-9条，而选择暂时不杠
 	bool CheckAllGangPai(::google::protobuf::RepeatedField<Asset::PaiOperationAlert_AlertElement>& gang_list); 
 
 	void OnGangPai(const Asset::PaiElement& pai, int64_t from_player_id); //杠牌

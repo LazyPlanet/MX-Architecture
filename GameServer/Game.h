@@ -6,6 +6,7 @@
 #include <numeric>
 #include <algorithm>
 #include <unordered_map>
+#include <unordered_set>
 
 #include "P_Header.h"
 #include "Player.h"
@@ -74,7 +75,7 @@ public:
 	void BroadCast(pb::Message* message, int64_t exclude_player_id = 0);
 	void BroadCast(pb::Message& message, int64_t exclude_player_id = 0);
 
-	void Calculate(int64_t hupai_player_id/*胡牌玩家*/, int64_t dianpao_player_id/*点炮玩家*/, std::vector<Asset::FAN_TYPE>& fan_list/*基础分*/);
+	void Calculate(int64_t hupai_player_id/*胡牌玩家*/, int64_t dianpao_player_id/*点炮玩家*/, std::unordered_set<int32_t>& fan_list/*基础分*/);
 
 	void AddTingPlayer(int64_t player_id) {	_ting_players.push_back(player_id);	} //增加听牌玩家
 	void OnTingPai(std::shared_ptr<Player> player); //玩家听牌
