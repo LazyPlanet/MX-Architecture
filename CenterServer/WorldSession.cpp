@@ -25,17 +25,10 @@ void WorldSession::InitializeHandler(const boost::system::error_code error, cons
 {
 	try
 	{
-		/*
-		std::stringstream str;
-		for (std::size_t i = 0; i < bytes_transferred; ++i)
-			str << (int)_buffer[i] << " ";
-		DEBUG("中心服务器接收数据:{} 当前缓存数量大小:{} 本次接收数据大小:{}", str.str(), _buffer.size(), bytes_transferred);
-		*/
 		if (error)
 		{
-			WARN("Remote client disconnect, remote_ip:{} port:{}, player_id:{}", _ip_address, _remote_endpoint.port(), g_player ? g_player->GetID() : 0);
+			ERROR("Remote client disconnect, remote_ip:{} port:{}, player_id:{}", _ip_address, _remote_endpoint.port(), _player ? _player->GetID() : 0);
 			KickOutPlayer(Asset::KICK_OUT_REASON_DISCONNECT);
-			//Close(); ////断开网络连接，不要显示的关闭网络连接
 			return;
 		}
 		else
@@ -73,8 +66,8 @@ void WorldSession::InitializeHandler(const boost::system::error_code error, cons
 	}
 	catch (std::exception& e)
 	{
-		ERROR("Remote client disconnect, remote_ip:{}, error:{}, player_id:{}", _ip_address, e.what(), g_player ? g_player->GetID() : 0);
-		//Close(); //不用显示关闭网络连接
+		ERROR("Remote client disconnect, remote_ip:{}, error:{}, player_id:{}", _ip_address, e.what(), _player ? _player->GetID() : 0);
+		KickOutPlayer(Asset::KICK_OUT_REASON_DISCONNECT);
 		return;
 	}
 
@@ -178,13 +171,13 @@ void WorldSession::OnProcessMessage(const Asset::Meta& meta)
 
 				_user.mutable_player_list()->Add(player_id);
 
-				g_player = std::make_shared<Player>(player_id, shared_from_this());
+				_player = std::make_shared<Player>(player_id, shared_from_this());
 				std::string player_name = NameInstance.Get();
 
 				TRACE("get player_name success, player_id:{}, player_name:{}", player_id, player_name.c_str());
 
-				g_player->SetName(player_name);
-				g_player->Save(); //存盘，防止数据库无数据
+				_player->SetName(player_name);
+				_player->Save(); //存盘，防止数据库无数据
 			}
 			else
 			{
@@ -240,10 +233,10 @@ void WorldSession::OnProcessMessage(const Asset::Meta& meta)
 			Asset::ReConnect* connect = dynamic_cast<Asset::ReConnect*>(message);
 			if (!connect) return; 
 
-			g_player = PlayerInstance.Get(connect->player_id());
-			if (!g_player) return;
+			_player = PlayerInstance.Get(connect->player_id());
+			if (!_player) return;
 
-			g_player->OnEnterGame();
+			_player->OnEnterGame();
 		}
 		else if (Asset::META_TYPE_C2S_ENTER_GAME == meta.type_t()) //进入游戏
 		{
@@ -256,29 +249,29 @@ void WorldSession::OnProcessMessage(const Asset::Meta& meta)
 				return; //账号下没有该角色数据
 			}
 
-			if (!g_player) 
+			if (!_player) 
 			{
-				g_player = std::make_shared<Player>(enter_game->player_id(), shared_from_this());
-				SetRoleType(Asset::ROLE_TYPE_PLAYER, g_player->GetID());
+				_player = std::make_shared<Player>(enter_game->player_id(), shared_from_this());
+				SetRoleType(Asset::ROLE_TYPE_PLAYER, _player->GetID());
 			}
 			//
 			// 已经在线玩家检查
 			//
 			// 对于已经进入游戏内操作的玩家进行托管
 			//
-			auto session = WorldSessionInstance.GetPlayerSession(g_player->GetID());
+			auto session = WorldSessionInstance.GetPlayerSession(_player->GetID());
 			if (session) //已经在线
 			{
 				session->KickOutPlayer(Asset::KICK_OUT_REASON_OTHER_LOGIN);
 			}
-			WorldSessionInstance.AddPlayer(g_player->GetID(), shared_from_this()); //在线玩家
+			//WorldSessionInstance.AddPlayer(_player->GetID(), shared_from_this()); //在线玩家
 			
 			//
 			//此时才可以真正进入游戏大厅
 			//
 			//加载数据
 			//
-			if (g_player->OnEnterGame()) //理论上不会出现
+			if (_player->OnEnterGame()) //理论上不会出现
 			{
 				Asset::AlertMessage alert;
 				alert.set_error_type(Asset::ERROR_TYPE_NORMAL);
@@ -293,7 +286,7 @@ void WorldSession::OnProcessMessage(const Asset::Meta& meta)
 			//
 			//进入房间根据房间号选择房间所在逻辑服务器进行会话选择
 			//
-			if (!g_player) return;
+			if (!_player) return;
 
 			Asset::EnterRoom* enter_room = dynamic_cast<Asset::EnterRoom*>(message);
 			if (!enter_room) return; 
@@ -304,39 +297,40 @@ void WorldSession::OnProcessMessage(const Asset::Meta& meta)
 			auto game_server = WorldSessionInstance.GetServerSession(server_id);
 			if (!game_server) return;
 
-			g_player->SetGameServer(game_server);
-			g_player->SendProtocol2GameServer(enter_room); //转发
+			_player->SetGameServer(game_server);
+			_player->SendProtocol2GameServer(enter_room); //转发
 
-			WorldSessionInstance.SetPlayerSession(g_player->GetID(), game_server);
+			WorldSessionInstance.SetPlayerSession(_player->GetID(), game_server);
 		}
 		else
 		{
-			if (!g_player) 
+			if (!_player) 
 			{
 				LOG(ERROR, "Player has not inited.");
 				return; //尚未初始化
 			}
 			//协议处理
-			g_player->HandleProtocol(meta.type_t(), message);
+			_player->HandleProtocol(meta.type_t(), message);
 		}
 	}
 }
 
 void WorldSession::KickOutPlayer(Asset::KICK_OUT_REASON reason)
 {
-	if (g_player) //网络断开
-	{
-		g_player->OnKickOut(reason); //玩家退出登陆
-	}
+	if (!_player) return;
+
+	_player->OnKickOut(reason); //玩家退出登陆
+	
+	_online = false;
 }
 	
 void WorldSession::OnLogout()
 {
-	if (g_player) 
-	{
-		ERROR("player_id:{} 退出登陆", g_player->GetID())
-		g_player->Logout(nullptr);
-	}
+	if (!_player) return;
+	
+	_player->Logout(nullptr);
+
+	_online = false;
 }
 	
 int32_t WorldSession::OnWechatLogin(const pb::Message* message)
@@ -481,12 +475,11 @@ bool WorldSession::Update()
 { 
 	if (!Socket::Update()) return false;
 
-	if (!g_player) 
-	{
-		return true; //长时间未能上线
-	}
+	if (!_player) return true; //长时间未能上线
 
-	g_player->Update(); 
+	if (!_online) return false;
+
+	_player->Update(); 
 
 	return true;
 }

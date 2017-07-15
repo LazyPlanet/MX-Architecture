@@ -24,6 +24,7 @@ private:
 	std::string _hostname = "127.0.0.1";
 	int32_t _port = 6379;
 	struct timeval _timeout = {1, 500000}; //1.5秒 
+	const std::string _password = "!QAZ%TGB&UJM9ol.";
 
 	redisContext* _client;
 public:
@@ -32,11 +33,23 @@ public:
 	Redis() 
 	{ 
 		_client = redisConnectWithTimeout(_hostname.c_str(), _port, _timeout);
+
+		redisReply* reply= (redisReply*)redisCommand(_client, "auth %s", _password.c_str()); 
+		if (reply && reply->type == REDIS_REPLY_ERROR) { 
+			LOG(ERROR, "Redis密码错误");
+		} 
+		freeReplyObject(reply);
 	}
 
 	Redis(std::string& hostname, int32_t port) : _hostname(hostname), _port(port)
 	{ 
 		_client = redisConnectWithTimeout(hostname.c_str(), port, _timeout);
+		
+		redisReply* reply= (redisReply*)redisCommand(_client, "auth %s", _password.c_str()); 
+		if (reply && reply->type == REDIS_REPLY_ERROR) { 
+			LOG(ERROR, "Redis密码错误");
+		} 
+		freeReplyObject(reply);
 	}
 
 	redisContext* GetClient() { return _client; }

@@ -86,13 +86,15 @@ int32_t Player::Logout(pb::Message* message)
 	
 int32_t Player::OnLogout()
 {
-	this->_stuff.set_login_time(0);
-	this->_stuff.set_logout_time(CommonTimerInstance.GetTime());
+	_stuff.set_login_time(0);
+	_stuff.set_logout_time(CommonTimerInstance.GetTime());
 	
 	Save();	//存档数据库
 
 	WorldSessionInstance.RemovePlayer(_player_id); //网络会话数据
 	PlayerInstance.Erase(_player_id); //玩家管理
+
+	DEBUG("player_id:{} stuff:{} leave game and scene.", _player_id, _stuff.ShortDebugString());
 
 	return 0;
 }
@@ -376,6 +378,7 @@ bool Player::Update()
 	{
 		TRACE("heart_count:{} player_id:{}", _heart_count, _player_id);
 	}
+
 	return true;
 }
 	
@@ -644,6 +647,11 @@ int32_t Player::CmdGameSetting(pb::Message* message)
 	
 void Player::OnKickOut(Asset::KICK_OUT_REASON reason)
 {
+	//
+	//如果玩家主动退出，数据发送失败
+	//
+	//如果由于顶号，会优先发给在线玩家
+	//
 	Asset::KickOut kickout; //提示Client
 	kickout.set_player_id(_player_id);
 	kickout.set_reason(reason);
