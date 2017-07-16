@@ -79,7 +79,11 @@ public:
 		redisReply* reply = (redisReply*)redisCommand(_client, "Incr player_counter");
 		if (!reply) return 0;
 
-		if (reply->type != REDIS_REPLY_INTEGER) return 0;
+		if (reply->type != REDIS_REPLY_INTEGER) 
+		{
+			freeReplyObject(reply);
+			return 0;
+		}
 		
 		int64_t player_id = reply->integer;
 		freeReplyObject(reply);
@@ -102,12 +106,20 @@ public:
 
 		if (!reply) return false;
 
-		if (reply->type == REDIS_REPLY_NIL) return false;
+		if (reply->type == REDIS_REPLY_NIL) 
+		{
+			freeReplyObject(reply);
+			return false;
+		}
 		
-		if (reply->type != REDIS_REPLY_STRING) return false;
+		if (reply->type != REDIS_REPLY_STRING) 
+		{
+			LOG(ERROR, "获取玩家数据失败，player_id:{} reply->type:{}", player_id, reply->type);
+			freeReplyObject(reply);
+			return false;
+		}
 		
 		auto success = player.ParseFromArray(reply->str, reply->len);
-
 		freeReplyObject(reply);
 
 		return success;
@@ -128,7 +140,7 @@ public:
 		
 		if (!(reply->type == REDIS_REPLY_STATUS && strcasecmp(reply->str, "OK") == 0)) 
 		{
-			LOG(ERROR, "保存玩家数据失败，player_id:{} player:{}", player_id, player.ShortDebugString());
+			LOG(ERROR, "保存玩家数据失败，reply->type:{} player_id:{} player:{}", reply->type, player_id, player.ShortDebugString());
 		}
 		freeReplyObject(reply);
 			
@@ -142,7 +154,11 @@ public:
 		redisReply* reply = (redisReply*)redisCommand(_client, "Incr room_counter");
 		if (!reply) return 0;
 
-		if (reply->type != REDIS_REPLY_INTEGER) return 0;
+		if (reply->type != REDIS_REPLY_INTEGER) 
+		{
+			freeReplyObject(reply);
+			return 0;
+		}
 		
 		int64_t room_id = reply->integer;
 		freeReplyObject(reply);
@@ -165,14 +181,26 @@ public:
 
 		if (!reply) return false;
 
-		if (reply->type == REDIS_REPLY_NIL) return false;
+		if (reply->type == REDIS_REPLY_NIL) 
+		{
+			freeReplyObject(reply);
+			return false;
+		}
 		
-		if (reply->type != REDIS_REPLY_STRING) return false;
+		if (reply->type != REDIS_REPLY_STRING) 
+		{
+			LOG(ERROR, "获取账号数据失败，username:{} reply->type:{}", username, reply->type);
+			freeReplyObject(reply);
+			return false;
+		}
 
-		if (reply->len == 0) return false;
+		if (reply->len == 0) 
+		{
+			freeReplyObject(reply);
+			return false;
+		}
 
 		auto success = user.ParseFromArray(reply->str, reply->len);
-
 		freeReplyObject(reply);
 
 		return success;
@@ -207,7 +235,11 @@ public:
 		redisReply* reply = (redisReply*)redisCommand(_client, "Incr guest_counter");
 		if (!reply) return false;
 
-		if (reply->type != REDIS_REPLY_INTEGER) return false;
+		if (reply->type != REDIS_REPLY_INTEGER) 
+		{
+			freeReplyObject(reply);
+			return false;
+		}
 		
 		int64_t guest_id = reply->integer;
 		freeReplyObject(reply);
@@ -238,14 +270,27 @@ public:
 		redisReply* reply = (redisReply*)redisCommand(_client, command.c_str());
 		if (!reply) return false;
 
-		if (reply->type != REDIS_REPLY_ARRAY || reply->elements != 1) return false;
+		if (reply->type != REDIS_REPLY_ARRAY || reply->elements != 1) 
+		{
+			freeReplyObject(reply);
+			return false;
+		}
 
-		if (reply->element[0]->elements != 2) return false;
+		if (reply->element[0]->elements != 2) 
+		{
+			freeReplyObject(reply);
+			return false;
+		}
 
-		if (!reply->element[0]->element[0]->str || !reply->element[0]->element[1]->str) return false;
+		if (!reply->element[0]->element[0]->str || !reply->element[0]->element[1]->str) 
+		{
+			freeReplyObject(reply);
+			return false;
+		}
 
 		double longitude = atof(reply->element[0]->element[0]->str);
 		double latitude = atof(reply->element[0]->element[1]->str);
+		freeReplyObject(reply);
 
 		location.set_longitude(longitude);
 		location.set_latitude(latitude);
@@ -260,9 +305,14 @@ public:
 		redisReply* reply = (redisReply*)redisCommand(_client, command.c_str());
 		if (!reply) return -1.0;
 
-		if (reply->type == REDIS_REPLY_NIL || !reply->str) return -1.0;
+		if (reply->type == REDIS_REPLY_NIL || !reply->str) 
+		{
+			freeReplyObject(reply);
+			return -1.0;
+		}
 
 		double dist = atof(reply->str);
+		freeReplyObject(reply);
 		return dist;
 	}
 };
