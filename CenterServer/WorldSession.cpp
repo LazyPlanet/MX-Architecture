@@ -15,6 +15,25 @@ namespace Adoter
 
 namespace spd = spdlog;
 
+std::string iso_8859_1_to_utf8(std::string& str)
+{
+    string strOut;
+    for (std::string::iterator it = str.begin(); it != str.end(); ++it)
+    {
+	    uint8_t ch = *it;
+	    if (ch < 0x80) 
+		{
+		    strOut.push_back(ch);
+		}
+	    else 
+		{
+	        strOut.push_back(0xc0 | ch >> 6);
+	        strOut.push_back(0x80 | (ch & 0x3f));
+	    }
+	}
+    return strOut;
+}
+
 WorldSession::WorldSession(boost::asio::ip::tcp::socket&& socket) : Socket(std::move(socket))
 {
 	_remote_endpoint = _socket.remote_endpoint();
@@ -188,6 +207,8 @@ void WorldSession::OnProcessMessage(const Asset::Meta& meta)
 			if (!_user.has_wechat()) _user.mutable_wechat()->CopyFrom(_wechat); //微信数据
 
 			RedisInstance.SaveUser(login->account().username(), _user); //账号数据存盘
+
+			PLAYER(_user); //账号查询
 			
 			//
 			//发送当前的角色信息
@@ -315,6 +336,8 @@ void WorldSession::OnProcessMessage(const Asset::Meta& meta)
 			auto client_data = dynamic_cast<Asset::UpdateClientData*>(message);
 			if (!client_data) return;
 
+			DEBUG("设置位置信息:{}", message->ShortDebugString());
+
 			_user.mutable_client_info()->CopyFrom(client_data->client_info());
 				
 			RedisInstance.SaveUser(_user.account().username(), _user); //账号数据存盘
@@ -404,6 +427,10 @@ int32_t WorldSession::OnWechatLogin(const pb::Message* message)
 				return ret;
 			}
 
+			auto iso_8859_1_nickname = _wechat.nickname();
+			auto nickname = iso_8859_1_to_utf8(iso_8859_1_nickname);
+			_wechat.set_nickname(nickname);
+
 			LOG(INFO, "微信: html:{} union_info:{}", html, _wechat.ShortDebugString());
 
 			Asset::WeChatInfo proto;
@@ -457,6 +484,10 @@ int32_t WorldSession::OnWechatLogin(const pb::Message* message)
 					LOG(ERROR, "json2pb ret:{} error:{} html:{}", ret, err, html);
 					return ret;
 				}
+
+				auto iso_8859_1_nickname = _wechat.nickname();
+				auto nickname = iso_8859_1_to_utf8(iso_8859_1_nickname);
+				_wechat.set_nickname(nickname);
 			
 				LOG(INFO, "微信: html:{} _wechat:{}", html, _wechat.ShortDebugString());
 

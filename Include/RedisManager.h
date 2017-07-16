@@ -225,7 +225,7 @@ public:
 		}
 		freeReplyObject(reply);
 			
-		LOG(INFO, "保存账号数据失败，username:{} user:{}", username, user.ShortDebugString());
+		LOG(INFO, "保存账号数据，username:{} user:{}", username, user.ShortDebugString());
 
 		return true;
 	}

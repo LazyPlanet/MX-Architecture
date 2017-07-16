@@ -274,7 +274,7 @@ public:
 
 	bool CanHuPai(std::vector<Card_t>& cards, bool use_pair = false);
 
-	bool CheckHuPai(); //胡牌检查:玩家手里现有牌检查
+	bool CheckHuPai(); //胡牌检查-玩家手里现有牌检查
 	bool CheckHuPai(const Asset::PaiElement& pai); //胡牌
 	bool CheckHuPai(std::unordered_set<int32_t>& fan_list); //胡牌且算番数
 	bool CheckHuPai(const Asset::PaiElement& pai, std::unordered_set<int32_t>& fan_list); //胡牌且算番数

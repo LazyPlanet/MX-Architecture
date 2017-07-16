@@ -102,26 +102,13 @@ int32_t Player::Save()
 	return 0;
 }
 	
-/*
-std::string Player::GetString()
-{
-	::google::protobuf::MessageFormat::Printer printer;
-	printer.SetSingleLineMode(true); //整行打印
-	printer.SetUseUtf8StringEscaping(true);
-
-	std::string output;
-	printer.PrintToString(_stuff, &output);
-
-	return output;
-}
-*/
-
 int32_t Player::OnLogin()
 {
 	if (Load()) return 1;
+
+	ClearCards();
 	
 	PlayerInstance.Emplace(_player_id, shared_from_this()); //玩家管理
-
 	SetLocalServer(ConfigInstance.GetInt("ServerID", 1));
 
 	return 0;
@@ -183,6 +170,8 @@ int32_t Player::OnLogout()
 
 	_stuff.set_login_time(0);
 	_stuff.set_logout_time(CommonTimerInstance.GetTime());
+	
+	ClearCards();
 
 	if (_game) _game.reset();
 	if (_room) _room.reset();
@@ -699,6 +688,8 @@ int32_t Player::CmdEnterRoom(pb::Message* message)
 		return 2; //已经在房间
 	}
 
+	ClearCards();
+
 	Asset::ROOM_TYPE room_type = enter_room->room().room_type();
 
 	auto check = [this, room_type]()->Asset::ERROR_CODE {
@@ -747,7 +738,6 @@ int32_t Player::CmdEnterRoom(pb::Message* message)
 			}
 
 			SendProtocol(enter_room);
-			return 0;
 		}
 		break;
 
@@ -1054,6 +1044,8 @@ void Player::OnLeaveRoom()
 
 	_game.reset();
 	_room.reset();
+
+	ClearCards();
 }
 	
 void Player::BroadCast(Asset::MsgItem& item) 
@@ -2480,8 +2472,9 @@ void Player::OnGangPai(const Asset::PaiElement& pai, int64_t from_player_id)
 	int32_t card_type = pai.card_type();
 	int32_t card_value = pai.card_value();
 
-	/////////////////////////////////////////////////////////////////////////////手里满足杠牌
-
+	//
+	//手里满足杠牌
+	//
 	auto it = _cards_inhand.find(card_type);
 	if (it == _cards_inhand.end()) 
 	{
@@ -2517,7 +2510,9 @@ void Player::OnGangPai(const Asset::PaiElement& pai, int64_t from_player_id)
 		return;
 	}
 	
-	/////////////////////////////////////////////////////////////////////////////墙外满足杠牌
+	//
+	//墙外满足杠牌
+	//
 	auto iit = _cards_outhand.find(card_type);
 	if (iit != _cards_outhand.end()) 
 	{
@@ -2535,11 +2530,15 @@ void Player::OnGangPai(const Asset::PaiElement& pai, int64_t from_player_id)
 	//记录日志
 	TRACE("player_id:{} crad_type:{} card_value:{} card_count:{}", _player_id, pai.card_type(), pai.card_value(), count);
 	
+	//
 	//从后楼给玩家取一张牌
+	//
 	auto cards = _game->TailPai(1);
 	OnFaPai(cards);
 	
-	///////////////////////旋风杠检查///////////////////////
+	//
+	//旋风杠检查
+	//
 	auto xuanfeng_gang = CheckXuanFeng();
 	if (xuanfeng_gang)
 	{
@@ -2845,7 +2844,9 @@ void Player::OnGangFengPai()
 	auto cards = _game->TailPai(1);
 	OnFaPai(cards);
 
-	///////////////////////旋风杠检查///////////////////////
+	//
+	//旋风杠检查
+	//
 	auto xuanfeng_gang = CheckXuanFeng();
 	if (xuanfeng_gang)
 	{
@@ -2906,7 +2907,9 @@ void Player::OnGangJianPai()
 
 	++_jiangang;
 	
-	///////////////////////旋风杠检查///////////////////////
+	//
+	//旋风杠检查
+	//
 	auto xuanfeng_gang = CheckXuanFeng();
 	if (xuanfeng_gang)
 	{
@@ -2974,9 +2977,12 @@ int32_t Player::OnFaPai(std::vector<int32_t>& cards)
 		}
 		
 		notify.set_data_type(Asset::PaiNotify_CARDS_DATA_TYPE_CARDS_DATA_TYPE_START); //操作类型：开局
-		
-////////////////////////////////////////////////////旋风杠检查
-// 缓存旋风杠给玩家
+
+		//
+		//旋风杠检查
+		//
+		//缓存旋风杠给玩家
+		//
 		auto xf_card = _cards_inhand;
 
 		//风牌检查
@@ -2993,7 +2999,7 @@ int32_t Player::OnFaPai(std::vector<int32_t>& cards)
 				if (it_if != it->second.end()) it->second.erase(it_if); //删除一个
 			}
 		}
-		//箭牌 检查
+		//箭牌检查
 		while (CheckJianGangPai(xf_card))
 		{
 			_xf_gang.push_back(Asset::PAI_OPER_TYPE_XUANFENG_JIAN);
@@ -3030,7 +3036,6 @@ int32_t Player::OnFaPai(std::vector<int32_t>& cards)
 			
 			_xf_gang.clear();
 		}
-////////////////////////////////////////////////////旋风杠检查
 	}
 	else if (cards.size() == 1)
 	{
@@ -3229,6 +3234,11 @@ void Player::ClearCards()
 
 	_jiangang = 0; //清理旋风杠
 	_fenggang = 0; //清理旋风杠
+	
+	_player_prop.clear_game_oper_state();
+	_oper_count_tingpai = _oper_count = 0; //操作次数
+	_has_ting = _tuoguan_server = false;
+	_oper_type = Asset::PAI_OPER_TYPE_BEGIN;
 }
 	
 void Player::OnGameOver()
@@ -3236,14 +3246,6 @@ void Player::OnGameOver()
 	ClearCards();
 	
 	if (_tuoguan_server) OnLogout();
-
-	_player_prop.clear_game_oper_state();
-
-	_oper_count_tingpai = _oper_count = 0; //操作次数
-
-	_has_ting = _tuoguan_server = false;
-
-	_oper_type = Asset::PAI_OPER_TYPE_BEGIN;
 }
 
 int32_t Player::CmdSayHi(pb::Message* message)
@@ -3286,7 +3288,7 @@ int32_t Player::OnKickOut(pb::Message* message)
 	const auto kick_out = dynamic_cast<const Asset::KickOutPlayer*>(message);
 	if (!kick_out) return 1;
 	
-	LOG(TRACE, "player_id:{} has been kickout for:{}", _player_id, kick_out->reason());
+	DEBUG("player_id:{} has been kickout for:{}", _player_id, kick_out->reason());
 
 	Logout(nullptr);
 

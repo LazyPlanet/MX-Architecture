@@ -423,13 +423,11 @@ void Game::OnPaiOperate(std::shared_ptr<Player> player, pb::Message* message)
 				player->OnGangPai(pai, _oper_limit.from_player_id());
 				_curr_player_index = GetPlayerOrder(player->GetID()); //重置当前玩家索引
 
-				////////听牌检查
+				//听牌检查
 				std::vector<Asset::PaiElement> pais;
-
 				if (player->CheckTingPai(pais))
 				{
 					Asset::PaiOperationAlert alert;
-
 					for (auto pai : pais) 
 					{
 						auto pai_perator = alert.mutable_pais()->Add();
