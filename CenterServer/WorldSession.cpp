@@ -15,25 +15,6 @@ namespace Adoter
 
 namespace spd = spdlog;
 
-std::string iso_8859_1_to_utf8(std::string& str)
-{
-    string strOut;
-    for (std::string::iterator it = str.begin(); it != str.end(); ++it)
-    {
-	    uint8_t ch = *it;
-	    if (ch < 0x80) 
-		{
-		    strOut.push_back(ch);
-		}
-	    else 
-		{
-	        strOut.push_back(0xc0 | ch >> 6);
-	        strOut.push_back(0x80 | (ch & 0x3f));
-	    }
-	}
-    return strOut;
-}
-
 WorldSession::WorldSession(boost::asio::ip::tcp::socket&& socket) : Socket(std::move(socket))
 {
 	_remote_endpoint = _socket.remote_endpoint();
@@ -427,10 +408,6 @@ int32_t WorldSession::OnWechatLogin(const pb::Message* message)
 				return ret;
 			}
 
-			auto iso_8859_1_nickname = _wechat.nickname();
-			auto nickname = iso_8859_1_to_utf8(iso_8859_1_nickname);
-			_wechat.set_nickname(nickname);
-
 			LOG(INFO, "微信: html:{} union_info:{}", html, _wechat.ShortDebugString());
 
 			Asset::WeChatInfo proto;
@@ -485,10 +462,6 @@ int32_t WorldSession::OnWechatLogin(const pb::Message* message)
 					return ret;
 				}
 
-				auto iso_8859_1_nickname = _wechat.nickname();
-				auto nickname = iso_8859_1_to_utf8(iso_8859_1_nickname);
-				_wechat.set_nickname(nickname);
-			
 				LOG(INFO, "微信: html:{} _wechat:{}", html, _wechat.ShortDebugString());
 
 				Asset::WeChatInfo proto;
