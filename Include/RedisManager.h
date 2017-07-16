@@ -26,9 +26,9 @@ private:
 	struct timeval _timeout = {1, 500000}; //1.5秒 
 	std::string _password = "!QAZ%TGB&UJM9ol.";
 
-	redisContext* _client;
+	redisContext* _client = nullptr;
 public:
-	~Redis() { redisFree(_client); }
+	~Redis() { if (_client) redisFree(_client);	}
 	
 	static Redis& Instance()
 	{
@@ -126,9 +126,13 @@ public:
 		redisReply* reply = (redisReply*)redisCommand(_client, "Set %s %b", key.c_str(), player_buff, player_length);
 		if (!reply) return false;
 		
-		if (reply->type != REDIS_REPLY_STRING) return false;
-
+		if (!(reply->type == REDIS_REPLY_STATUS && strcasecmp(reply->str, "OK") == 0)) 
+		{
+			LOG(ERROR, "保存玩家数据失败，player_id:{} player:{}", player_id, player.ShortDebugString());
+		}
 		freeReplyObject(reply);
+			
+		LOG(INFO, "保存玩家数据，player_id:{} player:{}", player_id, player.ShortDebugString());
 		
 		return true;
 	}
@@ -186,9 +190,15 @@ public:
 
 		redisReply* reply = (redisReply*)redisCommand(_client, "Set %s %b", key.c_str(), user_buff, user_length);
 		if (!reply) return false;
-
-		freeReplyObject(reply);
 		
+		if (!(reply->type == REDIS_REPLY_STATUS && strcasecmp(reply->str, "OK") == 0)) 
+		{
+			LOG(ERROR, "保存账号数据失败，username:{} user:{}", username, user.ShortDebugString());
+		}
+		freeReplyObject(reply);
+			
+		LOG(INFO, "保存账号数据失败，username:{} user:{}", username, user.ShortDebugString());
+
 		return true;
 	}
 	
