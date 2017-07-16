@@ -179,13 +179,13 @@ int32_t Player::Logout(pb::Message* message)
 	
 int32_t Player::OnLogout()
 {
-	DEBUG("玩家:{} 退出游戏", _player_id);
+	DEBUG("玩家:{} 退出游戏回调...", _player_id);
 
 	_stuff.set_login_time(0);
 	_stuff.set_logout_time(CommonTimerInstance.GetTime());
 
-	//if (_game) _game.reset();
-	//if (_room) _room.reset();
+	if (_game) _game.reset();
+	if (_room) _room.reset();
 	
 	Save();	//存档数据库
 
@@ -1334,6 +1334,8 @@ bool Player::AddGameRecord(const Asset::GameRecord& record)
 
 	auto list = room_history->mutable_list()->Add();
 	list->CopyFrom(record);
+
+	SetDirty();
 
 	DEBUG("player_id:{} add game record:{}", _player_id, record.ShortDebugString());
 
@@ -2594,12 +2596,9 @@ bool Player::CanTingPai(const Asset::PaiElement& pai)
 	auto it_baohu = std::find(options.extend_type().begin(), options.extend_type().end(), Asset::ROOM_EXTEND_TYPE_BAOPAI);
 	if (it_baohu == options.extend_type().end()) return false; //不带宝胡，绝对不可能呢听牌
 
-	std::map<int32_t, std::vector<int32_t>> cards_inhand; //玩家手里的牌
-	std::map<int32_t, std::vector<int32_t>> cards_outhand; //玩家墙外牌
-	std::vector<Asset::PaiElement> minggang; //明杠
-	std::vector<Asset::PaiElement> angang; //暗杠
-	int32_t jiangang = 0; //旋风杠，本质是明杠
-	int32_t fenggang = 0; //旋风杠，本质是暗杠
+	std::map<int32_t, std::vector<int32_t>> cards_inhand, cards_outhand; 
+	std::vector<Asset::PaiElement> minggang, angang; 
+	int32_t jiangang = 0, fenggang = 0; //旋风杠，本质是暗杠
 
 	try {
 		std::unique_lock<std::mutex> lock(_card_lock, std::defer_lock);

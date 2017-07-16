@@ -24,7 +24,7 @@ private:
 	std::string _hostname = "127.0.0.1";
 	int32_t _port = 6379;
 	struct timeval _timeout = {1, 500000}; //1.5秒 
-	const std::string _password = "!QAZ%TGB&UJM9ol.";
+	std::string _password = "!QAZ%TGB&UJM9ol.";
 
 	redisContext* _client;
 public:
@@ -38,6 +38,14 @@ public:
 
 	Redis() 
 	{ 
+		std::string hostname = ConfigInstance.GetString("Redis_ServerIP", "127.0.0.1");
+		int32_t port = ConfigInstance.GetInt("Redis_ServerPort", 6379); 
+		std::string password = ConfigInstance.GetString("Redis_Password", "!QAZ%TGB&UJM9ol.");
+
+		if (port > 0) _port = port;
+		if (!hostname.empty()) _hostname = hostname;
+		if (!password.empty()) _password = password;
+
 		_client = redisConnectWithTimeout(_hostname.c_str(), _port, _timeout);
 
 		redisReply* reply= (redisReply*)redisCommand(_client, "auth %s", _password.c_str()); 

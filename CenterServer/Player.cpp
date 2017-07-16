@@ -393,6 +393,8 @@ bool Player::HandleProtocol(int32_t type_t, pb::Message* message)
 	//
 	//如果中心服务器没有协议处理回调，则发往游戏服务器进行处理
 	//
+	//如果玩家已经在游戏逻辑服务器，则直接发往游戏逻辑服务器，防止数据覆盖
+	//
 	auto it = _callbacks.find(type_t);
 	if (it == _callbacks.end()) 
 	{
@@ -406,11 +408,17 @@ bool Player::HandleProtocol(int32_t type_t, pb::Message* message)
 		
 		WorldSessionInstance.SetPlayerSession(_player_id, _gs_session);
 		SendProtocol2GameServer(message); //转发给游戏逻辑服务器进行处理
-		return true;
+	}
+	else if (_gs_session)
+	{
+		SendProtocol2GameServer(message); //转发给游戏逻辑服务器进行处理
+	}
+	else
+	{
+		CallBack& callback = GetMethod(type_t); 
+		callback(std::forward<pb::Message*>(message));	
 	}
 
-	CallBack& callback = GetMethod(type_t); 
-	callback(std::forward<pb::Message*>(message));	
 	return true;
 }
 

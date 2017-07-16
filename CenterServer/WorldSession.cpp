@@ -290,11 +290,21 @@ void WorldSession::OnProcessMessage(const Asset::Meta& meta)
 
 			auto game_server = WorldSessionInstance.GetServerSession(server_id);
 			if (!game_server) return;
+			
+			auto curr_server = WorldSessionInstance.GetGameServerSession(_player->GetID());
+			if (curr_server && curr_server->GetID() != server_id) //不是当前游戏逻辑服务器
+			{
+				//通知当前游戏逻辑服务器下线
+				Asset::KickOutPlayer kickout_player; 
+				kickout_player.set_player_id(_player->GetID());
+				kickout_player.set_reason(Asset::KICK_OUT_REASON_CHANGE_SERVER);
+				_player->SendProtocol2GameServer(kickout_player); 
+			}
 
 			_player->SetGameServer(game_server);
 			_player->SendProtocol2GameServer(enter_room); //转发
 
-			WorldSessionInstance.SetPlayerSession(_player->GetID(), game_server);
+			WorldSessionInstance.SetGameServerSession(_player->GetID(), game_server);
 		}
 		else if (Asset::META_TYPE_SHARE_UPDATE_CLIENT_DATA == meta.type_t()) //Client参数数据
 		{

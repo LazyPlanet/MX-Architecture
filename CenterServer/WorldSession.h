@@ -105,7 +105,10 @@ public:
 
 	void AddServer(int64_t server_id, std::shared_ptr<WorldSession> session) {	_server_list.emplace(server_id, session);}	
 	std::shared_ptr<WorldSession> GetServerSession(int64_t server_id) { return _server_list[server_id]; }
-	void SetPlayerSession(int64_t player_id, std::shared_ptr<WorldSession> session) { _player_gs[player_id] = session; }
+
+	void SetGameServerSession(int64_t player_id, std::shared_ptr<WorldSession> session) { _player_gs[player_id] = session; }
+	std::shared_ptr<WorldSession> GetGameServerSession(int64_t player_id) { return _player_gs[player_id]; }
+
 	std::shared_ptr<WorldSession> RandomServer(); //随机选择游戏逻辑服务器
 	
 	void BroadCast2GameServer(const pb::Message& message); //游戏逻辑服务器

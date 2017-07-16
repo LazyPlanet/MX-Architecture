@@ -635,12 +635,13 @@ void Game::ClearOperation()
 	_oper_limit.Clear(); //清理状态
 }
 	
-bool Game::SanJiaBi()
+bool Game::SanJiaBi(int64_t hupai_player_id)
 {
 	for (int i = 0; i < MAX_PLAYER_COUNT; ++i)
 	{
 		auto player = _players[i];
-		if (!player || !player->IsBimen()) return false;
+		if (!player || player->GetID() == hupai_player_id) continue;
+		if (!player->IsBimen()) return false;
 	}
 
 	return true;
@@ -778,7 +779,7 @@ void Game::Calculate(int64_t hupai_player_id/*胡牌玩家*/, int64_t dianpao_pl
 			DEBUG("player_id:{} fan:{} score:{}", player_id, Asset::FAN_TYPE_PIAO_WEIHU, -score);
 		}
 		
-		if (SanJiaBi()) 
+		if (SanJiaBi(hupai_player_id)) 
 		{
 			score *= get_multiple(Asset::FAN_TYPE_SAN_JIA_BI_MEN); //三家闭门
 			
@@ -1257,7 +1258,7 @@ bool Game::CheckLiuJu()
 		auto record = game_calculate.mutable_record()->mutable_list()->Add();
 		record->set_player_id(player->GetID());
 		record->set_nickname(player->GetNickName());
-		record->set_headimgurl(player->GetHeadImag());
+		record->set_headimgurl(player->GetHeadImag()); //理论上这种不用存盘，读取发给CLIENT的时候重新获取
 		
 		auto ming_count = player->GetMingGangCount(); 
 		auto an_count = player->GetAnGangCount(); 
@@ -1295,6 +1296,39 @@ bool Game::CheckLiuJu()
 			auto detail = record->mutable_details()->Add();
 			detail->set_fan_type(Asset::FAN_TYPE_XUAN_FENG_GANG);
 			detail->set_score(xf_score * (MAX_PLAYER_COUNT - 1));
+		}
+		//
+		//2.其他玩家所输积分
+		//
+		for (int index = 0; index < MAX_PLAYER_COUNT; ++index)
+		{
+			if (index == i) continue;
+
+			auto record = game_calculate.mutable_record()->mutable_list(index);
+			record->set_score(record->score() - score); //扣除杠分
+
+			//非杠牌玩家所输积分列表
+
+			if (ming_count)
+			{
+				auto detail = record->mutable_details()->Add();
+				detail->set_fan_type(Asset::FAN_TYPE_MING_GANG);
+				detail->set_score(-ming_score);
+			}
+
+			if (an_count)
+			{
+				auto detail = record->mutable_details()->Add();
+				detail->set_fan_type(Asset::FAN_TYPE_AN_GANG);
+				detail->set_score(-an_score);
+			}
+
+			if (xf_count)
+			{
+				auto detail = record->mutable_details()->Add();
+				detail->set_fan_type(Asset::FAN_TYPE_XUAN_FENG_GANG);
+				detail->set_score(-xf_score);
+			}
 		}
 	}
 
