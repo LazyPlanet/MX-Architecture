@@ -268,6 +268,9 @@ public:
 	std::vector<Asset::PAI_OPER_TYPE> CheckPai(const Asset::PaiElement& pai, int64_t from_player_id);
 
 	bool CheckBaoHu(const Asset::PaiElement& pai);
+	void LookAtBaopai(bool has_saizi);
+	void ResetBaopai();
+	void ResetLookAtBaopai() { _oper_count_tingpai = 0; }
 
 	bool CanHuPai(std::vector<Card_t>& cards, bool use_pair = false);
 

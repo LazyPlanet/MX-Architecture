@@ -458,10 +458,8 @@ void Game::OnPaiOperate(std::shared_ptr<Player> player, pb::Message* message)
 				player->OnPengPai(pai);
 				_curr_player_index = GetPlayerOrder(player->GetID()); //重置当前玩家索引
 
-				////////听牌检查
 				std::vector<Asset::PaiElement> pais;
-
-				if (player->CheckTingPai(pais))
+				if (player->CheckTingPai(pais)) //听牌检查
 				{
 					Asset::PaiOperationAlert alert;
 
@@ -821,12 +819,14 @@ void Game::Calculate(int64_t hupai_player_id/*胡牌玩家*/, int64_t dianpao_pl
 	}
 
 	auto total_score = 0;
+	std::unordered_map<int64_t, int32_t> player_score; //各个玩家输积分//不包括杠
 
 	for (const auto& list_element : message.record().list())
 	{
 		if (list_element.player_id() == hupai_player_id) continue;
 
 		total_score -= list_element.score();
+		player_score.emplace(list_element.player_id(), -list_element.score());
 		
 		for (const auto& element : list_element.details())
 		{
@@ -939,9 +939,9 @@ void Game::Calculate(int64_t hupai_player_id/*胡牌玩家*/, int64_t dianpao_pl
 	//杠也要包赔
 	//
 	auto it_baosanjia = std::find(options.extend_type().begin(), options.extend_type().end(), Asset::ROOM_EXTEND_TYPE_BAOSANJIA);
-	auto baosanjia = (it_baosanjia != options.extend_type().end()); //是否支持包三家
+	auto baosanjia = (it_baosanjia != options.extend_type().end()); //是否支持
 
-	if (baosanjia) //包三家
+	if (baosanjia && dianpao_player_id != hupai_player_id) 
 	{
 		auto it_dianpao = get_record(dianpao_player_id);
 		if (it_dianpao == message.mutable_record()->mutable_list()->end()) 
@@ -950,7 +950,7 @@ void Game::Calculate(int64_t hupai_player_id/*胡牌玩家*/, int64_t dianpao_pl
 			return;
 		}
 
-		int32_t baofen_total = 0; //包积分
+		int32_t baofen_total = 0; //包积分，实则包赔两个玩家的积分
 
 		for (auto player : _players)
 		{
@@ -962,7 +962,7 @@ void Game::Calculate(int64_t hupai_player_id/*胡牌玩家*/, int64_t dianpao_pl
 
 			auto player_id = player->GetID();
 
-			if (player_id == hupai_player_id) continue; //和胡牌玩家无关
+			if (player_id == hupai_player_id || player_id == dianpao_player_id) continue; //和胡牌玩家无关
 
 			auto it_player = get_record(player_id);
 			if (it_player == message.mutable_record()->mutable_list()->end()) 
@@ -971,17 +971,16 @@ void Game::Calculate(int64_t hupai_player_id/*胡牌玩家*/, int64_t dianpao_pl
 				continue;
 			}
 
-			baofen_total += it_player->score();
+			it_player->set_score(it_player->score() + player_score[player_id]); //返回积分
 
-			it_dianpao->set_score(it_player->score() + it_dianpao->score()); //点炮玩家付钱
-			it_player->set_score(0);
+			baofen_total += player_score[player_id]; 
 		}
 			
 		auto detail = it_dianpao->mutable_details()->Add();
 		detail->set_fan_type(Asset::FAN_TYPE_BAOSANJIA);
-		detail->set_score(baofen_total);
+		detail->set_score(-baofen_total);
 
-		it_dianpao->set_score(baofen_total); //总积分
+		it_dianpao->set_score(-baofen_total + it_dianpao->score()); //总积分
 	}
 
 	//
@@ -1433,7 +1432,10 @@ int32_t Game::GetRemainBaopai()
 			});
 	return 3 - count; //墙上一张
 }
-	
+
+//
+//刷新宝牌，则通知全部听牌玩家
+//
 void Game::RefreshBaopai(int64_t player_id, int32_t random_result)
 {
 	Asset::RandomSaizi proto;
@@ -1445,6 +1447,7 @@ void Game::RefreshBaopai(int64_t player_id, int32_t random_result)
 	{
 		if (!player || !player->IsTingPai()) continue;
 
+		player->ResetLookAtBaopai(); //玩家可以重新查看宝牌
 		player->SendProtocol(proto); 
 	}
 }

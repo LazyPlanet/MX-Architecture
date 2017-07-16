@@ -2166,6 +2166,8 @@ bool Player::CheckMingPiao(const Asset::PAI_OPER_TYPE& oper_type)
 
 bool Player::CheckChiPai(const Asset::PaiElement& pai)
 {
+	if (!_room || !_game) return false;
+
 	if (_has_ting || _tuoguan_server) return false; //已经听牌，不再提示
 
 	if (!CheckMingPiao(Asset::PAI_OPER_TYPE_CHIPAI)) return false; //明飘检查
@@ -2206,7 +2208,6 @@ void Player::OnChiPai(const Asset::PaiElement& pai, pb::Message* message)
 	if (!pai_operate) return;
 	
 	std::vector<Asset::PaiElement> cards;
-
 	cards.push_back(pai);
 
 	if (pai_operate->pais().size() != 2) 
@@ -2261,7 +2262,10 @@ void Player::OnChiPai(const Asset::PaiElement& pai, pb::Message* message)
 			it->second.erase(second); //删除
 
 			for (const auto& card : cards)
+			{
 				_cards_outhand[card.card_type()].push_back(card.card_value());
+				_game->Add2CardsPool(card.card_type(), card.card_value());
+			}
 		}
 		else
 		{
@@ -2337,6 +2341,7 @@ void Player::OnPengPai(const Asset::PaiElement& pai)
 			for (int i = 0; i < 3; ++i)
 			{
 				_cards_outhand[pai.card_type()].push_back(pai.card_value());
+				_game->Add2CardsPool(pai.card_type(), pai.card_value());
 			}
 		}
 		else
@@ -2689,12 +2694,9 @@ bool Player::CheckTingPai(std::vector<Asset::PaiElement>& pais)
 	auto it_baohu = std::find(options.extend_type().begin(), options.extend_type().end(), Asset::ROOM_EXTEND_TYPE_BAOPAI);
 	if (it_baohu == options.extend_type().end()) return false; //不带宝胡，绝对不可能呢听牌
 	
-	std::map<int32_t, std::vector<int32_t>> cards_inhand; //玩家手里的牌
-	std::map<int32_t, std::vector<int32_t>> cards_outhand; //玩家墙外牌
-	std::vector<Asset::PaiElement> minggang; //明杠
-	std::vector<Asset::PaiElement> angang; //暗杠
-	int32_t jiangang = 0; //旋风杠，本质是明杠
-	int32_t fenggang = 0; //旋风杠，本质是暗杠
+	std::map<int32_t, std::vector<int32_t>> cards_inhand, cards_outhand; 
+	std::vector<Asset::PaiElement> minggang, angang; 
+	int32_t jiangang = 0, fenggang = 0; 
 	
 	try {
 		cards_inhand = _cards_inhand; //玩家手里牌
@@ -3040,42 +3042,32 @@ int32_t Player::OnFaPai(std::vector<int32_t>& cards)
 		notify.set_data_type(Asset::PaiNotify_CARDS_DATA_TYPE_CARDS_DATA_TYPE_FAPAI); //操作类型：发牌
 
 		//
-		//听牌后第一次抓牌，产生宝牌
+		//听牌后第一次抓牌，产生宝牌或查看宝牌
 		//
 		if (IsTingPai())
 		{
 			if (_oper_count_tingpai == 1) //听牌后第一次抓牌
 			{
-				Asset::RandomSaizi proto;
-
 				if (!_game->HasBaopai())
 				{
 					_game->OnTingPai(shared_from_this()); //生成宝牌
-					proto.set_has_rand_saizi(true);
+					LookAtBaopai(true);
 				}
 				else
 				{
-					proto.set_has_rand_saizi(false);
+					LookAtBaopai(false);
 				}
-					
-				auto baopai = _game->GetBaoPai();
-				proto.set_reason_type(Asset::RandomSaizi_REASON_TYPE_REASON_TYPE_TINGPAI);
-				proto.mutable_random_result()->Add(_game->GetRandResult());
-				proto.mutable_pai()->CopyFrom(baopai);
-				SendProtocol(proto); //看宝
-
-				if (CheckHuPai(baopai)) 
+			}
+			else if (_oper_count_tingpai > 1)
+			{
+				if (_game->HasBaopai() && _game->GetRemainBaopai() <= 0) 
 				{
-					Asset::PaiOperationAlert alert;
-					auto pai_perator = alert.mutable_pais()->Add();
-					pai_perator->mutable_pai()->CopyFrom(card);
-					pai_perator->mutable_oper_list()->Add(Asset::PAI_OPER_TYPE_HUPAI);
-					SendProtocol(proto); //进宝 
+					ResetBaopai(); 
 				}
 			}
 		}
 
-		if (IsTingPai()) ++_oper_count_tingpai; //听牌后发了多少张牌
+		if (IsTingPai()) ++_oper_count_tingpai; //听牌后发了//抓了多少张牌
 			
 		//
 		//如果玩家处于服务器托管状态，则自动出牌
@@ -3103,43 +3095,67 @@ int32_t Player::OnFaPai(std::vector<int32_t>& cards)
 
 	return 0;
 }
+	
+//
+//看宝的逻辑都一样，只不过第一人要打股子
+//
+void Player::LookAtBaopai(bool has_saizi)
+{
+	if (!_game) return;
+
+	auto baopai = _game->GetBaoPai();
+
+	Asset::RandomSaizi proto;
+	proto.set_has_rand_saizi(has_saizi);
+	proto.set_reason_type(Asset::RandomSaizi_REASON_TYPE_REASON_TYPE_TINGPAI);
+	proto.mutable_random_result()->Add(_game->GetRandResult());
+	proto.mutable_pai()->CopyFrom(baopai);
+	SendProtocol(proto); //通知Client
+
+	if (CheckHuPai(baopai)) 
+	{
+		Asset::PaiOperationAlert alert;
+		auto pai_perator = alert.mutable_pais()->Add();
+		pai_perator->mutable_pai()->CopyFrom(baopai);
+		pai_perator->mutable_oper_list()->Add(Asset::PAI_OPER_TYPE_HUPAI);
+		SendProtocol(proto); //进宝 
+	}
+}
 
 void Player::OnTingPai()
 {
 	if (!_game) return;
 
 	_has_ting = true;
-
 	_oper_count_tingpai = 1;
 
 	_game->AddTingPlayer(_player_id);
+}
 
-	//
-	//宝牌没有剩余数量则重新进行随机
-	//
-	//相当于玩家一直在打股子，选择宝牌
-	//
+//
+//宝牌没有剩余数量则重新进行随机
+//
+//相当于玩家一直在打股子，选择宝牌
+//
+void Player::ResetBaopai()
+{
+	if (!_has_ting) return;
+
 	while(_game->HasBaopai())
 	{
-		if (_game->GetRemainBaopai() > 0) 
+		if (_game->GetRemainBaopai() <= 0) 
 		{
-			Asset::RandomSaizi proto;
-			proto.set_reason_type(Asset::RandomSaizi_REASON_TYPE_REASON_TYPE_TINGPAI);
-			proto.mutable_random_result()->Add(_game->GetRandResult());
+			int32_t result = CommonUtil::Random(1, 6);
 
-			auto baopai = _game->GetBaoPai();
-			proto.mutable_pai()->CopyFrom(baopai);
+			auto baopai = _game->GetBaoPai(result);
+			_game->SetBaoPai(baopai);
 
-			SendProtocol(proto); //通知玩家宝牌数据
-			break;
+			_game->RefreshBaopai(_player_id, result);
 		}
-
-		int32_t result = CommonUtil::Random(1, 6);
-
-		auto baopai = _game->GetBaoPai(result);
-		_game->SetBaoPai(baopai);
-
-		_game->RefreshBaopai(_player_id, result);
+		else
+		{
+			return;
+		}
 	}
 }
 	

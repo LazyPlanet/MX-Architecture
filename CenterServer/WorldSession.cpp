@@ -178,7 +178,6 @@ void WorldSession::OnProcessMessage(const Asset::Meta& meta)
 				_player->Save(); //存盘，防止数据库无数据
 
 				_user.mutable_player_list()->Add(player_id);
-				RedisInstance.SaveUser(_access_token.openid(), _user); //账号数据存盘
 			}
 
 			for (auto player_id : _user.player_list()) _player_list.emplace(player_id); //玩家数据
@@ -188,7 +187,7 @@ void WorldSession::OnProcessMessage(const Asset::Meta& meta)
 			if (!_user.has_wechat_token()) _user.mutable_wechat_token()->CopyFrom(_access_token);
 			if (!_user.has_wechat()) _user.mutable_wechat()->CopyFrom(_wechat); //微信数据
 
-			if (_access_token.has_openid())	RedisInstance.SaveUser(_access_token.openid(), _user); //账号数据存盘
+			RedisInstance.SaveUser(login->account().username(), _user); //账号数据存盘
 			
 			//
 			//发送当前的角色信息
@@ -289,7 +288,12 @@ void WorldSession::OnProcessMessage(const Asset::Meta& meta)
 			auto server_id = room_id >> 16;
 
 			auto game_server = WorldSessionInstance.GetServerSession(server_id);
-			if (!game_server) return;
+			if (!game_server) 
+			{
+				enter_room->set_error_code(Asset::ERROR_ROOM_NOT_FOUNT);
+				SendProtocol(message);
+				return;
+			}
 			
 			auto curr_server = WorldSessionInstance.GetGameServerSession(_player->GetID());
 			if (curr_server && curr_server->GetID() != server_id) //不是当前游戏逻辑服务器

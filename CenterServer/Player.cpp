@@ -406,7 +406,7 @@ bool Player::HandleProtocol(int32_t type_t, pb::Message* message)
 			return false;
 		}
 		
-		WorldSessionInstance.SetPlayerSession(_player_id, _gs_session);
+		WorldSessionInstance.SetGameServerSession(_player_id, _gs_session);
 		SendProtocol2GameServer(message); //转发给游戏逻辑服务器进行处理
 	}
 	else if (_gs_session)
