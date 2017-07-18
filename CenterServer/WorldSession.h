@@ -77,6 +77,8 @@ private:
 	Asset::ROLE_TYPE _role_type; //会话类型
 	std::shared_ptr<Player> _player = nullptr; //全局玩家定义，唯一的一个Player对象
 	bool _online = true;
+
+	std::chrono::steady_clock::time_point _LastPingTime;
 };
 
 class WorldSessionManager : public SocketManager<WorldSession> 
@@ -99,11 +101,11 @@ public:
 		return _instance;
 	}
 
-	void AddPlayer(int64_t player_id, std::shared_ptr<WorldSession> session) { _client_list.emplace(player_id, session); }
+	void AddPlayer(int64_t player_id, std::shared_ptr<WorldSession> session) { _client_list[player_id] = session; }
 	void RemovePlayer(int64_t player_id) { _client_list.erase(player_id); }
 	std::shared_ptr<WorldSession> GetPlayerSession(int64_t player_id) { return _client_list[player_id]; }
 
-	void AddServer(int64_t server_id, std::shared_ptr<WorldSession> session) {	_server_list.emplace(server_id, session);}	
+	void AddServer(int64_t server_id, std::shared_ptr<WorldSession> session) {	_server_list[server_id] = session;}	
 	std::shared_ptr<WorldSession> GetServerSession(int64_t server_id) { return _server_list[server_id]; }
 
 	void SetGameServerSession(int64_t player_id, std::shared_ptr<WorldSession> session) { _player_gs[player_id] = session; }

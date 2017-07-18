@@ -146,9 +146,9 @@ void WorldSession::OnProcessMessage(const Asset::Meta& meta)
 			_account.CopyFrom(login->account()); //账号信息
 			_player_list.clear(); //账号下玩家列表，目前只有一个玩家
 		
-			auto success = RedisInstance.GetUser(login->account().username(), _user);
+			auto redis_reply_type = RedisInstance.GetUser(login->account().username(), _user);
 
-			if (!success) //没有该用户
+			if (redis_reply_type != REDIS_REPLY_STRING) //没有该用户
 			{
 				_user.mutable_account()->CopyFrom(login->account());
 			}
@@ -162,7 +162,7 @@ void WorldSession::OnProcessMessage(const Asset::Meta& meta)
 			//
 			//对于需要玩家自定义角色数据的游戏，此处要单独处理，比如需要选择性别
 			//
-			if (_user.player_list().size() == 0)
+			if (redis_reply_type == REDIS_REPLY_NIL && _user.player_list().size() == 0)
 			{
 				int64_t player_id = RedisInstance.CreatePlayer(); //如果账号下没有角色，创建一个给Client
 				if (player_id == 0) return;
@@ -178,6 +178,11 @@ void WorldSession::OnProcessMessage(const Asset::Meta& meta)
 				_player->Save(); //存盘，防止数据库无数据
 
 				_user.mutable_player_list()->Add(player_id);
+			}
+			else if (redis_reply_type != REDIS_REPLY_STRING) //返回的显然错误，数据库问题
+			{
+				LOG(ERROR, "获取数据库中数据错误, 账号:{} 错误类型:{}", login->account().username(), redis_reply_type);
+				return;
 			}
 
 			for (auto player_id : _user.player_list()) _player_list.emplace(player_id); //玩家数据
@@ -229,7 +234,7 @@ void WorldSession::OnProcessMessage(const Asset::Meta& meta)
 			if (!connect) return; 
 
 			_player = PlayerInstance.Get(connect->player_id());
-			if (!_player) return;
+			if (!_player) _player = std::make_shared<Player>(connect->player_id(), shared_from_this()); //服务器已经没有缓存
 
 			_player->OnEnterGame();
 		}
@@ -317,11 +322,13 @@ void WorldSession::OnProcessMessage(const Asset::Meta& meta)
 			auto client_data = dynamic_cast<Asset::UpdateClientData*>(message);
 			if (!client_data) return;
 
-			DEBUG("设置位置信息:{}", message->ShortDebugString());
+			if (!_player) return;
+
+			DEBUG("设置位置信息:player_id:{} message:{}", _player->GetID(), message->ShortDebugString());
 
 			_user.mutable_client_info()->CopyFrom(client_data->client_info());
 				
-			RedisInstance.SaveUser(_user.account().username(), _user); //账号数据存盘
+			RedisInstance.SetLocation(_player->GetID(), client_data->client_info().location()); //位置信息
 
 			SendProtocol(message);
 		}

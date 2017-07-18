@@ -831,7 +831,7 @@ void Player::SendProtocol(const pb::Message& message)
 
 	g_center_session->AsyncSendMessage(content);
 
-	TRACE("玩家:{} 发送协议内容:{}", _player_id, message.ShortDebugString());
+	//TRACE("玩家:{} 发送协议内容:{}", _player_id, message.ShortDebugString());
 }
 
 void Player::Send2Roomers(pb::Message& message, int64_t exclude_player_id) 
@@ -2682,8 +2682,6 @@ bool Player::CanTingPai(const Asset::PaiElement& pai)
 	
 bool Player::CheckTingPai(std::vector<Asset::PaiElement>& pais)
 {
-	TRACE("player_id:{}", _player_id);
-
 	if (!_room) return false;
 
 	if (_has_ting || _tuoguan_server) return false; //已经听牌，不再提示

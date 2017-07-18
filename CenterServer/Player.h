@@ -24,12 +24,14 @@ private:
 	Asset::Player _stuff; //玩家数据，存盘数据
 
 	int64_t _heart_count = 0; //心跳次数
-	int32_t _hi_time = 0; 
+	std::chrono::steady_clock::time_point _last_hi_time; 
+	int32_t _over_speed_pings = 0;
 	bool _dirty = false; //脏数据
 
 	CallBack _method; //协议处理回调函数
 	std::shared_ptr<WorldSession> _session = nullptr; //Client网络连接
 	std::shared_ptr<WorldSession> _gs_session = nullptr; //游戏逻辑服务器网络连接
+
 public:
 	Player();
 	Player(int64_t player_id, std::shared_ptr<WorldSession> session);

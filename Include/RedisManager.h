@@ -174,36 +174,42 @@ public:
 		return room_id;
 	}
 
-	bool GetUser(std::string username, Asset::User& user)
+	int32_t GetUser(std::string username, Asset::User& user)
 	{
 		std::string command = "Get user:" + username;
 		redisReply* reply = (redisReply*)redisCommand(_client, command.c_str());
 
-		if (!reply) return false;
+		if (!reply) return 0;
 
 		if (reply->type == REDIS_REPLY_NIL) 
 		{
 			freeReplyObject(reply);
-			return false;
+			return reply->type;
 		}
 		
 		if (reply->type != REDIS_REPLY_STRING) 
 		{
 			LOG(ERROR, "获取账号数据失败，username:{} reply->type:{}", username, reply->type);
 			freeReplyObject(reply);
-			return false;
+			return reply->type;
 		}
 
 		if (reply->len == 0) 
 		{
 			freeReplyObject(reply);
-			return false;
+			return reply->type;
 		}
 
 		auto success = user.ParseFromArray(reply->str, reply->len);
+		if (!success)
+		{
+			LOG(ERROR, "转换协议数据失败，username:{} reply->str:{} reply->len:{}", username, reply->str, reply->len);
+		}
+
+		auto type = reply->type;
 		freeReplyObject(reply);
 
-		return success;
+		return type;
 	}
 	
 	bool SaveUser(std::string username, const Asset::User& user)

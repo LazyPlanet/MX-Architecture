@@ -357,9 +357,9 @@ bool Player::Update()
 		if (_dirty) Save(); //触发存盘
 	}
 	
-	if (_heart_count % 3000 == 0) //30s
+	if (_heart_count % 1000 == 0) //10s
 	{
-		//SayHi();
+		SayHi();
 	}
 
 	if (_heart_count % 6000 == 0) //1min
@@ -591,21 +591,50 @@ int32_t Player::CmdSayHi(pb::Message* message)
 {
 	auto say_hi = dynamic_cast<const Asset::SayHi*>(message);
 	if (!say_hi) return 1;
+    
+	using namespace std::chrono;
 
-	auto hi_time = CommonTimerInstance.GetTime();
+    if (_last_hi_time == steady_clock::time_point())
+    {
+        _last_hi_time = steady_clock::now();
+	}
+	else
+	{
+        steady_clock::time_point now = steady_clock::now();
 
-	DEBUG("player_id:{} hi_time:{} last_hi_time:{}", _player_id, hi_time, _hi_time);
+        steady_clock::duration duration_pass = now - _last_hi_time;
+
+        _last_hi_time = now;
+
+        if (duration_pass > seconds(10))
+        {
+            ++_over_speed_pings;
+			
+            int32_t max_allowed = 3;
+
+            if (max_allowed && _over_speed_pings > max_allowed) return 2;
+	    }
+	    else
+		{
+			_over_speed_pings = 0;
+		}
+	}
+
+	if (!_session) return false;
+
+	SayHi();
+
 	return 0;
 }
 	
 void Player::SayHi()
 {
-	_hi_time = CommonTimerInstance.GetTime();
-
 	Asset::SayHi message;
 	message.set_heart_count(_heart_count);
 
 	SendProtocol(message);
+
+	DEBUG("player_id:{} _heart_count:{}", _player_id, _heart_count);
 }
 	
 int32_t Player::CmdGameSetting(pb::Message* message)
@@ -646,7 +675,7 @@ void PlayerManager::Emplace(int64_t player_id, std::shared_ptr<Player> player)
 {
 	if (!player) return;
 
-	if (_players.find(player_id) == _players.end()) _players.emplace(player_id, player);
+	_players[player_id] = player;
 }
 
 std::shared_ptr<Player> PlayerManager::GetPlayer(int64_t player_id)
