@@ -180,24 +180,26 @@ public:
 		redisReply* reply = (redisReply*)redisCommand(_client, command.c_str());
 
 		if (!reply) return 0;
+		
+		auto type = reply->type;
 
 		if (reply->type == REDIS_REPLY_NIL) 
 		{
 			freeReplyObject(reply);
-			return reply->type;
+			return type;
 		}
 		
 		if (reply->type != REDIS_REPLY_STRING) 
 		{
 			LOG(ERROR, "获取账号数据失败，username:{} reply->type:{}", username, reply->type);
 			freeReplyObject(reply);
-			return reply->type;
+			return type;
 		}
 
 		if (reply->len == 0) 
 		{
 			freeReplyObject(reply);
-			return reply->type;
+			return type;
 		}
 
 		auto success = user.ParseFromArray(reply->str, reply->len);
@@ -206,7 +208,6 @@ public:
 			LOG(ERROR, "转换协议数据失败，username:{} reply->str:{} reply->len:{}", username, reply->str, reply->len);
 		}
 
-		auto type = reply->type;
 		freeReplyObject(reply);
 
 		return type;

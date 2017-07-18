@@ -146,7 +146,7 @@ void WorldSession::OnProcessMessage(const Asset::Meta& meta)
 			_account.CopyFrom(login->account()); //账号信息
 			_player_list.clear(); //账号下玩家列表，目前只有一个玩家
 		
-			auto redis_reply_type = RedisInstance.GetUser(login->account().username(), _user);
+			int32_t redis_reply_type = RedisInstance.GetUser(login->account().username(), _user);
 
 			if (redis_reply_type != REDIS_REPLY_STRING) //没有该用户
 			{
@@ -179,7 +179,7 @@ void WorldSession::OnProcessMessage(const Asset::Meta& meta)
 
 				_user.mutable_player_list()->Add(player_id);
 			}
-			else if (redis_reply_type != REDIS_REPLY_STRING) //返回的显然错误，数据库问题
+			else if (redis_reply_type != 1) //返回的显然错误，数据库问题
 			{
 				LOG(ERROR, "获取数据库中数据错误, 账号:{} 错误类型:{}", login->account().username(), redis_reply_type);
 				return;
