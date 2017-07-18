@@ -863,24 +863,18 @@ bool Player::Update()
 {
 	++_heart_count; //心跳
 	
-	if (_heart_count % 100 == 0) //1s
+	if (_heart_count % 100 == 0) //5s
 	{
 		CommonLimitUpdate(); //通用限制,定时更新
-	}
 	
-	if (_heart_count % 1000 == 0) //10s
-	{
 		if (_dirty) Save(); //触发存盘
-	}
 	
-	if (_heart_count % 3000 == 0) //30s
-	{
-		//SayHi();
+		SayHi();
 	}
 
-	if (_heart_count % 6000 == 0) //1min
+	if (_heart_count % 120 == 0) //1min
 	{
-		TRACE("heart_count:{} player_id:{}", _heart_count, _player_id);
+		DEBUG("heart_count:{} player_id:{}", _heart_count, _player_id);
 	}
 	return true;
 }
