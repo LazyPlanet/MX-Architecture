@@ -424,6 +424,7 @@ void Game::OnPaiOperate(std::shared_ptr<Player> player, pb::Message* message)
 				_curr_player_index = GetPlayerOrder(player->GetID()); //重置当前玩家索引
 
 				//听牌检查
+				/*
 				std::vector<Asset::PaiElement> pais;
 				if (player->CheckTingPai(pais))
 				{
@@ -437,7 +438,7 @@ void Game::OnPaiOperate(std::shared_ptr<Player> player, pb::Message* message)
 
 					if (alert.pais().size()) player->SendProtocol(alert); //提示Client
 				}
-
+				*/
 				ClearOperation(); //清理缓存以及等待玩家操作的状态
 			}
 		}

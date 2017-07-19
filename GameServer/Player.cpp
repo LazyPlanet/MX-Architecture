@@ -2924,6 +2924,19 @@ void Player::PreCheckOnFaPai()
 
 }
 
+void Player::NormalCheckAfterFaPai()
+{
+	Asset::PaiOperationAlert alert;
+
+	if (CheckHuPai())
+	{
+		auto pai_perator = alert.mutable_pais()->Add();
+		pai_perator->mutable_oper_list()->Add(Asset::PAI_OPER_TYPE_HUPAI);
+	}
+					
+	if (alert.pais().size()) SendProtocol(alert); //提示Client
+}
+
 int32_t Player::OnFaPai(std::vector<int32_t>& cards)
 {
 	if (!_room || !_game) return 1;
@@ -3086,6 +3099,10 @@ int32_t Player::OnFaPai(std::vector<int32_t>& cards)
 			pai_operation.mutable_pai()->CopyFrom(card);
 
 			CmdPaiOperate(&pai_operation);
+		}
+		else
+		{
+			NormalCheckAfterFaPai();
 		}
 	}
 	

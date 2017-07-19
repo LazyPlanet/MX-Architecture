@@ -336,6 +336,7 @@ public:
 	int32_t GetXuanFengCount() { return _jiangang + _fenggang; } //旋风杠数量
 
 	void PreCheckOnFaPai(); //发牌前置检查
+	void NormalCheckAfterFaPai(); //发牌后，玩家手里牌通用检查
 	bool IsReady() { return _player_prop.game_oper_state() == Asset::GAME_OPER_TYPE_START; } //是否已经在准备状态 
 	Asset::GAME_OPER_TYPE GetOperState() { return _player_prop.game_oper_state(); }
 	void SetOperState(Asset::GAME_OPER_TYPE oper_type) { return _player_prop.set_game_oper_state(oper_type); }
