@@ -584,7 +584,10 @@ int32_t Player::CmdPaiOperate(pb::Message* message)
 				DEBUG_ASSERT(false);
 				return 8; //不能听牌
 			}
+					
+			pais.erase(it); //删除牌
 
+			/*
 			try {
 				std::unique_lock<std::mutex> lock(_card_lock, std::defer_lock);
 			
@@ -604,6 +607,7 @@ int32_t Player::CmdPaiOperate(pb::Message* message)
 				ERROR("Delete card from player_id:{} card_type:{} card_value:{} error.", _player_id, pai.card_type(), pai.card_value(), error.what());
 					return 10;
 			}
+			*/
 
 			OnTingPai();
 		}
@@ -1689,7 +1693,7 @@ bool Player::CheckHuPai(std::unordered_set<int32_t>& fan_list)
 	return CheckHuPai(pai, fan_list);
 }
 
-bool Player::CheckHuPai(const Asset::PaiElement& pai, std::unordered_set<int32_t>& fan_list)
+bool Player::CheckHuPai(const Asset::PaiElement& pai, std::unordered_set<int32_t>& fan_list, int32_t check_count)
 {
 	if (!_room || !_game) 
 	{
@@ -2037,7 +2041,8 @@ bool Player::CheckHuPai(const Asset::PaiElement& pai, std::unordered_set<int32_t
 			}
 		}
 	}
-	if (_game->IsBaopai(pai) && fan_list.find(Asset::FAN_TYPE_LOU_BAO) == fan_list.end()/*防止递归检查*/) //搂宝
+	if (_game->IsBaopai(pai) && fan_list.find(Asset::FAN_TYPE_LOU_BAO) == fan_list.end() 
+			&& fan_list.find(Asset::FAN_TYPE_JIN_BAO) == fan_list.end() && check_count == 0 /*防止递归检查*/) //搂宝
 	{
 		//
 		//进宝（朝阳特有）
@@ -2046,7 +2051,7 @@ bool Player::CheckHuPai(const Asset::PaiElement& pai, std::unordered_set<int32_t
 		//
 		//进宝和摸宝同时只有一个即可
 		//
-		if (CheckHuPai(pai, fan_list)) 
+		if (CheckHuPai(pai, fan_list, ++check_count)) 
 		{
 			fan_list.emplace(Asset::FAN_TYPE_JIN_BAO);
 		}
@@ -2924,13 +2929,14 @@ void Player::PreCheckOnFaPai()
 
 }
 
-void Player::NormalCheckAfterFaPai()
+void Player::NormalCheckAfterFaPai(const Asset::PaiElement& pai)
 {
 	Asset::PaiOperationAlert alert;
 
 	if (CheckHuPai())
 	{
 		auto pai_perator = alert.mutable_pais()->Add();
+		pai_perator->mutable_pai()->CopyFrom(pai);
 		pai_perator->mutable_oper_list()->Add(Asset::PAI_OPER_TYPE_HUPAI);
 	}
 					
@@ -3102,7 +3108,7 @@ int32_t Player::OnFaPai(std::vector<int32_t>& cards)
 		}
 		else
 		{
-			NormalCheckAfterFaPai();
+			NormalCheckAfterFaPai(card);
 		}
 	}
 	

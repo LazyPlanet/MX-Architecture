@@ -309,12 +309,15 @@ void Game::OnPaiOperate(std::shared_ptr<Player> player, pb::Message* message)
 				Asset::PaiOperationAlert alert;
 
 				//胡牌检查
+				/*
+				 * 放玩家抓牌里面检查
 				if (player_next->CheckHuPai(card)) //自摸
 				{
 					auto pai_perator = alert.mutable_pais()->Add();
 					pai_perator->mutable_pai()->CopyFrom(card);
 					pai_perator->mutable_oper_list()->Add(Asset::PAI_OPER_TYPE_HUPAI);
 				}
+				*/
 
 				if (player_next->HasTuoGuan()) _curr_player_index = next_player_index; //托管检查
 
@@ -531,12 +534,15 @@ void Game::OnPaiOperate(std::shared_ptr<Player> player, pb::Message* message)
 			Asset::PaiOperationAlert alert;
 
 			//胡牌检查
+			/*
+			 * 放玩家里面处理
 			if (player_next->CheckHuPai(card)) //自摸
 			{
 				auto pai_perator = alert.mutable_pais()->Add();
 				pai_perator->mutable_pai()->CopyFrom(card);
 				pai_perator->mutable_oper_list()->Add(Asset::PAI_OPER_TYPE_HUPAI);
 			}
+			*/
 
 			player_next->OnFaPai(cards); //放入玩家牌里面
 
@@ -1436,7 +1442,9 @@ Asset::PaiElement Game::GetBaoPai(int32_t tail_index)
 {
 	std::vector<int32_t> list(_cards.begin(), _cards.end());
 
-	auto card_index = list.size() - tail_index + 1; 
+	auto card_index = list.size() - tail_index; 
+
+	DEBUG("生成宝牌 list.size():{} tail_index:{} card_index:{}", list.size(), tail_index, card_index);
 
 	return GameInstance.GetCard(list[card_index]);
 }

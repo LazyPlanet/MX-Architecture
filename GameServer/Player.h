@@ -277,7 +277,7 @@ public:
 	bool CheckHuPai(); //胡牌检查-玩家手里现有牌检查
 	bool CheckHuPai(const Asset::PaiElement& pai); //胡牌
 	bool CheckHuPai(std::unordered_set<int32_t>& fan_list); //胡牌且算番数
-	bool CheckHuPai(const Asset::PaiElement& pai, std::unordered_set<int32_t>& fan_list); //胡牌且算番数
+	bool CheckHuPai(const Asset::PaiElement& pai, std::unordered_set<int32_t>& fan_list, int32_t check_count = 0); //胡牌且算番数
 	bool CheckHuPai(const std::map<int32_t, std::vector<int32_t>>& cards_inhand, //玩家手里的牌
 			const std::map<int32_t, std::vector<int32_t>>& cards_outhand, //玩家墙外牌
 			const std::vector<Asset::PaiElement>& minggang, //明杠
@@ -336,7 +336,7 @@ public:
 	int32_t GetXuanFengCount() { return _jiangang + _fenggang; } //旋风杠数量
 
 	void PreCheckOnFaPai(); //发牌前置检查
-	void NormalCheckAfterFaPai(); //发牌后，玩家手里牌通用检查
+	void NormalCheckAfterFaPai(const Asset::PaiElement& pai); //发牌后，玩家手里牌通用检查
 	bool IsReady() { return _player_prop.game_oper_state() == Asset::GAME_OPER_TYPE_START; } //是否已经在准备状态 
 	Asset::GAME_OPER_TYPE GetOperState() { return _player_prop.game_oper_state(); }
 	void SetOperState(Asset::GAME_OPER_TYPE oper_type) { return _player_prop.set_game_oper_state(oper_type); }
