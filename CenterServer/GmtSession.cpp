@@ -255,6 +255,15 @@ Asset::COMMAND_ERROR_CODE GmtSession::OnSystemBroadcast(const Asset::SystemBroad
 
 	return Asset::COMMAND_ERROR_CODE_SUCCESS; //直接返回，不用回复给GMT服务器
 }
+	
+void GmtSession::SendInnerMeta(const Asset::InnerMeta& meta)
+{
+	std::string content = meta.SerializeAsString();
+	if (content.empty()) return;
+
+	DEBUG("send message to gmt server:{} {}, message:{}", _ip_address, _remote_endpoint.port(), meta.ShortDebugString());
+	AsyncSendMessage(content);
+}
 
 void GmtSession::SendProtocol(pb::Message* message)
 {

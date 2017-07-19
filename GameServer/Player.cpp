@@ -803,6 +803,8 @@ void Player::SendMessage(Asset::MsgItem& item)
 
 void Player::SendProtocol(const pb::Message* message)
 {
+	if (!message) return;
+
 	SendProtocol(*message);
 }
 
@@ -831,7 +833,7 @@ void Player::SendProtocol(const pb::Message& message)
 
 	g_center_session->AsyncSendMessage(content);
 
-	//TRACE("玩家:{} 发送协议内容:{}", _player_id, message.ShortDebugString());
+	TRACE("玩家:{} 发送协议内容:{}", _player_id, message.ShortDebugString());
 }
 
 void Player::Send2Roomers(pb::Message& message, int64_t exclude_player_id) 

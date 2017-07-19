@@ -39,6 +39,8 @@ public:
 	void SendProtocol(pb::Message& message);
 	void SendProtocol(pb::Message* message);
 
+	void SendInnerMeta(const Asset::InnerMeta& meta);
+
     virtual bool StartReceive();
     virtual bool StartSend();
     

@@ -3,15 +3,18 @@
 #include "WorldSession.h"
 #include "MXLog.h"
 #include "Player.h"
+#include "GmtSession.h"
 
 namespace Adoter
 {
 
 namespace spd = spdlog;
 
+extern std::shared_ptr<GmtSession> g_gmt_client;
+
 bool WorldSession::OnInnerProcess(const Asset::Meta& meta)
 {
-	//DEBUG("接收逻辑服务器数据:{}", meta.type_t());
+	DEBUG("接收逻辑服务器数据:{}", meta.ShortDebugString());
 
 	switch (meta.type_t())
 	{
@@ -25,6 +28,18 @@ bool WorldSession::OnInnerProcess(const Asset::Meta& meta)
 			WorldSessionInstance.AddServer(message.global_id(), shared_from_this());
 
 			SendProtocol(message);
+		}
+		break;
+		
+		case Asset::META_TYPE_S2S_GMT_INNER_META: //GMT命令
+		{
+			Asset::GmtInnerMeta message;
+			auto result = message.ParseFromString(meta.stuff());
+			if (!result) return false;
+
+			if (!g_gmt_client) return false;
+
+			g_gmt_client->SendInnerMeta(message.inner_meta());
 		}
 		break;
 		

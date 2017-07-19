@@ -80,7 +80,7 @@ void ServerSession::InitializeHandler(const boost::system::error_code error, con
 //
 bool ServerSession::OnInnerProcess(const Asset::InnerMeta& meta)
 {
-	TRACE("Receive message:{} from server:{}", meta.ShortDebugString(), _ip_address);
+	DEBUG("Receive message:{} from server:{}", meta.ShortDebugString(), _ip_address);
 
 	switch (meta.type_t())
 	{
@@ -90,7 +90,7 @@ bool ServerSession::OnInnerProcess(const Asset::InnerMeta& meta)
 			auto result = message.ParseFromString(meta.stuff());
 			if (!result) return false;
 			
-			TRACE("Receive server register:{} ip_address:{}", message.ShortDebugString(), _ip_address);
+			DEBUG("GMT服务器接收其他服务器的注册:{} ip_address:{}", message.ShortDebugString(), _ip_address);
 
 			if (message.server_type() == Asset::SERVER_TYPE_GMT) //GMT服务器
 			{
@@ -151,7 +151,7 @@ bool ServerSession::OnInnerProcess(const Asset::InnerMeta& meta)
 
 			if (ServerSessionInstance.IsGmtServer(shared_from_this())) //处理GMT服务器发送的数据
 			{
-				auto game_server = ServerSessionInstance.Get(message.server_id());
+				auto game_server = ServerSessionInstance.Get(/*message.server_id()*/4);
 				if (!game_server) 
 				{
 					message.set_error_code(Asset::COMMAND_ERROR_CODE_SERVER_NOT_FOUND);
