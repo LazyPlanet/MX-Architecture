@@ -177,7 +177,7 @@ bool Room::Remove(int64_t player_id)
 {
 	for (size_t i = 0; i < _players.size(); ++i)
 	{
-		auto player = _players[i];
+		auto& player = _players[i];
 		if (!player) continue;
 
 		if (player->GetID() != player_id) continue;
