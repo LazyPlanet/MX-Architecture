@@ -56,7 +56,7 @@ public:
 
 	void OnCreated(); 
 
-	bool IsFull() { return _players.size() >= (size_t)MAX_PLAYER_COUNT; } //是否已满
+	bool IsFull(); //是否已满
 	bool IsEmpty() { return _players.size() == 0; } //是否没人
 
 	bool CanStarGame(); //能否开启游戏

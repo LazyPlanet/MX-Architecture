@@ -1036,8 +1036,6 @@ void Player::OnLeaveRoom()
 
 	DEBUG("player_id:{} leave room:{}.", _player_id, _room->GetID());
 
-	_player_prop.clear_game_oper_state(); //玩家操作状态
-
 	_game.reset();
 	_room.reset();
 

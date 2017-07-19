@@ -26,6 +26,7 @@ Asset::ERROR_CODE Room::TryEnter(std::shared_ptr<Player> player)
 	if (!player || IsFull()) return Asset::ERROR_ROOM_IS_FULL;
 
 	auto it = std::find_if(_players.begin(), _players.end(), [player](std::shared_ptr<Player> p) {
+				if (!p) return false;
 				return player->GetID() == p->GetID();
 			});
 
@@ -36,6 +37,23 @@ Asset::ERROR_CODE Room::TryEnter(std::shared_ptr<Player> player)
 	return Asset::ERROR_SUCCESS;
 }
 
+//
+//玩家退出，位置需要为后面加入的玩家空置出来
+//
+//防止玩家进入和退出，位置不一致的情况
+//
+bool Room::IsFull() 
+{ 
+	if (_players.size() < (size_t)MAX_PLAYER_COUNT) return false;
+
+	for (auto player : _players)
+	{
+		if (!player) return false;
+	}
+
+	return true;
+} 
+
 bool Room::Enter(std::shared_ptr<Player> player)
 {
 	if (TryEnter(player) != Asset::ERROR_SUCCESS) 
@@ -44,9 +62,25 @@ bool Room::Enter(std::shared_ptr<Player> player)
 		return false; //进入房间之前都需要做此检查，理论上不会出现
 	}
 	
-	_players.push_back(player); //进入房间
-	
-	player->SetPosition((Asset::POSITION_TYPE)_players.size()); //设置位置
+	if (MAX_PLAYER_COUNT == _players.size())
+	{
+		for (size_t i = 0; i < _players.size(); ++i)
+		{
+			auto player_in = _players[i];
+
+			if (!player_in)
+			{
+				player_in = player;
+				player->SetPosition((Asset::POSITION_TYPE)(i+1)); //设置位置
+				break;
+			}
+		}
+	}
+	else
+	{
+		_players.push_back(player); //进入房间
+		player->SetPosition((Asset::POSITION_TYPE)_players.size()); //设置位置
+	}
 	
 	DEBUG("curr_count:{} curr_enter:{} position:{}", _players.size(), player->GetID(), player->GetPosition());
 
@@ -141,13 +175,18 @@ int32_t Room::GetRemainCount()
 
 bool Room::Remove(int64_t player_id)
 {
-	for (auto it = _players.begin(); it != _players.end(); ++it)
+	for (size_t i = 0; i < _players.size(); ++i)
 	{
-		if ((*it)->GetID() != player_id) continue;
-			
-		it->get()->OnLeaveRoom(); //玩家退出房间
+		auto player = _players[i];
+		if (!player) continue;
 
-		_players.erase(it); //删除玩家
+		if (player->GetID() != player_id) continue;
+			
+		player->OnLeaveRoom(); //玩家退出房间
+
+		player.reset();
+
+		//_players.erase(it); //删除玩家
 
 		OnPlayerLeave(player_id); //玩家离开房间
 		
@@ -247,6 +286,8 @@ void Room::SyncRoom()
 
 	for (auto player : _players)
 	{
+		if (!player) continue;
+
 		DEBUG("sync room infomation, curr_player_size:{} player_id:{} position:{}", _players.size(), player->GetID(), player->GetPosition());
 		auto p = message.mutable_player_list()->Add();
 		p->set_position(player->GetPosition());
@@ -263,6 +304,8 @@ void Room::SyncRoom()
 			dis_element->set_distance(RedisInstance.GetDistance(dis_player->GetID(), player->GetID()));
 		}
 	}
+
+	DEBUG("同步房间数据:{}", message.ShortDebugString());
 
 	BroadCast(message);
 }
