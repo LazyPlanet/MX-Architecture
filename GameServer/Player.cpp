@@ -2039,14 +2039,21 @@ bool Player::CheckHuPai(const Asset::PaiElement& pai, std::unordered_set<int32_t
 	}
 	if (_game->IsBaopai(pai) && fan_list.find(Asset::FAN_TYPE_LOU_BAO) == fan_list.end()/*防止递归检查*/) //搂宝
 	{
-		fan_list.emplace(Asset::FAN_TYPE_LOU_BAO); //自摸宝牌
-
 		//
 		//进宝（朝阳特有）
 		//
 		//当胡牌与宝牌相同时加一番
 		//
-		if (CheckHuPai(pai, fan_list)) fan_list.emplace(Asset::FAN_TYPE_JIN_BAO);
+		//进宝和摸宝同时只有一个即可
+		//
+		if (CheckHuPai(pai, fan_list)) 
+		{
+			fan_list.emplace(Asset::FAN_TYPE_JIN_BAO);
+		}
+		else
+		{
+			fan_list.emplace(Asset::FAN_TYPE_LOU_BAO); //自摸宝牌
+		}
 	}
 	if (IsGangOperation()) //杠上开
 	{

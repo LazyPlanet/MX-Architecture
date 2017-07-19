@@ -697,6 +697,14 @@ void Game::Calculate(int64_t hupai_player_id/*胡牌玩家*/, int64_t dianpao_pl
 		if (hupai_player_id == player_id) continue;
 
 		int32_t score = base_score;
+		
+		//
+		//玩家角色性检查(比如，庄家胡牌)
+		//
+		if (IsBanker(player_id)) 
+		{
+			fan_list.emplace(Asset::FAN_TYPE_ZHUANG);
+		}
 
 		//
 		//牌型基础分值计算
@@ -717,7 +725,9 @@ void Game::Calculate(int64_t hupai_player_id/*胡牌玩家*/, int64_t dianpao_pl
 		//
 		//每个玩家不同
 		//
-		if (dianpao_player_id == hupai_player_id)
+			
+		if (dianpao_player_id == hupai_player_id && fan_list.find(Asset::FAN_TYPE_LOU_BAO) == fan_list.end() 
+				&& fan_list.find(Asset::FAN_TYPE_JIN_BAO) == fan_list.end()) //搂宝//进宝//都不算自摸
 		{
 			score *= get_multiple(Asset::FAN_TYPE_ZI_MO); //自摸
 			
