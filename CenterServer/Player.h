@@ -30,14 +30,14 @@ private:
 
 	CallBack _method; //协议处理回调函数
 	std::shared_ptr<WorldSession> _session = nullptr; //Client网络连接
-	std::shared_ptr<WorldSession> _gs_session = nullptr; //游戏逻辑服务器网络连接
+	//std::shared_ptr<WorldSession> _gs_session = nullptr; //游戏逻辑服务器网络连接
 
 public:
 	Player();
 	Player(int64_t player_id, std::shared_ptr<WorldSession> session);
 	
-	void SetGameServer(std::shared_ptr<WorldSession> gs_session) { _gs_session = gs_session; }
-	std::shared_ptr<WorldSession> GetGameServer() { return _gs_session; }
+	//void SetGameServer(std::shared_ptr<WorldSession> gs_session) { _gs_session = gs_session; }
+	//std::shared_ptr<WorldSession> GetGameServer() { return _gs_session; }
 
 	const std::shared_ptr<WorldSession> GetSession() { return _session;	}
 	bool Connected(); //网络是否连接
@@ -72,6 +72,7 @@ public:
 		_player_id = player_id; //缓存
 		_stuff.mutable_common_prop()->set_player_id(player_id); 
 	} 
+
 	//获取名字
 	virtual std::string GetName() { return _stuff.common_prop().name(); }
 	virtual void SetName(std::string name) { _stuff.mutable_common_prop()->set_name(name); } 

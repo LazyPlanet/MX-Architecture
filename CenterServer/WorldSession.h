@@ -101,17 +101,28 @@ public:
 		return _instance;
 	}
 
+	//玩家大厅会话
 	void AddPlayer(int64_t player_id, std::shared_ptr<WorldSession> session) { _client_list[player_id] = session; }
 	void RemovePlayer(int64_t player_id) { _client_list.erase(player_id); }
 	std::shared_ptr<WorldSession> GetPlayerSession(int64_t player_id) { return _client_list[player_id]; }
 
+	//逻辑服务器会话
 	void AddServer(int64_t server_id, std::shared_ptr<WorldSession> session) {	_server_list[server_id] = session;}	
+	void RemoveServer(int64_t server_id) { 
+	 
+		auto session = _server_list[server_id];
+	 
+	    if (session) session.reset();
+	 
+	    _server_list.erase(server_id); 
+	}
 	std::shared_ptr<WorldSession> GetServerSession(int64_t server_id) { return _server_list[server_id]; }
 
+	//玩家逻辑服务器会话
 	void SetGameServerSession(int64_t player_id, std::shared_ptr<WorldSession> session) { _player_gs[player_id] = session; }
 	std::shared_ptr<WorldSession> GetGameServerSession(int64_t player_id) { return _player_gs[player_id]; }
 
-	std::shared_ptr<WorldSession> RandomServer(); //随机选择游戏逻辑服务器
+	int64_t RandomServer(); //随机选择游戏逻辑服务器
 	
 	void BroadCast2GameServer(const pb::Message& message); //游戏逻辑服务器
 	void BroadCast2GameServer(const pb::Message* message); 

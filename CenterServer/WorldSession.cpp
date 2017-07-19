@@ -158,11 +158,20 @@ void WorldSession::OnProcessMessage(const Asset::Meta& meta)
 			}
 
 			//
+			//理论上不应该出现，Redis数据库状态不对
+			//
+			if (redis_reply_type == REDIS_REPLY_STATUS) //返回的显然错误，数据库问题
+			{
+				LOG(ERROR, "获取数据库中数据错误, 账号:{} 错误类型:{}", login->account().username(), redis_reply_type);
+				return;
+			}
+
+			//
 			//如果账号下没有角色，则创建一个
 			//
 			//对于需要玩家自定义角色数据的游戏，此处要单独处理，比如需要选择性别
 			//
-			if (redis_reply_type == REDIS_REPLY_NIL && _user.player_list().size() == 0)
+			if (_user.player_list().size() == 0)
 			{
 				int64_t player_id = RedisInstance.CreatePlayer(); //如果账号下没有角色，创建一个给Client
 				if (player_id == 0) return;
@@ -178,11 +187,6 @@ void WorldSession::OnProcessMessage(const Asset::Meta& meta)
 				_player->Save(); //存盘，防止数据库无数据
 
 				_user.mutable_player_list()->Add(player_id);
-			}
-			else if (redis_reply_type != 1) //返回的显然错误，数据库问题
-			{
-				LOG(ERROR, "获取数据库中数据错误, 账号:{} 错误类型:{}", login->account().username(), redis_reply_type);
-				return;
 			}
 
 			for (auto player_id : _user.player_list()) _player_list.emplace(player_id); //玩家数据
@@ -232,6 +236,8 @@ void WorldSession::OnProcessMessage(const Asset::Meta& meta)
 		{
 			Asset::ReConnect* connect = dynamic_cast<Asset::ReConnect*>(message);
 			if (!connect) return; 
+
+			LOG(ERROR, "玩家断线重连，角色ID:{}", connect->player_id());
 
 			_player = PlayerInstance.Get(connect->player_id());
 			if (!_player) _player = std::make_shared<Player>(connect->player_id(), shared_from_this()); //服务器已经没有缓存
@@ -311,11 +317,13 @@ void WorldSession::OnProcessMessage(const Asset::Meta& meta)
 				kickout_player.set_reason(Asset::KICK_OUT_REASON_CHANGE_SERVER);
 				_player->SendProtocol2GameServer(kickout_player); 
 			}
+	
+			_player->SetLocalServer(server_id); //设置玩家当前所在服务器
 
-			_player->SetGameServer(game_server);
+			//_player->SetGameServer(game_server);
 			_player->SendProtocol2GameServer(enter_room); //转发
 
-			WorldSessionInstance.SetGameServerSession(_player->GetID(), game_server);
+			//WorldSessionInstance.SetGameServerSession(_player->GetID(), game_server);
 		}
 		else if (Asset::META_TYPE_SHARE_UPDATE_CLIENT_DATA == meta.type_t()) //Client参数数据
 		{
@@ -347,10 +355,18 @@ void WorldSession::OnProcessMessage(const Asset::Meta& meta)
 
 void WorldSession::KickOutPlayer(Asset::KICK_OUT_REASON reason)
 {
-	if (!_player) return;
-
-	_player->OnKickOut(reason); //玩家退出登陆
+	DEBUG("_role_type:{} _global_id:{} reason:{}", _role_type, _global_id, reason);
 	
+	if (_role_type == Asset::ROLE_TYPE_GAME_SERVER) //逻辑服务器
+	{
+	    WorldSessionInstance.RemoveServer(_global_id);
+	}
+	else if (_role_type == Asset::ROLE_TYPE_PLAYER) //玩家
+	{
+		if (!_player) return;
+		_player->OnKickOut(reason); //玩家退出登陆
+	}
+		
 	_online = false;
 }
 	
@@ -591,16 +607,16 @@ void WorldSessionManager::BroadCast(const pb::Message* message)
 	BroadCast(*message);
 }
 
-std::shared_ptr<WorldSession> WorldSessionManager::RandomServer()
+int64_t WorldSessionManager::RandomServer()
 {
-	if (_server_list.size() == 0) return nullptr;
+	if (_server_list.size() == 0) return 0;
 
 	std::vector<int32_t> server_list;
 	for (auto it = _server_list.begin(); it != _server_list.end(); ++it) server_list.push_back(it->first);
 
 	std::random_shuffle(server_list.begin(), server_list.end()); //随机
 
-	return _server_list[server_list[0]];
+	return server_list[0];
 }
 
 NetworkThread<WorldSession>* WorldSessionManager::CreateThreads() const

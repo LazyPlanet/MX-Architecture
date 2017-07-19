@@ -311,6 +311,7 @@ void Player::SendMeta(const Asset::Meta& meta)
 	
 bool Player::SendProtocol2GameServer(const pb::Message& message)
 {
+	auto _gs_session = WorldSessionInstance.GetServerSession(GetLocalServer());
 	if (!_gs_session) return false;
 
 	const pb::FieldDescriptor* field = message.GetDescriptor()->FindFieldByName("type_t");
@@ -331,6 +332,7 @@ bool Player::SendProtocol2GameServer(const pb::Message& message)
 
 bool Player::SendProtocol2GameServer(const pb::Message* message)
 {
+	auto _gs_session = WorldSessionInstance.GetServerSession(GetLocalServer());
 	if (!_gs_session || !message) return false;
 
 	SendProtocol2GameServer(*message); 
@@ -390,26 +392,37 @@ int32_t Player::DefaultMethod(pb::Message* message)
 
 bool Player::HandleProtocol(int32_t type_t, pb::Message* message)
 {
+	if (!message) return false;
+
+	DEBUG("player_id:{} 接收协议数据:{}", _player_id, message->ShortDebugString());
 	//
 	//如果中心服务器没有协议处理回调，则发往游戏服务器进行处理
 	//
 	//如果玩家已经在游戏逻辑服务器，则直接发往游戏逻辑服务器，防止数据覆盖
 	//
 	auto it = _callbacks.find(type_t);
-	if (it == _callbacks.end()) 
+	if (it == _callbacks.end() && IsCenterServer()) //还在中心服
 	{
-		if (!_gs_session) _gs_session = WorldSessionInstance.RandomServer();
+		if (IsCenterServer())
+		{
+			int64_t server_id = WorldSessionInstance.RandomServer();
+			if (server_id != 0) SetLocalServer(server_id);
+		}
+		
+		DEBUG("player_id:{} server_id:{}", _player_id, _stuff.server_id());
 
+		/*
 		if (!_gs_session) 
 		{
 			DEBUG_ASSERT(false); //没有游戏逻辑服务器
 			return false;
 		}
+		*/
 		
-		WorldSessionInstance.SetGameServerSession(_player_id, _gs_session);
+		//WorldSessionInstance.SetGameServerSession(_player_id, _gs_session);
 		SendProtocol2GameServer(message); //转发给游戏逻辑服务器进行处理
 	}
-	else if (_gs_session)
+	else if (!IsCenterServer())
 	{
 		SendProtocol2GameServer(message); //转发给游戏逻辑服务器进行处理
 	}
