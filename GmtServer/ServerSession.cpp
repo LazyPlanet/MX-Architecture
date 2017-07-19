@@ -151,7 +151,7 @@ bool ServerSession::OnInnerProcess(const Asset::InnerMeta& meta)
 
 			if (ServerSessionInstance.IsGmtServer(shared_from_this())) //处理GMT服务器发送的数据
 			{
-				auto game_server = ServerSessionInstance.Get(/*message.server_id()*/4);
+				auto game_server = ServerSessionInstance.Get(message.server_id());
 				if (!game_server) 
 				{
 					message.set_error_code(Asset::COMMAND_ERROR_CODE_SERVER_NOT_FOUND);
