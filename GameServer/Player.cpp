@@ -3405,15 +3405,15 @@ void PlayerManager::Remove(int64_t player_id)
 {
 	auto player = _players[player_id];
 	if (player) player.reset();
-
-	Remove(player_id);
+	
+	_players.erase(player_id);
 }
 
 void PlayerManager::Remove(std::shared_ptr<Player> player)
 {
 	if (!player) return;
 
-	_players.erase(player->GetID());
+	Remove(player->GetID());
 }
 	
 void PlayerManager::BroadCast(const pb::Message& message)

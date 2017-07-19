@@ -147,7 +147,7 @@ bool ServerSession::OnInnerProcess(const Asset::InnerMeta& meta)
 			auto result = message.ParseFromString(meta.stuff());
 			if (!result) return false;
 
-			LOG(TRACE, "Receive command:{} from server:{}", message.ShortDebugString(), _ip_address);
+			LOG(INFO, "Receive command:{} from server:{}", message.ShortDebugString(), _ip_address);
 
 			if (ServerSessionInstance.IsGmtServer(shared_from_this())) //处理GMT服务器发送的数据
 			{
