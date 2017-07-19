@@ -66,7 +66,7 @@ bool Room::Enter(std::shared_ptr<Player> player)
 	{
 		for (size_t i = 0; i < _players.size(); ++i)
 		{
-			auto player_in = _players[i];
+			auto& player_in = _players[i];
 
 			if (!player_in)
 			{
@@ -184,7 +184,7 @@ bool Room::Remove(int64_t player_id)
 			
 		player->OnLeaveRoom(); //玩家退出房间
 
-		player.reset();
+		player = nullptr; //player.reset();
 
 		//_players.erase(it); //删除玩家
 
@@ -322,6 +322,8 @@ bool Room::CanStarGame()
 
 	for (auto player : _players)
 	{
+		if (!player) return false;
+
 		if (!player->IsReady()) return false; //需要所有玩家都是准备状态
 	}
 

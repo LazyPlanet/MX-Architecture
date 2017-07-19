@@ -1472,7 +1472,7 @@ bool Player::CheckBaoHu(const Asset::PaiElement& pai)
 	
 bool Player::CheckHuPai(const Asset::PaiElement& pai)
 {
-	std::unordered_set<int32_t> fan_list;
+	std::unordered_set<int32_t> fan_list = {};
 	return CheckHuPai(pai, fan_list);
 }
 
@@ -3403,7 +3403,10 @@ bool PlayerManager::Has(int64_t player_id)
 
 void PlayerManager::Remove(int64_t player_id)
 {
-	_players.erase(player_id);
+	auto player = _players[player_id];
+	if (player) player.reset();
+
+	Remove(player_id);
 }
 
 void PlayerManager::Remove(std::shared_ptr<Player> player)
