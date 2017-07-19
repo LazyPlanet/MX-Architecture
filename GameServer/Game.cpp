@@ -1011,9 +1011,11 @@ void Game::Calculate(int64_t hupai_player_id/*胡牌玩家*/, int64_t dianpao_pl
 		player->AddGameRecord(message.record());
 	}
 	
-	LOG(INFO, "胡牌结算:{}", message.ShortDebugString());
-		
+	_room->AddGameRecord(message.record()); //本局记录
+	
 	BroadCast(message);
+	
+	LOG(INFO, "胡牌结算:{}", message.ShortDebugString());
 }
 	
 void Game::BroadCast(pb::Message* message, int64_t exclude_player_id)
@@ -1185,6 +1187,8 @@ std::vector<int32_t> Game::TailPai(size_t card_count)
 	
 bool Game::CheckLiuJu()
 {
+	if (!_room) return false;
+
 	if (_cards.size() > size_t(g_const->liuju_count() + 4)) return false;
 
 	Asset::LiuJu message;
@@ -1329,8 +1333,6 @@ bool Game::CheckLiuJu()
 		}
 	}
 
-	BroadCast(game_calculate);
-	
 	//
 	//记录本次积分
 	//
@@ -1341,7 +1343,12 @@ bool Game::CheckLiuJu()
 		player->AddGameRecord(game_calculate.record());
 	}
 
-	TRACE("curr cards count:{} liuju_count:{}", _cards.size(), g_const->liuju_count());
+	_room->AddGameRecord(game_calculate.record()); //本局记录
+	
+	BroadCast(game_calculate);
+
+	LOG(INFO, "curr cards count:{} liuju_count:{}", _cards.size(), g_const->liuju_count());
+
 	return true;
 }
 

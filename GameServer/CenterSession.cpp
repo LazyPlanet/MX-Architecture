@@ -6,6 +6,7 @@
 #include "Timer.h"
 #include "Activity.h"
 #include "Protocol.h"
+#include "GmtSession.h"
 
 namespace Adoter
 {
@@ -26,13 +27,21 @@ void CenterSession::OnConnected()
 	SendProtocol(message); //注册服务器角色
 }
 
-bool CenterSession::OnInnerProcess(const Asset::Meta& meta)
+bool CenterSession::OnMessageProcess(const Asset::Meta& meta)
 {
 	DEBUG("接收来自中心服务器:{} {}的数据:{}", _ip_address, _remote_endpoint.port(), meta.ShortDebugString());
 
 	if (meta.type_t() == Asset::META_TYPE_S2S_REGISTER) //注册服务器成功
 	{
 		DEBUG("游戏逻辑服务器注册到中心服成功.");
+	}
+	else if (meta.type_t() == Asset::META_TYPE_S2S_GMT_INNER_META) //GMT命令
+	{
+		Asset::GmtInnerMeta inner_meta;
+		auto result = inner_meta.ParseFromString(meta.stuff());
+		if (!result) return false;
+
+		GmtInstance.InnerProcess(inner_meta.inner_meta());
 	}
 	else if (meta.type_t() == Asset::META_TYPE_SHARE_ENTER_ROOM) //进入游戏，从中心服务器首次进入逻辑服务器通过此处
 	{
@@ -198,7 +207,7 @@ void CenterSession::OnReadSome(const boost::system::error_code& error, std::size
 	while (!IsClosed() && !received_messages.empty())
 	{
 		const auto& message = received_messages.front();
-		OnInnerProcess(message);
+		OnMessageProcess(message);
 		received_messages.pop_front();
 	}
 	

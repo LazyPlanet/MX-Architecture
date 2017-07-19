@@ -33,7 +33,7 @@ public:
 	Asset::COMMAND_ERROR_CODE OnCommandProcess(const Asset::Command& command);
     
 	virtual void OnConnected(); //连接上服务器
-	bool OnInnerProcess(const Asset::Meta& meta); //内部协议处理
+	bool OnMessageProcess(const Asset::Meta& meta); //内部协议处理
 	
 	void SendProtocol(pb::Message& message);
 	void SendProtocol(pb::Message* message);

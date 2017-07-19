@@ -65,10 +65,14 @@ bool GmtSession::OnInnerProcess(const Asset::InnerMeta& meta)
 			auto result = message.ParseFromString(meta.stuff());
 			if (!result) return false;
 
-			auto gs_session = WorldSessionInstance.RandomServer();
-			if (!gs_session) return false;
+			int64_t server_id = WorldSessionInstance.RandomServer();
 
-			gs_session->SendProtocol(message); //游戏逻辑均在逻辑服务器上进行
+			auto session = WorldSessionInstance.GetServerSession(server_id);
+			if (!session) return false;
+
+			Asset::GmtInnerMeta inner_meta;
+			inner_meta.mutable_inner_meta()->CopyFrom(meta);
+			session->SendProtocol(inner_meta); //游戏逻辑均在逻辑服务器上进行
 		}
 		break;
 		

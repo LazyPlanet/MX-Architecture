@@ -201,6 +201,8 @@ void Room::OnGameOver(int64_t player_id)
 					record->set_score(record->score() + _history.list(i).list(j).score());
 	}
 
+	DEBUG("player_id:{} message:{}", player_id, message.ShortDebugString());
+
 	BroadCast(message);
 
 	_history.Clear();
