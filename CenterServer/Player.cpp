@@ -354,12 +354,12 @@ bool Player::Update()
 		CommonLimitUpdate(); //通用限制,定时更新
 	}
 	
-	if (_heart_count % 1000 == 0) //1s
+	if (_heart_count % 1000 == 0) //10s
 	{
 		if (_dirty) Save(); //触发存盘
 	}
 	
-	if (_heart_count % 10000 == 0) //10s
+	if (_heart_count % 10000 == 0) //100s
 	{
 		SayHi();
 	}
