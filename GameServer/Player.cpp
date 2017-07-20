@@ -689,7 +689,8 @@ int32_t Player::CmdEnterRoom(pb::Message* message)
 	if (_room) 
 	{
 		LOG(ERROR, "player_id:{} has been in room:{} enter_room:{}", _player_id, _room->GetID(), enter_room->ShortDebugString());
-		return 2; //已经在房间
+		AlertMessage(Asset::ERROR_ROOM_HAS_BEEN_IN);
+		return Asset::ERROR_ROOM_HAS_BEEN_IN; //已经在房间
 	}
 
 	ClearCards();

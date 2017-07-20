@@ -56,11 +56,18 @@ int32_t Player::Load()
 	return 0;
 }
 
+//
+//数据存储，如果玩家当前在中心服则以中心服为准
+//
+//如果玩家已经不在中心服，则去游戏逻辑服进行存储
+//
+//以免数据覆盖
+//
 int32_t Player::Save()
 {
-	RedisInstance.SavePlayer(_player_id, _stuff);
-	
 	PLAYER(_stuff);	//数据日志
+
+	if (IsCenterServer()) RedisInstance.SavePlayer(_player_id, _stuff); 
 		
 	return 0;
 }

@@ -120,12 +120,14 @@ std::shared_ptr<Player> Room::GetPlayer(int64_t player_id)
 
 void Room::OnPlayerOperate(std::shared_ptr<Player> player, pb::Message* message)
 {
-	if (!player) return;
+	if (!player || !message) return;
 
 	if (GetRemainCount() <= 0) return; //已经玩完X局
 	
 	auto game_operate = dynamic_cast<Asset::GameOperation*>(message);
 	if (!game_operate) return;
+
+	DEBUG("玩家房间内操作，玩家:{} 操作类型:{} message:{}", player->GetID(), game_operate->oper_type(), message->ShortDebugString());
 			
 	BroadCast(game_operate); //广播玩家操作
 	
