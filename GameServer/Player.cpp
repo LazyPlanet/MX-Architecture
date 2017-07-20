@@ -3262,6 +3262,8 @@ void Player::ClearCards()
 	_oper_count_tingpai = _oper_count = 0; //操作次数
 	_has_ting = _tuoguan_server = false;
 	_oper_type = Asset::PAI_OPER_TYPE_BEGIN;
+
+	_game = nullptr;
 }
 	
 void Player::OnGameOver()

@@ -17,6 +17,8 @@
 namespace Adoter 
 {
 
+#define MAX_DATA_SIZE 8192
+
 class ClientSocket : public std::enable_shared_from_this<ClientSocket>
 {
 public:
@@ -87,7 +89,7 @@ public:
 		//数据包头
 		//
 		unsigned short body_size = content.size();
-		if (body_size >= 4096) 
+		if (body_size >= MAX_DATA_SIZE) 
 		{
 			LOG(ERROR, "protocol has extend max size:{}", body_size);
 			return;
@@ -104,7 +106,7 @@ public:
 		auto body = content.c_str(); 
 
 		//数据整理发送
-		char buffer[4096] = { 0 }; //发送数据缓存
+		char buffer[MAX_DATA_SIZE] = { 0 }; //发送数据缓存
 		for (int i = 0; i < 2; ++i) buffer[i] = header[i];
 		for (int i = 0; i < body_size; ++i) buffer[i + 2] = body[i];
 
@@ -212,7 +214,7 @@ protected:
     volatile int64_t _last_rw_ticks = 0;
 	
 	//接收缓存
-	std::array<unsigned char, 4096> _buffer;
+	std::array<unsigned char, MAX_DATA_SIZE> _buffer;
     
     int64_t _connect_timeout = 10;
 

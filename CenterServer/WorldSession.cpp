@@ -38,13 +38,13 @@ void WorldSession::InitializeHandler(const boost::system::error_code error, cons
 			{
 				unsigned short body_size = _buffer[index] * 256 + _buffer[1 + index];
 					
-				if (body_size > 4096)
+				if (body_size > MAX_DATA_SIZE)
 				{
 					LOG(ERROR, "接收来自地址:{} 端口:{} 太大的包长:{} 丢弃.", _ip_address, _remote_endpoint.port(), body_size)
 					return;
 				}
 
-				char buffer[4096] = {0}; //数据缓存  
+				char buffer[MAX_DATA_SIZE] = {0}; //数据缓存  
 				for (size_t i = 0; i < body_size; ++i) buffer[i] = _buffer[i + index + 2];  
 
 				Asset::Meta meta;
