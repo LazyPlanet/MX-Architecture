@@ -244,7 +244,7 @@ void Room::OnGameOver(int64_t player_id)
 
 	BroadCast(message);
 
-	_history.Clear();
+	//_history.Clear();
 	_bankers.clear();
 	_hupai_players.clear();
 	_dianpao_players.clear();

@@ -123,7 +123,7 @@ void Game::OnStart()
 	_room->BroadCast(saizi);
 }
 
-bool Game::OnGameOver()
+bool Game::OnGameOver(int64_t player_id)
 {
 	if (!_room) return false;
 
@@ -172,6 +172,8 @@ bool Game::OnGameOver()
 		BroadCast(message);
 	}
 	*/
+				
+	_room->OnGameOver(player_id); //胡牌
 
 	return true;
 }
@@ -282,9 +284,7 @@ void Game::OnPaiOperate(std::shared_ptr<Player> player, pb::Message* message)
 			}
 			else if (CheckLiuJu())
 			{
-				_room->OnGameOver(0); //胡牌
-
-				OnGameOver(); 
+				OnGameOver(0); 
 				
 				_liuju = true;
 			}
@@ -392,9 +392,7 @@ void Game::OnPaiOperate(std::shared_ptr<Player> player, pb::Message* message)
 			{
 				Calculate(player->GetID(), _oper_limit.from_player_id(), fan_list); //结算
 
-				_room->OnGameOver(player->GetID()); //胡牌
-
-				OnGameOver(); //结算之后才是真正结束
+				OnGameOver(player->GetID()); //结算之后才是真正结束
 			}
 			else
 			{
@@ -1206,6 +1204,8 @@ bool Game::CheckLiuJu()
 {
 	if (!_room) return false;
 
+	DEBUG("流局检查, 当前牌数量:{} 配置流局牌数量:{}", _cards.size(), g_const->liuju_count());
+
 	if (_cards.size() > size_t(g_const->liuju_count() + 4)) return false;
 
 	Asset::LiuJu message;
@@ -1251,6 +1251,8 @@ bool Game::CheckLiuJu()
 	
 	BroadCast(message);
 	
+	DEBUG("流局检查, 当前牌数量:{} 配置流局牌数量:{}", _cards.size(), g_const->liuju_count());
+	
 	//
 	//2.杠牌积分
 	//
@@ -1286,9 +1288,9 @@ bool Game::CheckLiuJu()
 		int32_t an_score = an_count * get_multiple(Asset::FAN_TYPE_AN_GANG);
 		int32_t xf_score = xf_count * get_multiple(Asset::FAN_TYPE_XUAN_FENG_GANG);
 
-		auto score = ming_score + an_score + xf_score; //玩家杠牌赢得其他单个玩家积分
+		int32_t score = ming_score + an_score + xf_score; //玩家杠牌赢得其他单个玩家积分
 				
-		DEBUG("player_id:{}, ming_count:{}, an_count:{}, score:{}", player->GetID(), ming_count, an_count, score);
+		//DEBUG("player_id:{}, ming_count:{}, an_count:{}, score:{}", player->GetID(), ming_count, an_count, score);
 
 		record->set_score(score * (MAX_PLAYER_COUNT - 1)); //增加杠牌玩家总杠积分
 
@@ -1318,6 +1320,8 @@ bool Game::CheckLiuJu()
 		//
 		//2.其他玩家所输积分
 		//
+		//
+		/*
 		for (int index = 0; index < MAX_PLAYER_COUNT; ++index)
 		{
 			if (index == i) continue;
@@ -1348,6 +1352,7 @@ bool Game::CheckLiuJu()
 				detail->set_score(-xf_score);
 			}
 		}
+		*/
 	}
 
 	//
@@ -1360,9 +1365,9 @@ bool Game::CheckLiuJu()
 		player->AddGameRecord(game_calculate.record());
 	}
 
-	_room->AddGameRecord(game_calculate.record()); //本局记录
-	
 	BroadCast(game_calculate);
+	
+	_room->AddGameRecord(game_calculate.record()); //本局记录
 
 	LOG(INFO, "curr cards count:{} liuju_count:{}", _cards.size(), g_const->liuju_count());
 

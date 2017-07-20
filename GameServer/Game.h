@@ -49,7 +49,7 @@ public:
 	virtual bool Start(std::vector<std::shared_ptr<Player>> players); //开始游戏
 	virtual void OnStart(); //开始游戏回调
 
-	virtual bool OnGameOver(); //游戏结束
+	virtual bool OnGameOver(int64_t player_id); //游戏结束
 	void ClearState(); //清理状态
 
 	virtual std::vector<int32_t> FaPai(size_t card_count); //发牌

@@ -1311,6 +1311,7 @@ bool Player::AddGameRecord(const Asset::GameRecord& record)
 		if (_stuff.room_history(i).room_id() == room_id)
 		{
 			room_history = _stuff.mutable_room_history(i);
+			break;
 		}
 	}
 
