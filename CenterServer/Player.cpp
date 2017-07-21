@@ -9,6 +9,7 @@
 #include "Protocol.h"
 #include "CommonUtil.h"
 #include "RedisManager.h"
+#include "PlayerName.h"
 #include "PlayerCommonReward.h"
 #include "PlayerCommonLimit.h"
 
@@ -50,8 +51,17 @@ bool Player::Connected()
 
 int32_t Player::Load()
 {
-	auto success = RedisInstance.GetPlayer(_player_id, _stuff);
-	if (!success) return 1;
+	auto redis = make_unique<Redis>();
+	auto success = redis->GetPlayer(_player_id, _stuff);
+	if (!success) 
+	{
+		std::string player_name = NameInstance.Get();
+		SetName(player_name); //如果没有这个玩家则创建，防止因为创建账号但是没有角色的情况
+
+		redis->SavePlayer(_player_id, _stuff); //如果没有的角色，则创建一个
+
+		LOG(ERROR, "加载玩家数据失败:{}, 重新生成玩家数据", _player_id);
+	}
 		
 	return 0;
 }
@@ -67,7 +77,11 @@ int32_t Player::Save()
 {
 	PLAYER(_stuff);	//数据日志
 
-	if (IsCenterServer()) RedisInstance.SavePlayer(_player_id, _stuff); 
+	if (IsCenterServer()) 
+	{
+		auto redis = make_unique<Redis>();
+		redis->SavePlayer(_player_id, _stuff); 
+	}
 		
 	return 0;
 }
@@ -96,7 +110,7 @@ int32_t Player::OnLogout()
 
 int32_t Player::OnEnterGame() 
 {
-	if (Load()) return 1;
+	Load();
 
 	SendPlayer(); //发送数据给玩家
 	
@@ -109,13 +123,6 @@ int32_t Player::OnEnterGame()
 
 	WorldSessionInstance.AddPlayer(_player_id, _session); //网络会话数据
 	PlayerInstance.Emplace(_player_id, shared_from_this()); //玩家管理
-
-	//
-	//设置玩家所在服务器，每次进入场景均调用此
-	//
-	//对于MMORPG游戏，可以是任意一个场景或副本ID，此处记录为解决全球唯一服，通过Redis进行进程间通信，获取玩家所在服务器ID.
-	//
-	SetLocalServer(ConfigInstance.GetInt("ServerID", 1));
 
 	return 0;
 }

@@ -265,11 +265,7 @@ void Room::BroadCast(pb::Message* message, int64_t exclude_player_id)
 
 	for (auto player : _players)
 	{
-		if (!player) 
-		{
-			ERROR("玩家已经掉线");
-			continue; //可能已经释放
-		}
+		if (!player) continue; //可能已经释放//或者退出房间
 
 		if (exclude_player_id == player->GetID()) continue;
 
@@ -285,6 +281,8 @@ void Room::BroadCast(pb::Message& message, int64_t exclude_player_id)
 void Room::SyncRoom()
 {
 	Asset::RoomInformation message;
+			
+	auto redis = make_unique<Redis>();
 
 	for (auto player : _players)
 	{
@@ -303,7 +301,7 @@ void Room::SyncRoom()
 
 			auto dis_element = p->mutable_dis_list()->Add();
 			dis_element->set_position(dis_player->GetPosition());
-			dis_element->set_distance(RedisInstance.GetDistance(dis_player->GetID(), player->GetID()));
+			dis_element->set_distance(redis->GetDistance(dis_player->GetID(), player->GetID()));
 		}
 	}
 
@@ -358,7 +356,8 @@ bool RoomManager::CheckPassword(int64_t room_id, std::string password)
 
 int64_t RoomManager::CreateRoom()
 {
-	int64_t room_id = RedisInstance.CreateRoom();
+	auto redis = make_unique<Redis>();
+	int64_t room_id = redis->CreateRoom();
 	return room_id;
 }
 	

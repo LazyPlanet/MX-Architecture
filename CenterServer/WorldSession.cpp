@@ -147,7 +147,8 @@ void WorldSession::OnProcessMessage(const Asset::Meta& meta)
 			_account.CopyFrom(login->account()); //账号信息
 			_player_list.clear(); //账号下玩家列表，目前只有一个玩家
 		
-			int32_t redis_reply_type = RedisInstance.GetUser(login->account().username(), _user);
+			auto redis = make_unique<Redis>();
+			int32_t redis_reply_type = redis->GetUser(login->account().username(), _user);
 
 			if (redis_reply_type != REDIS_REPLY_STRING) //没有该用户
 			{
@@ -174,7 +175,7 @@ void WorldSession::OnProcessMessage(const Asset::Meta& meta)
 			//
 			if (_user.player_list().size() == 0)
 			{
-				int64_t player_id = RedisInstance.CreatePlayer(); //如果账号下没有角色，创建一个给Client
+				int64_t player_id = redis->CreatePlayer(); //如果账号下没有角色，创建一个给Client
 				if (player_id == 0) return;
 				
 				_player = std::make_shared<Player>(player_id, shared_from_this());
@@ -197,7 +198,7 @@ void WorldSession::OnProcessMessage(const Asset::Meta& meta)
 			if (!_user.has_wechat_token()) _user.mutable_wechat_token()->CopyFrom(_access_token);
 			if (!_user.has_wechat()) _user.mutable_wechat()->CopyFrom(_wechat); //微信数据
 
-			RedisInstance.SaveUser(login->account().username(), _user); //账号数据存盘
+			redis->SaveUser(login->account().username(), _user); //账号数据存盘
 
 			PLAYER(_user); //账号查询
 			
@@ -229,7 +230,8 @@ void WorldSession::OnProcessMessage(const Asset::Meta& meta)
 			if (!login) return; 
 			
 			std::string account;
-			if (RedisInstance.GetGuestAccount(account)) login->set_account(account);
+			auto redis = make_unique<Redis>();
+			if (redis->GetGuestAccount(account)) login->set_account(account);
 
 			SendProtocol(login); 
 		}
@@ -272,6 +274,12 @@ void WorldSession::OnProcessMessage(const Asset::Meta& meta)
 				session->KickOutPlayer(Asset::KICK_OUT_REASON_OTHER_LOGIN);
 			}
 			//WorldSessionInstance.AddPlayer(_player->GetID(), shared_from_this()); //在线玩家
+			//
+			//设置玩家所在服务器，每次进入场景均调用此
+			//
+			//对于MMORPG游戏，可以是任意一个场景或副本ID，此处记录为解决全球唯一服，通过Redis进行进程间通信，获取玩家所在服务器ID.
+			//
+			_player->SetLocalServer(ConfigInstance.GetInt("ServerID", 1));
 			
 			//
 			//此时才可以真正进入游戏大厅
@@ -337,7 +345,8 @@ void WorldSession::OnProcessMessage(const Asset::Meta& meta)
 
 			_user.mutable_client_info()->CopyFrom(client_data->client_info());
 				
-			RedisInstance.SetLocation(_player->GetID(), client_data->client_info().location()); //位置信息
+			auto redis = make_unique<Redis>();
+			redis->SetLocation(_player->GetID(), client_data->client_info().location()); //位置信息
 
 			SendProtocol(message);
 		}
@@ -525,7 +534,8 @@ int32_t WorldSession::OnWechatLogin(const pb::Message* message)
 	if (!_user.has_wechat_token()) _user.mutable_wechat_token()->CopyFrom(_access_token);
 	if (!_user.has_wechat()) _user.mutable_wechat()->CopyFrom(_wechat); //微信数据
 
-	if (_access_token.has_openid())	RedisInstance.SaveUser(_access_token.openid(), _user); //账号数据存盘
+	auto redis = make_unique<Redis>();
+	if (_access_token.has_openid())	redis->SaveUser(_access_token.openid(), _user); //账号数据存盘
 
 	return 0;
 }

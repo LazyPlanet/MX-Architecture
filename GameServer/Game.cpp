@@ -704,14 +704,6 @@ void Game::Calculate(int64_t hupai_player_id/*胡牌玩家*/, int64_t dianpao_pl
 		int32_t score = base_score;
 		
 		//
-		//玩家角色性检查(比如，庄家胡牌)
-		//
-		if (IsBanker(player_id)) 
-		{
-			fan_list.emplace(Asset::FAN_TYPE_ZHUANG);
-		}
-
-		//
 		//牌型基础分值计算
 		//
 		for (const auto& fan : fan_list)
@@ -766,6 +758,18 @@ void Game::Calculate(int64_t hupai_player_id/*胡牌玩家*/, int64_t dianpao_pl
 			}
 			
 			DEBUG("player_id:{} fan:{} score:{}", player_id, Asset::FAN_TYPE_DIAN_PAO, -score);
+		}
+		
+		//
+		//庄家
+		//
+		if (IsBanker(player_id)) 
+		{
+			score *= get_multiple(Asset::FAN_TYPE_ZHUANG); 
+			
+			auto detail = record->mutable_details()->Add();
+			detail->set_fan_type(Asset::FAN_TYPE_ZHUANG);
+			detail->set_score(-score);
 		}
 
 		if (player->IsBimen()) 
@@ -1256,6 +1260,9 @@ bool Game::CheckLiuJu()
 	//
 	//2.杠牌积分
 	//
+	Asset::GameCalculate game_calculate;
+	game_calculate.set_calculte_type(Asset::CALCULATE_TYPE_LIUJU);
+
 	const auto fan_asset = dynamic_cast<const Asset::RoomFan*>(AssetInstance.Get(g_const->fan_id()));
 	if (!fan_asset) return false;
 
@@ -1266,9 +1273,14 @@ bool Game::CheckLiuJu()
 		if (it == fan_asset->fans().end()) return 0;
 		return pow(2, it->multiple());
 	};
-
-	Asset::GameCalculate game_calculate;
-	game_calculate.set_calculte_type(Asset::CALCULATE_TYPE_LIUJU);
+	
+	auto get_record = [&](int64_t player_id)->google::protobuf::internal::RepeatedPtrIterator<Adoter::Asset::GameRecord_GameElement> { 
+		auto it = std::find_if(game_calculate.mutable_record()->mutable_list()->begin(), game_calculate.mutable_record()->mutable_list()->end(), 
+				[player_id](const Asset::GameRecord_GameElement& ele){
+					return player_id == ele.player_id();
+			});
+		return it;
+	};
 
 	for (int i = 0; i < MAX_PLAYER_COUNT; ++i)
 	{
@@ -1290,7 +1302,7 @@ bool Game::CheckLiuJu()
 
 		int32_t score = ming_score + an_score + xf_score; //玩家杠牌赢得其他单个玩家积分
 				
-		//DEBUG("player_id:{}, ming_count:{}, an_count:{}, score:{}", player->GetID(), ming_count, an_count, score);
+		DEBUG("player_id:{}, ming_count:{}, an_count:{}, score:{}", player->GetID(), ming_count, an_count, score);
 
 		record->set_score(score * (MAX_PLAYER_COUNT - 1)); //增加杠牌玩家总杠积分
 
@@ -1321,13 +1333,29 @@ bool Game::CheckLiuJu()
 		//2.其他玩家所输积分
 		//
 		//
-		/*
 		for (int index = 0; index < MAX_PLAYER_COUNT; ++index)
 		{
 			if (index == i) continue;
 
-			auto record = game_calculate.mutable_record()->mutable_list(index);
-			record->set_score(record->score() - score); //扣除杠分
+			auto player = _players[index];
+			if (!player) return false;
+			
+			Asset::GameRecord_GameElement* record = nullptr;
+
+			auto it = get_record(player->GetID());
+	
+			if (it == game_calculate.mutable_record()->mutable_list()->end() || index >= game_calculate.record().list().size()) 
+			{
+				record = game_calculate.mutable_record()->mutable_list()->Add();
+				record->set_player_id(player->GetID());
+				record->set_nickname(player->GetNickName());
+				record->set_headimgurl(player->GetHeadImag()); //理论上这种不用存盘，读取发给CLIENT的时候重新获取
+				record->set_score(record->score() - score); //扣除杠分
+			}
+			else
+			{
+				record = game_calculate.mutable_record()->mutable_list(index);
+			}
 
 			//非杠牌玩家所输积分列表
 
@@ -1352,7 +1380,6 @@ bool Game::CheckLiuJu()
 				detail->set_score(-xf_score);
 			}
 		}
-		*/
 	}
 
 	//

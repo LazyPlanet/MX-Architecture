@@ -30,6 +30,11 @@ private:
 public:
 	~Redis() { if (_client) redisFree(_client);	}
 	
+	//
+	//Redis多线程限制
+	//
+	//不能利用单例模式
+	//
 	static Redis& Instance()
 	{
 		static Redis _instance;
@@ -108,6 +113,7 @@ public:
 
 		if (reply->type == REDIS_REPLY_NIL) 
 		{
+			LOG(ERROR, "获取玩家数据失败，player_id:{} reply->type:{}", player_id, reply->type);
 			freeReplyObject(reply);
 			return false;
 		}
@@ -244,6 +250,7 @@ public:
 
 		if (reply->type != REDIS_REPLY_INTEGER) 
 		{
+			LOG(ERROR, "获取游客数据失败，account:{} reply->type:{}", account, reply->type);
 			freeReplyObject(reply);
 			return false;
 		}

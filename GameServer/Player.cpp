@@ -63,7 +63,8 @@ Player::Player(int64_t player_id, std::shared_ptr<WorldSession> session) : Playe
 int32_t Player::Load()
 {
 	//加载数据库
-	auto success = RedisInstance.GetPlayer(_player_id, _stuff);
+	auto redis = make_unique<Redis>();
+	auto success = redis->GetPlayer(_player_id, _stuff);
 	if (!success) return 1;
 		
 	DEBUG("player_id:{} load info:{}", _player_id, _stuff.ShortDebugString());
@@ -95,7 +96,8 @@ int32_t Player::Load()
 
 int32_t Player::Save()
 {
-	RedisInstance.SavePlayer(_player_id, _stuff);
+	auto redis = make_unique<Redis>();
+	redis->SavePlayer(_player_id, _stuff);
 	
 	PLAYER(_stuff);	//BI日志
 		
@@ -817,7 +819,7 @@ void Player::SendProtocol(const pb::Message& message)
 {
 	if (!g_center_session) 
 	{
-		ERROR("玩家{}尚未建立连接", _player_id);
+		LOG(ERROR, "玩家{}尚未建立连接", _player_id);
 		return; //尚未建立网络连接
 	}
 
@@ -838,7 +840,7 @@ void Player::SendProtocol(const pb::Message& message)
 
 	g_center_session->AsyncSendMessage(content);
 
-	TRACE("玩家:{} 发送协议内容:{}", _player_id, message.ShortDebugString());
+	DEBUG("玩家:{} 发送协议内容:{}", _player_id, message.ShortDebugString());
 }
 
 void Player::Send2Roomers(pb::Message& message, int64_t exclude_player_id) 
@@ -3363,7 +3365,8 @@ void Player::DebugCommand()
 const Asset::WechatUnion Player::GetWechat() 
 { 
 	Asset::User user;
-	RedisInstance.GetUser(_stuff.account(), user);
+	auto redis = make_unique<Redis>();
+	redis->GetUser(_stuff.account(), user);
 
 	return user.wechat();
 }
