@@ -313,7 +313,11 @@ void Room::SyncRoom()
 
 			auto dis_element = p->mutable_dis_list()->Add();
 			dis_element->set_position(dis_player->GetPosition());
-			dis_element->set_distance(redis->GetDistance(dis_player->GetID(), player->GetID()));
+
+			auto distance = redis->GetDistance(dis_player->GetID(), player->GetID());
+			dis_element->set_distance(distance);
+
+			DEBUG("获取玩家{}和玩家{}之间的距离:{}", dis_player->GetID(), player->GetID(), distance);
 		}
 	}
 
