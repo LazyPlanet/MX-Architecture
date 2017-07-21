@@ -95,7 +95,7 @@ void WorldSession::OnProcessMessage(const Asset::Meta& meta)
 	if (!enum_value) return;
 
 
-	WARN("中心服务器接收数据, 玩家:{} 协议:{} {} 内容:{}", meta.player_id(), meta.type_t(), enum_value->name(), message->ShortDebugString());
+	DEBUG("中心服务器接收数据, 玩家:{} 协议:{} {} 内容:{}", meta.player_id(), meta.type_t(), enum_value->name(), message->ShortDebugString());
 
 	//
 	// C2S协议可能存在两种情况：
@@ -272,6 +272,7 @@ void WorldSession::OnProcessMessage(const Asset::Meta& meta)
 			if (session) //已经在线
 			{
 				session->KickOutPlayer(Asset::KICK_OUT_REASON_OTHER_LOGIN);
+				WARN("玩家{}目前在线，被踢掉", _player->GetID());
 			}
 			//WorldSessionInstance.AddPlayer(_player->GetID(), shared_from_this()); //在线玩家
 			//
