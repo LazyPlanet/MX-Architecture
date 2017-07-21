@@ -57,7 +57,7 @@ public:
 	void OnCreated(); 
 
 	bool IsFull(); //是否已满
-	bool IsEmpty() { return _players.size() == 0; } //是否没人
+	bool IsEmpty(); //是否没人
 
 	bool CanStarGame(); //能否开启游戏
 	int32_t GetRemainCount(); //剩余游戏次数

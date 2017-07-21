@@ -15,9 +15,9 @@ namespace Adoter
 
 extern const Asset::CommonConst* g_const;
 
-/////////////////////////////////////////////////////
+//
 //房间
-/////////////////////////////////////////////////////
+//
 
 Asset::ERROR_CODE Room::TryEnter(std::shared_ptr<Player> player)
 {
@@ -53,6 +53,18 @@ bool Room::IsFull()
 
 	return true;
 } 
+	
+bool Room::IsEmpty()
+{
+	if (_players.size() == 0) return true;
+	
+	for (auto player : _players)
+	{
+		if (player) return false;
+	}
+
+	return true;
+}
 
 bool Room::Enter(std::shared_ptr<Player> player)
 {
