@@ -129,10 +129,10 @@ bool CenterSession::StartSend()
 {
 	bool started = false;
 
-	_mutex.lock();
+	//_mutex.lock();
 	std::deque<std::string> send_list;
 	send_list.swap(_send_list);
-	_mutex.unlock();
+	//_mutex.unlock();
 
 	while (IsConnected() && send_list.size())
 	{
@@ -169,7 +169,11 @@ bool CenterSession::StartReceive()
 
 void CenterSession::OnReadSome(const boost::system::error_code& error, std::size_t bytes_transferred)
 {
-	if (!IsConnected()) return;
+	if (!IsConnected()) 
+	{
+		LOG(ERROR, "接收来自地址:{} {} 的数据长度，此时网络已经断开.", _ip_address, _remote_endpoint.port(), bytes_transferred);
+		return;
+	}
 		
 	if (error)
 	{
