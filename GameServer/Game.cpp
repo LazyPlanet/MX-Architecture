@@ -278,15 +278,15 @@ void Game::OnPaiOperate(std::shared_ptr<Player> player, pb::Message* message)
 			//
 			//(3) 否则给当前玩家的下家继续发牌
 			//
-			if (CheckPai(pai, player->GetID())) //有满足要求的玩家
-			{
-				SendCheckRtn();
-			}
-			else if (CheckLiuJu())
+			if (CheckLiuJu())
 			{
 				OnGameOver(0); 
 				
 				_liuju = true;
+			}
+			else if (CheckPai(pai, player->GetID())) //有满足要求的玩家
+			{
+				SendCheckRtn();
 			}
 			else
 			{
@@ -386,13 +386,40 @@ void Game::OnPaiOperate(std::shared_ptr<Player> player, pb::Message* message)
 		
 		case Asset::PAI_OPER_TYPE_HUPAI: //胡牌
 		{
-			std::unordered_set<int32_t> fan_list = {};
+			auto fan_list = player->GetFanList();
 
-			if (player->CheckHuPai(pai, fan_list)/*玩家点炮*/ || player->CheckHuPai(fan_list)/*自摸*/ || player->CheckBaoHu(pai)) //正常胡牌或者宝胡
+			if (player->CheckHuPai(pai/*, fan_list*/)) //玩家点炮
 			{
-				Calculate(player->GetID(), _oper_limit.from_player_id(), fan_list); //结算
+				DEBUG_ASSERT(player->GetID() != _oper_limit.from_player_id()); //必然不一致
 
-				OnGameOver(player->GetID()); //结算之后才是真正结束
+				Calculate(player->GetID(), _oper_limit.from_player_id(), fan_list); //结算
+			}
+			else if (player->CheckZiMo(pai)) //自摸
+			{
+				DEBUG_ASSERT(player->GetID() == _oper_limit.from_player_id()); //必然一致
+
+				if (IsBaopai(pai)) fan_list.emplace(Asset::FAN_TYPE_JIN_BAO); //进宝
+				Calculate(player->GetID(), _oper_limit.from_player_id(), fan_list); //结算
+			}
+			else if (player->CheckBaoHu(pai)) //宝胡
+			{
+				//
+				//进宝（朝阳特有）
+				//
+				//当胡牌与宝牌相同时加一番
+				//
+				//进宝和摸宝同时只有一个即可
+				//
+				if (player->CheckHuPai(pai/*, fan_list*/)) 
+				{
+					fan_list.emplace(Asset::FAN_TYPE_JIN_BAO);
+				}
+				else
+				{
+					fan_list.emplace(Asset::FAN_TYPE_LOU_BAO); //自摸宝牌
+				}
+
+				Calculate(player->GetID(), _oper_limit.from_player_id(), fan_list); //结算
 			}
 			else
 			{
@@ -651,6 +678,8 @@ bool Game::SanJiaBi(int64_t hupai_player_id)
 void Game::Calculate(int64_t hupai_player_id/*胡牌玩家*/, int64_t dianpao_player_id/*点炮玩家*/, std::unordered_set<int32_t>& fan_list)
 {
 	if (!_room) return;
+
+	DEBUG("玩家胡牌, 胡牌玩家:{} 点炮玩家:{}", hupai_player_id, dianpao_player_id);
 
 	if (hupai_player_id != dianpao_player_id) _room->AddDianpao(dianpao_player_id); //不是自摸
 	
@@ -1033,6 +1062,8 @@ void Game::Calculate(int64_t hupai_player_id/*胡牌玩家*/, int64_t dianpao_pl
 	_room->AddGameRecord(message.record()); //本局记录
 	
 	BroadCast(message);
+				
+	OnGameOver(hupai_player_id); //结算之后才是真正结束
 	
 	LOG(INFO, "胡牌结算:{}", message.ShortDebugString());
 }

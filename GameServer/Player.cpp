@@ -1478,11 +1478,13 @@ bool Player::CheckBaoHu(const Asset::PaiElement& pai)
 	return true;
 }
 	
+/*
 bool Player::CheckHuPai(const Asset::PaiElement& pai)
 {
-	std::unordered_set<int32_t> fan_list = {};
-	return CheckHuPai(pai, fan_list);
+	//std::unordered_set<int32_t> _fan_list = {};
+	return CheckHuPai(pai, _fan_list);
 }
+*/
 
 bool Player::CheckHuPai(const std::map<int32_t, std::vector<int32_t>>& cards_inhand, //玩家手里的牌
 		const std::map<int32_t, std::vector<int32_t>>& cards_outhand, //玩家墙外牌
@@ -1683,21 +1685,29 @@ bool Player::CheckHuPai(const std::map<int32_t, std::vector<int32_t>>& cards_inh
 	return true;
 }
 
-bool Player::CheckHuPai()
+bool Player::CheckZiMo()
+{
+	Asset::PaiElement pai;
+	return CheckZiMo(pai);
+}
+
+bool Player::CheckZiMo(const Asset::PaiElement& pai)
 {
 	if (_tuoguan_server) return false;
 
-	Asset::PaiElement pai;
-	return CheckHuPai(pai);
+	//Asset::PaiElement pai;
+	return CheckHuPai(pai, true);
 }
 	
-bool Player::CheckHuPai(std::unordered_set<int32_t>& fan_list)
+/*
+bool Player::CheckHuPai(std::unordered_set<int32_t>& _fan_list)
 {
 	Asset::PaiElement pai;
-	return CheckHuPai(pai, fan_list);
+	return CheckHuPai(pai, _fan_list);
 }
+*/
 
-bool Player::CheckHuPai(const Asset::PaiElement& pai, std::unordered_set<int32_t>& fan_list, int32_t check_count)
+bool Player::CheckHuPai(const Asset::PaiElement& pai/*, std::unordered_set<int32_t>& _fan_list*/, bool check_zibo)
 {
 	if (!_room || !_game) 
 	{
@@ -1733,7 +1743,10 @@ bool Player::CheckHuPai(const Asset::PaiElement& pai, std::unordered_set<int32_t
 	for (const auto& crds : _cards_outhand) //复制牌外牌
 		cards[crds.first].insert(cards[crds.first].end(), crds.second.begin(), crds.second.end());
 
-	if (pai.card_type() && pai.card_value()) cards[pai.card_type()].push_back(pai.card_value()); //放入可以操作的牌
+	//
+	//自摸的牌已经在玩家手中，没必要再进行插入
+	//
+	if (!check_zibo && pai.card_type() && pai.card_value()) cards[pai.card_type()].push_back(pai.card_value()); //放入可以操作的牌
 	
 	for (auto& card : cards)
 		std::sort(card.second.begin(), card.second.end(), [](int x, int y){ return x < y; }); //由小到大，排序
@@ -1875,10 +1888,14 @@ bool Player::CheckHuPai(const Asset::PaiElement& pai, std::unordered_set<int32_t
 		//DEBUG("player_id:{} card_type:{} card_value:{} reason:没幺九.", _player_id, pai.card_type(), pai.card_value());
 		return false;
 	}
+	
+	//
+	//是否可以宝胡：单独处理
+	//
 
-	////////是否可以宝胡：单独处理
-
-	////////////////////////////////////////////////////////////////////////////是否可以满足胡牌的要求
+	//
+	//是否可以满足胡牌的要求
+	//
 	
 	std::vector<Card_t> card_list;
 	for (auto crds : cards) //胡牌逻辑检查
@@ -1953,7 +1970,7 @@ bool Player::CheckHuPai(const Asset::PaiElement& pai, std::unordered_set<int32_t
 		piao = true; //TODO：玩家吃了三套副一样的..
 	}
 	
-	////////是否是夹胡
+	//是否是夹胡
 	{
 		bool he_deleted = false, smaller_deleted = false, bigger_deleted = false;
 
@@ -2012,69 +2029,50 @@ bool Player::CheckHuPai(const Asset::PaiElement& pai, std::unordered_set<int32_t
 	
 	if (zhanlihu)
 	{
-		fan_list.emplace(Asset::FAN_TYPE_ZHAN_LI);
+		_fan_list.emplace(Asset::FAN_TYPE_ZHAN_LI);
 	}
 	if (duanmen) 
 	{
-		fan_list.emplace(Asset::FAN_TYPE_DUAN_MEN);
+		_fan_list.emplace(Asset::FAN_TYPE_DUAN_MEN);
 	}
 	if (yise) 
 	{
-		fan_list.emplace(Asset::FAN_TYPE_QING_YI_SE);
+		_fan_list.emplace(Asset::FAN_TYPE_QING_YI_SE);
 	}
 	if (piao) 
 	{
-		fan_list.emplace(Asset::FAN_TYPE_PIAO_HU);
+		_fan_list.emplace(Asset::FAN_TYPE_PIAO_HU);
 	}
 	if (jiahu) //夹胡积分
 	{
 		auto it_jiahu = std::find(options.extend_type().begin(), options.extend_type().end(), Asset::ROOM_EXTEND_TYPE_JIAHU);
 		if (it_jiahu != options.extend_type().end()) //普通夹胡
 		{
-			fan_list.emplace(Asset::FAN_TYPE_JIA_HU_NORMAL);
+			_fan_list.emplace(Asset::FAN_TYPE_JIA_HU_NORMAL);
 		}
 		else
 		{
 			if (pai.card_value() == 3 || pai.card_value() == 7) 
 			{
-				fan_list.emplace(Asset::FAN_TYPE_JIA_HU_MIDDLE);
+				_fan_list.emplace(Asset::FAN_TYPE_JIA_HU_MIDDLE);
 			}
 			if (pai.card_value() == 5) 
 			{
-				fan_list.emplace(Asset::FAN_TYPE_JIA_HU_HIGHER);
+				_fan_list.emplace(Asset::FAN_TYPE_JIA_HU_HIGHER);
 			}
-		}
-	}
-	if (_game->IsBaopai(pai) && fan_list.find(Asset::FAN_TYPE_LOU_BAO) == fan_list.end() 
-			&& fan_list.find(Asset::FAN_TYPE_JIN_BAO) == fan_list.end() && check_count == 0 /*防止递归检查*/) //搂宝
-	{
-		//
-		//进宝（朝阳特有）
-		//
-		//当胡牌与宝牌相同时加一番
-		//
-		//进宝和摸宝同时只有一个即可
-		//
-		if (CheckHuPai(pai, fan_list, ++check_count)) 
-		{
-			fan_list.emplace(Asset::FAN_TYPE_JIN_BAO);
-		}
-		else
-		{
-			fan_list.emplace(Asset::FAN_TYPE_LOU_BAO); //自摸宝牌
 		}
 	}
 	if (IsGangOperation()) //杠上开
 	{
-		fan_list.emplace(Asset::FAN_TYPE_GANG_SHANG_KAI);
+		_fan_list.emplace(Asset::FAN_TYPE_GANG_SHANG_KAI);
 	}
 	if (_game->IsLiuJu()) //海底捞月
 	{
-		fan_list.emplace(Asset::FAN_TYPE_HAI_DI_LAO);
+		_fan_list.emplace(Asset::FAN_TYPE_HAI_DI_LAO);
 	}
 	if (IsMingPiao()) //明飘
 	{
-		fan_list.emplace(Asset::FAN_TYPE_MING_PIAO);
+		_fan_list.emplace(Asset::FAN_TYPE_MING_PIAO);
 	}
 	
 	return true;
@@ -2608,7 +2606,7 @@ bool Player::CanTingPai(const Asset::PaiElement& pai)
 	auto options = _room->GetOptions();
 	
 	auto it_baohu = std::find(options.extend_type().begin(), options.extend_type().end(), Asset::ROOM_EXTEND_TYPE_BAOPAI);
-	if (it_baohu == options.extend_type().end()) return false; //不带宝胡，绝对不可能呢听牌
+	if (it_baohu == options.extend_type().end()) return false; //不带宝胡，绝对不可能听牌
 
 	std::map<int32_t, std::vector<int32_t>> cards_inhand, cards_outhand; 
 	std::vector<Asset::PaiElement> minggang, angang; 
@@ -2699,7 +2697,7 @@ bool Player::CheckTingPai(std::vector<Asset::PaiElement>& pais)
 	auto options = _room->GetOptions();
 	
 	auto it_baohu = std::find(options.extend_type().begin(), options.extend_type().end(), Asset::ROOM_EXTEND_TYPE_BAOPAI);
-	if (it_baohu == options.extend_type().end()) return false; //不带宝胡，绝对不可能呢听牌
+	if (it_baohu == options.extend_type().end()) return false; //不带宝胡，绝对不可能听牌
 	
 	std::map<int32_t, std::vector<int32_t>> cards_inhand, cards_outhand; 
 	std::vector<Asset::PaiElement> minggang, angang; 
@@ -2937,7 +2935,7 @@ void Player::NormalCheckAfterFaPai(const Asset::PaiElement& pai)
 {
 	Asset::PaiOperationAlert alert;
 
-	if (CheckHuPai())
+	if (CheckZiMo(pai)) //牌已经在玩家手里
 	{
 		auto pai_perator = alert.mutable_pais()->Add();
 		pai_perator->mutable_pai()->CopyFrom(pai);
@@ -3048,7 +3046,7 @@ int32_t Player::OnFaPai(std::vector<int32_t>& cards)
 			}
 
 			//是否可以胡牌
-			if (CheckHuPai())
+			if (CheckZiMo())
 			{
 				auto pai_perator = alert.mutable_pais()->Add();
 				pai_perator->mutable_oper_list()->Add(Asset::PAI_OPER_TYPE_HUPAI);

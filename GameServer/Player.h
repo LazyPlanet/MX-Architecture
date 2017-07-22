@@ -225,6 +225,7 @@ private:
 	std::mutex _card_lock;
 	std::shared_ptr<Room> _room = nullptr; //实体所在房间
 	std::shared_ptr<Game> _game = nullptr; //当前游戏
+	std::unordered_set<int32_t> _fan_list = {}; //番型缓存
 
 	//玩家牌数据
 	std::map<int32_t/*麻将牌类型*/, std::vector<int32_t>/*牌值*/> _cards_inhand; //玩家手里的牌
@@ -274,10 +275,11 @@ public:
 
 	bool CanHuPai(std::vector<Card_t>& cards, bool use_pair = false);
 
-	bool CheckHuPai(); //胡牌检查-玩家手里现有牌检查
-	bool CheckHuPai(const Asset::PaiElement& pai); //胡牌
-	bool CheckHuPai(std::unordered_set<int32_t>& fan_list); //胡牌且算番数
-	bool CheckHuPai(const Asset::PaiElement& pai, std::unordered_set<int32_t>& fan_list, int32_t check_count = 0); //胡牌且算番数
+	bool CheckZiMo(); //胡牌检查-玩家手里现有牌检查
+	bool CheckZiMo(const Asset::PaiElement& pai); //胡牌检查-玩家手里现有牌检查
+	bool CheckHuPai(const Asset::PaiElement& pai, bool check_zibo = false); //胡牌
+	//bool CheckHuPai(std::unordered_set<int32_t>& fan_list); //胡牌且算番数
+	//bool CheckHuPai(const Asset::PaiElement& pai, std::unordered_set<int32_t>& fan_list); //胡牌且算番数
 	bool CheckHuPai(const std::map<int32_t, std::vector<int32_t>>& cards_inhand, //玩家手里的牌
 			const std::map<int32_t, std::vector<int32_t>>& cards_outhand, //玩家墙外牌
 			const std::vector<Asset::PaiElement>& minggang, //明杠
@@ -285,6 +287,8 @@ public:
 			int32_t jiangang, //旋风杠，本质是明杠
 			int32_t fenggang, //旋风杠，本质是暗杠
 			const Asset::PaiElement& pai); //胡牌
+
+	std::unordered_set<int32_t> GetFanList() { return _fan_list; }
 
 	void DebugCommand();
 	bool CheckGangPai(const Asset::PaiElement& pai, int64_t from_player_id); //是否可以杠牌
