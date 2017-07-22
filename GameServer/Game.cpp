@@ -1378,15 +1378,16 @@ bool Game::CheckLiuJu()
 			if (it == game_calculate.mutable_record()->mutable_list()->end() || index >= game_calculate.record().list().size()) 
 			{
 				record = game_calculate.mutable_record()->mutable_list()->Add();
-				record->set_player_id(player->GetID());
-				record->set_nickname(player->GetNickName());
-				record->set_headimgurl(player->GetHeadImag()); //理论上这种不用存盘，读取发给CLIENT的时候重新获取
-				record->set_score(record->score() - score); //扣除杠分
 			}
 			else
 			{
 				record = game_calculate.mutable_record()->mutable_list(index);
 			}
+				
+			record->set_player_id(player->GetID());
+			record->set_nickname(player->GetNickName());
+			record->set_headimgurl(player->GetHeadImag()); //理论上这种不用存盘，读取发给CLIENT的时候重新获取
+			record->set_score(record->score() - score); //扣除杠分
 
 			//非杠牌玩家所输积分列表
 
@@ -1427,7 +1428,7 @@ bool Game::CheckLiuJu()
 	
 	_room->AddGameRecord(game_calculate.record()); //本局记录
 
-	LOG(INFO, "curr cards count:{} liuju_count:{}", _cards.size(), g_const->liuju_count());
+	LOG(INFO, "流局结算:{}", game_calculate.ShortDebugString());
 
 	return true;
 }
