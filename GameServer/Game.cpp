@@ -1201,7 +1201,9 @@ bool Game::CheckPai(const Asset::PaiElement& pai, int64_t from_player_id)
 		
 		if (rtn_check.size() == 0) continue; 
 
-		///////////////////////////////////////////////////缓存所有操作
+		//
+		//缓存所有操作
+		//
 		Asset::PaiOperationList pai_operation;
 		pai_operation.set_player_id(player->GetID());
 		pai_operation.set_from_player_id(from_player_id);

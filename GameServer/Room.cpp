@@ -145,8 +145,6 @@ void Room::OnPlayerOperate(std::shared_ptr<Player> player, pb::Message* message)
 	{
 		case Asset::GAME_OPER_TYPE_START: //开始游戏：其实是个准备
 		{
-			if (GetRemainCount() <= 0) return; //对局结束
-
 			if (!CanStarGame()) return;
 
 			auto game = std::make_shared<Game>();
@@ -163,8 +161,6 @@ void Room::OnPlayerOperate(std::shared_ptr<Player> player, pb::Message* message)
 
 		case Asset::GAME_OPER_TYPE_LEAVE: //离开游戏
 		{
-			if (GetRemainCount() > 0) return; //对局尚未结束
-	
 			Remove(player->GetID()); //玩家退出房间
 		}
 		break;
