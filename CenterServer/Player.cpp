@@ -313,7 +313,7 @@ void Player::SendProtocol(const pb::Message& message)
 	const pb::EnumValueDescriptor* enum_value = message.GetReflection()->GetEnum(message, field);
 	if (!enum_value) return;
 
-	TRACE("send protocol to player_id:{} protocol_name:{} content:{}", _player_id, enum_value->name().c_str(), message.ShortDebugString().c_str());
+	DEBUG("send protocol to player_id:{} protocol_name:{} content:{}", _player_id, enum_value->name().c_str(), message.ShortDebugString());
 }
 	
 void Player::SendMeta(const Asset::Meta& meta)
@@ -338,6 +338,8 @@ bool Player::SendProtocol2GameServer(const pb::Message& message)
 	meta.set_type_t((Asset::META_TYPE)type_t);
 	meta.set_stuff(message.SerializeAsString());
 	meta.set_player_id(_player_id); 
+
+	DEBUG("玩家{}发送协议{}到逻辑服务器", _player_id, message.ShortDebugString());
 
 	_gs_session->SendMeta(meta); 
 
