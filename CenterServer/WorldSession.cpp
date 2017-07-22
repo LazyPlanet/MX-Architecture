@@ -65,7 +65,7 @@ void WorldSession::InitializeHandler(const boost::system::error_code error, cons
 		return;
 	}
 
-	//WARN("中心服务器接收数据之后, 当前缓存数量大小:{} 本次接收数据大小:{}", _buffer.size(), bytes_transferred);
+	WARN("中心服务器接收数据之后, 当前缓存数量大小:{} 本次接收数据大小:{}", _buffer.size(), bytes_transferred);
 	AsyncReceiveWithCallback(&WorldSession::InitializeHandler); //递归持续接收	
 }
 			
@@ -95,7 +95,7 @@ void WorldSession::OnProcessMessage(const Asset::Meta& meta)
 	if (!enum_value) return;
 
 
-	DEBUG("中心服务器接收数据, 玩家:{} 协议:{} {} 内容:{}", meta.player_id(), meta.type_t(), enum_value->name(), message->ShortDebugString());
+	WARN("中心服务器接收数据, 玩家:{} 协议:{} {} 内容:{}", meta.player_id(), meta.type_t(), enum_value->name(), message->ShortDebugString());
 
 	//
 	// C2S协议可能存在两种情况：

@@ -310,11 +310,18 @@ bool Player::CheckDiamond(int64_t count)
 int32_t Player::OnEnterGame() 
 {
 	if (Load()) return 1;
-
-	SendPlayer(); //发送数据给玩家
 	
-	this->_stuff.set_login_time(CommonTimerInstance.GetTime());
-	this->_stuff.set_logout_time(0);
+	//
+	//设置玩家所在服务器，每次进入场景均调用此
+	//
+	//对于MMORPG游戏，可以是任意一个场景或副本ID，此处记录为解决全球唯一服，通过Redis进行进程间通信，获取玩家所在服务器ID.
+	//
+	SetLocalServer(ConfigInstance.GetInt("ServerID", 1));
+
+	//SendPlayer(); //发送数据给玩家
+	
+	_stuff.set_login_time(CommonTimerInstance.GetTime());
+	_stuff.set_logout_time(0);
 
 	SetDirty(); //存盘
 
@@ -322,13 +329,6 @@ int32_t Player::OnEnterGame()
 
 	//WorldSessionInstance.Emplace(_player_id, _session); //网络会话数据
 	PlayerInstance.Emplace(_player_id, shared_from_this()); //玩家管理
-
-	//
-	//设置玩家所在服务器，每次进入场景均调用此
-	//
-	//对于MMORPG游戏，可以是任意一个场景或副本ID，此处记录为解决全球唯一服，通过Redis进行进程间通信，获取玩家所在服务器ID.
-	//
-	SetLocalServer(ConfigInstance.GetInt("ServerID", 1));
 
 	return 0;
 }
@@ -1260,7 +1260,7 @@ void Player::OnEnterScene()
 	SendPlayer(); //发送数据给Client
 
 	//调试命令，在此处处理
-	DebugCommand();
+	//DebugCommand();
 }
 
 int32_t Player::CmdLuckyPlate(pb::Message* message)
@@ -1710,7 +1710,7 @@ bool Player::CheckHuPai(std::unordered_set<int32_t>& _fan_list)
 
 bool Player::CheckHuPai(const Asset::PaiElement& pai/*, std::unordered_set<int32_t>& _fan_list*/, bool check_zibo)
 {
-	if (!_debug_model && (!_room || !_game))
+	if (!_room || !_game)
 	{
 		DEBUG_ASSERT(false);
 		return false;
@@ -1759,8 +1759,7 @@ bool Player::CheckHuPai(const Asset::PaiElement& pai/*, std::unordered_set<int32
 	//
 	//是否可以胡牌的前置检查
 	//
-	//auto options = _room->GetOptions();
-	Asset::RoomOptions options;
+	auto options = _room->GetOptions();
 
 	////////是否可以缺门、清一色
 	{
@@ -2088,7 +2087,7 @@ bool Player::CheckHuPai(const Asset::PaiElement& pai/*, std::unordered_set<int32
 	{
 		_fan_list.emplace(Asset::FAN_TYPE_GANG_SHANG_KAI);
 	}
-	if (!_debug_model && _game->IsLiuJu()) //海底捞月
+	if (_game->IsLiuJu()) //海底捞月
 	{
 		_fan_list.emplace(Asset::FAN_TYPE_HAI_DI_LAO);
 	}

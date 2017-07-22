@@ -71,7 +71,7 @@ bool GmtSession::OnInnerProcess(const Asset::InnerMeta& meta)
 			if (!session) return false;
 
 			Asset::GmtInnerMeta inner_meta;
-			inner_meta.mutable_inner_meta()->CopyFrom(meta);
+			inner_meta.set_inner_meta(meta.SerializeAsString());
 			session->SendProtocol(inner_meta); //游戏逻辑均在逻辑服务器上进行
 		}
 		break;

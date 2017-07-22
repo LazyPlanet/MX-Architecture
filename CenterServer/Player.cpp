@@ -114,8 +114,8 @@ int32_t Player::OnEnterGame()
 
 	SendPlayer(); //发送数据给玩家
 	
-	this->_stuff.set_login_time(CommonTimerInstance.GetTime());
-	this->_stuff.set_logout_time(0);
+	_stuff.set_login_time(CommonTimerInstance.GetTime());
+	_stuff.set_logout_time(0);
 
 	SetDirty(); //存盘
 
@@ -131,7 +131,9 @@ int32_t Player::OnEnterGame()
 	
 int32_t Player::OnLogin()
 {
-	PlayerInstance.OnPlayerLogin(shared_from_this());
+	ActivityInstance.OnPlayerLogin(shared_from_this());
+
+	return 0;
 }
 	
 void Player::SetLocalServer(int32_t server_id) 

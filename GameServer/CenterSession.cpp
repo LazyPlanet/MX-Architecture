@@ -37,11 +37,13 @@ bool CenterSession::OnMessageProcess(const Asset::Meta& meta)
 	}
 	else if (meta.type_t() == Asset::META_TYPE_S2S_GMT_INNER_META) //GMT命令
 	{
-		Asset::GmtInnerMeta inner_meta;
-		auto result = inner_meta.ParseFromString(meta.stuff());
+		Asset::GmtInnerMeta message;
+		auto result = message.ParseFromString(meta.stuff());
 		if (!result) return false;
 
-		GmtInstance.InnerProcess(inner_meta.inner_meta());
+		Asset::InnerMeta inner_meta;
+		inner_meta.ParseFromString(message.inner_meta());
+		GmtInstance.InnerProcess(inner_meta);
 	}
 	else if (meta.type_t() == Asset::META_TYPE_SHARE_ENTER_ROOM) //进入游戏，从中心服务器首次进入逻辑服务器通过此处
 	{

@@ -39,7 +39,9 @@ bool WorldSession::OnInnerProcess(const Asset::Meta& meta)
 
 			if (!g_gmt_client) return false;
 
-			g_gmt_client->SendInnerMeta(message.inner_meta());
+			Asset::InnerMeta inner_meta;
+			inner_meta.ParseFromString(message.inner_meta());
+			g_gmt_client->SendInnerMeta(inner_meta);
 		}
 		break;
 		
