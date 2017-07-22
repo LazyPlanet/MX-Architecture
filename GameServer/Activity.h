@@ -178,6 +178,21 @@ public:
 			PlayerInstance.BroadCast(message); //广播所有玩家
 		}
 	}
+
+	void OnPlayerLogin(std::shared_ptr<Player> player)
+	{
+		if (!player) return;
+
+		Asset::SyncActivity message; //数据变化
+
+		for (auto it = _state.begin(); it != _state.end(); ++it)
+		{
+			auto activity = message.mutable_activity_list()->Add();
+			activity->set_activity_id(it->first);
+			activity->set_open(it->second);
+		}
+		player->SendProtocol(message);
+	}
 	
 	//
 	//GMT命令控制活动的开启时间和结束时间

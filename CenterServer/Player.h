@@ -94,6 +94,7 @@ public:
 	//玩家登出
 	virtual int32_t Logout(pb::Message* message);
 	virtual int32_t OnLogout();
+	virtual int32_t OnLogin();
 	//加载数据	
 	virtual int32_t Load();
 	//保存数据

@@ -124,7 +124,14 @@ int32_t Player::OnEnterGame()
 	WorldSessionInstance.AddPlayer(_player_id, _session); //网络会话数据
 	PlayerInstance.Emplace(_player_id, shared_from_this()); //玩家管理
 
+	OnLogin();
+
 	return 0;
+}
+	
+int32_t Player::OnLogin()
+{
+	PlayerInstance.OnPlayerLogin(shared_from_this());
 }
 	
 void Player::SetLocalServer(int32_t server_id) 

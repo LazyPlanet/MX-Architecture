@@ -37,6 +37,7 @@ Player::Player()
 	AddHandler(Asset::META_TYPE_SHARE_COMMON_PROPERTY, std::bind(&Player::CmdGetCommonProperty, this, std::placeholders::_1));
 	AddHandler(Asset::META_TYPE_SHARE_SAY_HI, std::bind(&Player::CmdSayHi, this, std::placeholders::_1));
 	AddHandler(Asset::META_TYPE_SHARE_GAME_SETTING, std::bind(&Player::CmdGameSetting, this, std::placeholders::_1));
+	AddHandler(Asset::META_TYPE_SHARE_SYSTEM_CHAT, std::bind(&Player::CmdSystemChat, this, std::placeholders::_1));
 
 	//AddHandler(Asset::META_TYPE_C2S_LOGIN, std::bind(&Player::CmdLogin, this, std::placeholders::_1));
 	//AddHandler(Asset::META_TYPE_C2S_ENTER_GAME, std::bind(&Player::CmdEnterGame, this, std::placeholders::_1));
@@ -1259,7 +1260,7 @@ void Player::OnEnterScene()
 	SendPlayer(); //发送数据给Client
 
 	//调试命令，在此处处理
-	//DebugCommand();
+	DebugCommand();
 }
 
 int32_t Player::CmdLuckyPlate(pb::Message* message)
@@ -1709,13 +1710,15 @@ bool Player::CheckHuPai(std::unordered_set<int32_t>& _fan_list)
 
 bool Player::CheckHuPai(const Asset::PaiElement& pai/*, std::unordered_set<int32_t>& _fan_list*/, bool check_zibo)
 {
-	if (!_room || !_game) 
+	if (!_debug_model && (!_room || !_game))
 	{
 		DEBUG_ASSERT(false);
 		return false;
 	}
 
 	PrintPai();
+
+	_fan_list.clear(); //番型清空
 
 	std::map<int32_t/*麻将牌类型*/, std::vector<int32_t>/*牌值*/> cards;
 
@@ -1751,12 +1754,13 @@ bool Player::CheckHuPai(const Asset::PaiElement& pai/*, std::unordered_set<int32
 	for (auto& card : cards)
 		std::sort(card.second.begin(), card.second.end(), [](int x, int y){ return x < y; }); //由小到大，排序
 			
-	bool zhanlihu = false, jiahu = false, xuanfenggang = false, duanmen = false, yise = false, piao = false; //积分
+	bool zhanlihu = false, jiahu = false, bianhu = false, xuanfenggang = false, duanmen = false, yise = false, piao = false; //积分
 
 	//
 	//是否可以胡牌的前置检查
 	//
-	auto options = _room->GetOptions();
+	//auto options = _room->GetOptions();
+	Asset::RoomOptions options;
 
 	////////是否可以缺门、清一色
 	{
@@ -1972,56 +1976,93 @@ bool Player::CheckHuPai(const Asset::PaiElement& pai/*, std::unordered_set<int32
 	
 	//是否是夹胡
 	{
-		bool he_deleted = false, smaller_deleted = false, bigger_deleted = false;
-
-		for (auto it = card_list.begin(); it != card_list.end();)
+		auto cards_inhand_check = _cards_inhand;
+		if (pai.card_type() && pai.card_value()) cards_inhand_check[pai.card_type()].push_back(pai.card_value()); //放入可以操作的牌
+			
+		for (auto& card : cards_inhand_check)
+			std::sort(card.second.begin(), card.second.end(), [](int x, int y){ return x < y; }); //由小到大，排序
+	
+		std::vector<Card_t> card_list;
+		for (auto crds : cards_inhand_check) //玩家牌内胡牌逻辑检查
 		{
-			if (it->_type == pai.card_type() && it->_value == pai.card_value() - 1)
+			for (auto value : crds.second)
+				card_list.push_back(Card_t(crds.first, value));
+		}
+
+		if (pai.card_value() == 3)
+		{
+			Card_t card_t2(pai.card_type(), pai.card_value() - 1);
+			auto it2 = std::find(card_list.begin(), card_list.end(), card_t2);
+
+			Card_t card_t1(pai.card_type(), pai.card_value() - 2);
+			auto it1 = std::find(card_list.begin(), card_list.end(), card_t1);
+
+			if (it1 != card_list.end() && it2 != card_list.end())
 			{
-				if (!smaller_deleted) 
-				{
-					it = card_list.erase(it); //只删除一个
-					smaller_deleted = true;
-				}
-				else
-				{
-					++it;
-				}
+				it2 = std::find(card_list.begin(), card_list.end(), card_t2);
+				card_list.erase(it2);
+				it1 = std::find(card_list.begin(), card_list.end(), card_t1);
+				card_list.erase(it1);
+				
+				bianhu = CanHuPai(card_list);	
 			}
-			else if (it->_type == pai.card_type() && it->_value == pai.card_value())
+		}
+		else if (pai.card_value() == 7)
+		{
+			Card_t card_t8(pai.card_type(), pai.card_value() + 1);
+			auto it8 = std::find(card_list.begin(), card_list.end(), card_t8);
+
+			Card_t card_t9(pai.card_type(), pai.card_value() + 2);
+			auto it9 = std::find(card_list.begin(), card_list.end(), card_t9);
+			
+			if (it8 != card_list.end() && it9 != card_list.end())
 			{
-				if (!he_deleted) 
-				{
-					it = card_list.erase(it); //只删除一个
-					he_deleted = true;
-				}
-				else
-				{
-					++it;
-				}
+				it8 = std::find(card_list.begin(), card_list.end(), card_t8);
+				card_list.erase(it8);
+				it9 = std::find(card_list.begin(), card_list.end(), card_t9);
+				card_list.erase(it9);
+				
+				bianhu = CanHuPai(card_list);	
 			}
-			else if (it->_type == pai.card_type() && it->_value == pai.card_value() + 1)
+		}
+		else
+		{
+			Card_t card_t_small(pai.card_type(), pai.card_value() - 1);
+			auto it_small = std::find(card_list.begin(), card_list.end(), card_t_small);
+
+			Card_t card_t_big(pai.card_type(), pai.card_value() + 1);
+			auto it_big = std::find(card_list.begin(), card_list.end(), card_t_big);
+			
+			if (it_small != card_list.end() && it_big != card_list.end())
 			{
-				if (!bigger_deleted) 
-				{
-					it = card_list.erase(it); //只删除一个
-					bigger_deleted = true;
-				}
-				else
-				{
-					++it;
-				}
-			}
-			else
-			{
-				++it;
+				it_small = std::find(card_list.begin(), card_list.end(), card_t_small);
+				card_list.erase(it_small);
+				it_big = std::find(card_list.begin(), card_list.end(), card_t_big);
+				card_list.erase(it_big);
+				
+				jiahu = CanHuPai(card_list);	
 			}
 		}
 
-		if (smaller_deleted && he_deleted && bigger_deleted)
+		auto it = std::find(options.extend_type().begin(), options.extend_type().end(), Asset::ROOM_EXTEND_TYPE_JIAHU);
+
+		if (it != options.extend_type().end()) //支持夹胡
 		{
-			bool can_hu = CanHuPai(card_list);	
-			if (can_hu) jiahu = true; //如果删除了这个顺子还能胡，就说明真的是夹胡
+			if (bianhu)
+			{
+				_fan_list.emplace(Asset::FAN_TYPE_JIA_HU_MIDDLE);
+			}
+			else if (jiahu)
+			{
+				if (pai.card_value() == 5) 
+				{
+					_fan_list.emplace(Asset::FAN_TYPE_JIA_HU_HIGHER);
+				}
+				else
+				{
+					_fan_list.emplace(Asset::FAN_TYPE_JIA_HU_NORMAL);
+				}
+			}
 		}
 	}
 	
@@ -2043,30 +2084,11 @@ bool Player::CheckHuPai(const Asset::PaiElement& pai/*, std::unordered_set<int32
 	{
 		_fan_list.emplace(Asset::FAN_TYPE_PIAO_HU);
 	}
-	if (jiahu) //夹胡积分
-	{
-		auto it_jiahu = std::find(options.extend_type().begin(), options.extend_type().end(), Asset::ROOM_EXTEND_TYPE_JIAHU);
-		if (it_jiahu != options.extend_type().end()) //普通夹胡
-		{
-			_fan_list.emplace(Asset::FAN_TYPE_JIA_HU_NORMAL);
-		}
-		else
-		{
-			if (pai.card_value() == 3 || pai.card_value() == 7) 
-			{
-				_fan_list.emplace(Asset::FAN_TYPE_JIA_HU_MIDDLE);
-			}
-			if (pai.card_value() == 5) 
-			{
-				_fan_list.emplace(Asset::FAN_TYPE_JIA_HU_HIGHER);
-			}
-		}
-	}
 	if (IsGangOperation()) //杠上开
 	{
 		_fan_list.emplace(Asset::FAN_TYPE_GANG_SHANG_KAI);
 	}
-	if (_game->IsLiuJu()) //海底捞月
+	if (!_debug_model && _game->IsLiuJu()) //海底捞月
 	{
 		_fan_list.emplace(Asset::FAN_TYPE_HAI_DI_LAO);
 	}
@@ -3264,6 +3286,7 @@ void Player::ClearCards()
 	_fenggang = 0; //清理旋风杠
 	
 	_player_prop.clear_game_oper_state();
+	_fan_list.clear(); 
 	_oper_count_tingpai = _oper_count = 0; //操作次数
 	_has_ting = _tuoguan_server = false;
 	_oper_type = Asset::PAI_OPER_TYPE_BEGIN;
@@ -3313,6 +3336,20 @@ int32_t Player::CmdGameSetting(pb::Message* message)
 	return 0;
 }
 	
+int32_t Player::CmdSystemChat(pb::Message* message)
+{
+	auto chat = dynamic_cast<Asset::SystemChat*>(message);
+	if (!chat) return 1;
+
+	if (!_room) return 2;
+
+	chat->set_position(GetPosition());
+
+	_room->BroadCast(message);
+
+	return 0;
+}
+	
 int32_t Player::OnKickOut(pb::Message* message)
 {
 	const auto kick_out = dynamic_cast<const Asset::KickOutPlayer*>(message);
@@ -3339,6 +3376,8 @@ int32_t Player::GetCardCount()
 	
 void Player::DebugCommand()
 {
+	_debug_model = true;
+
 	_cards_outhand = {
 		{ 1, { 3, 4, 5, 8, 8, 8} },
 	}; 
@@ -3362,6 +3401,13 @@ void Player::DebugCommand()
 	{
 		WARN("不可以胡牌");
 	}
+
+	WARN("番型:");
+	for (auto fan : _fan_list)
+	{
+		std::cout << fan << "  ";
+	}
+	std::cout << std::endl;
 }
 	
 const Asset::WechatUnion Player::GetWechat() 

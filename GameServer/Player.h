@@ -165,6 +165,8 @@ public:
 	void SayHi();
 	//游戏设置
 	virtual int32_t CmdGameSetting(pb::Message* message);
+	//系统聊天
+	virtual int32_t CmdSystemChat(pb::Message* message);
 
 	//踢下线
 	virtual int32_t OnKickOut(pb::Message* message);
@@ -226,6 +228,7 @@ private:
 	std::shared_ptr<Room> _room = nullptr; //实体所在房间
 	std::shared_ptr<Game> _game = nullptr; //当前游戏
 	std::unordered_set<int32_t> _fan_list = {}; //番型缓存
+	bool _debug_model = false;
 
 	//玩家牌数据
 	std::map<int32_t/*麻将牌类型*/, std::vector<int32_t>/*牌值*/> _cards_inhand; //玩家手里的牌
