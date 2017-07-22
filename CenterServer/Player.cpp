@@ -421,7 +421,7 @@ bool Player::HandleProtocol(int32_t type_t, pb::Message* message)
 	{
 		if (IsCenterServer())
 		{
-			int64_t server_id = WorldSessionInstance.RandomServer();
+			int64_t server_id = WorldSessionInstance.RandomServer(); //随机一个逻辑服务器
 			if (server_id != 0) SetLocalServer(server_id);
 		}
 		

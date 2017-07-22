@@ -134,8 +134,6 @@ void Room::OnPlayerOperate(std::shared_ptr<Player> player, pb::Message* message)
 {
 	if (!player || !message) return;
 
-	if (GetRemainCount() <= 0) return; //已经玩完X局
-	
 	auto game_operate = dynamic_cast<Asset::GameOperation*>(message);
 	if (!game_operate) return;
 
@@ -147,6 +145,8 @@ void Room::OnPlayerOperate(std::shared_ptr<Player> player, pb::Message* message)
 	{
 		case Asset::GAME_OPER_TYPE_START: //开始游戏：其实是个准备
 		{
+			if (GetRemainCount() <= 0) return; //对局结束
+
 			if (!CanStarGame()) return;
 
 			auto game = std::make_shared<Game>();
@@ -163,6 +163,8 @@ void Room::OnPlayerOperate(std::shared_ptr<Player> player, pb::Message* message)
 
 		case Asset::GAME_OPER_TYPE_LEAVE: //离开游戏
 		{
+			if (GetRemainCount() > 0) return; //对局尚未结束
+	
 			Remove(player->GetID()); //玩家退出房间
 		}
 		break;
@@ -225,10 +227,9 @@ void Room::OnGameOver(int64_t player_id)
 {
 	AddHupai(player_id); //记录
 
-	if (_banker != player_id) 
-		_banker_index = (_banker_index + 1) % MAX_PLAYER_COUNT; //下庄
+	if (_banker != player_id) _banker_index = (_banker_index + 1) % MAX_PLAYER_COUNT; //下庄
 
-	if (GetRemainCount() > 0) return;
+	if (GetRemainCount() > 0) return; //没有对局结束
 
 	Asset::RoomCalculate message;
 
