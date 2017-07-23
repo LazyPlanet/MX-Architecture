@@ -297,6 +297,20 @@ void WorldSession::OnProcessMessage(const Asset::Meta& meta)
 				SendProtocol(alert);
 			}
 		}
+		else if (Asset::META_TYPE_C2S_SWITCH_ACCOUNT == meta.type_t()) //切换账号
+		{
+			Asset::SwitchAccount* switch_account = dynamic_cast<Asset::SwitchAccount*>(message);
+			if (!switch_account) return; 
+
+			if (switch_account->account_name() != _account.username()) return;
+
+			if (!_player || _player->GetID() != switch_account->player_id()) return;
+
+			auto redis = make_unique<Redis>();
+			redis->GetUser(_account.username(), _user); //存盘退出
+
+			OnLogout();
+		}
 		else if (Asset::META_TYPE_SHARE_ENTER_ROOM == meta.type_t()) //进入房间：进入游戏逻辑服务器的入口
 		{
 			//

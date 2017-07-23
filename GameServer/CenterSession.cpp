@@ -223,10 +223,20 @@ void CenterSession::OnReadSome(const boost::system::error_code& error, std::size
 	
 	AsynyReadSome(); //继续下一次数据接收
 }
+
+void CenterSession::SayHi()
+{
+	Asset::SayHi message;
+	message.set_heart_count(_heart_count);
+
+	SendProtocol(message);
+}
 	
 bool CenterSession::Update()
 {
 	ClientSocket::Update();
+	
+	++_heart_count;
 
 	for (auto it = _players.begin(); it != _players.end(); ++it)
 	{
@@ -244,6 +254,9 @@ bool CenterSession::Update()
 		*/
 		//it->second->Update();
 	}
+
+	if (_heart_count % 1000) SayHi();
+
 	return true;
 }
 

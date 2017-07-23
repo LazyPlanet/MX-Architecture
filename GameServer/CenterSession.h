@@ -47,6 +47,7 @@ public:
     virtual void OnWriteSome(const boost::system::error_code& error, std::size_t bytes_transferred);  
 
 	virtual bool Update() override;
+	void SayHi();
 private:
 	std::deque<std::string> _send_list;
 	std::deque<Asset::Meta> _receive_list;
@@ -54,6 +55,8 @@ private:
 	std::string _ip_address;
 	std::unordered_map<int64_t, std::shared_ptr<Player>> _players; //实体为智能指针，不要传入引用
 	std::mutex _mutex;
+	
+	int64_t _heart_count = 0; //心跳次数
 };
 
 }
