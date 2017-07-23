@@ -221,7 +221,7 @@ void Room::OnGameOver(int64_t player_id)
 {
 	AddHupai(player_id); //记录
 
-	if (_banker != player_id) _banker_index = (_banker_index + 1) % MAX_PLAYER_COUNT; //下庄
+	if (player_id != 0 && _banker != player_id) _banker_index = (_banker_index + 1) % MAX_PLAYER_COUNT; //下庄
 
 	if (GetRemainCount() > 0) return; //没有对局结束
 

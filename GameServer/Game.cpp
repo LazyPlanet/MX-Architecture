@@ -1323,6 +1323,7 @@ bool Game::CheckLiuJu()
 	//
 	//2.杠牌积分
 	//
+	/*
 	Asset::GameCalculate game_calculate;
 	game_calculate.set_calculte_type(Asset::CALCULATE_TYPE_LIUJU);
 
@@ -1454,10 +1455,14 @@ bool Game::CheckLiuJu()
 			}
 		}
 	}
+	*/
 
 	//
 	//记录本次积分
 	//
+	Asset::GameCalculate game_calculate;
+	game_calculate.set_calculte_type(Asset::CALCULATE_TYPE_LIUJU);
+
 	for (auto player : _players)
 	{
 		if (!player) continue;
