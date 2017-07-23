@@ -309,15 +309,12 @@ void Game::OnPaiOperate(std::shared_ptr<Player> player, pb::Message* message)
 				Asset::PaiOperationAlert alert;
 
 				//胡牌检查
-				/*
-				 * 放玩家抓牌里面检查
 				if (player_next->CheckHuPai(card)) //自摸
 				{
 					auto pai_perator = alert.mutable_pais()->Add();
 					pai_perator->mutable_pai()->CopyFrom(card);
 					pai_perator->mutable_oper_list()->Add(Asset::PAI_OPER_TYPE_HUPAI);
 				}
-				*/
 
 				if (player_next->HasTuoGuan()) _curr_player_index = next_player_index; //托管检查
 
@@ -388,7 +385,7 @@ void Game::OnPaiOperate(std::shared_ptr<Player> player, pb::Message* message)
 		{
 			auto fan_list = player->GetFanList();
 
-			if (player->CheckHuPai(pai/*, fan_list*/)) //玩家点炮
+			if (player->CheckHuPai(pai)) //玩家点炮
 			{
 				DEBUG_ASSERT(player->GetID() != _oper_limit.from_player_id()); //必然不一致
 
@@ -559,15 +556,12 @@ void Game::OnPaiOperate(std::shared_ptr<Player> player, pb::Message* message)
 			Asset::PaiOperationAlert alert;
 
 			//胡牌检查
-			/*
-			 * 放玩家里面处理
 			if (player_next->CheckHuPai(card)) //自摸
 			{
 				auto pai_perator = alert.mutable_pais()->Add();
 				pai_perator->mutable_pai()->CopyFrom(card);
 				pai_perator->mutable_oper_list()->Add(Asset::PAI_OPER_TYPE_HUPAI);
 			}
-			*/
 
 			player_next->OnFaPai(cards); //放入玩家牌里面
 

@@ -77,8 +77,11 @@ int32_t Player::Save()
 {
 	PLAYER(_stuff);	//数据日志
 
+	DEBUG("保存玩家{}数据，当前玩家所在服务器:{}", _player_id, _stuff.server_id());
+
 	if (IsCenterServer()) 
 	{
+		DEBUG("玩家{}可以保存数据，当前玩家所在服务器:{}", _player_id, _stuff.server_id());
 		auto redis = make_unique<Redis>();
 		redis->SavePlayer(_player_id, _stuff); 
 	}
