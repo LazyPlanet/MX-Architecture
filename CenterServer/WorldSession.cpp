@@ -459,7 +459,6 @@ int32_t WorldSession::OnWechatLogin(const pb::Message* message)
 			LOG(INFO, "微信: html:{} union_info:{} response:{}", html, _wechat.ShortDebugString(), response);
 
 			Asset::WeChatInfo proto;
-			_wechat.set_json_wechat(html);
 			proto.mutable_wechat()->CopyFrom(_wechat);
 			SendProtocol(proto); //同步Client
 		}
@@ -514,7 +513,6 @@ int32_t WorldSession::OnWechatLogin(const pb::Message* message)
 				LOG(INFO, "微信: html:{} _wechat:{} response:{}", html, _wechat.ShortDebugString(), response);
 
 				Asset::WeChatInfo proto;
-				_wechat.set_json_wechat(html);
 				proto.mutable_wechat()->CopyFrom(_wechat);
 				SendProtocol(proto); //同步Client
 			}
