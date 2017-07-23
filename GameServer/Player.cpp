@@ -3260,9 +3260,12 @@ void Player::ResetBaopai()
 			int32_t result = CommonUtil::Random(1, 6);
 
 			auto baopai = _game->GetBaoPai(result);
+
+			DEBUG("玩家{}发起换宝，当前宝牌:{}, 换之后宝牌:{} 打股子:{}", _player_id, _game->GetBaoPai().ShortDebugString(), baopai.ShortDebugString(), result);
+
 			_game->SetBaoPai(baopai);
 
-			_game->RefreshBaopai(_player_id, result);
+			_game->OnRefreshBaopai(_player_id, result);
 		}
 		else
 		{

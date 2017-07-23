@@ -94,7 +94,7 @@ public:
 		return pai.card_type() == _baopai.card_type() && pai.card_value() == _baopai.card_value(); 
 	} 
 	bool HasBaopai() { return _baopai.card_type() != 0 && _baopai.card_value() != 0; } //当前是否含有宝牌
-	void RefreshBaopai(int64_t player_id, int32_t random_result); //刷新宝牌
+	void OnRefreshBaopai(int64_t player_id, int32_t random_result); //刷新宝牌
 	int32_t GetRemainBaopai(); //剩余宝牌数量
 
 	void SetRandResult(int32_t random_result) { _random_result = random_result; }

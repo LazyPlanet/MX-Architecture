@@ -1551,18 +1551,21 @@ int32_t Game::GetRemainBaopai()
 	auto count = std::count_if(_cards_pool.begin(), _cards_pool.end(), [&](const Asset::PaiElement& pai){
 			return _baopai.card_type() == pai.card_type() && _baopai.card_value() == pai.card_value();
 			});
+	DEBUG("获取剩余宝牌{}数量，当前牌池数量:{}", _baopai.ShortDebugString(), count);
 	return 3 - count; //墙上一张
 }
 
 //
 //刷新宝牌，则通知全部听牌玩家
 //
-void Game::RefreshBaopai(int64_t player_id, int32_t random_result)
+void Game::OnRefreshBaopai(int64_t player_id, int32_t random_result)
 {
 	Asset::RandomSaizi proto;
 	proto.set_reason_type(Asset::RandomSaizi_REASON_TYPE_REASON_TYPE_TINGPAI);
 	proto.set_has_rand_saizi(true);
 	proto.mutable_pai()->CopyFrom(_baopai);
+
+	DEBUG("刷新宝牌，玩家:{} 随机值:{}", player_id, random_result);
 
 	for (auto player : _players)
 	{
