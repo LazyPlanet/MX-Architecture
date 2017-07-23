@@ -424,7 +424,7 @@ bool Player::HandleProtocol(int32_t type_t, pb::Message* message)
 {
 	if (!message) return false;
 
-	DEBUG("player_id:{} 接收协议数据:{}", _player_id, message->ShortDebugString());
+	DEBUG("当前玩家{}所在服务器:{} 接收协议数据:{}", _player_id, _stuff.server_id(), message->ShortDebugString());
 	//
 	//如果中心服务器没有协议处理回调，则发往游戏服务器进行处理
 	//
@@ -433,8 +433,6 @@ bool Player::HandleProtocol(int32_t type_t, pb::Message* message)
 	auto it = _callbacks.find(type_t);
 	if (it == _callbacks.end() && IsCenterServer()) //还在中心服
 	{
-		DEBUG("玩家:{} 当前服务器:{}", _player_id, _stuff.server_id());
-
 		if (IsCenterServer())
 		{
 			int64_t server_id = WorldSessionInstance.RandomServer(); //随机一个逻辑服务器

@@ -1048,8 +1048,8 @@ void Game::Calculate(int64_t hupai_player_id/*胡牌玩家*/, int64_t dianpao_pl
 			for (int32_t j = 0; j < message.record().list(i).details().size(); ++j)
 			{
 				if (message.record().list(i).details(j).fan_type() != Asset::FAN_TYPE_MING_GANG 
-						&& message.record().list(i).details(i).fan_type() != Asset::FAN_TYPE_AN_GANG
-						&& message.record().list(i).details(i).fan_type() != Asset::FAN_TYPE_XUAN_FENG_GANG) //只有杠是平胡
+						&& message.record().list(i).details(j).fan_type() != Asset::FAN_TYPE_AN_GANG
+						&& message.record().list(i).details(j).fan_type() != Asset::FAN_TYPE_XUAN_FENG_GANG) //只有杠是平胡
 				{
 					is_pinghu = false;
 					break;
