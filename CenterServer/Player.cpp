@@ -85,6 +85,8 @@ int32_t Player::Save()
 		auto redis = make_unique<Redis>();
 		redis->SavePlayer(_player_id, _stuff); 
 	}
+
+	_dirty = false;
 		
 	return 0;
 }
@@ -431,14 +433,14 @@ bool Player::HandleProtocol(int32_t type_t, pb::Message* message)
 	auto it = _callbacks.find(type_t);
 	if (it == _callbacks.end() && IsCenterServer()) //还在中心服
 	{
+		DEBUG("玩家:{} 当前服务器:{}", _player_id, _stuff.server_id());
+
 		if (IsCenterServer())
 		{
 			int64_t server_id = WorldSessionInstance.RandomServer(); //随机一个逻辑服务器
 			if (server_id != 0) SetLocalServer(server_id);
 		}
 		
-		DEBUG("player_id:{} server_id:{}", _player_id, _stuff.server_id());
-
 		/*
 		if (!_gs_session) 
 		{

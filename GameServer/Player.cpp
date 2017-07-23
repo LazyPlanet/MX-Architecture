@@ -590,9 +590,6 @@ int32_t Player::CmdPaiOperate(pb::Message* message)
 				return 8; //不能听牌
 			}
 					
-			pais.erase(it); //删除牌
-
-			/*
 			try {
 				std::unique_lock<std::mutex> lock(_card_lock, std::defer_lock);
 			
@@ -612,7 +609,6 @@ int32_t Player::CmdPaiOperate(pb::Message* message)
 				ERROR("Delete card from player_id:{} card_type:{} card_value:{} error.", _player_id, pai.card_type(), pai.card_value(), error.what());
 					return 10;
 			}
-			*/
 
 			OnTingPai();
 		}
@@ -2525,7 +2521,6 @@ void Player::OnGangPai(const Asset::PaiElement& pai, int64_t from_player_id)
 	else if (count == 4)
 		_angang.push_back(pai);
 	
-	/*
 	try {
 		std::unique_lock<std::mutex> lock(_card_lock, std::defer_lock);
 
@@ -2545,10 +2540,8 @@ void Player::OnGangPai(const Asset::PaiElement& pai, int64_t from_player_id)
 	{
 		ERROR("Delete card from player_id:{} card_type:{} card_value:{} error:{}.", _player_id, card_type, card_value, error.what());
 		return;
-	}*/
+	}
 	
-	auto remove_it = std::remove(it->second.begin(), it->second.end(), card_value); //从玩家手里删除
-	it->second.erase(remove_it, it->second.end());
 	//
 	//墙外满足杠牌
 	//
@@ -2966,7 +2959,6 @@ void Player::OnGangJianPai()
 {
 	if (!CheckJianGangPai(_cards_inhand)) return;
 	
-	/*
 	try {
 		std::unique_lock<std::mutex> lock(_card_lock, std::defer_lock);
 
@@ -2989,22 +2981,6 @@ void Player::OnGangJianPai()
 	{
 		ERROR("Delete card from player_id:{} error:{}.", _player_id, error.what());
 		return;
-	}
-	*/
-
-	auto it = _cards_inhand.find(Asset::CARD_TYPE_JIAN);
-	for (auto card_value = 1; card_value <= 3; ++card_value) //中发白
-	{
-		auto it_if = std::find(it->second.begin(), it->second.end(), card_value);
-		if (it_if != it->second.end()) 
-		{
-			it->second.erase(it_if); //删除
-		}
-		else
-		{
-			DEBUG_ASSERT(false);
-			return;
-		}
 	}
 
 	++_jiangang;
@@ -3051,7 +3027,32 @@ int32_t Player::OnFaPai(std::vector<int32_t>& cards)
 
 	PreCheckOnFaPai(); //发牌前置检查
 
-	/*
+	//
+	//听牌后第一次抓牌，产生宝牌或查看宝牌
+	//
+	if (IsTingPai())
+	{
+		if (_oper_count_tingpai == 1) //听牌后第一次抓牌
+		{
+			if (!_game->HasBaopai())
+			{
+				_game->OnTingPai(shared_from_this()); //生成宝牌
+				LookAtBaopai(true);
+			}
+			else
+			{
+				LookAtBaopai(false);
+			}
+		}
+		else if (_oper_count_tingpai > 1)
+		{
+			if (_game->HasBaopai() && _game->GetRemainBaopai() <= 0) 
+			{
+				ResetBaopai(); 
+			}
+		}
+	}
+
 	try {
 		std::unique_lock<std::mutex> lock(_card_lock, std::defer_lock);
 
@@ -3080,48 +3081,6 @@ int32_t Player::OnFaPai(std::vector<int32_t>& cards)
 	{
 		ERROR("player get cards, player_id:{} error:{}.", _player_id, error.what());
 		return 4;
-	}
-	*/
-
-	//
-	//听牌后第一次抓牌，产生宝牌或查看宝牌
-	//
-	if (IsTingPai())
-	{
-		if (_oper_count_tingpai == 1) //听牌后第一次抓牌
-		{
-			if (!_game->HasBaopai())
-			{
-				_game->OnTingPai(shared_from_this()); //生成宝牌
-				LookAtBaopai(true);
-			}
-			else
-			{
-				LookAtBaopai(false);
-			}
-		}
-		else if (_oper_count_tingpai > 1)
-		{
-			if (_game->HasBaopai() && _game->GetRemainBaopai() <= 0) 
-			{
-				ResetBaopai(); 
-			}
-		}
-	}
-
-	for (auto card_index : cards) //发牌到玩家手里
-	{
-		auto card = GameInstance.GetCard(card_index);
-		if (card.card_type() == 0 || card.card_value() == 0) 
-		{
-			DEBUG_ASSERT(false);
-			return 2; //数据有误
-		}
-
-		//
-		//玩家真正把牌抓到手里
-		//
-		_cards_inhand[card.card_type()].push_back(card.card_value()); //插入玩家手牌
 	}
 
 	for (auto& cards : _cards_inhand) //整理牌
