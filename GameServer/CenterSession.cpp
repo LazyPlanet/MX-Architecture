@@ -230,8 +230,13 @@ void CenterSession::SayHi()
 	message.set_heart_count(_heart_count);
 
 	SendProtocol(message);
+
+	DEBUG("游戏逻辑服务器 _heart_count:{}", _heart_count);
 }
 	
+//
+//心跳周期50MS
+//
 bool CenterSession::Update()
 {
 	ClientSocket::Update();
@@ -255,7 +260,7 @@ bool CenterSession::Update()
 		//it->second->Update();
 	}
 
-	if (_heart_count % 1000) SayHi();
+	if (_heart_count % 100 == 0) SayHi();
 
 	return true;
 }
