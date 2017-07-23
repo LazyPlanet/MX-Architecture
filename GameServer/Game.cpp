@@ -389,17 +389,24 @@ void Game::OnPaiOperate(std::shared_ptr<Player> player, pb::Message* message)
 			{
 				DEBUG_ASSERT(player->GetID() != _oper_limit.from_player_id()); //必然不一致
 
+				if (player->IsJinbao()) fan_list.emplace(Asset::FAN_TYPE_JIN_BAO);
+
 				Calculate(player->GetID(), _oper_limit.from_player_id(), fan_list); //结算
 			}
-			else if (player->CheckZiMo(pai)) //自摸
+			else if (player->CheckZiMo(pai)) 
 			{
 				DEBUG_ASSERT(player->GetID() == _oper_limit.from_player_id()); //必然一致
 
-				if (IsBaopai(pai)) fan_list.emplace(Asset::FAN_TYPE_JIN_BAO); //进宝
+				//if (IsBaopai(pai)) fan_list.emplace(Asset::FAN_TYPE_JIN_BAO); //进宝
+				if (player->IsJinbao()) fan_list.emplace(Asset::FAN_TYPE_JIN_BAO);
+
 				Calculate(player->GetID(), _oper_limit.from_player_id(), fan_list); //结算
 			}
 			else if (player->CheckBaoHu(pai)) //宝胡
 			{
+				//if (player->IsJinbao()) fan_list.emplace(Asset::FAN_TYPE_JIN_BAO);
+
+				fan_list.emplace(Asset::FAN_TYPE_LOU_BAO); //摸宝
 				//
 				//进宝（朝阳特有）
 				//
@@ -407,7 +414,8 @@ void Game::OnPaiOperate(std::shared_ptr<Player> player, pb::Message* message)
 				//
 				//进宝和摸宝同时只有一个即可
 				//
-				if (player->CheckHuPai(pai/*, fan_list*/)) 
+				/*
+				if (player->CheckHuPai(pai)) 
 				{
 					fan_list.emplace(Asset::FAN_TYPE_JIN_BAO);
 				}
@@ -415,6 +423,7 @@ void Game::OnPaiOperate(std::shared_ptr<Player> player, pb::Message* message)
 				{
 					fan_list.emplace(Asset::FAN_TYPE_LOU_BAO); //自摸宝牌
 				}
+				*/
 
 				Calculate(player->GetID(), _oper_limit.from_player_id(), fan_list); //结算
 			}

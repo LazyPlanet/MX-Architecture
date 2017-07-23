@@ -229,6 +229,7 @@ private:
 	std::shared_ptr<Game> _game = nullptr; //当前游戏
 	std::unordered_set<int32_t> _fan_list = {}; //番型缓存
 	bool _debug_model = false;
+	bool _jinbao = false;
 
 	//玩家牌数据
 	std::map<int32_t/*麻将牌类型*/, std::vector<int32_t>/*牌值*/> _cards_inhand; //玩家手里的牌
@@ -275,6 +276,7 @@ public:
 	void LookAtBaopai(bool has_saizi);
 	void ResetBaopai();
 	void ResetLookAtBaopai() { _oper_count_tingpai = 0; }
+	bool IsJinbao() { return _jinbao; }
 
 	bool CanHuPai(std::vector<Card_t>& cards, bool use_pair = false);
 

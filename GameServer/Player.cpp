@@ -3051,6 +3051,7 @@ int32_t Player::OnFaPai(std::vector<int32_t>& cards)
 
 	PreCheckOnFaPai(); //发牌前置检查
 
+	/*
 	try {
 		std::unique_lock<std::mutex> lock(_card_lock, std::defer_lock);
 
@@ -3080,8 +3081,53 @@ int32_t Player::OnFaPai(std::vector<int32_t>& cards)
 		ERROR("player get cards, player_id:{} error:{}.", _player_id, error.what());
 		return 4;
 	}
+	*/
 
-	Asset::PaiNotify notify; /////玩家当前牌数据发给Client
+	//
+	//听牌后第一次抓牌，产生宝牌或查看宝牌
+	//
+	if (IsTingPai())
+	{
+		if (_oper_count_tingpai == 1) //听牌后第一次抓牌
+		{
+			if (!_game->HasBaopai())
+			{
+				_game->OnTingPai(shared_from_this()); //生成宝牌
+				LookAtBaopai(true);
+			}
+			else
+			{
+				LookAtBaopai(false);
+			}
+		}
+		else if (_oper_count_tingpai > 1)
+		{
+			if (_game->HasBaopai() && _game->GetRemainBaopai() <= 0) 
+			{
+				ResetBaopai(); 
+			}
+		}
+	}
+
+	for (auto card_index : cards) //发牌到玩家手里
+	{
+		auto card = GameInstance.GetCard(card_index);
+		if (card.card_type() == 0 || card.card_value() == 0) 
+		{
+			DEBUG_ASSERT(false);
+			return 2; //数据有误
+		}
+
+		//
+		//玩家真正把牌抓到手里
+		//
+		_cards_inhand[card.card_type()].push_back(card.card_value()); //插入玩家手牌
+	}
+
+	for (auto& cards : _cards_inhand) //整理牌
+		std::sort(cards.second.begin(), cards.second.end(), [](int x, int y){ return x < y; }); //由小到大
+
+	Asset::PaiNotify notify; //玩家牌数据发给Client
 	notify.set_player_id(_player_id); //目标玩家
 
 	if (cards.size() > 1) //开局
@@ -3161,36 +3207,10 @@ int32_t Player::OnFaPai(std::vector<int32_t>& cards)
 	{
 		auto card = GameInstance.GetCard(cards[0]);
 
+		notify.set_data_type(Asset::PaiNotify_CARDS_DATA_TYPE_CARDS_DATA_TYPE_FAPAI); //操作类型:发牌
 		notify.mutable_pai()->set_card_type(card.card_type());
 		notify.mutable_pai()->set_card_value(card.card_value());
 
-		notify.set_data_type(Asset::PaiNotify_CARDS_DATA_TYPE_CARDS_DATA_TYPE_FAPAI); //操作类型：发牌
-
-		//
-		//听牌后第一次抓牌，产生宝牌或查看宝牌
-		//
-		if (IsTingPai())
-		{
-			if (_oper_count_tingpai == 1) //听牌后第一次抓牌
-			{
-				if (!_game->HasBaopai())
-				{
-					_game->OnTingPai(shared_from_this()); //生成宝牌
-					LookAtBaopai(true);
-				}
-				else
-				{
-					LookAtBaopai(false);
-				}
-			}
-			else if (_oper_count_tingpai > 1)
-			{
-				if (_game->HasBaopai() && _game->GetRemainBaopai() <= 0) 
-				{
-					ResetBaopai(); 
-				}
-			}
-		}
 
 		if (IsTingPai()) ++_oper_count_tingpai; //听牌后发了//抓了多少张牌
 			
@@ -3226,7 +3246,9 @@ int32_t Player::OnFaPai(std::vector<int32_t>& cards)
 }
 	
 //
-//看宝的逻辑都一样，只不过第一人要打股子
+//看宝的逻辑都一样
+//
+//只不过第一人要打股子
 //
 void Player::LookAtBaopai(bool has_saizi)
 {
@@ -3243,6 +3265,8 @@ void Player::LookAtBaopai(bool has_saizi)
 
 	if (CheckHuPai(baopai)) 
 	{
+		_jinbao = true;
+
 		Asset::PaiOperationAlert alert;
 		auto pai_perator = alert.mutable_pais()->Add();
 		pai_perator->mutable_pai()->CopyFrom(baopai);
@@ -3361,8 +3385,11 @@ void Player::ClearCards()
 	
 	_player_prop.clear_game_oper_state();
 	_fan_list.clear(); 
-	_oper_count_tingpai = _oper_count = 0; //操作次数
-	_has_ting = _tuoguan_server = false;
+	_oper_count_tingpai = 0;
+	_oper_count = 0; 
+	_has_ting = false;
+	_tuoguan_server = false;
+	_jinbao = false;
 	_oper_type = Asset::PAI_OPER_TYPE_BEGIN;
 
 	_game = nullptr;
