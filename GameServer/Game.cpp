@@ -278,15 +278,15 @@ void Game::OnPaiOperate(std::shared_ptr<Player> player, pb::Message* message)
 			//
 			//(3) 否则给当前玩家的下家继续发牌
 			//
-			if (CheckLiuJu())
+			if (CheckPai(pai, player->GetID())) //有满足要求的玩家
+			{
+				SendCheckRtn();
+			}
+			else if (CheckLiuJu())
 			{
 				OnGameOver(0); 
 				
 				_liuju = true;
-			}
-			else if (CheckPai(pai, player->GetID())) //有满足要求的玩家
-			{
-				SendCheckRtn();
 			}
 			else
 			{
