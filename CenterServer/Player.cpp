@@ -143,8 +143,11 @@ int32_t Player::OnLogin()
 	
 void Player::SetLocalServer(int32_t server_id) 
 { 
-	_dirty = true;
+	DEBUG("玩家:{} 所在服务器:{} 新服务器:{}", _player_id, _stuff.server_id(), server_id);
+
 	_stuff.set_server_id(server_id); 
+
+	_dirty = true;
 }
 	
 bool Player::IsCenterServer() 
