@@ -1750,7 +1750,9 @@ bool Player::CheckHuPai(const Asset::PaiElement& pai/*, std::unordered_set<int32
 		cards[crds.first].insert(cards[crds.first].end(), crds.second.begin(), crds.second.end());
 
 	//
-	//自摸的牌已经在玩家手中，没必要再进行插入
+	//如果非自摸检查，牌已经在玩家手中，没必要再进行插入
+	//
+	//如果不是自摸检查，则放入手中
 	//
 	if (!check_zibo && pai.card_type() && pai.card_value()) cards[pai.card_type()].push_back(pai.card_value()); //放入可以操作的牌
 	
@@ -1926,7 +1928,7 @@ bool Player::CheckHuPai(const Asset::PaiElement& pai/*, std::unordered_set<int32
 	 * */
 	{
 		auto cards_inhand_check = _cards_inhand;
-		if (pai.card_type() && pai.card_value()) cards_inhand_check[pai.card_type()].push_back(pai.card_value()); //放入可以操作的牌
+		if (!check_zibo && pai.card_type() && pai.card_value()) cards_inhand_check[pai.card_type()].push_back(pai.card_value()); //放入可以操作的牌
 			
 		for (auto& card : cards_inhand_check)
 			std::sort(card.second.begin(), card.second.end(), [](int x, int y){ return x < y; }); //由小到大，排序
@@ -1979,7 +1981,7 @@ bool Player::CheckHuPai(const Asset::PaiElement& pai/*, std::unordered_set<int32
 	//是否是夹胡
 	{
 		auto cards_inhand_check = _cards_inhand;
-		if (pai.card_type() && pai.card_value()) cards_inhand_check[pai.card_type()].push_back(pai.card_value()); //放入可以操作的牌
+		if (!check_zibo && pai.card_type() && pai.card_value()) cards_inhand_check[pai.card_type()].push_back(pai.card_value()); //放入可以操作的牌
 			
 		for (auto& card : cards_inhand_check)
 			std::sort(card.second.begin(), card.second.end(), [](int x, int y){ return x < y; }); //由小到大，排序

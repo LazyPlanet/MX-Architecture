@@ -334,7 +334,9 @@ void Game::OnPaiOperate(std::shared_ptr<Player> player, pb::Message* message)
 					pai_perator->mutable_oper_list()->Add(Asset::PAI_OPER_TYPE_HUPAI);
 				}
 
+				//
 				//听牌检查
+				//
 				std::vector<Asset::PaiElement> ting_list;
 				if (player_next->CheckTingPai(ting_list))
 				{
@@ -346,7 +348,9 @@ void Game::OnPaiOperate(std::shared_ptr<Player> player, pb::Message* message)
 					}
 				}
 				
-				//杠检查：包括明杠和暗杠
+				//
+				//杠检查:包括明杠和暗杠
+				//
 				::google::protobuf::RepeatedField<Asset::PaiOperationAlert_AlertElement> gang_list;
 				if (player_next->CheckAllGangPai(gang_list)) 
 				{
@@ -357,7 +361,9 @@ void Game::OnPaiOperate(std::shared_ptr<Player> player, pb::Message* message)
 					}
 				}
 				
+				//
 				//旋风杠检查
+				//
 				auto xf_gang = player_next->CheckXuanFeng();
 				if (xf_gang)
 				{
@@ -556,7 +562,7 @@ void Game::OnPaiOperate(std::shared_ptr<Player> player, pb::Message* message)
 				return; 
 			}
 			
-			TRACE("oper_limit.player_id:{} player_id:{} next_player_id:{} _curr_player_index:{} next_player_index:{}",
+			DEBUG("oper_limit.player_id:{} player_id:{} next_player_id:{} _curr_player_index:{} next_player_index:{}",
 				_oper_limit.player_id(), player->GetID(), player_next->GetID(), _curr_player_index, next_player_index);
 
 			auto cards = FaPai(1); 
@@ -564,8 +570,10 @@ void Game::OnPaiOperate(std::shared_ptr<Player> player, pb::Message* message)
 
 			Asset::PaiOperationAlert alert;
 
+			//
 			//胡牌检查
-			if (player_next->CheckHuPai(card)) //自摸
+			//
+			if (player_next->CheckHuPai(card)) //自摸检查，但该张牌尚未在玩家牌内
 			{
 				auto pai_perator = alert.mutable_pais()->Add();
 				pai_perator->mutable_pai()->CopyFrom(card);
