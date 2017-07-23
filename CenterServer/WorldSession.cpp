@@ -435,10 +435,6 @@ int32_t WorldSession::OnWechatLogin(const pb::Message* message)
 			request = "https://api.weixin.qq.com/sns/userinfo?access_token=" + _access_token.access_token() + "&openid=" + _access_token.openid() + "&lang=en";
 			html = http.quickGetStr(request.c_str());
 				
-			std::string response(html);
-			response = b64_encode(response);
-			response = b64_decode(response);
-
 			ret = pbjson::json2pb(html, &_wechat, err);
 			if (ret)
 			{
@@ -449,6 +445,7 @@ int32_t WorldSession::OnWechatLogin(const pb::Message* message)
 			LOG(INFO, "微信: html:{} union_info:{} response:{}", html, _wechat.ShortDebugString(), response);
 
 			Asset::WeChatInfo proto;
+			_wechat.set_json_wechat(html);
 			proto.mutable_wechat()->CopyFrom(_wechat);
 			SendProtocol(proto); //同步Client
 		}
@@ -493,10 +490,6 @@ int32_t WorldSession::OnWechatLogin(const pb::Message* message)
 				request = "https://api.weixin.qq.com/sns/userinfo?access_token=" + refresh_token + "&openid=" + openid + "&lang=en";
 				html = http.quickGetStr(request.c_str());
 
-				std::string response(html);
-				response = b64_encode(response);
-				response = b64_decode(response);
-
 				ret = pbjson::json2pb(html, &_wechat, err);
 				if (ret)
 				{
@@ -507,6 +500,7 @@ int32_t WorldSession::OnWechatLogin(const pb::Message* message)
 				LOG(INFO, "微信: html:{} _wechat:{} response:{}", html, _wechat.ShortDebugString(), response);
 
 				Asset::WeChatInfo proto;
+				_wechat.set_json_wechat(html);
 				proto.mutable_wechat()->CopyFrom(_wechat);
 				SendProtocol(proto); //同步Client
 			}
