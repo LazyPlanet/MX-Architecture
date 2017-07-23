@@ -629,7 +629,12 @@ int32_t Player::CmdPaiOperate(pb::Message* message)
 
 	++_oper_count;
 
-	if (pai_operate->oper_type() != Asset::PAI_OPER_TYPE_HUPAI) _oper_type = pai_operate->oper_type(); //记录上次牌操作
+	if (pai_operate->oper_type() != Asset::PAI_OPER_TYPE_HUPAI) 
+	{
+		_oper_type = pai_operate->oper_type(); //记录上次牌操作
+
+		DEBUG("玩家:{}进行牌局操作:{}", _player_id, _oper_type);
+	}
 
 	return 0;
 }

@@ -1028,7 +1028,27 @@ void Game::Calculate(int64_t hupai_player_id/*胡牌玩家*/, int64_t dianpao_pl
 	//
 	for (int32_t i = 0; i < message.record().list().size(); ++i)
 	{
+		bool is_pinghu = true;
+
 		if (message.record().list(i).details().size() == 0)
+		{
+			is_pinghu = true;
+		}
+		else
+		{
+			for (int32_t j = 0; j < message.record().list(i).details().size(); ++j)
+			{
+				if (message.record().list(i).details(j).fan_type() != Asset::FAN_TYPE_MING_GANG 
+						&& message.record().list(i).details(i).fan_type() != Asset::FAN_TYPE_AN_GANG
+						&& message.record().list(i).details(i).fan_type() != Asset::FAN_TYPE_XUAN_FENG_GANG) //只有杠是平胡
+				{
+					is_pinghu = false;
+					break;
+				}
+			}
+		}
+
+		if (is_pinghu)
 		{
 			auto pinghu = message.mutable_record()->mutable_list(i)->mutable_details()->Add();
 			pinghu->set_score(1);
@@ -1036,7 +1056,9 @@ void Game::Calculate(int64_t hupai_player_id/*胡牌玩家*/, int64_t dianpao_pl
 		}
 	}
 
-	//取最大番数
+	//
+	//最大番数
+	//
 	auto max_fan_it = std::max_element(record->details().begin(), record->details().end(), 
 			[&](const Asset::GameRecord_GameElement_DetailElement& detail1, const Asset::GameRecord_GameElement_DetailElement& detail2){
 				return get_multiple(detail1.fan_type()) < get_multiple(detail2.fan_type()) ;
@@ -1110,11 +1132,8 @@ bool Game::SendCheckRtn()
 		auto result = check((Asset::PAI_OPER_TYPE)i, operation);
 		if (result) break;
 	}
-	if (operation.oper_list().size() == 0) 
-	{
-		//DEBUG("%s:line%d 没有可操作的牌值.\n", __func__, __LINE__);
-		return false;
-	}
+
+	if (operation.oper_list().size() == 0) return false;
 
 	int64_t player_id = operation.player_id(); 
 
@@ -1313,11 +1332,22 @@ bool Game::CheckLiuJu()
 	{
 		auto player = _players[i];
 		if (!player) return false;
-		
-		auto record = game_calculate.mutable_record()->mutable_list()->Add();
-		record->set_player_id(player->GetID());
-		record->set_nickname(player->GetNickName());
-		record->set_headimgurl(player->GetHeadImag()); //理论上这种不用存盘，读取发给CLIENT的时候重新获取
+			
+		Asset::GameRecord_GameElement* record = nullptr;
+
+		auto it = get_record(player->GetID());
+	
+		if (it == game_calculate.mutable_record()->mutable_list()->end() || i >= game_calculate.record().list().size()) 
+		{
+			record = game_calculate.mutable_record()->mutable_list()->Add();
+			record->set_player_id(player->GetID());
+			record->set_nickname(player->GetNickName());
+			record->set_headimgurl(player->GetHeadImag()); //理论上这种不用存盘，读取发给CLIENT的时候重新获取
+		}
+		else
+		{
+			record = game_calculate.mutable_record()->mutable_list(i);
+		}
 		
 		auto ming_count = player->GetMingGangCount(); 
 		auto an_count = player->GetAnGangCount(); 
@@ -1329,8 +1359,6 @@ bool Game::CheckLiuJu()
 
 		int32_t score = ming_score + an_score + xf_score; //玩家杠牌赢得其他单个玩家积分
 				
-		DEBUG("player_id:{}, ming_count:{}, an_count:{}, score:{}", player->GetID(), ming_count, an_count, score);
-
 		record->set_score(score * (MAX_PLAYER_COUNT - 1)); //增加杠牌玩家总杠积分
 
 		//
@@ -1360,33 +1388,33 @@ bool Game::CheckLiuJu()
 		//2.其他玩家所输积分
 		//
 		//
-		for (int index = 0; index < MAX_PLAYER_COUNT; ++index)
+		for (int j = 0; j < MAX_PLAYER_COUNT; ++j)
 		{
-			if (index == i) continue;
+			if (j == i) continue;
 
-			auto player = _players[index];
+			auto player = _players[j];
 			if (!player) return false;
 			
 			Asset::GameRecord_GameElement* record = nullptr;
 
 			auto it = get_record(player->GetID());
 	
-			if (it == game_calculate.mutable_record()->mutable_list()->end() || index >= game_calculate.record().list().size()) 
+			if (it == game_calculate.mutable_record()->mutable_list()->end() || j >= game_calculate.record().list().size()) 
 			{
 				record = game_calculate.mutable_record()->mutable_list()->Add();
+				record->set_player_id(player->GetID());
+				record->set_nickname(player->GetNickName());
+				record->set_headimgurl(player->GetHeadImag()); //理论上这种不用存盘，读取发给CLIENT的时候重新获取
+				record->set_score(record->score() - score); //扣除杠分
 			}
 			else
 			{
-				record = game_calculate.mutable_record()->mutable_list(index);
+				record = game_calculate.mutable_record()->mutable_list(j);
 			}
-				
-			record->set_player_id(player->GetID());
-			record->set_nickname(player->GetNickName());
-			record->set_headimgurl(player->GetHeadImag()); //理论上这种不用存盘，读取发给CLIENT的时候重新获取
-			record->set_score(record->score() - score); //扣除杠分
 
+			//
 			//非杠牌玩家所输积分列表
-
+			//
 			if (ming_count)
 			{
 				auto detail = record->mutable_details()->Add();
@@ -1564,9 +1592,9 @@ void Game::OnTingPai(std::shared_ptr<Player> player)
 	*/
 }
 
-/////////////////////////////////////////////////////
+//
 //游戏通用管理类
-/////////////////////////////////////////////////////
+//
 bool GameManager::Load()
 {
 	std::unordered_set<pb::Message*> messages = AssetInstance.GetMessagesByType(Asset::ASSET_TYPE_MJ_CARD);
