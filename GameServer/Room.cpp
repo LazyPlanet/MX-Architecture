@@ -180,9 +180,7 @@ void Room::OnPlayerOperate(std::shared_ptr<Player> player, pb::Message* message)
 	
 int32_t Room::GetRemainCount() 
 { 
-	if (!_stuff) return 0;
-
-	return _stuff->options().open_rands() - _games.size(); 
+	return _stuff.options().open_rands() - _games.size(); 
 }
 
 bool Room::Remove(int64_t player_id)
@@ -213,7 +211,7 @@ bool Room::Remove(int64_t player_id)
 void Room::OnGameStart()
 {
 	Asset::GameStart game_start;
-	game_start.set_total_rounds(_stuff->options().open_rands());
+	game_start.set_total_rounds(_stuff.options().open_rands());
 	game_start.set_current_rounds(_games.size());
 
 	BroadCast(game_start);

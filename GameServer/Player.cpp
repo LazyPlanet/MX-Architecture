@@ -748,6 +748,8 @@ int32_t Player::CmdEnterRoom(pb::Message* message)
 				enter_room->set_error_code(ret); //是否可以进入场景//房间
 			}
 
+			enter_room->mutable_room()->CopyFrom(locate_room->Get());
+
 			SendProtocol(enter_room);
 		}
 		break;

@@ -24,7 +24,7 @@ private:
 	int32_t _expired_time = 0; //过期时间
 private:
 	std::mutex _mutex;
-	std::shared_ptr<Asset::Room> _stuff; //数据
+	Asset::Room _stuff; //数据
 	std::vector<std::shared_ptr<Game>> _games; //游戏列表
 	std::vector<std::shared_ptr<Player>> _players; //房间中的玩家：按照进房间的顺序，东南西北
 	Asset::RoomHistory _history;
@@ -32,14 +32,14 @@ private:
 	std::unordered_map<int64_t, int32_t> _dianpao_players;
 	std::unordered_map<int64_t, int32_t> _bankers;
 public:
-	explicit Room(Asset::Room room) {  _stuff = std::make_shared<Asset::Room>(room); }
+	explicit Room(Asset::Room room) {  _stuff = room; }
 
-	virtual int64_t GetID() { return _stuff->room_id(); }
-	virtual void SetID(int64_t room_id) { return _stuff->set_room_id(room_id); }
-	virtual std::shared_ptr<Asset::Room> Get() { return _stuff; } //数据
+	virtual int64_t GetID() { return _stuff.room_id(); }
+	virtual void SetID(int64_t room_id) { return _stuff.set_room_id(room_id); }
+	virtual Asset::Room Get() { return _stuff; } //数据
 	
-	const Asset::RoomOptions& GetOptions() { return _stuff->options(); } //额外番型
-	void SetOption(const Asset::RoomOptions& options) {	_stuff->mutable_options()->CopyFrom(options);}
+	const Asset::RoomOptions& GetOptions() { return _stuff.options(); } //额外番型
+	void SetOption(const Asset::RoomOptions& options) {	_stuff.mutable_options()->CopyFrom(options);}
 
 	int32_t GetTime() { return _expired_time; } //获取过期时间
 	void SetTime(int32_t expired_time) { _expired_time = expired_time; }
