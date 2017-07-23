@@ -2072,8 +2072,6 @@ bool Player::CheckHuPai(const Asset::PaiElement& pai/*, std::unordered_set<int32
 		}
 	}
 	
-	////////////////////////////////////////////////////////////////////////////积分计算
-	
 	if (zhanlihu)
 	{
 		_fan_list.emplace(Asset::FAN_TYPE_ZHAN_LI);
