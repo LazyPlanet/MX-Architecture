@@ -439,6 +439,8 @@ int32_t Player::CmdGameOperate(pb::Message* message)
 		case Asset::GAME_OPER_TYPE_NULL: 
 		case Asset::GAME_OPER_TYPE_START: //开始游戏：相当于准备
 		case Asset::GAME_OPER_TYPE_LEAVE: //离开游戏：相当于退出房间
+		case Asset::GAME_OPER_TYPE_DISMISS_AGREE: //解散
+		case Asset::GAME_OPER_TYPE_DISMISS_DISAGREE: //不解散
 		{
 			_player_prop.set_game_oper_state(game_operate->oper_type());
 		}
@@ -745,10 +747,9 @@ int32_t Player::CmdEnterRoom(pb::Message* message)
 			else
 			{
 				auto ret = locate_room->TryEnter(shared_from_this()); //玩家进入房间
+				enter_room->mutable_room()->CopyFrom(locate_room->Get());
 				enter_room->set_error_code(ret); //是否可以进入场景//房间
 			}
-
-			enter_room->mutable_room()->CopyFrom(locate_room->Get());
 
 			SendProtocol(enter_room);
 		}

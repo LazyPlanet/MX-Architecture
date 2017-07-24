@@ -340,6 +340,11 @@ bool Room::CanStarGame()
 
 	return true;
 }
+
+bool Room::CanDisMiss()
+{
+
+}
 	
 bool Room::IsExpired()
 {
