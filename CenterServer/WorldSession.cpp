@@ -371,7 +371,7 @@ void WorldSession::OnProcessMessage(const Asset::Meta& meta)
 
 			SendProtocol(message);
 		}
-		else if (Asset::META_TYPE_SHARE_SAY_HI == meta.type_t()) //心跳
+		else if (Asset::META_TYPE_SHARE_SAY_HI == meta.type_t() && _role_type == Asset::ROLE_TYPE_GAME_SERVER) //心跳
 		{
 			SendProtocol(message);
 		}
@@ -379,7 +379,7 @@ void WorldSession::OnProcessMessage(const Asset::Meta& meta)
 		{
 			if (!_player) 
 			{
-				LOG(ERROR, "Player has not inited.");
+				LOG(ERROR, "玩家尚未初始化，收到协议:{}", meta.type_t());
 				return; //尚未初始化
 			}
 			//协议处理

@@ -329,6 +329,68 @@ public:
 		freeReplyObject(reply);
 		return dist;
 	}
+	
+	int32_t GetRoomHistory(int64_t room_id, Asset::RoomHistory history)
+	{
+		std::string command = "Get room_history:" + std::to_string(room_id);
+		redisReply* reply = (redisReply*)redisCommand(_client, command.c_str());
+
+		if (!reply) return 0;
+		
+		auto type = reply->type;
+
+		if (reply->type == REDIS_REPLY_NIL) 
+		{
+			freeReplyObject(reply);
+			return type;
+		}
+		
+		if (reply->type != REDIS_REPLY_STRING) 
+		{
+			freeReplyObject(reply);
+			return type;
+		}
+
+		if (reply->len == 0) 
+		{
+			freeReplyObject(reply);
+			return type;
+		}
+
+		auto success = history.ParseFromArray(reply->str, reply->len);
+		if (!success)
+		{
+			LOG(ERROR, "转换协议数据失败，room_id:{} reply->str:{} reply->len:{}", room_id, reply->str, reply->len);
+		}
+
+		freeReplyObject(reply);
+
+		return type;
+	}
+	
+	bool SaveRoomHistory(int64_t room_id, const Asset::RoomHistory& history)
+	{
+		const int user_length = history.ByteSize();
+		char user_buff[user_length];
+		memset(user_buff, 0, user_length);
+
+		history.SerializeToArray(user_buff, user_length);
+		
+		std::string key = "user:" + std::to_string(room_id);
+
+		redisReply* reply = (redisReply*)redisCommand(_client, "Set %s %b", key.c_str(), user_buff, user_length);
+		if (!reply) return false;
+		
+		if (!(reply->type == REDIS_REPLY_STATUS && strcasecmp(reply->str, "OK") == 0)) 
+		{
+			LOG(ERROR, "保存历史战绩数据失败，room_id:{} history:{}", room_id, history.ShortDebugString());
+		}
+		freeReplyObject(reply);
+			
+		LOG(INFO, "保存历史战绩数据，room_id:{} history:{}", room_id, history.ShortDebugString());
+
+		return true;
+	}
 };
 
 #define RedisInstance Redis::Instance()

@@ -68,6 +68,8 @@ bool Room::IsEmpty()
 
 bool Room::Enter(std::shared_ptr<Player> player)
 {
+	if (!player) return false;
+
 	if (TryEnter(player) != Asset::ERROR_SUCCESS) 
 	{
 		ERROR("player_id:{} cannot enter room:{}", player->GetID(), GetID());
@@ -95,6 +97,8 @@ bool Room::Enter(std::shared_ptr<Player> player)
 	}
 	
 	DEBUG("curr_count:{} curr_enter:{} position:{}", _players.size(), player->GetID(), player->GetPosition());
+
+	player->ClearCards(); //每次进房初始化状态
 
 	SyncRoom(); //同步当前房间内玩家数据
 	return true;
@@ -224,6 +228,13 @@ void Room::OnGameOver(int64_t player_id)
 	if (player_id != 0 && _banker != player_id) _banker_index = (_banker_index + 1) % MAX_PLAYER_COUNT; //下庄
 
 	if (GetRemainCount() > 0) return; //没有对局结束
+	
+	for (auto player : _players)
+	{
+		if (!player) continue;
+
+		player->AddRoomRecord(GetID());
+	}
 
 	Asset::RoomCalculate message;
 
@@ -252,8 +263,11 @@ void Room::OnGameOver(int64_t player_id)
 	DEBUG("整局结算: player_id:{} message:{}", player_id, message.ShortDebugString());
 
 	BroadCast(message);
+	
+	auto redis = make_unique<Redis>();
+	redis->SaveRoomHistory(GetID(), _history); //存盘
 
-	//_history.Clear();
+	_history.Clear();
 	_bankers.clear();
 	_hupai_players.clear();
 	_dianpao_players.clear();
@@ -325,6 +339,10 @@ void Room::OnCreated()
 { 
 	auto curr_time = CommonTimerInstance.GetTime();
 	SetTime(curr_time + g_const->room_last_time());
+	
+	_history.set_room_id(GetID());
+	_history.set_create_time(CommonTimerInstance.GetTime()); //创建时间
+	_history.mutable_options()->CopyFrom(GetOptions());
 }
 	
 bool Room::CanStarGame()
@@ -343,7 +361,7 @@ bool Room::CanStarGame()
 
 bool Room::CanDisMiss()
 {
-
+	return true;
 }
 	
 bool Room::IsExpired()

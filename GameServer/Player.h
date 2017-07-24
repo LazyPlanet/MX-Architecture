@@ -369,7 +369,7 @@ public:
 	int32_t GetCardCount();	//获取当前玩家手中牌数
 	bool IsGangOperation(); //上次牌是否杠操作
 
-	bool AddGameRecord(const Asset::GameRecord& record);
+	bool AddRoomRecord(int64_t room_id);
 };
 
 /////////////////////////////////////////////////////

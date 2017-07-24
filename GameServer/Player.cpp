@@ -1308,6 +1308,7 @@ int32_t Player::CmdSaizi(pb::Message* message)
 	return 0;
 }
 	
+/*
 bool Player::AddGameRecord(const Asset::GameRecord& record)
 {
 	if (!_room) return false;
@@ -1342,7 +1343,17 @@ bool Player::AddGameRecord(const Asset::GameRecord& record)
 
 	return true;
 }
+*/
 	
+bool Player::AddRoomRecord(int64_t room_id) 
+{ 
+	_stuff.mutable_room_history()->Add(room_id); 
+
+	SetDirty(); 
+
+	return true;
+}
+
 const std::string Player::GetNickName()
 {
 	auto wechat = GetWechat();
@@ -3348,7 +3359,7 @@ void Player::ClearCards()
 	_jiangang = 0; //清理旋风杠
 	_fenggang = 0; //清理旋风杠
 	
-	_player_prop.clear_game_oper_state();
+	_player_prop.clear_game_oper_state(); //准备//离开
 	_fan_list.clear(); 
 	_oper_count_tingpai = 0;
 	_oper_count = 0; 
