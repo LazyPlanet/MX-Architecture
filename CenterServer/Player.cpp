@@ -117,7 +117,8 @@ int32_t Player::OnEnterGame()
 {
 	Load();
 
-	SendPlayer(); //发送数据给玩家
+	//SendPlayer(); //发送数据给玩家
+	SyncCommonProperty(); //基础数据给玩家
 	
 	_stuff.set_login_time(CommonTimerInstance.GetTime());
 	_stuff.set_logout_time(0);

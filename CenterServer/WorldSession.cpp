@@ -41,6 +41,7 @@ void WorldSession::InitializeHandler(const boost::system::error_code error, cons
 				if (body_size > MAX_DATA_SIZE)
 				{
 					LOG(ERROR, "接收来自地址:{} 端口:{} 太大的包长:{} 丢弃.", _ip_address, _remote_endpoint.port(), body_size)
+					AsyncReceiveWithCallback(&WorldSession::InitializeHandler); //递归持续接收	
 					return;
 				}
 
@@ -50,7 +51,12 @@ void WorldSession::InitializeHandler(const boost::system::error_code error, cons
 				Asset::Meta meta;
 				bool result = meta.ParseFromArray(buffer, body_size);
 
-				if (!result) return; //非法协议
+				if (!result) 
+				{
+					LOG(ERROR, "接收来自地址:{} 端口:{} 转换Protobuff数据失败.", _ip_address, _remote_endpoint.port())
+					AsyncReceiveWithCallback(&WorldSession::InitializeHandler); //递归持续接收	
+					return; //非法协议
+				}
 
 				OnProcessMessage(meta);
 
@@ -60,7 +66,7 @@ void WorldSession::InitializeHandler(const boost::system::error_code error, cons
 	}
 	catch (std::exception& e)
 	{
-		ERROR("Remote client disconnect, remote_ip:{}, error:{}, player_id:{}", _ip_address, e.what(), _player ? _player->GetID() : 0);
+		LOG(INFO, "Remote client disconnect, remote_ip:{}, error:{}, player_id:{}", _ip_address, e.what(), _player ? _player->GetID() : 0);
 		KickOutPlayer(Asset::KICK_OUT_REASON_DISCONNECT);
 		return;
 	}
