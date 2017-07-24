@@ -277,8 +277,8 @@ void WorldSession::OnProcessMessage(const Asset::Meta& meta)
 			auto session = WorldSessionInstance.GetPlayerSession(_player->GetID());
 			if (session) //已经在线
 			{
-				session->KickOutPlayer(Asset::KICK_OUT_REASON_OTHER_LOGIN);
-				WARN("玩家{}目前在线，被踢掉", _player->GetID());
+				//session->KickOutPlayer(Asset::KICK_OUT_REASON_OTHER_LOGIN);
+				LOG(ERROR, "玩家{}目前在线，被踢掉", _player->GetID());
 			}
 			//WorldSessionInstance.AddPlayer(_player->GetID(), shared_from_this()); //在线玩家
 			//
@@ -369,6 +369,10 @@ void WorldSession::OnProcessMessage(const Asset::Meta& meta)
 			auto redis = make_unique<Redis>();
 			redis->SetLocation(_player->GetID(), client_data->client_info().location()); //位置信息
 
+			SendProtocol(message);
+		}
+		else if (Asset::META_TYPE_SHARE_SAY_HI == meta.type_t()) //心跳
+		{
 			SendProtocol(message);
 		}
 		else
