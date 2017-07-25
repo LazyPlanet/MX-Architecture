@@ -174,6 +174,20 @@ void Room::OnPlayerOperate(std::shared_ptr<Player> player, pb::Message* message)
 			Remove(game_operate->destination_player_id()); //玩家退出房间
 		}
 		break;
+
+		case Asset::GAME_OPER_TYPE_DISMISS_AGREE: //解散
+		{
+			if (!CanDisMiss()) return;
+
+			DisMiss();
+		}
+		break;
+
+		case Asset::GAME_OPER_TYPE_DISMISS_DISAGREE: //不解散
+		{
+			ClearDisMiss();
+		}
+		break;
 		
 		default:
 		{
@@ -298,6 +312,27 @@ void Room::BroadCast(pb::Message& message, int64_t exclude_player_id)
 {
 	BroadCast(&message, exclude_player_id);
 }
+
+void Room::DisMiss()
+{
+	Asset::RoomDisMiss proto;
+
+	for (auto player : _players)
+	{
+		if (!player) continue;
+
+		auto list = proto.mutable_list()->Add();
+		list->set_player_id(player->GetID());
+		list->set_position(player->GetPosition());
+		list->set_oper_type(player->GetOperState());
+
+		Remove(player->GetID());
+	}
+
+	BroadCast(proto);
+
+	RoomInstance.OnDisMiss(GetID());
+}
 	
 void Room::SyncRoom()
 {
@@ -361,7 +396,24 @@ bool Room::CanStarGame()
 
 bool Room::CanDisMiss()
 {
+	for (auto player : _players)
+	{
+		if (!player) return false;
+
+		if (!player->AgreeDisMiss()) return false; 
+	}
+
 	return true;
+}
+
+void Room::ClearDisMiss()
+{
+	for (auto player : _players)
+	{
+		if (!player) continue;
+
+		player->ClearDisMiss();
+	}
 }
 	
 bool Room::IsExpired()
@@ -454,6 +506,14 @@ void RoomManager::Update(int32_t diff)
 			++it;
 		}
 	}
+}
+	
+void RoomManager::OnDisMiss(int64_t room_id)
+{
+	auto it = _rooms.find(room_id);
+	if (it == _rooms.end()) return;
+
+	_rooms.erase(it);
 }
 
 }

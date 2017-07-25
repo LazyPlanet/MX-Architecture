@@ -264,6 +264,8 @@ void WorldSession::OnProcessMessage(const Asset::Meta& meta)
 				return; //账号下没有该角色数据
 			}
 
+			_player = PlayerInstance.Get(enter_game->player_id());
+
 			if (!_player) 
 			{
 				_player = std::make_shared<Player>(enter_game->player_id(), shared_from_this());
@@ -313,9 +315,9 @@ void WorldSession::OnProcessMessage(const Asset::Meta& meta)
 			if (!_player || _player->GetID() != switch_account->player_id()) return;
 
 			auto redis = make_unique<Redis>();
-			redis->GetUser(_account.username(), _user); //存盘退出
+			redis->SaveUser(_account.username(), _user); //存盘退出
 
-			OnLogout();
+			//OnLogout();
 		}
 		else if (Asset::META_TYPE_SHARE_ENTER_ROOM == meta.type_t()) //进入房间：进入游戏逻辑服务器的入口
 		{

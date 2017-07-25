@@ -70,6 +70,7 @@ public:
 	void BroadCast(pb::Message& message, int64_t exclude_player_id = 0);
 	
 	void SyncRoom(); //房间数据
+	void DisMiss(); //解散房间
 
 	//获取房主
 	std::shared_ptr<Player> GetHoster();
@@ -91,6 +92,7 @@ public:
 	bool IsBanker(int64_t player_id){ return _banker == player_id; } //是否是庄家
 
 	bool IsExpired(); //是否过期
+	void ClearDisMiss();
 };
 
 /////////////////////////////////////////////////////
@@ -125,6 +127,8 @@ public:
 	std::shared_ptr<Room> GetAvailableRoom(); //获取可入房间
 	bool CheckPassword(int64_t room_id, std::string password); //密码检查
 	void Update(int32_t diff); //心跳
+
+	void OnDisMiss(int64_t room_id);
 };
 
 #define RoomInstance RoomManager::Instance()

@@ -1054,6 +1054,10 @@ void Player::OnLeaveRoom()
 	_room.reset();
 
 	ClearCards();
+	
+	Asset::RoomState room_state;
+	room_state.set_oper_type(Asset::GAME_OPER_TYPE_LEAVE);
+	SendProtocol(room_state);
 }
 	
 void Player::BroadCast(Asset::MsgItem& item) 
