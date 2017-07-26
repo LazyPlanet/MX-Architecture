@@ -2596,11 +2596,11 @@ void Player::OnGangPai(const Asset::PaiElement& pai, int64_t from_player_id)
 	//
 	//自摸检查
 	//
-	if (CheckZiMo())
+	auto zhuapai = GameInstance.GetCard(cards[0]);
+	if (CheckZiMo() || CheckBaoHu(zhuapai))
 	{
 		auto pai_perator = alert.mutable_pais()->Add();
-		auto card = GameInstance.GetCard(cards[0]);
-		pai_perator->mutable_pai()->CopyFrom(card);
+		pai_perator->mutable_pai()->CopyFrom(zhuapai);
 		pai_perator->mutable_oper_list()->Add(Asset::PAI_OPER_TYPE_HUPAI);
 	}
 	//
@@ -2931,11 +2931,11 @@ void Player::OnGangFengPai()
 	//
 	//自摸检查
 	//
-	if (CheckZiMo())
+	auto zhuapai = GameInstance.GetCard(cards[0]);
+	if (CheckZiMo() || CheckBaoHu(zhuapai))
 	{
 		auto pai_perator = alert.mutable_pais()->Add();
-		auto card = GameInstance.GetCard(cards[0]);
-		pai_perator->mutable_pai()->CopyFrom(card);
+		pai_perator->mutable_pai()->CopyFrom(zhuapai);
 		pai_perator->mutable_oper_list()->Add(Asset::PAI_OPER_TYPE_HUPAI);
 	}
 	//
@@ -3053,6 +3053,12 @@ int32_t Player::OnFaPai(std::vector<int32_t>& cards)
 	if (IsTingPai())
 	{
 		DEBUG("玩家:{}听牌之后，检查宝牌，当前次数:{}", _player_id, _oper_count_tingpai);
+			
+		if (_game->HasBaopai() && _game->GetRemainBaopai() <= 0) 
+		{
+			ResetBaopai(); 
+		}
+
 		if (_oper_count_tingpai == 1) //听牌后第一次抓牌
 		{
 			if (!_game->HasBaopai())
@@ -3063,13 +3069,6 @@ int32_t Player::OnFaPai(std::vector<int32_t>& cards)
 			else
 			{
 				LookAtBaopai(false);
-			}
-		}
-		else if (_oper_count_tingpai > 1)
-		{
-			if (_game->HasBaopai() && _game->GetRemainBaopai() <= 0) 
-			{
-				ResetBaopai(); 
 			}
 		}
 	}
@@ -3187,7 +3186,7 @@ int32_t Player::OnFaPai(std::vector<int32_t>& cards)
 	{
 		auto card = GameInstance.GetCard(cards[0]);
 
-		if (card.card_type() == 0 || card.card_type())
+		if (card.card_type() == 0 || card.card_type() == 0)
 		{
 			LOG(ERROR, "玩家:{} 抓到非法的牌数据:{}", _player_id, card.ShortDebugString());
 			DEBUG_ASSERT(false && "错误的牌数据");
@@ -3258,7 +3257,7 @@ void Player::LookAtBaopai(bool has_saizi)
 		auto pai_perator = alert.mutable_pais()->Add();
 		pai_perator->mutable_pai()->CopyFrom(baopai);
 		pai_perator->mutable_oper_list()->Add(Asset::PAI_OPER_TYPE_HUPAI);
-		SendProtocol(proto); //进宝 
+		SendProtocol(alert); //进宝 
 	
 		DEBUG("玩家:{}看宝牌:{}之后胡牌", _player_id, baopai.ShortDebugString());
 	}

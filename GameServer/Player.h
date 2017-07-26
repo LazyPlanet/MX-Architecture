@@ -275,7 +275,7 @@ public:
 	bool CheckBaoHu(const Asset::PaiElement& pai);
 	void LookAtBaopai(bool has_saizi);
 	void ResetBaopai();
-	void ResetLookAtBaopai() { _oper_count_tingpai = 0; }
+	void ResetLookAtBaopai() { _oper_count_tingpai = 1; }
 	bool IsJinbao() { return _jinbao; }
 
 	bool CanHuPai(std::vector<Card_t>& cards, bool use_pair = false);

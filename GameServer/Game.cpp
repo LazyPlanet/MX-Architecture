@@ -269,7 +269,7 @@ void Game::OnPaiOperate(std::shared_ptr<Player> player, pb::Message* message)
 		case Asset::PAI_OPER_TYPE_DAPAI: //打牌
 		case Asset::PAI_OPER_TYPE_TINGPAI: //听牌
 		{
-			_cards_pool.push_back(pai); //牌池缓存
+			Add2CardsPool(pai); //牌池缓存
 
 			//
 			//(1) 检查各个玩家手里的牌是否满足胡、杠、碰、吃
@@ -763,8 +763,7 @@ void Game::Calculate(int64_t hupai_player_id/*胡牌玩家*/, int64_t dianpao_pl
 		//每个玩家不同
 		//
 			
-		if (dianpao_player_id == hupai_player_id && fan_list.find(Asset::FAN_TYPE_LOU_BAO) == fan_list.end() 
-				&& fan_list.find(Asset::FAN_TYPE_JIN_BAO) == fan_list.end()) //搂宝//进宝//都不算自摸
+		if (dianpao_player_id == hupai_player_id)
 		{
 			score *= get_multiple(Asset::FAN_TYPE_ZI_MO); //自摸
 			
