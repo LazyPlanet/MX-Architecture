@@ -1498,7 +1498,7 @@ bool Player::CheckBaoHu(const Asset::PaiElement& pai)
 	auto it_baohu = std::find(options.extend_type().begin(), options.extend_type().end(), Asset::ROOM_EXTEND_TYPE_BAOPAI);
 	if (it_baohu == options.extend_type().end()) return false; //不带宝胡
 
-	DEBUG("玩家{}可以宝胡.", _player_id);
+	DEBUG("玩家{}可以胡宝牌{}", _player_id, baopai.ShortDebugString());
 	return true;
 }
 	
@@ -3052,6 +3052,7 @@ int32_t Player::OnFaPai(std::vector<int32_t>& cards)
 	//
 	if (IsTingPai())
 	{
+		DEBUG("玩家:{}听牌之后，检查宝牌，当前次数:{}", _player_id, _oper_count_tingpai);
 		if (_oper_count_tingpai == 1) //听牌后第一次抓牌
 		{
 			if (!_game->HasBaopai())
@@ -3186,10 +3187,15 @@ int32_t Player::OnFaPai(std::vector<int32_t>& cards)
 	{
 		auto card = GameInstance.GetCard(cards[0]);
 
+		if (card.card_type() == 0 || card.card_type())
+		{
+			LOG(ERROR, "玩家:{} 抓到非法的牌数据:{}", _player_id, card.ShortDebugString());
+			DEBUG_ASSERT(false && "错误的牌数据");
+		}
+
 		notify.set_data_type(Asset::PaiNotify_CARDS_DATA_TYPE_CARDS_DATA_TYPE_FAPAI); //操作类型:发牌
 		notify.mutable_pai()->set_card_type(card.card_type());
 		notify.mutable_pai()->set_card_value(card.card_value());
-
 
 		if (IsTingPai()) ++_oper_count_tingpai; //听牌后发了//抓了多少张牌
 			
@@ -3234,6 +3240,8 @@ void Player::LookAtBaopai(bool has_saizi)
 	if (!_game) return;
 
 	auto baopai = _game->GetBaoPai();
+	
+	DEBUG("玩家:{}看宝牌:{}", _player_id, baopai.ShortDebugString());
 
 	Asset::RandomSaizi proto;
 	proto.set_has_rand_saizi(has_saizi);
@@ -3251,6 +3259,8 @@ void Player::LookAtBaopai(bool has_saizi)
 		pai_perator->mutable_pai()->CopyFrom(baopai);
 		pai_perator->mutable_oper_list()->Add(Asset::PAI_OPER_TYPE_HUPAI);
 		SendProtocol(proto); //进宝 
+	
+		DEBUG("玩家:{}看宝牌:{}之后胡牌", _player_id, baopai.ShortDebugString());
 	}
 }
 
@@ -3272,6 +3282,8 @@ void Player::OnTingPai()
 void Player::ResetBaopai()
 {
 	if (!_has_ting) return;
+		
+	DEBUG("玩家:{}重置宝牌", _player_id);
 
 	while(_game->HasBaopai())
 	{
