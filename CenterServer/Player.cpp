@@ -2,6 +2,7 @@
 
 #include <spdlog/spdlog.h>
 #include <pbjson.hpp>
+#include <cpp_redis/cpp_redis>
 
 #include "Player.h"
 #include "Timer.h"
@@ -51,8 +52,17 @@ bool Player::Connected()
 
 int32_t Player::Load()
 {
+	cpp_redis::redis_client client;
+	client.connect();
+	client.auth("!QAZ%TGB&UJM9ol.");
+	client.get("player:" + std::to_string(_player_id), [&](cpp_redis::reply& reply) {
+		DEBUG("测试新版数据库读取接口:{}", reply);
+	});
+	//client.sync_commit();
+
 	auto redis = make_unique<Redis>();
 	auto success = redis->GetPlayer(_player_id, _stuff);
+
 	if (!success) 
 	{
 		std::string player_name = NameInstance.Get();
@@ -387,7 +397,7 @@ bool Player::Update()
 		CommonLimitUpdate(); //通用限制,定时更新
 	}
 	
-	if (_heart_count % 1000 == 0) //10s
+	if (_heart_count % 300 == 0) //3s
 	{
 		if (_dirty) Save(); //触发存盘
 	}
@@ -686,11 +696,11 @@ int32_t Player::CmdGameSetting(pb::Message* message)
 	auto game_setting = dynamic_cast<const Asset::GameSetting*>(message);
 	if (!game_setting) return 1;
 
-	SetDirty();
-
 	_stuff.mutable_game_setting()->CopyFrom(game_setting->game_setting());
-
+	
 	SendProtocol(game_setting); //设置成功
+	
+	SetDirty();
 
 	return 0;
 }

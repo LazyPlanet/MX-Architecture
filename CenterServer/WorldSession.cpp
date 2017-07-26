@@ -198,12 +198,14 @@ void WorldSession::OnProcessMessage(const Asset::Meta& meta)
 			}
 
 			for (auto player_id : _user.player_list()) _player_list.emplace(player_id); //玩家数据
-
+			
 			LOG(INFO, "user:{} account:{} wechat:{} token:{}", _user.ShortDebugString(), _account.ShortDebugString(), _wechat.ShortDebugString(), _access_token.ShortDebugString());
 				
+			//
+			//账号数据存储
+			//
 			if (!_user.has_wechat_token()) _user.mutable_wechat_token()->CopyFrom(_access_token);
 			if (!_user.has_wechat()) _user.mutable_wechat()->CopyFrom(_wechat); //微信数据
-
 			redis->SaveUser(login->account().username(), _user); //账号数据存盘
 
 			PLAYER(_user); //账号查询
@@ -271,6 +273,25 @@ void WorldSession::OnProcessMessage(const Asset::Meta& meta)
 				_player = std::make_shared<Player>(enter_game->player_id(), shared_from_this());
 				SetRoleType(Asset::ROLE_TYPE_PLAYER, _player->GetID());
 			}
+			
+			//
+			//必须放在角色初始化之后，后面很多操作都依赖此处，比如存盘
+			//
+			//设置玩家所在服务器，每次进入场景均调用此
+			//
+			//对于MMORPG游戏，可以是任意一个场景或副本ID，此处记录为解决全球唯一服，通过Redis进行进程间通信，获取玩家所在服务器ID.
+			//
+			_player->SetLocalServer(ConfigInstance.GetInt("ServerID", 1));
+			
+			//
+			//账号未能存储成功在角色数据，则重新存储
+			//
+			if (_player->GetAccount().empty()) 
+			{
+				_player->SetAccount(_account.username());
+				_player->Save(); //存盘，防止数据库无数据
+			}
+
 			//
 			// 已经在线玩家检查
 			//
@@ -283,12 +304,6 @@ void WorldSession::OnProcessMessage(const Asset::Meta& meta)
 				LOG(ERROR, "玩家{}目前在线，被踢掉", _player->GetID());
 			}
 			//WorldSessionInstance.AddPlayer(_player->GetID(), shared_from_this()); //在线玩家
-			//
-			//设置玩家所在服务器，每次进入场景均调用此
-			//
-			//对于MMORPG游戏，可以是任意一个场景或副本ID，此处记录为解决全球唯一服，通过Redis进行进程间通信，获取玩家所在服务器ID.
-			//
-			_player->SetLocalServer(ConfigInstance.GetInt("ServerID", 1));
 			
 			//
 			//此时才可以真正进入游戏大厅

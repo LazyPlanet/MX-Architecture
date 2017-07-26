@@ -116,6 +116,8 @@ int32_t Player::OnLogin()
 	PlayerInstance.Emplace(_player_id, shared_from_this()); //玩家管理
 	SetLocalServer(ConfigInstance.GetInt("ServerID", 1));
 
+
+
 	return 0;
 }
 
@@ -3408,11 +3410,11 @@ int32_t Player::CmdGameSetting(pb::Message* message)
 	auto game_setting = dynamic_cast<const Asset::GameSetting*>(message);
 	if (!game_setting) return 1;
 
-	SetDirty();
-
 	_stuff.mutable_game_setting()->CopyFrom(game_setting->game_setting());
 
 	SendProtocol(game_setting); //设置成功
+	
+	SetDirty();
 
 	return 0;
 }
