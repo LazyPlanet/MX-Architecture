@@ -3251,7 +3251,7 @@ void Player::LookAtBaopai(bool has_saizi)
 
 	if (CheckHuPai(baopai)) 
 	{
-		_jinbao = true;
+		Jinbao(); //进宝
 
 		Asset::PaiOperationAlert alert;
 		auto pai_perator = alert.mutable_pais()->Add();

@@ -276,7 +276,9 @@ public:
 	void LookAtBaopai(bool has_saizi);
 	void ResetBaopai();
 	void ResetLookAtBaopai() { _oper_count_tingpai = 1; }
+
 	bool IsJinbao() { return _jinbao; }
+	bool Jinbao() { _jinbao = true; }
 
 	bool CanHuPai(std::vector<Card_t>& cards, bool use_pair = false);
 
