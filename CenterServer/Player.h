@@ -173,6 +173,8 @@ public:
 	//通用奖励
 	Asset::ERROR_CODE DeliverReward(int64_t global_id);
 	void SyncCommonReward(int64_t common_reward_id);
+
+	void BattleHistory();
 };
 
 class PlayerManager : public std::enable_shared_from_this<PlayerManager>

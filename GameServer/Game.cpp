@@ -395,7 +395,11 @@ void Game::OnPaiOperate(std::shared_ptr<Player> player, pb::Message* message)
 			{
 				DEBUG_ASSERT(player->GetID() != _oper_limit.from_player_id()); //必然不一致
 
-				if (player->IsJinbao()) fan_list.emplace(Asset::FAN_TYPE_JIN_BAO);
+				if (player->IsJinbao()) 
+				{
+					fan_list.emplace(Asset::FAN_TYPE_JIN_BAO);
+					fan_list.emplace(Asset::FAN_TYPE_ZI_MO);
+				}
 
 				Calculate(player->GetID(), _oper_limit.from_player_id(), fan_list); //结算
 			}
@@ -403,13 +407,18 @@ void Game::OnPaiOperate(std::shared_ptr<Player> player, pb::Message* message)
 			{
 				DEBUG_ASSERT(player->GetID() == _oper_limit.from_player_id()); //必然一致
 
-				if (player->IsJinbao()) fan_list.emplace(Asset::FAN_TYPE_JIN_BAO);
+				if (player->IsJinbao()) 
+				{
+					fan_list.emplace(Asset::FAN_TYPE_ZI_MO);
+					fan_list.emplace(Asset::FAN_TYPE_JIN_BAO);
+				}
 
 				Calculate(player->GetID(), _oper_limit.from_player_id(), fan_list); //结算
 			}
 			else if (player->CheckBaoHu(pai)) //宝胡
 			{
-				fan_list.emplace(Asset::FAN_TYPE_LOU_BAO); //摸宝
+				fan_list.emplace(Asset::FAN_TYPE_LOU_BAO); 
+				fan_list.emplace(Asset::FAN_TYPE_ZI_MO);
 
 				Calculate(player->GetID(), _oper_limit.from_player_id(), fan_list); //结算
 			}
@@ -1410,6 +1419,7 @@ void Game::OnRefreshBaopai(int64_t player_id, int32_t random_result)
 {
 	Asset::RandomSaizi proto;
 	proto.set_reason_type(Asset::RandomSaizi_REASON_TYPE_REASON_TYPE_TINGPAI);
+	proto.mutable_random_result()->Add(random_result);
 	proto.set_has_rand_saizi(true);
 	proto.mutable_pai()->CopyFrom(_baopai);
 

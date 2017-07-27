@@ -3064,11 +3064,11 @@ int32_t Player::OnFaPai(std::vector<int32_t>& cards)
 			if (!_game->HasBaopai())
 			{
 				_game->OnTingPai(shared_from_this()); //生成宝牌
-				LookAtBaopai(true);
+				if (LookAtBaopai(true)) return 8;
 			}
 			else
 			{
-				LookAtBaopai(false);
+				if (LookAtBaopai(false)) return 9;
 			}
 		}
 	}
@@ -3234,9 +3234,9 @@ int32_t Player::OnFaPai(std::vector<int32_t>& cards)
 //
 //只不过第一人要打股子
 //
-void Player::LookAtBaopai(bool has_saizi)
+bool Player::LookAtBaopai(bool has_saizi)
 {
-	if (!_game) return;
+	if (!_game) return false;
 
 	auto baopai = _game->GetBaoPai();
 	
@@ -3260,7 +3260,11 @@ void Player::LookAtBaopai(bool has_saizi)
 		SendProtocol(alert); //进宝 
 	
 		DEBUG("玩家:{}看宝牌:{}之后胡牌", _player_id, baopai.ShortDebugString());
+
+		return true;
 	}
+
+	return false;
 }
 
 void Player::OnTingPai()

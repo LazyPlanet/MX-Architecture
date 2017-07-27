@@ -34,6 +34,7 @@ Player::Player()
 	AddHandler(Asset::META_TYPE_SHARE_SIGN, std::bind(&Player::CmdSign, this, std::placeholders::_1));
 	AddHandler(Asset::META_TYPE_SHARE_COMMON_PROPERTY, std::bind(&Player::CmdGetCommonProperty, this, std::placeholders::_1));
 	AddHandler(Asset::META_TYPE_SHARE_SAY_HI, std::bind(&Player::CmdSayHi, this, std::placeholders::_1));
+	AddHandler(Asset::META_TYPE_SHARE_GAME_SETTING, std::bind(&Player::CmdGameSetting, this, std::placeholders::_1));
 
 	AddHandler(Asset::META_TYPE_C2S_GET_REWARD, std::bind(&Player::CmdGetReward, this, std::placeholders::_1));
 }
@@ -149,6 +150,21 @@ int32_t Player::OnLogin()
 	ActivityInstance.OnPlayerLogin(shared_from_this());
 
 	return 0;
+}
+
+void Player::BattleHistory()
+{
+	int32_t historty_count = std::min(_stuff.room_history().size(), 5); //最多显示5条记录
+
+	/*
+	Asset::BattleHistory proto;
+
+	for (int32_t i = _stuff.room_history().size() - 1; i < historty_count; --i)
+	{
+		int32_t GetRoomHistory(int64_t room_id, Asset::RoomHistory history)
+		auto  
+	}
+	*/
 }
 	
 void Player::SetLocalServer(int32_t server_id) 
