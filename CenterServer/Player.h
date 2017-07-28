@@ -126,6 +126,8 @@ public:
 	int32_t CmdGetReward(pb::Message* message);
 	//幸运转盘
 	int32_t CmdLuckyPlate(pb::Message* message);
+	//历史战绩
+	virtual int32_t CmdGetBattleHistory(pb::Message* message);
 public:
 	//获取所有包裹
 	const Asset::Inventory& GetInventory() { return _stuff.inventory();	}
@@ -174,7 +176,7 @@ public:
 	Asset::ERROR_CODE DeliverReward(int64_t global_id);
 	void SyncCommonReward(int64_t common_reward_id);
 
-	void BattleHistory();
+	void BattleHistory(int32_t start_index = 0, int32_t end_index = 0);
 };
 
 class PlayerManager : public std::enable_shared_from_this<PlayerManager>

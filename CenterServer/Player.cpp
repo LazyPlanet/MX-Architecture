@@ -35,6 +35,7 @@ Player::Player()
 	AddHandler(Asset::META_TYPE_SHARE_COMMON_PROPERTY, std::bind(&Player::CmdGetCommonProperty, this, std::placeholders::_1));
 	AddHandler(Asset::META_TYPE_SHARE_SAY_HI, std::bind(&Player::CmdSayHi, this, std::placeholders::_1));
 	AddHandler(Asset::META_TYPE_SHARE_GAME_SETTING, std::bind(&Player::CmdGameSetting, this, std::placeholders::_1));
+	AddHandler(Asset::META_TYPE_SHARE_ROOM_HISTORY, std::bind(&Player::CmdGetBattleHistory, this, std::placeholders::_1));
 
 	AddHandler(Asset::META_TYPE_C2S_GET_REWARD, std::bind(&Player::CmdGetReward, this, std::placeholders::_1));
 }
@@ -168,28 +169,6 @@ int32_t Player::OnLogin()
 	return 0;
 }
 
-void Player::BattleHistory()
-{
-	int32_t historty_count = std::min(_stuff.room_history().size(), 5); //最多显示5条记录
-	if (historty_count <= 0) return;
-
-	auto redis = make_unique<Redis>();
-
-	Asset::BattleHistory message;
-
-	for (int32_t i = _stuff.room_history().size() - 1; i < historty_count; --i)
-	{
-		Asset::RoomHistory history;
-		auto success = redis->GetRoomHistory(_stuff.room_history(i), history);
-		if (success != REDIS_REPLY_STRING) continue;
-
-		auto record = message.mutable_history_list()->Add();
-		record->CopyFrom(history);
-	}
-
-	if (message.history_list().size()) SendProtocol(message);
-}
-	
 void Player::SetLocalServer(int32_t server_id) 
 { 
 	DEBUG("玩家:{} 所在服务器:{} 新服务器:{}", _player_id, _stuff.server_id(), server_id);
@@ -739,6 +718,49 @@ int32_t Player::CmdGameSetting(pb::Message* message)
 	SetDirty();
 
 	return 0;
+}
+	
+int32_t Player::CmdGetBattleHistory(pb::Message* message)
+{
+	auto battle_history = dynamic_cast<const Asset::BattleHistory*>(message);
+	if (!battle_history) return 1;
+
+	int32_t start_index = battle_history->start_index();
+	int32_t end_index = battle_history->end_index();
+
+	BattleHistory(start_index, end_index);
+
+	return 0;
+}
+
+void Player::BattleHistory(int32_t start_index, int32_t end_index)
+{
+	if (start_index > end_index || start_index < 0 || end_index < 0) return;
+
+	int32_t historty_count = std::min(_stuff.room_history().size(), 5); //最多显示5条记录
+	if (historty_count <= 0) return;
+	
+	if (end_index - start_index > historty_count) return;
+
+	if (end_index == 0) end_index = _stuff.room_history().size();
+	if (start_index == 0) start_index = end_index - historty_count;
+
+	Asset::BattleHistory message;
+	auto redis = make_unique<Redis>();
+
+	for (int32_t i = end_index - 1; i >= start_index; --i)
+	{
+		if (i < 0 || i >= _stuff.room_history().size()) continue; //安全检查
+
+		Asset::RoomHistory history;
+		auto success = redis->GetRoomHistory(_stuff.room_history(i), history);
+		if (success != REDIS_REPLY_STRING) continue;
+
+		auto record = message.mutable_history_list()->Add();
+		record->CopyFrom(history);
+	}
+
+	if (message.history_list().size()) SendProtocol(message);
 }
 	
 void Player::OnKickOut(Asset::KICK_OUT_REASON reason)

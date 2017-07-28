@@ -97,12 +97,16 @@ int32_t Player::Load()
 
 int32_t Player::Save()
 {
-	DEBUG("保存玩家{}数据，当前玩家所在服务器:{}", _player_id, _stuff.server_id());
+	PLAYER(_stuff);	//BI日志
+
+	if (!IsDirty()) return 1;
 
 	auto redis = make_unique<Redis>();
 	redis->SavePlayer(_player_id, _stuff);
-	
-	PLAYER(_stuff);	//BI日志
+
+	_dirty = false;
+
+	DEBUG("玩家:{}保存数据，数据内容:{}", _player_id, _stuff.ShortDebugString());
 		
 	return 0;
 }
@@ -115,8 +119,6 @@ int32_t Player::OnLogin()
 	
 	PlayerInstance.Emplace(_player_id, shared_from_this()); //玩家管理
 	SetLocalServer(ConfigInstance.GetInt("ServerID", 1));
-
-
 
 	return 0;
 }
