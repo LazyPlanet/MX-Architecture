@@ -147,7 +147,9 @@ int32_t Player::OnEnterGame()
 	
 int32_t Player::OnLogin()
 {
-	ActivityInstance.OnPlayerLogin(shared_from_this());
+	ActivityInstance.OnPlayerLogin(shared_from_this()); //活动数据
+
+	BattleHistory(); //历史对战表
 
 	return 0;
 }
@@ -156,15 +158,21 @@ void Player::BattleHistory()
 {
 	int32_t historty_count = std::min(_stuff.room_history().size(), 5); //最多显示5条记录
 
-	/*
-	Asset::BattleHistory proto;
+	auto redis = make_unique<Redis>();
+
+	Asset::BattleHistory message;
 
 	for (int32_t i = _stuff.room_history().size() - 1; i < historty_count; --i)
 	{
-		int32_t GetRoomHistory(int64_t room_id, Asset::RoomHistory history)
-		auto  
+		Asset::RoomHistory history;
+		auto success = redis->GetRoomHistory(_stuff.room_history(i), history);
+		if (success != REDIS_REPLY_STRING) continue;
+
+		auto record = message.mutable_history_list()->Add();
+		record->CopyFrom(history);
 	}
-	*/
+
+	if (message.history_list().size()) SendProtocol(message);
 }
 	
 void Player::SetLocalServer(int32_t server_id) 

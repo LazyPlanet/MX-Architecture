@@ -185,7 +185,7 @@ public:
 		std::string command = "Get user:" + username;
 		redisReply* reply = (redisReply*)redisCommand(_client, command.c_str());
 
-		if (!reply) return 0;
+		if (!reply) return REDIS_REPLY_NIL;
 		
 		auto type = reply->type;
 
@@ -335,7 +335,7 @@ public:
 		std::string command = "Get room_history:" + std::to_string(room_id);
 		redisReply* reply = (redisReply*)redisCommand(_client, command.c_str());
 
-		if (!reply) return 0;
+		if (!reply) return REDIS_REPLY_NIL;
 		
 		auto type = reply->type;
 
