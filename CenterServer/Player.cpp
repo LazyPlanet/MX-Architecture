@@ -53,18 +53,27 @@ bool Player::Connected()
 
 int32_t Player::Load()
 {
+	if (_player_id == 0) return 1;
+
 	cpp_redis::redis_client client;
 	client.connect();
 	client.auth("!QAZ%TGB&UJM9ol.");
-	client.get("player:" + std::to_string(_player_id), [&](cpp_redis::reply& reply) {
-		DEBUG("测试新版数据库读取接口:{}", reply);
+	client.get("player:" + std::to_string(_player_id), [this](cpp_redis::reply& reply) {
+		if (reply.is_string())
+		{
+			auto success = _stuff.ParseFromString(reply.as_string());
+			if (!success)
+			{
+				DEBUG_ASSERT(false);
+			}
+		}
 	});
-	//client.sync_commit();
+	client.sync_commit();
 
-	auto redis = make_unique<Redis>();
-	auto success = redis->GetPlayer(_player_id, _stuff);
+	//auto redis = make_unique<Redis>();
+	//auto success = redis->GetPlayer(_player_id, _stuff);
 
-	if (_player_id == 0) return 1;
+	/*
 
 	if (!success) 
 	{
@@ -75,6 +84,7 @@ int32_t Player::Load()
 
 		LOG(ERROR, "加载玩家数据失败:{}, 重新生成玩家数据", _player_id);
 	}
+	*/
 		
 	return 0;
 }

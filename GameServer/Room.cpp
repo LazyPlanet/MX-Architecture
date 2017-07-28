@@ -325,11 +325,16 @@ void Room::DisMiss()
 		list->set_player_id(player->GetID());
 		list->set_position(player->GetPosition());
 		list->set_oper_type(player->GetOperState());
-
-		Remove(player->GetID());
 	}
 
-	BroadCast(proto);
+	BroadCast(proto); //投票状态
+
+	for (auto player : _players)
+	{
+		if (!player) continue;
+
+		Remove(player->GetID()); //踢人
+	}
 
 	RoomInstance.OnDisMiss(GetID());
 }
