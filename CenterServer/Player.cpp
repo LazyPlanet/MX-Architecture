@@ -64,6 +64,8 @@ int32_t Player::Load()
 	auto redis = make_unique<Redis>();
 	auto success = redis->GetPlayer(_player_id, _stuff);
 
+	if (_player_id == 0) return 1;
+
 	if (!success) 
 	{
 		std::string player_name = NameInstance.Get();
@@ -88,16 +90,17 @@ int32_t Player::Save()
 {
 	PLAYER(_stuff);	//数据日志
 
-	DEBUG("保存玩家{}数据，当前玩家所在服务器:{}", _player_id, _stuff.server_id());
+	if (!IsDirty()) return 1;
 
-	if (IsCenterServer()) 
-	{
-		DEBUG("玩家{}可以保存数据，当前玩家所在服务器:{}", _player_id, _stuff.server_id());
-		auto redis = make_unique<Redis>();
-		redis->SavePlayer(_player_id, _stuff); 
-	}
+	if (!IsCenterServer()) return 2; 
+
+	auto redis = make_unique<Redis>();
+	auto success = redis->SavePlayer(_player_id, _stuff); 
+	if (!success) return 3;
 
 	_dirty = false;
+	
+	DEBUG("玩家:{}保存数据，数据内容:{}", _player_id, _stuff.ShortDebugString());
 		
 	return 0;
 }
@@ -151,12 +154,14 @@ int32_t Player::OnLogin()
 
 	BattleHistory(); //历史对战表
 
+	DEBUG("玩家:{}登陆加载数据，数据内容:{}", _player_id, _stuff.ShortDebugString());
 	return 0;
 }
 
 void Player::BattleHistory()
 {
 	int32_t historty_count = std::min(_stuff.room_history().size(), 5); //最多显示5条记录
+	if (historty_count <= 0) return;
 
 	auto redis = make_unique<Redis>();
 
@@ -473,18 +478,15 @@ bool Player::HandleProtocol(int32_t type_t, pb::Message* message)
 		if (IsCenterServer())
 		{
 			int64_t server_id = WorldSessionInstance.RandomServer(); //随机一个逻辑服务器
-			if (server_id != 0) SetLocalServer(server_id);
+			if (server_id == 0) 
+			{
+				LOG(ERROR, "玩家:{}未能分配到逻辑服务器", _player_id);
+				DEBUG_ASSERT(false);
+			}
+
+			SetLocalServer(server_id);
 		}
 		
-		/*
-		if (!_gs_session) 
-		{
-			DEBUG_ASSERT(false); //没有游戏逻辑服务器
-			return false;
-		}
-		*/
-		
-		//WorldSessionInstance.SetGameServerSession(_player_id, _gs_session);
 		SendProtocol2GameServer(message); //转发给游戏逻辑服务器进行处理
 	}
 	else if (!IsCenterServer())

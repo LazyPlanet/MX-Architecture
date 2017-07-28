@@ -260,6 +260,12 @@ void WorldSession::OnProcessMessage(const Asset::Meta& meta)
 			const Asset::EnterGame* enter_game = dynamic_cast<Asset::EnterGame*>(message);
 			if (!enter_game) return; 
 
+			if (enter_game->player_id() == 0)
+			{
+				DEBUG_ASSERT(false);
+				return;
+			}
+
 			if (_player_list.find(enter_game->player_id()) == _player_list.end())
 			{
 				LOG(ERROR, "player_id:{} has not found in username:{}, maybe it is cheated.", enter_game->player_id(), _account.username());
@@ -272,6 +278,12 @@ void WorldSession::OnProcessMessage(const Asset::Meta& meta)
 			{
 				_player = std::make_shared<Player>(enter_game->player_id(), shared_from_this());
 				SetRoleType(Asset::ROLE_TYPE_PLAYER, _player->GetID());
+			}
+
+			if (_player->Load())
+			{
+				DEBUG_ASSERT(false);
+				return; //数据加载失败必须终止
 			}
 			
 			//
