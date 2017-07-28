@@ -80,6 +80,7 @@ public:
 	std::shared_ptr<Player> GetPlayer(int64_t player_id);
 	//删除玩家
 	bool Remove(int64_t player_id);
+	void KickOutPlayer(int64_t player_id = 0);
 	//游戏开始
 	void OnGameStart();
 	//游戏结束

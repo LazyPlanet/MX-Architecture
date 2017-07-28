@@ -177,9 +177,17 @@ void Room::OnPlayerOperate(std::shared_ptr<Player> player, pb::Message* message)
 
 		case Asset::GAME_OPER_TYPE_DISMISS_AGREE: //解散
 		{
-			if (!CanDisMiss()) return;
-
-			DisMiss();
+			//
+			//如果房主发起解散房间，且此时尚未开局，则直接解散
+			//
+			if (IsHoster(player->GetID()) && _games.size() == 0)
+			{
+				DisMiss();
+			}
+			else if (CanDisMiss()) 
+			{
+				DisMiss();
+			}
 		}
 		break;
 
@@ -329,9 +337,16 @@ void Room::DisMiss()
 
 	BroadCast(proto); //投票状态
 
+	KickOutPlayer(); //踢出玩家
+}
+	
+void Room::KickOutPlayer(int64_t player_id)
+{
 	for (auto player : _players)
 	{
 		if (!player) continue;
+
+		if (player_id != 0 && player->GetID() != player_id) continue;
 
 		Remove(player->GetID()); //踢人
 	}
