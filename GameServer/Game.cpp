@@ -393,8 +393,6 @@ void Game::OnPaiOperate(std::shared_ptr<Player> player, pb::Message* message)
 
 			if (player->CheckHuPai(pai)) //玩家点炮
 			{
-				DEBUG_ASSERT(player->GetID() != _oper_limit.from_player_id()); //必然不一致
-
 				if (player->IsJinbao()) 
 				{
 					fan_list.emplace(Asset::FAN_TYPE_JIN_BAO);
@@ -405,8 +403,6 @@ void Game::OnPaiOperate(std::shared_ptr<Player> player, pb::Message* message)
 			}
 			else if (player->CheckZiMo(pai)) 
 			{
-				DEBUG_ASSERT(player->GetID() == _oper_limit.from_player_id()); //必然一致
-
 				if (player->IsJinbao()) 
 				{
 					fan_list.emplace(Asset::FAN_TYPE_ZI_MO);
