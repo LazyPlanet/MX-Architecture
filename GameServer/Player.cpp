@@ -3300,7 +3300,7 @@ void Player::ResetBaopai()
 
 			_game->SetBaoPai(baopai);
 
-			_game->OnRefreshBaopai(_player_id, result);
+			if (_game->GetRemainBaopai() > 0) _game->OnRefreshBaopai(_player_id, result);
 		}
 		else
 		{
