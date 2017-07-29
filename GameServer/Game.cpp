@@ -759,9 +759,9 @@ void Game::Calculate(int64_t hupai_player_id/*胡牌玩家*/, int64_t dianpao_pl
 			DEBUG("player_id:{} fan:{} score:{}", player_id, Asset::FAN_TYPE_ZI_MO, -score);
 		}
 
-		if (player_id == dianpao_player_id) 
+		if (dianpao_player_id != hupai_player_id && player_id == dianpao_player_id) 
 		{
-			score *= get_multiple(Asset::FAN_TYPE_DIAN_PAO); //炮翻番
+			score *= get_multiple(Asset::FAN_TYPE_DIAN_PAO); 
 			
 			auto detail = record->mutable_details()->Add();
 			detail->set_fan_type(Asset::FAN_TYPE_DIAN_PAO);

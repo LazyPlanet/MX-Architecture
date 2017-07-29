@@ -376,7 +376,7 @@ public:
 
 		history.SerializeToArray(user_buff, user_length);
 		
-		std::string key = "user:" + std::to_string(room_id);
+		std::string key = "room_history:" + std::to_string(room_id);
 
 		redisReply* reply = (redisReply*)redisCommand(_client, "Set %s %b", key.c_str(), user_buff, user_length);
 		if (!reply) return false;

@@ -875,7 +875,7 @@ void Player::Send2Roomers(pb::Message* message, int64_t exclude_player_id)
 }
 
 //
-//玩家心跳周期为50MS
+//玩家心跳周期为1s
 //
 //如果该函数返回FALSE则表示掉线
 //
@@ -883,8 +883,10 @@ bool Player::Update()
 {
 	++_heart_count; //心跳
 	
-	if (_heart_count % 100 == 0) //5s
+	if (_heart_count % 5 == 0) //5s
 	{
+		DEBUG("当前心跳:{}", _heart_count);
+
 		CommonLimitUpdate(); //通用限制,定时更新
 	
 		if (_dirty) Save(); //触发存盘
@@ -892,7 +894,7 @@ bool Player::Update()
 		SayHi();
 	}
 
-	if (_heart_count % 120 == 0) //1min
+	if (_heart_count % 60 == 0) //1min
 	{
 		DEBUG("heart_count:{} player_id:{}", _heart_count, _player_id);
 	}
@@ -1358,6 +1360,10 @@ bool Player::AddRoomRecord(int64_t room_id)
 	_stuff.mutable_room_history()->Add(room_id); 
 
 	SetDirty(); 
+	
+	Asset::BattleList message;
+	for (auto id : _stuff.room_history()) message.mutable_room_list()->Add(id);
+	SendProtocol(message);
 
 	return true;
 }
@@ -3415,10 +3421,11 @@ int32_t Player::CmdSayHi(pb::Message* message)
 void Player::SayHi()
 {
 	_hi_time = CommonTimerInstance.GetTime();
+	
+	DEBUG("player_id:{} hi_time:{}", _player_id, _hi_time);
 
 	Asset::SayHi message;
 	message.set_heart_count(_heart_count);
-
 	SendProtocol(message);
 }
 	

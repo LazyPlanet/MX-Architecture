@@ -1,5 +1,6 @@
 #include <spdlog/spdlog.h>
 #include <CkHttp.h>
+#include <cpp_redis/cpp_redis>
 
 #include "WorldSession.h"
 #include "RedisManager.h"
@@ -151,7 +152,37 @@ void WorldSession::OnProcessMessage(const Asset::Meta& meta)
 			if (!login) return; 
 			
 			_account.CopyFrom(login->account()); //账号信息
-			_player_list.clear(); //账号下玩家列表，目前只有一个玩家
+
+			cpp_redis::future_client client;
+			client.connect("127.0.0.1", 6379, [](cpp_redis::redis_client&) {
+			    std::cout << "client disconnected (disconnection handler)" << std::endl;
+			});
+
+			auto has_auth = client.auth("!QAZ%TGB&UJM9ol.");
+			if (has_auth.get().ko()) 
+			{
+				DEBUG_ASSERT(false);
+				return;
+			}
+
+			auto get = client.get("user:" + login->account().username());
+			cpp_redis::reply reply = get.get();
+			client.commit();
+
+			if (!reply.is_string()) 
+			{
+				DEBUG_ASSERT(false);
+				return;
+			}
+
+			auto success = _user.ParseFromString(reply.as_string());
+			if (!success)
+			{
+				DEBUG_ASSERT(false);
+				return;
+			}
+
+			/*
 		
 			auto redis = make_unique<Redis>();
 			int32_t redis_reply_type = redis->GetUser(login->account().username(), _user);
@@ -173,6 +204,7 @@ void WorldSession::OnProcessMessage(const Asset::Meta& meta)
 				LOG(ERROR, "获取数据库中数据错误, 账号:{} 错误类型:{}", login->account().username(), redis_reply_type);
 				return;
 			}
+			*/
 
 			//
 			//如果账号下没有角色，则创建一个
@@ -181,6 +213,7 @@ void WorldSession::OnProcessMessage(const Asset::Meta& meta)
 			//
 			if (_user.player_list().size() == 0)
 			{
+				auto redis = make_unique<Redis>();
 				int64_t player_id = redis->CreatePlayer(); //如果账号下没有角色，创建一个给Client
 				if (player_id == 0) return;
 				
@@ -197,16 +230,22 @@ void WorldSession::OnProcessMessage(const Asset::Meta& meta)
 				_user.mutable_player_list()->Add(player_id);
 			}
 
+			if (_player_list.size()) _player_list.clear(); 
 			for (auto player_id : _user.player_list()) _player_list.emplace(player_id); //玩家数据
 			
-			LOG(INFO, "user:{} account:{} wechat:{} token:{}", _user.ShortDebugString(), _account.ShortDebugString(), _wechat.ShortDebugString(), _access_token.ShortDebugString());
+			LOG(INFO, "user:{} account:{} wechat:{} token:{}", _user.ShortDebugString(), _account.ShortDebugString(), 
+					_wechat.ShortDebugString(), _access_token.ShortDebugString());
 				
 			//
 			//账号数据存储
 			//
 			if (!_user.has_wechat_token()) _user.mutable_wechat_token()->CopyFrom(_access_token);
 			if (!_user.has_wechat()) _user.mutable_wechat()->CopyFrom(_wechat); //微信数据
-			redis->SaveUser(login->account().username(), _user); //账号数据存盘
+		
+			//redis->SaveUser(login->account().username(), _user); //账号数据存盘
+			
+			client.set("user:" + login->account().username(), _user.SerializeAsString());
+			client.commit();
 
 			PLAYER(_user); //账号查询
 			

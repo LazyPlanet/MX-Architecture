@@ -228,10 +228,7 @@ void CenterSession::SayHi()
 {
 	Asset::SayHi message;
 	message.set_heart_count(_heart_count);
-
 	SendProtocol(message);
-
-	DEBUG("游戏逻辑服务器 _heart_count:{}", _heart_count);
 }
 	
 //
@@ -242,25 +239,36 @@ bool CenterSession::Update()
 	ClientSocket::Update();
 	
 	++_heart_count;
-
-	for (auto it = _players.begin(); it != _players.end(); ++it)
+	
+	if (_heart_count % 20 == 0) //1s
 	{
-		/*
-		if (!it->second) 
+		DEBUG("当前心跳:{}", _heart_count);
+		for (auto player : _players)
 		{
-			it = _players.erase(it);
-			WARN("删除空指针玩家，当前玩家数量:{}", _players.size());
-			continue;
+			/*
+			if (!it->second) 
+			{
+				it = _players.erase(it);
+				WARN("删除空指针玩家，当前玩家数量:{}", _players.size());
+				continue;
+			}
+			else
+			{
+				++it;
+			}
+
+			it->second->Update();
+			*/
+			if (!player.second) continue;
+			player.second->Update();
 		}
-		else
-		{
-			++it;
-		}
-		*/
-		//it->second->Update();
 	}
 
-	if (_heart_count % 100 == 0) SayHi();
+	if (_heart_count % 100 == 0) //5s
+	{
+		SayHi(); //心跳
+		DEBUG("当前心跳:{}", _heart_count);
+	}
 
 	return true;
 }

@@ -286,7 +286,7 @@ void Room::OnGameOver(int64_t player_id)
 					record->set_score(record->score() + _history.list(i).list(j).score());
 	}
 
-	DEBUG("整局结算: player_id:{} message:{}", player_id, message.ShortDebugString());
+	LOG(INFO, "整局结算，胡牌玩家:{} 数据:{}", player_id, message.ShortDebugString());
 
 	BroadCast(message);
 	
