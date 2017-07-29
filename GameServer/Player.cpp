@@ -187,7 +187,7 @@ int32_t Player::OnLogout()
 	
 	Save();	//存档数据库
 
-	//WorldSessionInstance.Erase(_player_id); //网络会话数据
+	//if (g_center_session) g_center_session->Remove(_player_id); //网络会话数据
 	PlayerInstance.Remove(_player_id); //玩家管理
 
 	return 0;
@@ -891,7 +891,7 @@ bool Player::Update()
 	
 		if (_dirty) Save(); //触发存盘
 	
-		SayHi();
+		//SayHi(); //逻辑服务器不进行玩家心跳
 	}
 
 	if (_heart_count % 60 == 0) //1min

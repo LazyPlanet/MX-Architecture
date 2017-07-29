@@ -48,6 +48,8 @@ public:
 
 	virtual bool Update() override;
 	void SayHi();
+
+	void Remove(int64_t player_id) { _players.erase(player_id); }
 private:
 	std::deque<std::string> _send_list;
 	std::deque<Asset::Meta> _receive_list;
