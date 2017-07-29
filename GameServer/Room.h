@@ -31,6 +31,7 @@ private:
 	std::unordered_map<int64_t, int32_t> _hupai_players;
 	std::unordered_map<int64_t, int32_t> _dianpao_players;
 	std::unordered_map<int64_t, int32_t> _bankers;
+	bool _is_dismiss = false;
 public:
 	explicit Room(Asset::Room room) {  _stuff = room; }
 
@@ -70,7 +71,8 @@ public:
 	void BroadCast(pb::Message& message, int64_t exclude_player_id = 0);
 	
 	void SyncRoom(); //房间数据
-	void DisMiss(); //解散房间
+	void OnDisMiss(); //解散房间
+	void DoDisMiss(); //解散房间
 
 	//获取房主
 	std::shared_ptr<Player> GetHoster();
@@ -84,7 +86,7 @@ public:
 	//游戏开始
 	void OnGameStart();
 	//游戏结束
-	void OnGameOver(int64_t player_id/*胡牌玩家*/);
+	void OnGameOver(int64_t player_id = 0/*胡牌玩家*/);
 	
 	//庄家信息
 	void SetBanker(int64_t player_id) { _banker = player_id; AddBanker(player_id); } //设置庄家

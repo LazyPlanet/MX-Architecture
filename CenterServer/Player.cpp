@@ -746,11 +746,18 @@ void Player::BattleHistory(int32_t start_index, int32_t end_index)
 	if (start_index == 0) start_index = end_index - historty_count;
 
 	Asset::BattleHistory message;
+	message.set_start_index(start_index);
+	message.set_end_index(end_index);
+
 	auto redis = make_unique<Redis>();
 
 	for (int32_t i = end_index - 1; i >= start_index; --i)
 	{
-		if (i < 0 || i >= _stuff.room_history().size()) continue; //安全检查
+		if (i < 0 || i >= _stuff.room_history().size()) 
+		{
+			DEBUG_ASSERT(false);
+			continue; //安全检查
+		}
 
 		Asset::RoomHistory history;
 		auto success = redis->GetRoomHistory(_stuff.room_history(i), history);

@@ -177,22 +177,26 @@ void Room::OnPlayerOperate(std::shared_ptr<Player> player, pb::Message* message)
 
 		case Asset::GAME_OPER_TYPE_DISMISS_AGREE: //解散
 		{
+			OnDisMiss();
+
 			//
 			//如果房主发起解散房间，且此时尚未开局，则直接解散
 			//
 			if (IsHoster(player->GetID()) && _games.size() == 0)
 			{
-				DisMiss();
+				DoDisMiss();
 			}
 			else if (CanDisMiss()) 
 			{
-				DisMiss();
+				DoDisMiss();
 			}
 		}
 		break;
 
 		case Asset::GAME_OPER_TYPE_DISMISS_DISAGREE: //不解散
 		{
+			OnDisMiss();
+
 			ClearDisMiss();
 		}
 		break;
@@ -249,7 +253,7 @@ void Room::OnGameOver(int64_t player_id)
 
 	if (player_id != 0 && _banker != player_id) _banker_index = (_banker_index + 1) % MAX_PLAYER_COUNT; //下庄
 
-	if (GetRemainCount() > 0) return; //没有对局结束
+	if (GetRemainCount() > 0 && !_is_dismiss) return; //没有对局结束，且没有解散房间
 	
 	for (auto player : _players)
 	{
@@ -321,13 +325,16 @@ void Room::BroadCast(pb::Message& message, int64_t exclude_player_id)
 	BroadCast(&message, exclude_player_id);
 }
 
-void Room::DisMiss()
+void Room::OnDisMiss()
 {
 	Asset::RoomDisMiss proto;
 
 	for (auto player : _players)
 	{
 		if (!player) continue;
+
+		if (Asset::GAME_OPER_TYPE_DISMISS_AGREE != player->GetOperState() && 
+				Asset::GAME_OPER_TYPE_DISMISS_DISAGREE != player->GetOperState()) continue;
 
 		auto list = proto.mutable_list()->Add();
 		list->set_player_id(player->GetID());
@@ -336,8 +343,13 @@ void Room::DisMiss()
 	}
 
 	BroadCast(proto); //投票状态
+}
 
-	KickOutPlayer(); //踢出玩家
+void Room::DoDisMiss()
+{
+	_is_dismiss = true;
+
+	OnGameOver();
 }
 	
 void Room::KickOutPlayer(int64_t player_id)
