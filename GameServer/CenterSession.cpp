@@ -63,6 +63,8 @@ bool CenterSession::OnMessageProcess(const Asset::Meta& meta)
 	}
 	else
 	{
+		if (meta.player_id() == 0) return false;
+
 		auto player = _players[meta.player_id()];
 		if (!player) 
 		{
