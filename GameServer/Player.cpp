@@ -1668,7 +1668,9 @@ bool Player::CheckHuPai(const std::map<int32_t, std::vector<int32_t>>& cards_inh
 		return false;
 	}
 
-	////////////////////////////////////////////////////////////////////////////是否可以满足胡牌的要求
+	//
+	//是否可以满足胡牌的要求
+	//
 	
 	_hu_result.clear();
 
@@ -1686,13 +1688,13 @@ bool Player::CheckHuPai(const std::map<int32_t, std::vector<int32_t>>& cards_inh
 		return false;
 	}
 	
-	/*
-	 * 防止出现玩家已经碰了6饼，但是牌内含有2、3、4、5、6万，7、8饼
-	 *
-	 * 收到1、4、7万胡牌的情况
-	 *
-	 * So，这里对牌内牌进行胡牌检查
-	 * */
+	//
+	//防止出现玩家已经碰了6饼，但是牌内含有2、3、4、5、6万，7、8饼
+	//
+	//收到1、4、7万胡牌的情况
+	//
+	//这里对牌内牌进行胡牌检查
+	//
 	{
 		auto cards_inhand_check = cards_inhand;
 		if (pai.card_type() && pai.card_value()) cards_inhand_check[pai.card_type()].push_back(pai.card_value()); //放入可以操作的牌
@@ -1726,11 +1728,7 @@ bool Player::CheckHuPai(const std::map<int32_t, std::vector<int32_t>>& cards_inh
 	
 	if (!has_ke && (jiangang > 0 || fenggang > 0 || minggang.size() > 0 || angang.size() > 0)) has_ke = true;
 	
-	if (!has_ke) 
-	{
-		//TRACE("player_id:{} card_type:{} card_value:{} reason:胡牌时至少有一刻子或杠，或有中发白其中一对.", _player_id, pai.card_type(), pai.card_value());
-		return false;
-	}
+	if (!has_ke) return false;
 
 	return true;
 }
@@ -1964,31 +1962,7 @@ bool Player::CheckHuPai(const Asset::PaiElement& pai/*, std::unordered_set<int32
 		//DEBUG("player_id:{} card_type:{} card_value:{} reason:牌内无法满足胡牌条件.", _player_id, pai.card_type(), pai.card_value());
 		return false;
 	}
-
-	/*
-	 * 防止出现玩家已经碰了6饼，但是牌内含有2、3、4、5、6万，7、8饼
-	 *
-	 * 收到1、4、7万胡牌的情况
-	 *
-	 * So，这里对牌内牌进行胡牌检查
-	 * */
-	{
-		auto cards_inhand_check = _cards_inhand;
-		if (!check_zibo && pai.card_type() && pai.card_value()) cards_inhand_check[pai.card_type()].push_back(pai.card_value()); //放入可以操作的牌
-			
-		for (auto& card : cards_inhand_check)
-			std::sort(card.second.begin(), card.second.end(), [](int x, int y){ return x < y; }); //由小到大，排序
 	
-		std::vector<Card_t> card_list;
-		for (auto crds : cards_inhand_check) //玩家牌内胡牌逻辑检查
-		{
-			for (auto value : crds.second)
-				card_list.push_back(Card_t(crds.first, value));
-		}
-		bool can_hu = CanHuPai(card_list);	
-		if (!can_hu) return false;
-	}
-
 	//
 	//胡牌时至少有刻子或杠，或有中发白
 	//
@@ -2013,7 +1987,10 @@ bool Player::CheckHuPai(const Asset::PaiElement& pai/*, std::unordered_set<int32
 		return false;
 	}
 
-	ke_count /= 2; 
+	//
+	//飘胡检查，严重依赖上面的刻的数量
+	//
+
 	auto ke_total = ke_count + _jiangang + _fenggang + _minggang.size() + _angang.size();
 		
 	DEBUG("player_id:{} ke_total:{} ke_count:{} jiangang_count:{} fenggang_count:{} minggang.size():{} angang.size():{}", 
@@ -2022,6 +1999,30 @@ bool Player::CheckHuPai(const Asset::PaiElement& pai/*, std::unordered_set<int32
 	if (ke_total == 4) 
 	{
 		piao = true; //TODO：玩家吃了三套副一样的..
+	}
+
+	//
+	//防止出现玩家已经碰了6饼，但是牌内含有2、3、4、5、6万，7、8饼
+	//
+	//收到1、4、7万胡牌的情况
+	//
+	//这里对牌内牌进行胡牌检查
+	//
+	{
+		auto cards_inhand_check = _cards_inhand;
+		if (!check_zibo && pai.card_type() && pai.card_value()) cards_inhand_check[pai.card_type()].push_back(pai.card_value()); //放入可以操作的牌
+			
+		for (auto& card : cards_inhand_check)
+			std::sort(card.second.begin(), card.second.end(), [](int x, int y){ return x < y; }); //由小到大，排序
+	
+		std::vector<Card_t> card_list;
+		for (auto crds : cards_inhand_check) //玩家牌内胡牌逻辑检查
+		{
+			for (auto value : crds.second)
+				card_list.push_back(Card_t(crds.first, value));
+		}
+		bool can_hu = CanHuPai(card_list);	
+		if (!can_hu) return false;
 	}
 	
 	//是否是夹胡
