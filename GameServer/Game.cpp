@@ -991,7 +991,7 @@ void Game::Calculate(int64_t hupai_player_id/*胡牌玩家*/, int64_t dianpao_pl
 	auto it_baosanjia = std::find(options.extend_type().begin(), options.extend_type().end(), Asset::ROOM_EXTEND_TYPE_BAOSANJIA);
 	auto baosanjia = (it_baosanjia != options.extend_type().end()); //是否支持
 
-	if (baosanjia && dianpao_player_id != hupai_player_id) 
+	if (baosanjia && dianpao_player_id != 0 && dianpao_player_id != hupai_player_id) 
 	{
 		auto it_dianpao = get_record(dianpao_player_id);
 		if (it_dianpao == message.mutable_record()->mutable_list()->end()) 
