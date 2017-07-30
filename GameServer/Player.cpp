@@ -529,6 +529,7 @@ int32_t Player::CmdPaiOperate(pb::Message* message)
 				if (lock.try_lock()) 
 				{
 					pais.erase(it); //打出牌
+					Add2CardsPool(pai);
 					TRACE("Delete card from player_id:{} card_type:{} card_value:{} for dapai.", _player_id, pai.card_type(), pai.card_value());
 				}
 				else
@@ -615,6 +616,7 @@ int32_t Player::CmdPaiOperate(pb::Message* message)
 				if (lock.try_lock()) 
 				{
 					pais.erase(it); //删除牌
+					Add2CardsPool(pai);
 					TRACE("Delete card from player_id:{} card_type:{} card_value:{} for dapai.", _player_id, pai.card_type(), pai.card_value());
 				}
 				else
@@ -1066,10 +1068,10 @@ void Player::OnLeaveRoom()
 
 	DEBUG("player_id:{} leave room:{}.", _player_id, _room->GetID());
 
-	_game.reset();
 	_room.reset();
+	_stuff.clear_room_id(); //用于处理玩家断线重入房间
 
-	ClearCards();
+	ClearCards();  //游戏数据
 	
 	Asset::RoomState room_state;
 	room_state.set_oper_type(Asset::GAME_OPER_TYPE_LEAVE);
@@ -1266,8 +1268,12 @@ int32_t Player::CmdLoadScene(pb::Message* message)
 			
 			_player_prop.clear_load_type(); 
 			_player_prop.clear_room_id(); 
+	
+			_stuff.set_room_id(room_id);
+
+			SetDirty();
 			
-			OnEnterScene(); //进入房间//场景回调
+			OnEnterScene(room_id); //进入房间//场景回调
 		}
 		break;
 		
@@ -1281,7 +1287,7 @@ int32_t Player::CmdLoadScene(pb::Message* message)
 	return 0;
 }
 
-void Player::OnEnterScene()
+void Player::OnEnterScene(int64_t room_id)
 {
 	SendPlayer(); //发送数据给Client
 
@@ -3409,6 +3415,7 @@ void Player::ClearCards()
 	_jinbao = false;
 	_oper_type = Asset::PAI_OPER_TYPE_BEGIN;
 
+	_game.reset();
 	_game = nullptr;
 }
 	

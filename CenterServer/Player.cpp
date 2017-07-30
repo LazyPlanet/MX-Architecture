@@ -153,7 +153,11 @@ int32_t Player::OnLogout()
 
 int32_t Player::OnEnterGame() 
 {
-	Load();
+	if (Load())
+	{
+		LOG(ERROR, "加载数据失败");
+		return 1;
+	}
 
 	SendPlayer(); //发送数据给玩家
 	

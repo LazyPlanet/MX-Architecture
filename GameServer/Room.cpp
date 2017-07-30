@@ -23,14 +23,19 @@ Asset::ERROR_CODE Room::TryEnter(std::shared_ptr<Player> player)
 {
 	std::lock_guard<std::mutex> lock(_mutex);
 
-	if (!player || IsFull()) return Asset::ERROR_ROOM_IS_FULL;
+	if (!player) return Asset::ERROR_INNER;
 
 	auto it = std::find_if(_players.begin(), _players.end(), [player](std::shared_ptr<Player> p) {
 				if (!p) return false;
 				return player->GetID() == p->GetID();
 			});
 
-	if (it != _players.end()) return Asset::ERROR_ROOM_HAS_BEEN_IN; //已经在房间
+	if (it != _players.end()) 
+	{
+		return Asset::ERROR_ROOM_HAS_BEEN_IN; //已经在房间
+	}
+	
+	if (IsFull()) return Asset::ERROR_ROOM_IS_FULL; //房间已满
 
 	DEBUG("player_id:{} enter room:{} success.", player->GetID(), GetID());
 
@@ -70,9 +75,11 @@ bool Room::Enter(std::shared_ptr<Player> player)
 {
 	if (!player) return false;
 
-	if (TryEnter(player) != Asset::ERROR_SUCCESS) 
+	auto enter_status = TryEnter(player);
+
+	if (enter_status != Asset::ERROR_SUCCESS && enter_status != Asset::ERROR_ROOM_HAS_BEEN_IN) 
 	{
-		ERROR("player_id:{} cannot enter room:{}", player->GetID(), GetID());
+		LOG(ERROR, "玩家:{} 无法进入房间:{} 原因:{}", player->GetID(), GetID(), enter_status);
 		return false; //进入房间之前都需要做此检查，理论上不会出现
 	}
 	
@@ -88,6 +95,10 @@ bool Room::Enter(std::shared_ptr<Player> player)
 				player->SetPosition((Asset::POSITION_TYPE)(i+1)); //设置位置
 				break;
 			}
+			else if (player_in->GetID() == player->GetID()) //当前还在房间内
+			{
+				OnReEnter(player);
+			}
 		}
 	}
 	else
@@ -102,6 +113,55 @@ bool Room::Enter(std::shared_ptr<Player> player)
 
 	SyncRoom(); //同步当前房间内玩家数据
 	return true;
+}
+	
+void Room::OnReEnter(std::shared_ptr<Player> player)
+{
+	if (!player) return;
+
+	Asset::RoomAll message;
+
+	for (auto player : _players)
+	{
+		if (!player) continue;
+
+		auto player_list = message.mutable_player_list()->Add();
+		player_list->set_player_id(player->GetID());
+		player_list->set_position(player->GetPosition());
+		player_list->set_pai_count_inhand(player->GetCardCount());
+
+		if (player->GetID() == player->GetID())
+		{
+			auto cards_inhand = player->GetCardsInhand();
+			for (auto cards : cards_inhand)
+			{
+				if (cards.second.size() == 0) continue;
+
+				auto pais = player_list->mutable_pai_inhand()->Add();
+				pais->set_card_type((Asset::CARD_TYPE)cards.first);
+				for (auto card_value : cards.second) pais->mutable_cards()->Add(card_value);
+			}
+		}
+
+		auto cards_outhand = player->GetCardsOuthand();
+		for (auto cards : cards_outhand)
+		{
+			if (cards.second.size() == 0) continue;
+
+			auto pais = player_list->mutable_pai_outhand()->Add();
+			pais->set_card_type((Asset::CARD_TYPE)cards.first);
+			for (auto card_value : cards.second) pais->mutable_cards()->Add(card_value);
+		}
+
+		auto pai_pool = player->GetCardsPool();
+		for (auto pai_element : pai_pool)
+		{
+			auto pai = player_list->mutable_pai_pool()->Add();
+			pai->CopyFrom(pai_element);
+		}
+	}
+
+	player->SendProtocol(message);
 }
 
 void Room::OnPlayerLeave(int64_t player_id)
