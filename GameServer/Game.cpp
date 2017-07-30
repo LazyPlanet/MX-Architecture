@@ -396,7 +396,6 @@ void Game::OnPaiOperate(std::shared_ptr<Player> player, pb::Message* message)
 				if (player->IsJinbao()) 
 				{
 					fan_list.emplace(Asset::FAN_TYPE_JIN_BAO);
-					fan_list.emplace(Asset::FAN_TYPE_ZI_MO);
 
 					_oper_limit.set_from_player_id(player->GetID());
 				}
@@ -407,7 +406,6 @@ void Game::OnPaiOperate(std::shared_ptr<Player> player, pb::Message* message)
 			{
 				if (player->IsJinbao()) 
 				{
-					fan_list.emplace(Asset::FAN_TYPE_ZI_MO);
 					fan_list.emplace(Asset::FAN_TYPE_JIN_BAO);
 					
 					_oper_limit.set_from_player_id(player->GetID());
@@ -418,7 +416,6 @@ void Game::OnPaiOperate(std::shared_ptr<Player> player, pb::Message* message)
 			else if (player->CheckBaoHu(pai)) //宝胡
 			{
 				fan_list.emplace(Asset::FAN_TYPE_LOU_BAO); 
-				fan_list.emplace(Asset::FAN_TYPE_ZI_MO);
 					
 				_oper_limit.set_from_player_id(player->GetID());
 

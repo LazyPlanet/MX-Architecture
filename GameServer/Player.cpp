@@ -2610,6 +2610,7 @@ void Player::OnGangPai(const Asset::PaiElement& pai, int64_t from_player_id)
 	OnFaPai(cards);
 	
 	Asset::PaiOperationAlert alert;
+	std::vector<Asset::PaiElement> pais;
 
 	//
 	//旋风杠检查
@@ -2633,8 +2634,7 @@ void Player::OnGangPai(const Asset::PaiElement& pai, int64_t from_player_id)
 	//
 	//听牌检查
 	//
-	std::vector<Asset::PaiElement> pais;
-	if (CheckTingPai(pais))
+	else if (CheckTingPai(pais))
 	{
 		for (auto pai : pais) 
 		{
