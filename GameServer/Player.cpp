@@ -216,6 +216,7 @@ int64_t Player::ConsumeRoomCard(Asset::ROOM_CARD_CHANGED_TYPE changed_type, int6
 	if (!CheckRoomCard(count)) return 0;
 
 	_stuff.mutable_common_prop()->set_room_card_count(_stuff.common_prop().room_card_count() - count);
+	_dirty = true;
 	
 	SyncCommonProperty();
 	
@@ -227,6 +228,7 @@ int64_t Player::GainRoomCard(Asset::ROOM_CARD_CHANGED_TYPE changed_type, int64_t
 	if (count <= 0) return 0;
 
 	_stuff.mutable_common_prop()->set_room_card_count(_stuff.common_prop().room_card_count() + count);
+	_dirty = true;
 	
 	SyncCommonProperty();
 	
@@ -251,6 +253,7 @@ int64_t Player::ConsumeHuanledou(Asset::HUANLEDOU_CHANGED_TYPE changed_type, int
 	if (!CheckHuanledou(count)) return 0;
 
 	_stuff.mutable_common_prop()->set_huanledou(_stuff.common_prop().huanledou() - count);
+	_dirty = true;
 	
 	SyncCommonProperty();
 	
@@ -262,6 +265,7 @@ int64_t Player::GainHuanledou(Asset::HUANLEDOU_CHANGED_TYPE changed_type, int64_
 	if (count <= 0) return 0;
 
 	_stuff.mutable_common_prop()->set_huanledou(_stuff.common_prop().huanledou() + count);
+	_dirty = true;
 	
 	SyncCommonProperty();
 	
@@ -291,6 +295,7 @@ int64_t Player::ConsumeDiamond(Asset::DIAMOND_CHANGED_TYPE changed_type, int64_t
 	if (!CheckDiamond(count)) return 0;
 
 	_stuff.mutable_common_prop()->set_diamond(_stuff.common_prop().diamond() - count);
+	_dirty = true;
 	
 	SyncCommonProperty();
 	
@@ -302,6 +307,7 @@ int64_t Player::GainDiamond(Asset::DIAMOND_CHANGED_TYPE changed_type, int64_t co
 	if (count <= 0) return 0;
 
 	_stuff.mutable_common_prop()->set_diamond(_stuff.common_prop().diamond() + count);
+	_dirty = true;
 
 	SyncCommonProperty();
 	

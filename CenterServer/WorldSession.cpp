@@ -174,37 +174,13 @@ void WorldSession::OnProcessMessage(const Asset::Meta& meta)
 				DEBUG_ASSERT(false);
 				return;
 			}
-
+	
 			auto success = _user.ParseFromString(reply.as_string());
 			if (!success)
 			{
 				DEBUG_ASSERT(false);
 				return;
 			}
-
-			/*
-		
-			auto redis = make_unique<Redis>();
-			int32_t redis_reply_type = redis->GetUser(login->account().username(), _user);
-
-			if (redis_reply_type != REDIS_REPLY_STRING) //没有该用户
-			{
-				_user.mutable_account()->CopyFrom(login->account());
-			}
-			else
-			{
-				LOG(TRACE, "get player_name success, username:{} who has exist.", login->account().username());
-			}
-
-			//
-			//理论上不应该出现，Redis数据库状态不对
-			//
-			if (redis_reply_type == REDIS_REPLY_STATUS) //返回的显然错误，数据库问题
-			{
-				LOG(ERROR, "获取数据库中数据错误, 账号:{} 错误类型:{}", login->account().username(), redis_reply_type);
-				return;
-			}
-			*/
 
 			//
 			//如果账号下没有角色，则创建一个
@@ -219,6 +195,8 @@ void WorldSession::OnProcessMessage(const Asset::Meta& meta)
 				
 				_player = std::make_shared<Player>(player_id, shared_from_this());
 				std::string player_name = NameInstance.Get();
+	
+				DEBUG("当前账号数据:{}", _user.ShortDebugString());
 
 				LOG(INFO, "账号:{}下角色数量为0，创建角色:{} 账号数据:{}", login->account().username(), player_id, _user.ShortDebugString());
 
@@ -613,14 +591,42 @@ int32_t WorldSession::OnWechatLogin(const pb::Message* message)
 	}
 			
 	//
-	//微信登陆之后，直接进行存盘，防止玩家此时退出
+	//1.必须先进行数据加载，初始化_user数据，防止已经存在玩家数据覆盖
 	//
+	//2.微信登陆之后，直接进行存盘，防止玩家此时退出
+	//
+	
+	cpp_redis::future_client client;
+	client.connect("127.0.0.1", 6379, [](cpp_redis::redis_client&) {
+		std::cout << "client disconnected (disconnection handler)" << std::endl;
+	});
+
+	auto has_auth = client.auth("!QAZ%TGB&UJM9ol.");
+	if (has_auth.get().ko()) 
+	{
+		DEBUG_ASSERT(false);
+		return 2;
+	}
+
+	auto get = client.get("user:" + _access_token.openid());
+	cpp_redis::reply reply = get.get();
+	client.commit();
+
+	if (reply.is_string()) 
+	{
+		auto success = _user.ParseFromString(reply.as_string()); //现有账号的数据加载
+		if (!success) return 3;
+	}
+	
+	DEBUG("当前账号数据:{}", _user.ShortDebugString());
 
 	if (!_user.has_wechat_token()) _user.mutable_wechat_token()->CopyFrom(_access_token);
 	if (!_user.has_wechat()) _user.mutable_wechat()->CopyFrom(_wechat); //微信数据
 
 	auto redis = make_unique<Redis>();
 	if (_access_token.has_openid())	redis->SaveUser(_access_token.openid(), _user); //账号数据存盘
+
+	DEBUG("当前账号数据:{}", _user.ShortDebugString());
 
 	return 0;
 }
