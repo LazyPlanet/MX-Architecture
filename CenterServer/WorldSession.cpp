@@ -72,7 +72,7 @@ void WorldSession::InitializeHandler(const boost::system::error_code error, cons
 		return;
 	}
 
-	WARN("中心服务器接收数据之后, 当前缓存数量大小:{} 本次接收数据大小:{}", _buffer.size(), bytes_transferred);
+	//WARN("中心服务器接收数据之后, 当前缓存数量大小:{} 本次接收数据大小:{}", _buffer.size(), bytes_transferred);
 	AsyncReceiveWithCallback(&WorldSession::InitializeHandler); //递归持续接收	
 }
 			
@@ -196,9 +196,7 @@ void WorldSession::OnProcessMessage(const Asset::Meta& meta)
 				_player = std::make_shared<Player>(player_id, shared_from_this());
 				std::string player_name = NameInstance.Get();
 	
-				DEBUG("当前账号数据:{}", _user.ShortDebugString());
-
-				LOG(INFO, "账号:{}下角色数量为0，创建角色:{} 账号数据:{}", login->account().username(), player_id, _user.ShortDebugString());
+				LOG(INFO, "账号:{}下尚未创建角色，创建角色:{} 账号数据:{}", login->account().username(), player_id, _user.ShortDebugString());
 
 				_player->SetName(player_name);
 				_player->SetAccount(login->account().username());
@@ -256,7 +254,16 @@ void WorldSession::OnProcessMessage(const Asset::Meta& meta)
 			
 			std::string account;
 			auto redis = make_unique<Redis>();
-			if (redis->GetGuestAccount(account)) login->set_account(account);
+			if (redis->GetGuestAccount(account)) 
+			{
+				login->set_account(account);
+
+				_account.set_account_type(Asset::ACCOUNT_TYPE_GUEST); 
+				_account.set_username(login->account()); //账号信息
+			}
+
+			_user.mutable_account()->CopyFrom(_account);
+			redis->SaveUser(account, _user); //存盘
 
 			SendProtocol(login); 
 		}
