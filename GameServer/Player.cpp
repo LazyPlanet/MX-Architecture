@@ -396,7 +396,7 @@ int32_t Player::CmdCreateRoom(pb::Message* message)
 
 		int32_t consume_count = open_rands / rounds; //待消耗房卡数量
 
-		if (CheckRoomCard(consume_count)) 
+		if (!CheckRoomCard(consume_count)) 
 		{
 			AlertMessage(Asset::ERROR_ROOM_CARD_NOT_ENOUGH); //房卡不足
 			return 5;
