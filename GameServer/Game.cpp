@@ -397,6 +397,8 @@ void Game::OnPaiOperate(std::shared_ptr<Player> player, pb::Message* message)
 				{
 					fan_list.emplace(Asset::FAN_TYPE_JIN_BAO);
 					fan_list.emplace(Asset::FAN_TYPE_ZI_MO);
+
+					_oper_limit.set_from_player_id(player->GetID());
 				}
 
 				Calculate(player->GetID(), _oper_limit.from_player_id(), fan_list); //结算
@@ -407,6 +409,8 @@ void Game::OnPaiOperate(std::shared_ptr<Player> player, pb::Message* message)
 				{
 					fan_list.emplace(Asset::FAN_TYPE_ZI_MO);
 					fan_list.emplace(Asset::FAN_TYPE_JIN_BAO);
+					
+					_oper_limit.set_from_player_id(player->GetID());
 				}
 
 				Calculate(player->GetID(), _oper_limit.from_player_id(), fan_list); //结算
@@ -415,6 +419,8 @@ void Game::OnPaiOperate(std::shared_ptr<Player> player, pb::Message* message)
 			{
 				fan_list.emplace(Asset::FAN_TYPE_LOU_BAO); 
 				fan_list.emplace(Asset::FAN_TYPE_ZI_MO);
+					
+				_oper_limit.set_from_player_id(player->GetID());
 
 				Calculate(player->GetID(), _oper_limit.from_player_id(), fan_list); //结算
 			}
