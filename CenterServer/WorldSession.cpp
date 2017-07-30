@@ -220,7 +220,7 @@ void WorldSession::OnProcessMessage(const Asset::Meta& meta)
 				_player = std::make_shared<Player>(player_id, shared_from_this());
 				std::string player_name = NameInstance.Get();
 
-				TRACE("get player_name success, player_id:{}, player_name:{}", player_id, player_name.c_str());
+				LOG(INFO, "账号:{}下角色数量为0，创建角色:{} 账号数据:{}", login->account().username(), player_id, _user.ShortDebugString());
 
 				_player->SetName(player_name);
 				_player->SetAccount(login->account().username());
