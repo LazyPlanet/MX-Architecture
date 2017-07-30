@@ -98,7 +98,7 @@ public:
 	//加载数据	
 	virtual int32_t Load();
 	//保存数据
-	virtual int32_t Save();
+	virtual int32_t Save(bool force = false);
 	//进入游戏
 	virtual int32_t OnEnterGame();
 	//是否脏数据

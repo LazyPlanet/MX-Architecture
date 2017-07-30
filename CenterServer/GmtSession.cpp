@@ -174,7 +174,7 @@ Asset::COMMAND_ERROR_CODE GmtSession::OnSendMail(const Asset::SendMail& command)
 		}
 
 		//存盘
-		player_ptr->Save();
+		player_ptr->SetDirty();
 	}
 	else //全服邮件
 	{
@@ -241,7 +241,7 @@ Asset::COMMAND_ERROR_CODE GmtSession::OnCommandProcess(const Asset::Command& com
 	}
 
 	//存盘
-	player_ptr->Save();
+	player_ptr->SetDirty();
 
 	RETURN(Asset::COMMAND_ERROR_CODE_SUCCESS); //执行成功
 }

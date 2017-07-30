@@ -95,14 +95,15 @@ int32_t Player::Load()
 	return 0;
 }
 
-int32_t Player::Save()
+int32_t Player::Save(bool force)
 {
 	PLAYER(_stuff);	//BI日志
 
-	if (!IsDirty()) return 1;
+	if (!force && !IsDirty()) return 1;
 
 	auto redis = make_unique<Redis>();
-	redis->SavePlayer(_player_id, _stuff);
+	auto success = redis->SavePlayer(_player_id, _stuff);
+	if (!success) return 2;
 
 	_dirty = false;
 
@@ -185,7 +186,7 @@ int32_t Player::OnLogout()
 	if (_game) _game.reset();
 	if (_room) _room.reset();
 	
-	Save();	//存档数据库
+	Save(true);	//存档数据库
 
 	//if (g_center_session) g_center_session->Remove(_player_id); //网络会话数据
 	PlayerInstance.Remove(_player_id); //玩家管理
@@ -885,8 +886,6 @@ bool Player::Update()
 	
 	if (_heart_count % 5 == 0) //5s
 	{
-		DEBUG("当前心跳:{}", _heart_count);
-
 		CommonLimitUpdate(); //通用限制,定时更新
 	
 		if (_dirty) Save(); //触发存盘
@@ -1364,6 +1363,8 @@ bool Player::AddRoomRecord(int64_t room_id)
 	Asset::BattleList message;
 	for (auto id : _stuff.room_history()) message.mutable_room_list()->Add(id);
 	SendProtocol(message);
+	
+	DEBUG("增加玩家:{}历史战绩:{}", _player_id, room_id);
 
 	return true;
 }
@@ -3528,20 +3529,25 @@ const Asset::WechatUnion Player::GetWechat()
 
 void PlayerManager::Update(int32_t diff)
 {
-	for (auto it = _players.begin(); it != _players.end();)
-	{
-		if (!it->second) 
-		{
-			it = _players.erase(it);
-			WARN("删除空指针玩家，当前玩家数量:{}", _players.size());
-			continue;
-		}
-		else
-		{
-			++it;
-		}
+	++_heart_count;
 
-		it->second->Update();
+	if (_heart_count % 20 == 0) //1s
+	{
+		for (auto it = _players.begin(); it != _players.end();)
+		{
+			if (!it->second) 
+			{
+				it = _players.erase(it);
+				WARN("删除空指针玩家，当前玩家数量:{}", _players.size());
+				continue;
+			}
+			else
+			{
+				++it;
+			}
+
+			it->second->Update();
+		}
 	}
 }
 
@@ -3549,7 +3555,8 @@ void PlayerManager::Emplace(int64_t player_id, std::shared_ptr<Player> player)
 {
 	if (!player) return;
 
-	if (_players.find(player_id) == _players.end()) _players.emplace(player_id, player);
+	//if (_players.find(player_id) == _players.end()) _players.emplace(player_id, player);
+	_players[player_id] = player;
 }
 
 std::shared_ptr<Player> PlayerManager::GetPlayer(int64_t player_id)

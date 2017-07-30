@@ -263,6 +263,8 @@ void Room::OnGameOver(int64_t player_id)
 	}
 
 	Asset::RoomCalculate message;
+	message.set_calculte_type(Asset::CALCULATE_TYPE_FULL);
+	if (_is_dismiss) message.set_calculte_type(Asset::CALCULATE_TYPE_DISMISS);
 
 	for (auto player : _players)
 	{

@@ -143,7 +143,7 @@ public:
 	//加载数据	
 	virtual int32_t Load();
 	//保存数据
-	virtual int32_t Save();
+	virtual int32_t Save(bool force = false);
 	//是否脏数据
 	virtual bool IsDirty() { return _dirty; }
 	virtual void SetDirty(bool dirty = true) { _dirty = dirty; }
@@ -384,6 +384,7 @@ class PlayerManager : public std::enable_shared_from_this<PlayerManager>
 private:
 	std::mutex _mutex;
 	std::unordered_map<int64_t, std::shared_ptr<Player>> _players; //实体为智能指针，不要传入引用
+	int32_t _heart_count = 0;
 public:
 	static PlayerManager& Instance()
 	{

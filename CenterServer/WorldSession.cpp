@@ -225,7 +225,7 @@ void WorldSession::OnProcessMessage(const Asset::Meta& meta)
 				_player->SetName(player_name);
 				_player->SetAccount(login->account().username());
 
-				_player->Save(); //存盘，防止数据库无数据
+				_player->Save(true); //存盘，防止数据库无数据
 
 				_user.mutable_player_list()->Add(player_id);
 			}
@@ -340,7 +340,7 @@ void WorldSession::OnProcessMessage(const Asset::Meta& meta)
 			if (_player->GetAccount().empty()) 
 			{
 				_player->SetAccount(_account.username());
-				_player->Save(); //存盘，防止数据库无数据
+				_player->Save(true); //存盘，防止数据库无数据
 			}
 
 			//

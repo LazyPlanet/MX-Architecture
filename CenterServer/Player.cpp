@@ -97,11 +97,11 @@ int32_t Player::Load()
 //
 //以免数据覆盖
 //
-int32_t Player::Save()
+int32_t Player::Save(bool force)
 {
 	PLAYER(_stuff);	//数据日志
 
-	if (!IsDirty()) return 1;
+	if (!force && !IsDirty()) return 1;
 
 	if (!IsCenterServer()) return 2; 
 
@@ -128,7 +128,7 @@ int32_t Player::OnLogout()
 	_stuff.set_login_time(0);
 	_stuff.set_logout_time(CommonTimerInstance.GetTime());
 	
-	Save();	//存档数据库
+	Save(true);	//存档数据库
 
 	WorldSessionInstance.RemovePlayer(_player_id); //网络会话数据
 	PlayerInstance.Erase(_player_id); //玩家管理

@@ -244,23 +244,8 @@ bool CenterSession::Update()
 	
 	if (_heart_count % 20 == 0) //1s
 	{
-		DEBUG("当前心跳:{}", _heart_count);
 		for (auto player : _players)
 		{
-			/*
-			if (!it->second) 
-			{
-				it = _players.erase(it);
-				WARN("删除空指针玩家，当前玩家数量:{}", _players.size());
-				continue;
-			}
-			else
-			{
-				++it;
-			}
-
-			it->second->Update();
-			*/
 			if (!player.second) continue;
 			player.second->Update();
 		}
@@ -269,7 +254,6 @@ bool CenterSession::Update()
 	if (_heart_count % 100 == 0) //5s
 	{
 		SayHi(); //心跳
-		DEBUG("当前心跳:{}", _heart_count);
 	}
 
 	return true;

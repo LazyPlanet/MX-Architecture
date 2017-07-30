@@ -704,6 +704,9 @@ void Game::Calculate(int64_t hupai_player_id/*胡牌玩家*/, int64_t dianpao_pl
 
 	Asset::GameCalculate message;
 	message.set_calculte_type(Asset::CALCULATE_TYPE_HUPAI);
+	message.mutable_baopai()->CopyFrom(_baopai);
+	auto dianpao_player = GetPlayer(dianpao_player_id);
+	if (dianpao_player) message.set_dianpao_player_position(dianpao_player->GetPosition());
 	//
 	//胡牌积分，三部分
 	//
@@ -1299,6 +1302,7 @@ bool Game::CheckLiuJu()
 	//
 	Asset::GameCalculate game_calculate;
 	game_calculate.set_calculte_type(Asset::CALCULATE_TYPE_LIUJU);
+	game_calculate.mutable_baopai()->CopyFrom(_baopai);
 
 	for (auto player : _players)
 	{
