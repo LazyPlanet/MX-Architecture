@@ -331,14 +331,15 @@ void WorldSession::OnProcessMessage(const Asset::Meta& meta)
 			}
 
 			//
-			// 已经在线玩家检查
+			//已经在线玩家检查
 			//
-			// 对于已经进入游戏内操作的玩家进行托管
+			//对于已经进入游戏内操作的玩家进行托管
 			//
 			auto session = WorldSessionInstance.GetPlayerSession(_player->GetID());
 			if (session) //已经在线
 			{
 				//session->KickOutPlayer(Asset::KICK_OUT_REASON_OTHER_LOGIN);
+				_player->SetSession(shared_from_this()); //重新设置网路连接会话，防止之前会话过期
 				LOG(ERROR, "玩家{}目前在线，被踢掉", _player->GetID());
 			}
 			//WorldSessionInstance.AddPlayer(_player->GetID(), shared_from_this()); //在线玩家

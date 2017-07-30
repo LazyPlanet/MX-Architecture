@@ -40,6 +40,7 @@ public:
 	//std::shared_ptr<WorldSession> GetGameServer() { return _gs_session; }
 
 	const std::shared_ptr<WorldSession> GetSession() { return _session;	}
+	void SetSession(std::shared_ptr<WorldSession> session) { _session = session; }
 	bool Connected(); //网络是否连接
 
 	int32_t DefaultMethod(pb::Message*); //协议处理默认调用函数
