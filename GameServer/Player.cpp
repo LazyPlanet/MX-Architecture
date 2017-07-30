@@ -367,6 +367,12 @@ int32_t Player::CmdCreateRoom(pb::Message* message)
 {
 	Asset::CreateRoom* create_room = dynamic_cast<Asset::CreateRoom*>(message);
 	if (!create_room) return 1;
+	
+	if (_room) 
+	{
+		AlertMessage(Asset::ERROR_ROOM_HAS_BEEN_IN);
+		return 2;
+	}
 
 	//
 	//检查是否活动限免房卡
@@ -707,9 +713,8 @@ int32_t Player::CmdEnterRoom(pb::Message* message)
 
 	if (_room) 
 	{
-		LOG(ERROR, "player_id:{} has been in room:{} enter_room:{}", _player_id, _room->GetID(), enter_room->ShortDebugString());
 		AlertMessage(Asset::ERROR_ROOM_HAS_BEEN_IN);
-		return Asset::ERROR_ROOM_HAS_BEEN_IN; //已经在房间
+		return 2;
 	}
 
 	ClearCards();

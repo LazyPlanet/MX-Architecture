@@ -56,20 +56,33 @@ int32_t Player::Load()
 {
 	if (_player_id == 0) return 1;
 
-	cpp_redis::redis_client client;
-	client.connect();
-	client.auth("!QAZ%TGB&UJM9ol.");
-	client.get("player:" + std::to_string(_player_id), [this](cpp_redis::reply& reply) {
-		if (reply.is_string())
-		{
-			auto success = _stuff.ParseFromString(reply.as_string());
-			if (!success)
-			{
-				DEBUG_ASSERT(false);
-			}
-		}
-	});
-	client.sync_commit();
+	cpp_redis::future_client client;
+	client.connect(ConfigInstance.GetString("Redis_ServerIP", "127.0.0.1"), ConfigInstance.GetInt("Redis_ServerPort", 6379));
+	if (!client.is_connected()) return 2;
+	
+	auto has_auth = client.auth(ConfigInstance.GetString("Redis_Password", "!QAZ%TGB&UJM9ol."));
+	if (has_auth.get().ko()) 
+	{
+		DEBUG_ASSERT(false);
+		return 3;
+	}
+
+	auto get = client.get("player:" + std::to_string(_player_id));
+	cpp_redis::reply reply = get.get();
+	client.commit();
+
+	if (!reply.is_string()) 
+	{
+		DEBUG_ASSERT(false);
+		return 4;
+	}
+
+	auto success = _stuff.ParseFromString(reply.as_string());
+	if (!success)
+	{
+		DEBUG_ASSERT(false);
+		return 5;
+	}
 
 	//auto redis = make_unique<Redis>();
 	//auto success = redis->GetPlayer(_player_id, _stuff);

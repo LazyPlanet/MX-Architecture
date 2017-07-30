@@ -154,11 +154,10 @@ void WorldSession::OnProcessMessage(const Asset::Meta& meta)
 			_account.CopyFrom(login->account()); //账号信息
 
 			cpp_redis::future_client client;
-			client.connect("127.0.0.1", 6379, [](cpp_redis::redis_client&) {
-			    std::cout << "client disconnected (disconnection handler)" << std::endl;
-			});
+			client.connect(ConfigInstance.GetString("Redis_ServerIP", "127.0.0.1"), ConfigInstance.GetInt("Redis_ServerPort", 6379));
+			if (!client.is_connected()) return;
 
-			auto has_auth = client.auth("!QAZ%TGB&UJM9ol.");
+			auto has_auth = client.auth(ConfigInstance.GetString("Redis_Password", "!QAZ%TGB&UJM9ol."));
 			if (has_auth.get().ko()) 
 			{
 				DEBUG_ASSERT(false);
@@ -607,11 +606,11 @@ int32_t WorldSession::OnWechatLogin(const pb::Message* message)
 	//
 	
 	cpp_redis::future_client client;
-	client.connect("127.0.0.1", 6379, [](cpp_redis::redis_client&) {
-		std::cout << "client disconnected (disconnection handler)" << std::endl;
-	});
+	client.connect(ConfigInstance.GetString("Redis_ServerIP", "127.0.0.1"), ConfigInstance.GetInt("Redis_ServerPort", 6379));
+	if (!client.is_connected()) return 1;
 
-	auto has_auth = client.auth("!QAZ%TGB&UJM9ol.");
+	auto has_auth = client.auth(ConfigInstance.GetString("Redis_Password", "!QAZ%TGB&UJM9ol."));
+
 	if (has_auth.get().ko()) 
 	{
 		DEBUG_ASSERT(false);
