@@ -370,8 +370,13 @@ int32_t Player::CmdCreateRoom(pb::Message* message)
 	
 	if (_room) 
 	{
-		AlertMessage(Asset::ERROR_ROOM_HAS_BEEN_IN);
-		return 2;
+		auto room = RoomInstance.Get(_room->GetID());
+
+		if (room) //房间尚未解散
+		{
+			AlertMessage(Asset::ERROR_ROOM_HAS_BEEN_IN);
+			return 2;
+		}
 	}
 
 	//
