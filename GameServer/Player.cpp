@@ -1748,18 +1748,9 @@ bool Player::CheckZiMo(const Asset::PaiElement& pai)
 {
 	if (_tuoguan_server) return false;
 
-	//Asset::PaiElement pai;
 	return CheckHuPai(pai, true);
 }
 	
-/*
-bool Player::CheckHuPai(std::unordered_set<int32_t>& _fan_list)
-{
-	Asset::PaiElement pai;
-	return CheckHuPai(pai, _fan_list);
-}
-*/
-
 bool Player::CheckHuPai(const Asset::PaiElement& pai/*, std::unordered_set<int32_t>& _fan_list*/, bool check_zibo)
 {
 	if (!_room || !_game)
