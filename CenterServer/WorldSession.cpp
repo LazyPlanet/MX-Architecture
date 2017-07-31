@@ -278,6 +278,8 @@ void WorldSession::OnProcessMessage(const Asset::Meta& meta)
 			_player = PlayerInstance.Get(connect->player_id());
 			if (!_player) _player = std::make_shared<Player>(connect->player_id(), shared_from_this()); //服务器已经没有缓存
 
+			_player->SetLocalServer(ConfigInstance.GetInt("ServerID", 1));
+
 			_player->OnEnterGame();
 		}
 		else if (Asset::META_TYPE_C2S_ENTER_GAME == meta.type_t()) //进入游戏

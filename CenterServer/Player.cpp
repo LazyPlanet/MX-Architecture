@@ -153,7 +153,7 @@ int32_t Player::OnLogout()
 
 int32_t Player::OnEnterGame() 
 {
-	if (Load())
+	if (Load()) //覆盖数据
 	{
 		LOG(ERROR, "加载数据失败");
 		return 1;
@@ -188,16 +188,16 @@ int32_t Player::OnLogin()
 
 void Player::SetLocalServer(int32_t server_id) 
 { 
-	DEBUG("玩家:{} 所在服务器:{} 新服务器:{}", _player_id, _stuff.server_id(), server_id);
-
 	_stuff.set_server_id(server_id); 
 
-	_dirty = true;
+	Save(true); //必须强制存盘，否则会覆盖数据
 }
 	
 bool Player::IsCenterServer() 
 { 
-	return _stuff.server_id() == ConfigInstance.GetInt("ServerID", 1); 
+	int32_t curr_server_id = ConfigInstance.GetInt("ServerID", 1);
+
+	return _stuff.server_id() == curr_server_id;
 }
 	
 int64_t Player::ConsumeRoomCard(Asset::ROOM_CARD_CHANGED_TYPE changed_type, int64_t count)

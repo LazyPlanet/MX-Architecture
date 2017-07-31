@@ -121,6 +121,13 @@ int32_t Player::OnLogin()
 	PlayerInstance.Emplace(_player_id, shared_from_this()); //玩家管理
 	SetLocalServer(ConfigInstance.GetInt("ServerID", 1));
 
+	//
+	//调试命令
+	//
+	//如果不用，请勿忘注释
+	//
+	//DebugCommand();
+
 	return 0;
 }
 
@@ -1295,9 +1302,6 @@ int32_t Player::CmdLoadScene(pb::Message* message)
 void Player::OnEnterScene(int64_t room_id)
 {
 	SendPlayer(); //发送数据给Client
-
-	//调试命令，在此处处理
-	//DebugCommand();
 }
 
 int32_t Player::CmdLuckyPlate(pb::Message* message)
@@ -2506,10 +2510,12 @@ bool Player::DebugCheckHuPai(const Asset::PaiElement& pai, bool check_zibo)
 	{
 		_fan_list.emplace(Asset::FAN_TYPE_GANG_SHANG_KAI);
 	}
+	/*
 	if (_game->IsLiuJu()) //海底捞月
 	{
 		_fan_list.emplace(Asset::FAN_TYPE_HAI_DI_LAO);
 	}
+	*/
 	if (IsMingPiao()) //明飘
 	{
 		_fan_list.emplace(Asset::FAN_TYPE_MING_PIAO);
