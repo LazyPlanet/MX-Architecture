@@ -282,7 +282,6 @@ public:
 	void Jinbao() { _jinbao = true; }
 
 	bool CanHuPai(std::vector<Card_t>& cards, bool use_pair = false);
-
 	bool CheckZiMo(); //胡牌检查-玩家手里现有牌检查
 	bool CheckZiMo(const Asset::PaiElement& pai); //胡牌检查-玩家手里现有牌检查
 	bool CheckHuPai(const Asset::PaiElement& pai, bool check_zibo = false); //胡牌
@@ -295,6 +294,7 @@ public:
 			int32_t jiangang, //旋风杠，本质是明杠
 			int32_t fenggang, //旋风杠，本质是暗杠
 			const Asset::PaiElement& pai); //胡牌
+	bool DebugCheckHuPai(const Asset::PaiElement& pai, bool check_zibo = false); //调试胡牌检查
 
 	std::unordered_set<int32_t> GetFanList() { return _fan_list; }
 
