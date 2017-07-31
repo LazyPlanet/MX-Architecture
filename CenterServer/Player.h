@@ -92,6 +92,9 @@ public:
 	
 	virtual bool SendProtocol2GameServer(const pb::Message& message);
 	virtual bool SendProtocol2GameServer(const pb::Message* message);
+
+	virtual void SendGmtProtocol(pb::Message* message);
+	virtual void SendGmtProtocol(pb::Message& message);
 	//玩家登出
 	virtual int32_t Logout(pb::Message* message);
 	virtual int32_t OnLogout();

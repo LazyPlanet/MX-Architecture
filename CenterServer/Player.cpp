@@ -424,6 +424,29 @@ bool Player::SendProtocol2GameServer(const pb::Message* message)
 	return true;
 }
 
+void Player::SendGmtProtocol(pb::Message* message)
+{
+	SendGmtProtocol(*message);
+}
+
+void Player::SendGmtProtocol(pb::Message& message)
+{
+	const pb::FieldDescriptor* field = message.GetDescriptor()->FindFieldByName("type_t");
+	if (!field) return;
+	
+	int type_t = field->default_value_enum()->number();
+	if (!Asset::INNER_TYPE_IsValid(type_t)) return;	//如果不合法，不检查会宕线
+	
+	Asset::InnerMeta meta;
+	meta.set_type_t((Asset::INNER_TYPE)type_t);
+	meta.set_stuff(message.SerializeAsString());
+
+	Asset::GmtInnerMeta gmt_meta;
+	gmt_meta.set_inner_meta(meta.SerializeAsString());
+
+	SendProtocol2GameServer(gmt_meta);
+}
+
 //
 //玩家心跳周期为10MS
 //
