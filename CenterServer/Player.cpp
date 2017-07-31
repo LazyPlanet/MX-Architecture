@@ -424,12 +424,12 @@ bool Player::SendProtocol2GameServer(const pb::Message* message)
 	return true;
 }
 
-void Player::SendGmtProtocol(pb::Message* message)
+void Player::SendGmtProtocol(const pb::Message* message)
 {
 	SendGmtProtocol(*message);
 }
 
-void Player::SendGmtProtocol(pb::Message& message)
+void Player::SendGmtProtocol(const pb::Message& message)
 {
 	const pb::FieldDescriptor* field = message.GetDescriptor()->FindFieldByName("type_t");
 	if (!field) return;
