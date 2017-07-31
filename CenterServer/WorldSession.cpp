@@ -171,6 +171,7 @@ void WorldSession::OnProcessMessage(const Asset::Meta& meta)
 			if (!reply.is_string()) 
 			{
 				DEBUG_ASSERT(false);
+				LOG(ERROR, "未能找到玩家账号数据:{}", login->account().username());
 				return;
 			}
 	

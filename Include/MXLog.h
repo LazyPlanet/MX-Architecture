@@ -48,7 +48,7 @@ namespace Adoter
 		std::string json; \
 		pbjson::pb2json(&message, json); \
 		spdlog::get("player_info")->info(json); \
-		spdlog::get("player")->info(message.ShortDebugString()); \
+		spdlog::get("player")->info("[file:#{} func:#{} line:#{}] info:{}", __FILE__, __func__, __LINE__, message.ShortDebugString()); \
 }\
 
 //通用日志
