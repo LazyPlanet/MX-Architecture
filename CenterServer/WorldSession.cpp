@@ -195,14 +195,14 @@ void WorldSession::OnProcessMessage(const Asset::Meta& meta)
 				
 				_player = std::make_shared<Player>(player_id, shared_from_this());
 				_player->SetLocalServer(ConfigInstance.GetInt("ServerID", 1));
+				
+				SetRoleType(Asset::ROLE_TYPE_PLAYER, _player->GetID());
 
 				std::string player_name = NameInstance.Get();
-
 				_player->SetName(player_name);
 				_player->SetAccount(login->account().username());
 
 				_player->Save(true); //存盘，防止数据库无数据
-
 				_user.mutable_player_list()->Add(player_id);
 				
 				LOG(INFO, "账号:{}下尚未创建角色，创建角色:{} 账号数据:{}", login->account().username(), player_id, _user.ShortDebugString());
@@ -274,10 +274,25 @@ void WorldSession::OnProcessMessage(const Asset::Meta& meta)
 			Asset::ReConnect* connect = dynamic_cast<Asset::ReConnect*>(message);
 			if (!connect) return; 
 
-			LOG(ERROR, "玩家断线重连，角色ID:{}", connect->player_id());
-
 			_player = PlayerInstance.Get(connect->player_id());
-			if (!_player) _player = std::make_shared<Player>(connect->player_id(), shared_from_this()); //服务器已经没有缓存
+
+			if (!_player) 
+			{
+				//
+				//新增用户，必须首先进行数据加载
+				//
+				_player = std::make_shared<Player>(connect->player_id(), shared_from_this()); //服务器已经没有缓存
+
+				SetRoleType(Asset::ROLE_TYPE_PLAYER, _player->GetID());
+
+				if (_player->Load())
+				{
+					DEBUG_ASSERT(false);
+
+					LOG(ERROR, "玩家断线重连，角色ID:{} 加载数据失败", connect->player_id());
+					return;
+				}
+			}
 
 			_player->SetLocalServer(ConfigInstance.GetInt("ServerID", 1));
 
@@ -305,12 +320,15 @@ void WorldSession::OnProcessMessage(const Asset::Meta& meta)
 			if (!_player) 
 			{
 				_player = std::make_shared<Player>(enter_game->player_id(), shared_from_this());
+					
 				SetRoleType(Asset::ROLE_TYPE_PLAYER, _player->GetID());
 			}
 
 			if (_player->Load())
 			{
 				DEBUG_ASSERT(false);
+				
+				LOG(ERROR, "玩家断线重连，角色ID:{} 加载数据失败", enter_game->player_id());
 				return; //数据加载失败必须终止
 			}
 			
