@@ -457,8 +457,8 @@ int32_t Player::CmdGameOperate(pb::Message* message)
 	
 	if (!_room) 
 	{
-		DEBUG_ASSERT(false);
-		return 2; //如果玩家不在房间，也不存在后面的逻辑
+		OnLeaveRoom();
+		return 0; //如果玩家不在房间，也不存在后面的逻辑
 	}
 
 	game_operate->set_source_player_id(_player_id); //设置当前操作玩家
@@ -1076,11 +1076,8 @@ void Player::BroadCastCommonProp(Asset::MSG_TYPE type)
 
 void Player::OnLeaveRoom()
 {
-	if (!_room) return; 
+	if (_room) _room.reset();
 
-	DEBUG("player_id:{} leave room:{}.", _player_id, _room->GetID());
-
-	_room.reset();
 	_stuff.clear_room_id(); //用于处理玩家断线重入房间
 
 	ClearCards();  //游戏数据
