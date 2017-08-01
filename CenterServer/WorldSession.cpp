@@ -328,7 +328,7 @@ void WorldSession::OnProcessMessage(const Asset::Meta& meta)
 			{
 				DEBUG_ASSERT(false);
 				
-				LOG(ERROR, "玩家断线重连，角色ID:{} 加载数据失败", enter_game->player_id());
+				LOG(ERROR, "玩家进入游戏，角色ID:{} 加载数据失败", enter_game->player_id());
 				return; //数据加载失败必须终止
 			}
 			

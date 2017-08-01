@@ -126,7 +126,7 @@ int32_t Player::OnLogin()
 	//
 	//如果不用，请勿忘注释
 	//
-	//DebugCommand();
+	DebugCommand();
 
 	return 0;
 }

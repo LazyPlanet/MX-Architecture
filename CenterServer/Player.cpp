@@ -84,22 +84,8 @@ int32_t Player::Load()
 		return 5;
 	}
 
-	//auto redis = make_unique<Redis>();
-	//auto success = redis->GetPlayer(_player_id, _stuff);
+	_loaded = true;
 
-	/*
-
-	if (!success) 
-	{
-		std::string player_name = NameInstance.Get();
-		SetName(player_name); //如果没有这个玩家则创建，防止因为创建账号但是没有角色的情况
-
-		redis->SavePlayer(_player_id, _stuff); //如果没有的角色，则创建一个
-
-		LOG(ERROR, "加载玩家数据失败:{}, 重新生成玩家数据", _player_id);
-	}
-	*/
-		
 	return 0;
 }
 
@@ -153,10 +139,13 @@ int32_t Player::OnLogout()
 
 int32_t Player::OnEnterGame() 
 {
-	if (Load()) //覆盖数据
+	if (!_loaded)
 	{
-		LOG(ERROR, "加载数据失败");
-		return 1;
+		if (Load())
+		{
+			LOG(ERROR, "加载玩家{}数据失败", _player_id);
+			return 1;
+		}
 	}
 
 	SendPlayer(); //发送数据给玩家
@@ -164,7 +153,7 @@ int32_t Player::OnEnterGame()
 	_stuff.set_login_time(CommonTimerInstance.GetTime());
 	_stuff.set_logout_time(0);
 
-	SetDirty(); //存盘
+	Save(true); //存盘
 
 	PLAYER(_stuff);	//BI日志
 

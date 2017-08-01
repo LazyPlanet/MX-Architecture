@@ -27,6 +27,7 @@ private:
 	std::chrono::steady_clock::time_point _last_hi_time; 
 	int32_t _over_speed_pings = 0;
 	bool _dirty = false; //脏数据
+	bool _loaded = false; //数据是否加载
 
 	CallBack _method; //协议处理回调函数
 	std::shared_ptr<WorldSession> _session = nullptr; //Client网络连接

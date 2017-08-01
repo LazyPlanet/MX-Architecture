@@ -115,16 +115,20 @@ bool ServerSession::OnInnerProcess(const Asset::InnerMeta& meta)
 			auto gmt_server = ServerSessionInstance.GetGmtServer();
 			if (gmt_server) gmt_server_address = gmt_server->GetRemoteAddress();
 
-			LOG(TRACE, "Receive command:{} from server:{} gmt_server:{}", message.ShortDebugString(), _ip_address, gmt_server_address);
+			DEBUG("收到命令:{} 来自服务器:{} GMT服务器:{}", message.ShortDebugString(), _ip_address, gmt_server_address);
 
 			if (ServerSessionInstance.IsGmtServer(shared_from_this())) //处理GMT服务器发送的数据
 			{
 				auto error_code = OnCommandProcess(message); //处理离线玩家的指令执行
-				if (Asset::COMMAND_ERROR_CODE_PLAYER_ONLINE == error_code) ServerSessionInstance.BroadCastProtocol(message); //处理在线玩家的指令执行
+				if (Asset::COMMAND_ERROR_CODE_PLAYER_ONLINE == error_code) 
+				{
+					DEBUG("玩家{}当前在线，发往游戏服务器进行处理", message.player_id());
+					ServerSessionInstance.BroadCastProtocol(message); //处理在线玩家的指令执行
+				}
 
 				if (Asset::COMMAND_ERROR_CODE_SUCCESS == error_code)
 				{
-					TRACE("Server:{} server send gmt message:{} error_code:{}", _ip_address, message.ShortDebugString(), error_code);
+					DEBUG("服务器:{} 处理指令数据成功:{} error_code:{}", _ip_address, message.ShortDebugString(), error_code);
 				}
 				else if (Asset::COMMAND_ERROR_CODE_PLAYER_ONLINE != error_code) //在线
 				{
