@@ -314,6 +314,8 @@ void Room::OnGameOver(int64_t player_id)
 	if (player_id != 0 && _banker != player_id) _banker_index = (_banker_index + 1) % MAX_PLAYER_COUNT; //下庄
 
 	if (GetRemainCount() > 0 && !_is_dismiss) return; //没有对局结束，且没有解散房间
+
+	if (_games.size() == 0) return; //没有对局
 	
 	for (auto player : _players)
 	{
