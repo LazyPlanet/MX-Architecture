@@ -369,7 +369,7 @@ int32_t Player::CmdCreateRoom(pb::Message* message)
 	//
 	//如果不用，请勿忘注释
 	//
-	//DebugCommand();
+	DebugCommand();
 
 	Asset::CreateRoom* create_room = dynamic_cast<Asset::CreateRoom*>(message);
 	if (!create_room) return 1;
@@ -2416,7 +2416,7 @@ bool Player::DebugCheckHuPai(const Asset::PaiElement& pai, bool check_zibo)
 	//是否是夹胡
 	{
 		auto cards_inhand_check = _cards_inhand;
-		if (!check_zibo && pai.card_type() && pai.card_value()) cards_inhand_check[pai.card_type()].push_back(pai.card_value()); //放入可以操作的牌
+		//if (!check_zibo && pai.card_type() && pai.card_value()) cards_inhand_check[pai.card_type()].push_back(pai.card_value()); //放入可以操作的牌
 			
 		for (auto& card : cards_inhand_check)
 			std::sort(card.second.begin(), card.second.end(), [](int x, int y){ return x < y; }); //由小到大，排序
@@ -3900,10 +3900,10 @@ void Player::DebugCommand()
 	}; 
 
 	_cards_inhand = {
-		{ 1, { 1, 2} },
+		{ 1, { 4, 6} },
 		{ 2, { 6, 7, 8} },
 		{ 3, { 6, 6, 6} },
-		{ 4, {} },
+		{ 4, { 1, 1} },
 	};
 	
 	/*
@@ -3914,7 +3914,7 @@ void Player::DebugCommand()
 	*/
 
 	Asset::PaiElement pai;
-	pai.set_card_value(3);
+	pai.set_card_value(5);
 
 	bool can_hu = DebugCheckHuPai(pai);	
 	if (can_hu)
