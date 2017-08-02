@@ -369,7 +369,7 @@ int32_t Player::CmdCreateRoom(pb::Message* message)
 	//
 	//如果不用，请勿忘注释
 	//
-	DebugCommand();
+	//DebugCommand();
 
 	Asset::CreateRoom* create_room = dynamic_cast<Asset::CreateRoom*>(message);
 	if (!create_room) return 1;
@@ -454,21 +454,26 @@ int32_t Player::CmdGameOperate(pb::Message* message)
 	auto game_operate = dynamic_cast<Asset::GameOperation*>(message);
 	if (!game_operate) return 1;
 	
-	if (!_room) 
-	{
-		OnLeaveRoom();
-		return 0; //如果玩家不在房间，也不存在后面的逻辑
-	}
-
 	game_operate->set_source_player_id(_player_id); //设置当前操作玩家
 
 	switch(game_operate->oper_type())
 	{
 		case Asset::GAME_OPER_TYPE_NULL: 
 		case Asset::GAME_OPER_TYPE_START: //开始游戏：相当于准备
+		{
+			_player_prop.set_game_oper_state(game_operate->oper_type());
+		}
+		break;
+
 		case Asset::GAME_OPER_TYPE_LEAVE: //离开游戏：相当于退出房间
 		{
 			if (_game) return 0;
+
+			if (!_room) 
+			{
+				OnLeaveRoom();
+				return 0; //如果玩家不在房间，也不存在后面的逻辑
+			}
 		}
 		break;
 
@@ -2043,7 +2048,6 @@ bool Player::CheckHuPai(const Asset::PaiElement& pai/*, std::unordered_set<int32
 	//是否是夹胡
 	{
 		auto cards_inhand_check = _cards_inhand;
-		if (!check_zibo && pai.card_type() && pai.card_value()) cards_inhand_check[pai.card_type()].push_back(pai.card_value()); //放入可以操作的牌
 			
 		for (auto& card : cards_inhand_check)
 			std::sort(card.second.begin(), card.second.end(), [](int x, int y){ return x < y; }); //由小到大，排序
