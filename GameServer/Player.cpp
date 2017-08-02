@@ -121,13 +121,6 @@ int32_t Player::OnLogin()
 	PlayerInstance.Emplace(_player_id, shared_from_this()); //玩家管理
 	SetLocalServer(ConfigInstance.GetInt("ServerID", 1));
 
-	//
-	//调试命令
-	//
-	//如果不用，请勿忘注释
-	//
-	DebugCommand();
-
 	return 0;
 }
 
@@ -190,8 +183,7 @@ int32_t Player::OnLogout()
 	
 	ClearCards();
 
-	if (_game) _game.reset();
-	if (_room) _room.reset();
+	if (!_game && _room) _room.reset();
 	
 	Save(true);	//存档数据库
 
@@ -372,6 +364,13 @@ void Player::SendPlayer()
 
 int32_t Player::CmdCreateRoom(pb::Message* message)
 {
+	//
+	//调试命令
+	//
+	//如果不用，请勿忘注释
+	//
+	//DebugCommand();
+
 	Asset::CreateRoom* create_room = dynamic_cast<Asset::CreateRoom*>(message);
 	if (!create_room) return 1;
 	
@@ -468,6 +467,11 @@ int32_t Player::CmdGameOperate(pb::Message* message)
 		case Asset::GAME_OPER_TYPE_NULL: 
 		case Asset::GAME_OPER_TYPE_START: //开始游戏：相当于准备
 		case Asset::GAME_OPER_TYPE_LEAVE: //离开游戏：相当于退出房间
+		{
+			if (_game) return 0;
+		}
+		break;
+
 		case Asset::GAME_OPER_TYPE_DISMISS_AGREE: //解散
 		case Asset::GAME_OPER_TYPE_DISMISS_DISAGREE: //不解散
 		{
@@ -727,8 +731,22 @@ int32_t Player::CmdEnterRoom(pb::Message* message)
 
 	if (_room) 
 	{
-		AlertMessage(Asset::ERROR_ROOM_HAS_BEEN_IN);
-		return 2;
+		DEBUG("玩家:{}重入房间:{} 数据:{}", _player_id, _room->GetID(), enter_room->ShortDebugString());
+
+		if (_room->GetID() == enter_room->room().room_id()) //重入房间
+		{
+			enter_room->mutable_room()->CopyFrom(_room->Get());
+			enter_room->set_error_code(Asset::ERROR_SUCCESS); //是否可以进入场景//房间
+
+			SendProtocol(message);
+
+			return 0;
+		}
+		else
+		{
+			AlertMessage(Asset::ERROR_ROOM_HAS_BEEN_IN);
+			return 2;
+		}
 	}
 
 	ClearCards();
