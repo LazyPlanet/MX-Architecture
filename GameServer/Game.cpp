@@ -1440,29 +1440,11 @@ void Game::OnRefreshBaopai(int64_t player_id, int32_t random_result)
 void Game::OnTingPai(std::shared_ptr<Player> player)
 {
 	if (!player) return;
-
-	_random_result = CommonUtil::Random(1, 6);
-	_baopai = GetBaoPai(_random_result);
-
-	/*
-	for (auto _player : _players)
-	{
-		if (!_player) continue;
-
-		Asset::RandomSaizi proto;
-		proto.set_reason_type(Asset::RandomSaizi_REASON_TYPE_REASON_TYPE_TINGPAI);
-		proto.mutable_random_result()->Add(_random_result);
-		proto.set_has_rand_saizi(true);
-
-		//
-		//用于处理，玩家听牌，下家随后当圈立即听牌，宝牌同时查看
-		//
-		if (_player->IsTingPai()) 
-			proto.mutable_pai()->CopyFrom(_baopai);
-
-		_player->SendProtocol(proto); 
-	}
-	*/
+	
+	do {
+		_random_result = CommonUtil::Random(1, 6);
+		_baopai = GetBaoPai(_random_result);
+	} while(GetRemainBaopai() <= 0); //直到产生还有剩余的宝牌
 }
 
 //

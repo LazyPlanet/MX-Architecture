@@ -3497,6 +3497,7 @@ int32_t Player::OnFaPai(std::vector<int32_t>& cards)
 			if (!_game->HasBaopai())
 			{
 				_game->OnTingPai(shared_from_this()); //生成宝牌
+
 				if (LookAtBaopai(true)) return 8;
 			}
 			else
