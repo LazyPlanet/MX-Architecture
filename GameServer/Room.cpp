@@ -25,6 +25,8 @@ Asset::ERROR_CODE Room::TryEnter(std::shared_ptr<Player> player)
 
 	if (!player) return Asset::ERROR_INNER;
 
+	if (player->GetLocalRoomID() == GetID()) return Asset::ERROR_SUCCESS; //重入
+
 	auto it = std::find_if(_players.begin(), _players.end(), [player](std::shared_ptr<Player> p) {
 				if (!p) return false;
 				return player->GetID() == p->GetID();
@@ -98,6 +100,8 @@ bool Room::Enter(std::shared_ptr<Player> player)
 			else if (player_in->GetID() == player->GetID()) //当前还在房间内
 			{
 				OnReEnter(player);
+
+				return true;
 			}
 		}
 	}
@@ -118,6 +122,8 @@ bool Room::Enter(std::shared_ptr<Player> player)
 void Room::OnReEnter(std::shared_ptr<Player> player)
 {
 	if (!player) return;
+				
+	SyncRoom();
 
 	Asset::RoomAll message;
 
@@ -159,6 +165,13 @@ void Room::OnReEnter(std::shared_ptr<Player> player)
 			auto pai = player_list->mutable_pai_pool()->Add();
 			pai->CopyFrom(pai_element);
 		}
+	}
+
+	if (_games.size() > 0)
+	{
+		auto curr_game = _games[_games.size() - 1];
+		if (curr_game)
+			message.set_curr_operator_position(Asset::POSITION_TYPE(curr_game->GetCurrPlayerIndex() + 1));
 	}
 
 	player->SendProtocol(message);

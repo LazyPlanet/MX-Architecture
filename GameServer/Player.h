@@ -262,6 +262,8 @@ public:
 	//获取房间
 	virtual std::shared_ptr<Room> GetRoom() { return _room; }	//获取当前房间
 	virtual void SetRoomID(int64_t room_id) { _player_prop.set_room_id(room_id); }	
+	virtual int32_t GetLocalRoomID();
+
 	virtual int32_t GetRoomID() { return _player_prop.room_id(); }
 	virtual bool HasRoom() { return _room != nullptr; }
 	virtual void SetRoom(std::shared_ptr<Room> room) { _room = room; }

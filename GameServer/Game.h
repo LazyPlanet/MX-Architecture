@@ -107,7 +107,7 @@ public:
 	bool SanJiaBi(int64_t hupai_player_id); //三家闭门
 
 	void SetCurrPlayerIndex(int64_t curr_player_index) { _curr_player_index = curr_player_index; } //设置当前可操作的玩家
-	//int32_t GetRemainGameCount(); //当前剩余游戏局数
+	int32_t GetCurrPlayerIndex() { return _curr_player_index; }
 };
 
 /////////////////////////////////////////////////////

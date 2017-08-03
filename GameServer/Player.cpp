@@ -137,10 +137,11 @@ int32_t Player::Logout(pb::Message* message)
 	{
 		if (_game) //游戏中
 		{
-			LOG(ERROR, "player_id:{} logout game when in room:{}", _player_id, _room->GetID()); //玩家逃跑
+			ERROR("player_id:{} logout game when in room:{}", _player_id, _room->GetID()); //玩家逃跑
 
 			_tuoguan_server = true; //服务器托管
 
+			/*
 			if (_tuoguan_server && _game->CanPaiOperate(shared_from_this())) //轮到该玩家操作
 			{
 				Asset::PaiElement pai;
@@ -162,6 +163,9 @@ int32_t Player::Logout(pb::Message* message)
 
 				CmdPaiOperate(&pai_operation);
 			}
+			*/
+
+			return 1; //不能退出游戏
 		}
 		else
 		{
@@ -187,7 +191,6 @@ int32_t Player::OnLogout()
 	
 	Save(true);	//存档数据库
 
-	//if (g_center_session) g_center_session->Remove(_player_id); //网络会话数据
 	PlayerInstance.Remove(_player_id); //玩家管理
 
 	return 0;
@@ -834,6 +837,13 @@ int32_t Player::CmdEnterRoom(pb::Message* message)
 
 	return 0;
 }
+	
+int32_t Player::GetLocalRoomID() 
+{ 
+	if (!_room) return 0; 
+
+	return _room->GetID();
+}
 
 bool Player::OnEnterRoom(int64_t room_id)
 {
@@ -1279,11 +1289,11 @@ int32_t Player::CmdLoadScene(pb::Message* message)
 				return 3; //非法的房间 
 			}
 			
-			auto ret = locate_room->TryEnter(shared_from_this()); //玩家进入房间
+			auto enter_status = locate_room->TryEnter(shared_from_this()); //玩家进入房间
 
-			if (ret != Asset::ERROR_SUCCESS) 
+			if (enter_status != Asset::ERROR_SUCCESS && enter_status != Asset::ERROR_ROOM_HAS_BEEN_IN) 
 			{
-				ERROR("player_id:{} enter room:{} failed, reason:{}.", _player_id, room_id, ret);
+				ERROR("player_id:{} enter room:{} failed, reason:{}.", _player_id, room_id, enter_status);
 				return 4;
 			}
 
@@ -1402,15 +1412,15 @@ bool Player::AddGameRecord(const Asset::GameRecord& record)
 	
 bool Player::AddRoomRecord(int64_t room_id) 
 { 
-	_stuff.mutable_room_history()->Add(room_id); 
-
-	SetDirty(); 
-	
 	Asset::BattleList message;
 	for (auto id : _stuff.room_history()) message.mutable_room_list()->Add(id);
+
 	SendProtocol(message);
 	
-	DEBUG("增加玩家:{}历史战绩:{}", _player_id, room_id);
+	_stuff.mutable_room_history()->Add(room_id); 
+	_dirty = true; 
+	
+	OnGameOver(); 
 
 	return true;
 }
@@ -3464,9 +3474,11 @@ void Player::NormalCheckAfterFaPai(const Asset::PaiElement& pai)
 
 int32_t Player::OnFaPai(std::vector<int32_t>& cards)
 {
-	if (!_room || !_game) return 1;
-
-	PreCheckOnFaPai(); //发牌前置检查
+	if (!_room || !_game) 
+	{
+		ERROR("玩家{}牌局数据为空", _player_id);
+		return 1;
+	}
 
 	//
 	//听牌后第一次抓牌，产生宝牌或查看宝牌
@@ -3792,6 +3804,12 @@ void Player::PrintPai()
 
 void Player::ClearCards() 
 {
+	if (_game) 
+	{
+		ERROR("玩家:{}清理牌数据失败", _player_id);
+		return;
+	}
+
 	_cards_inhand.clear();	//清理手里牌
 	_cards_outhand.clear(); //清理墙外牌
  
@@ -3809,13 +3827,12 @@ void Player::ClearCards()
 	_tuoguan_server = false;
 	_jinbao = false;
 	_oper_type = Asset::PAI_OPER_TYPE_BEGIN;
-
-	_game.reset();
-	_game = nullptr;
 }
 	
 void Player::OnGameOver()
 {
+	if (_game) _game.reset();
+
 	ClearCards();
 	
 	if (_tuoguan_server) OnLogout();
