@@ -1763,7 +1763,7 @@ bool Player::CheckHuPai(const std::map<int32_t, std::vector<int32_t>>& cards_inh
 
 	if (ke_count) has_ke = true;
 
-	if (!has_ke && (cards[Asset::CARD_TYPE_FENG].size() || cards[Asset::CARD_TYPE_JIAN].size())) has_ke = true;
+	if (!has_ke && (/*cards[Asset::CARD_TYPE_FENG].size() //朝阳：两个风牌不顶横 || */cards[Asset::CARD_TYPE_JIAN].size())) has_ke = true;
 	
 	if (!has_ke && (jiangang > 0 || fenggang > 0 || minggang.size() > 0 || angang.size() > 0)) has_ke = true;
 	
