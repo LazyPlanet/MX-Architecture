@@ -159,6 +159,23 @@ void Room::OnReEnter(std::shared_ptr<Player> player)
 			for (auto card_value : cards.second) pais->mutable_cards()->Add(card_value);
 		}
 
+		const auto minggang = player->GetMingGang();
+		for (auto gang : minggang)
+		{
+			auto pai = player_list->mutable_minggang_list()->Add();
+			pai->CopyFrom(gang);
+		}
+		
+		const auto angang = player->GetAnGang();
+		for (auto gang : angang)
+		{
+			auto pai = player_list->mutable_minggang_list()->Add();
+			pai->CopyFrom(gang);
+		}
+
+		player_list->set_fenggang_count(player->GetFengGang());
+		player_list->set_jiangang_count(player->GetJianGang());
+
 		auto pai_pool = player->GetCardsPool();
 		for (auto pai_element : pai_pool)
 		{

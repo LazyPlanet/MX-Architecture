@@ -348,6 +348,11 @@ public:
 	int32_t GetMingGangCount() { return _minggang.size(); } //明杠数量
 	int32_t GetAnGangCount() { return _angang.size(); } //暗杠数量
 	int32_t GetXuanFengCount() { return _jiangang + _fenggang; } //旋风杠数量
+	
+	const std::vector<Asset::PaiElement>& GetMingGang() { return _minggang; } //明杠
+	const std::vector<Asset::PaiElement>& GetAnGang() { return _angang; } //暗杠
+	int32_t GetJianGang() { return _jiangang; } //旋风杠，本质是明杠
+	int32_t GetFengGang() { return _fenggang; } //旋风杠，本质是暗杠
 
 	void PreCheckOnFaPai(); //发牌前置检查
 	void NormalCheckAfterFaPai(const Asset::PaiElement& pai); //发牌后，玩家手里牌通用检查
