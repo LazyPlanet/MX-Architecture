@@ -504,7 +504,11 @@ int32_t Player::CmdGameOperate(pb::Message* message)
 		break;
 	}
 
-	if (!_room) return 4;
+	if (!_room) 
+	{
+		DEBUG_ASSERT(false && "玩家尚未在房间当中");
+		return 4;
+	}
 
 	_room->OnPlayerOperate(shared_from_this(), message); //广播给其他玩家
 
