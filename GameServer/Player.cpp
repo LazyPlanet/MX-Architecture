@@ -2556,7 +2556,10 @@ bool Player::DebugCheckHuPai(const Asset::PaiElement& pai, bool check_zibo)
 bool Player::IsMingPiao()
 {
 	auto curr_count = GetCardCount();
-	return curr_count == 1;
+
+	DEBUG("当前玩家:{}手里的牌数量:{}", _player_id, curr_count);
+
+	return curr_count == 1 || curr_count == 2;
 }
 	
 //
