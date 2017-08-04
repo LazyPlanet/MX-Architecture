@@ -32,6 +32,8 @@ private:
 	std::unordered_map<int64_t, int32_t> _dianpao_players;
 	std::unordered_map<int64_t, int32_t> _bankers;
 	bool _is_dismiss = false;
+	int32_t _dismiss_time = 0; //解散房间时间
+	int32_t _dismiss_cooldown = 0; //解散冷却时间
 public:
 	explicit Room(Asset::Room room) {  _stuff = room; }
 
@@ -57,6 +59,7 @@ public:
 	void OnPlayerLeave(int64_t player_id);
 
 	void OnCreated(); 
+	void Update();
 
 	bool IsFull(); //是否已满
 	bool IsEmpty(); //是否没人
@@ -117,6 +120,8 @@ private:
 	
 	//房间池
 	std::unordered_map<int64_t, std::shared_ptr<Room>> _room_pool;
+	
+	int32_t _heart_count = 0; //心跳
 public:
 	static RoomManager& Instance()
 	{

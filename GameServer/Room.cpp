@@ -250,6 +250,14 @@ void Room::OnPlayerOperate(std::shared_ptr<Player> player, pb::Message* message)
 
 		case Asset::GAME_OPER_TYPE_DISMISS_AGREE: //解散
 		{
+			auto curr_time = CommonTimerInstance.GetTime();
+
+			if (_dismiss_cooldown > 0 && curr_time <= _dismiss_cooldown) 
+			{
+				player->AlertMessage(Asset::ERROR_ROOM_DISMISS_COOLDOWN);
+				return;
+			}
+
 			OnDisMiss();
 
 			//
@@ -404,6 +412,12 @@ void Room::BroadCast(pb::Message& message, int64_t exclude_player_id)
 
 void Room::OnDisMiss()
 {
+	if (_dismiss_time == 0) 
+	{
+		_dismiss_time = CommonTimerInstance.GetTime() + g_const->room_dismiss_timeout();
+		_dismiss_cooldown = CommonTimerInstance.GetTime() + g_const->room_dismiss_cooldown();
+	}
+
 	Asset::RoomDisMiss proto;
 
 	for (auto player : _players)
@@ -517,6 +531,8 @@ bool Room::CanDisMiss()
 
 void Room::ClearDisMiss()
 {
+	_dismiss_time = 0;
+
 	for (auto player : _players)
 	{
 		if (!player) continue;
@@ -529,6 +545,17 @@ bool Room::IsExpired()
 {
 	auto curr_time = CommonTimerInstance.GetTime();
 	return _expired_time < curr_time;
+}
+	
+void Room::Update()
+{
+	auto curr_time = CommonTimerInstance.GetTime();
+
+	if (_dismiss_time > 0 && _dismiss_time <= curr_time) 
+	{
+		LOG(INFO, "时间到，自动解散房间:{}", GetID());
+		DoDisMiss(); //解散
+	}
 }
 	
 /////////////////////////////////////////////////////
@@ -602,6 +629,10 @@ std::shared_ptr<Room> RoomManager::GetAvailableRoom()
 	
 void RoomManager::Update(int32_t diff)
 {
+	++_heart_count;
+	
+	if (_heart_count % 20 != 0) return; //1s
+
 	for (auto it = _rooms.begin(); it != _rooms.end(); )
 	{
 		if (it->second->IsExpired() && it->second->IsEmpty())
