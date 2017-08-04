@@ -3102,15 +3102,20 @@ int32_t Player::CheckXuanFeng()
 
 bool Player::CanTingPai(const Asset::PaiElement& pai)
 {
+	if (!_room) return false;
+
 	auto options = _room->GetOptions();
 	
 	auto it_baohu = std::find(options.extend_type().begin(), options.extend_type().end(), Asset::ROOM_EXTEND_TYPE_BAOPAI);
 	if (it_baohu == options.extend_type().end()) return false; //不带宝胡，绝对不可能听牌
 
+	/*
 	std::map<int32_t, std::vector<int32_t>> cards_inhand, cards_outhand; 
 	std::vector<Asset::PaiElement> minggang, angang; 
 	int32_t jiangang = 0, fenggang = 0; //旋风杠，本质是暗杠
+	*/
 
+	/*
 	try {
 		std::unique_lock<std::mutex> lock(_card_lock, std::defer_lock);
 
@@ -3134,7 +3139,15 @@ bool Player::CanTingPai(const Asset::PaiElement& pai)
 		ERROR("Delete card from player_id:{} card_type:{} card_value:{} error.", _player_id, pai.card_type(), pai.card_value(), error.what());
 		return false;
 	}
-	
+	*/
+
+	auto cards_inhand = _cards_inhand; //玩家手里牌
+	auto cards_outhand = _cards_outhand; //玩家墙外牌
+	auto minggang = _minggang; //明杠
+	auto angang = _angang; //暗杠
+	auto jiangang = _jiangang; //旋风杠，本质是明杠
+	auto fenggang = _fenggang; //旋风杠，本质是暗杠
+
 	auto find_it = std::find(cards_inhand[pai.card_type()].begin(), cards_inhand[pai.card_type()].end(), pai.card_value());
 	if (find_it == cards_inhand[pai.card_type()].end()) 
 	{
