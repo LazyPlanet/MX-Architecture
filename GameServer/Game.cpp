@@ -406,11 +406,11 @@ void Game::OnPaiOperate(std::shared_ptr<Player> player, pb::Message* message)
 			{
 				auto fan_list = player->GetFanList();
 
+				_oper_limit.set_from_player_id(player->GetID()); //自摸
+
 				if (player->IsJinbao()) 
 				{
 					fan_list.emplace(Asset::FAN_TYPE_JIN_BAO);
-					
-					_oper_limit.set_from_player_id(player->GetID());
 				}
 
 				Calculate(player->GetID(), _oper_limit.from_player_id(), fan_list); //结算
