@@ -504,6 +504,8 @@ int32_t Player::CmdGameOperate(pb::Message* message)
 		break;
 	}
 
+	if (!_room) return 4;
+
 	_room->OnPlayerOperate(shared_from_this(), message); //广播给其他玩家
 
 	return 0;
