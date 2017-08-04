@@ -3471,20 +3471,6 @@ void Player::PreCheckOnFaPai()
 
 void Player::NormalCheckAfterFaPai(const Asset::PaiElement& pai)
 {
-	DEBUG("玩家{}抓牌{}回调", _player_id, pai.ShortDebugString());
-
-	Asset::PaiOperationAlert alert;
-
-	if (CheckZiMo(pai)) //牌已经在玩家手里
-	{
-		auto pai_perator = alert.mutable_pais()->Add();
-		pai_perator->mutable_pai()->CopyFrom(pai);
-		pai_perator->mutable_oper_list()->Add(Asset::PAI_OPER_TYPE_HUPAI);
-	}
-	
-	DEBUG("玩家{}抓牌{}发送协议", _player_id, alert.ShortDebugString());
-					
-	//if (alert.pais().size()) SendProtocol(alert); //提示Client
 }
 
 int32_t Player::OnFaPai(std::vector<int32_t>& cards)

@@ -389,10 +389,10 @@ void Game::OnPaiOperate(std::shared_ptr<Player> player, pb::Message* message)
 		
 		case Asset::PAI_OPER_TYPE_HUPAI: //胡牌
 		{
-			auto fan_list = player->GetFanList();
-
 			if (player->CheckHuPai(pai)) //玩家点炮
 			{
+				auto fan_list = player->GetFanList();
+
 				if (player->IsJinbao()) 
 				{
 					fan_list.emplace(Asset::FAN_TYPE_JIN_BAO);
@@ -404,6 +404,8 @@ void Game::OnPaiOperate(std::shared_ptr<Player> player, pb::Message* message)
 			}
 			else if (player->CheckZiMo(pai)) 
 			{
+				auto fan_list = player->GetFanList();
+
 				if (player->IsJinbao()) 
 				{
 					fan_list.emplace(Asset::FAN_TYPE_JIN_BAO);
@@ -415,6 +417,8 @@ void Game::OnPaiOperate(std::shared_ptr<Player> player, pb::Message* message)
 			}
 			else if (player->CheckBaoHu(pai)) //宝胡
 			{
+				auto fan_list = player->GetFanList();
+
 				fan_list.emplace(Asset::FAN_TYPE_LOU_BAO); 
 					
 				_oper_limit.set_from_player_id(player->GetID());

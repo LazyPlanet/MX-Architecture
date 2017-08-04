@@ -250,6 +250,7 @@ void Room::OnPlayerOperate(std::shared_ptr<Player> player, pb::Message* message)
 
 		case Asset::GAME_OPER_TYPE_DISMISS_AGREE: //解散
 		{
+			/*
 			auto curr_time = CommonTimerInstance.GetTime();
 
 			if (_dismiss_cooldown > 0 && curr_time <= _dismiss_cooldown) 
@@ -257,6 +258,7 @@ void Room::OnPlayerOperate(std::shared_ptr<Player> player, pb::Message* message)
 				player->AlertMessage(Asset::ERROR_ROOM_DISMISS_COOLDOWN);
 				return;
 			}
+			*/
 
 			OnDisMiss();
 
@@ -532,6 +534,7 @@ bool Room::CanDisMiss()
 void Room::ClearDisMiss()
 {
 	_dismiss_time = 0;
+	_dismiss_cooldown = 0;
 
 	for (auto player : _players)
 	{
