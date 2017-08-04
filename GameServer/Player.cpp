@@ -2513,14 +2513,7 @@ bool Player::DebugCheckHuPai(const Asset::PaiElement& pai, bool check_zibo)
 			}
 			else if (jiahu)
 			{
-				if (pai.card_value() == 5) 
-				{
-					_fan_list.emplace(Asset::FAN_TYPE_JIA_HU_HIGHER);
-				}
-				else
-				{
-					_fan_list.emplace(Asset::FAN_TYPE_JIA_HU_NORMAL);
-				}
+				_fan_list.emplace(Asset::FAN_TYPE_JIA_HU_NORMAL);
 			}
 		}
 	}
