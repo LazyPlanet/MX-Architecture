@@ -139,7 +139,7 @@ int32_t Player::Logout(pb::Message* message)
 		{
 			ERROR("player_id:{} logout game when in room:{}", _player_id, _room->GetID()); //玩家逃跑
 
-			_tuoguan_server = true; //服务器托管
+			//_tuoguan_server = true; //服务器托管
 
 			/*
 			if (_tuoguan_server && _game->CanPaiOperate(shared_from_this())) //轮到该玩家操作
