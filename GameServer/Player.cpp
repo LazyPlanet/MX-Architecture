@@ -3638,6 +3638,7 @@ int32_t Player::OnFaPai(std::vector<int32_t>& cards)
 		//
 		//可能玩家掉线或者已经逃跑
 		//
+		/*
 		if (HasTuoGuan())
 		{
 			Asset::PaiOperation pai_operation; 
@@ -3651,6 +3652,7 @@ int32_t Player::OnFaPai(std::vector<int32_t>& cards)
 		{
 			NormalCheckAfterFaPai(card);
 		}
+		*/
 	}
 	
 	auto remain_count = _game->GetRemainCount();
