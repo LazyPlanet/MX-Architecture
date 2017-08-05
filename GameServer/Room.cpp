@@ -651,21 +651,27 @@ void RoomManager::Update(int32_t diff)
 {
 	++_heart_count;
 	
-	if (_heart_count % 20 != 0) return; //1s
-
-	for (auto it = _rooms.begin(); it != _rooms.end(); )
+	if (_heart_count % 20 == 0) //1s
 	{
-		it->second->Update();
+	
+	}
 
-		if (it->second->IsExpired() && it->second->IsEmpty())
+	if (_heart_count % 100 == 0) //5s
+	{
+		for (auto it = _rooms.begin(); it != _rooms.end(); )
 		{
-			LOG(INFO, "Remove room_id:{} for empty and expired.", it->second->GetID());
+			it->second->Update();
 
-			it = _rooms.erase(it);
-		}
-		else
-		{
-			++it;
+			if ((it->second->IsExpired() && it->second->IsEmpty()) || it->second->HasDisMiss())
+			{
+				LOG(INFO, "Remove room_id:{} for empty and expired.", it->second->GetID());
+
+				it = _rooms.erase(it);
+			}
+			else
+			{
+				++it;
+			}
 		}
 	}
 }

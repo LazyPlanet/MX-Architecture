@@ -741,27 +741,45 @@ void Player::SyncCommonProperty(Asset::SyncCommonProperty_SYNC_REASON_TYPE reaso
 int32_t Player::CmdEnterRoom(pb::Message* message) 
 {
 	Asset::EnterRoom* enter_room = dynamic_cast<Asset::EnterRoom*>(message);
-	if (!enter_room) return 1; 
+	if (!enter_room) return Asset::ERROR_INNER; 
 
+	//
+	//房间重入检查
+	//
 	if (_room) 
 	{
 		DEBUG("玩家:{}重入房间:{} 数据:{}", _player_id, _room->GetID(), enter_room->ShortDebugString());
+			
+		auto locate_room = RoomInstance.Get(enter_room->room().room_id());
+		if (!locate_room)
+		{
+			_room.reset();
+
+			enter_room->set_error_code(Asset::ERROR_ROOM_NOT_FOUNT); //是否可以进入场景//房间
+			SendProtocol(message);
+
+			return Asset::ERROR_ROOM_NOT_FOUNT;
+		}
 
 		if (_room->GetID() == enter_room->room().room_id()) //重入房间
 		{
 			enter_room->mutable_room()->CopyFrom(_room->Get());
 			enter_room->set_error_code(Asset::ERROR_SUCCESS); //是否可以进入场景//房间
-
 			SendProtocol(message);
 
-			return 0;
+			return Asset::ERROR_SUCCESS;
 		}
 		else
 		{
 			AlertMessage(Asset::ERROR_ROOM_HAS_BEEN_IN);
-			return 2;
+
+			return Asset::ERROR_ROOM_HAS_BEEN_IN;
 		}
 	}
+
+	//
+	//房间正常进入
+	//
 
 	ClearCards();
 

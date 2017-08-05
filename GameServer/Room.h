@@ -99,7 +99,8 @@ public:
 	bool IsBanker(int64_t player_id){ return _banker == player_id; } //是否是庄家
 
 	bool IsExpired(); //是否过期
-	void ClearDisMiss();
+	bool HasDisMiss() { return _is_dismiss; } //是否解散状态
+	void ClearDisMiss(); //清除解散状态
 };
 
 /////////////////////////////////////////////////////
