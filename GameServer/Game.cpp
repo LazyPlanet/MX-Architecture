@@ -127,6 +127,7 @@ bool Game::OnGameOver(int64_t player_id)
 {
 	if (!_room) return false;
 
+	/*
 	Asset::PaiPushDown proto;
 
 	for (int i = 0; i < MAX_PLAYER_COUNT; ++i)
@@ -160,6 +161,14 @@ bool Game::OnGameOver(int64_t player_id)
 	}
 
 	BroadCast(proto);
+	*/
+
+	for (auto player : _players)
+	{
+		if (!player) continue;
+
+		player->OnGameOver();
+	}
 	
 	ClearState();
 
@@ -684,6 +693,44 @@ void Game::Calculate(int64_t hupai_player_id/*胡牌玩家*/, int64_t dianpao_pl
 
 	DEBUG("玩家胡牌, 胡牌玩家:{} 点炮玩家:{}", hupai_player_id, dianpao_player_id);
 
+	//
+	//1.推到牌
+	//
+	Asset::PaiPushDown proto;
+
+	for (int i = 0; i < MAX_PLAYER_COUNT; ++i)
+	{
+		auto player = _players[i];
+		if (!player) 
+		{
+			ERROR("player_index:{} has not found, maybe it has disconneced.", i);
+			continue;
+		}
+
+		auto player_info = proto.mutable_player_list()->Add();
+		player_info->set_player_id(player->GetID());
+		player_info->set_position(player->GetPosition());
+
+		const auto& cards = player->GetCardsInhand();
+
+		for (auto it = cards.begin(); it != cards.end(); ++it)
+		{
+			auto pai = player_info->mutable_pai_list()->Add();
+
+			pai->set_card_type((Asset::CARD_TYPE)it->first); //牌类型
+
+			for (auto card_value : it->second)
+			{
+				pai->mutable_cards()->Add(card_value); //牌值
+			}
+		}
+	}
+
+	BroadCast(proto);
+
+	//
+	//2.结算
+	//
 	if (hupai_player_id != dianpao_player_id) _room->AddDianpao(dianpao_player_id); //不是自摸
 	
 	const auto options = _room->GetOptions();

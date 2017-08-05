@@ -2,6 +2,7 @@
 #include <algorithm>
 
 #include <boost/asio.hpp>
+#include <cpp_redis/cpp_redis>
 
 #include "Room.h"
 #include "Game.h"
@@ -401,8 +402,8 @@ void Room::OnGameOver(int64_t player_id)
 		player->SendProtocol(message);
 	}
 	
-	auto redis = make_unique<Redis>();
-	redis->SaveRoomHistory(GetID(), _history); //存盘
+	//auto redis = make_unique<Redis>();
+	//redis->SaveRoomHistory(GetID(), _history); //存盘
 
 	_history.Clear();
 	_bankers.clear();
@@ -413,6 +414,22 @@ void Room::OnGameOver(int64_t player_id)
 void Room::AddGameRecord(const Asset::GameRecord& record)
 {
 	_history.mutable_list()->Add()->CopyFrom(record);
+
+	LOG(INFO, "房间:{} 存储战绩信息:{} 当前历史战绩信息:{}", GetID(), record.ShortDebugString(), _history.ShortDebugString());
+
+	cpp_redis::future_client client;
+	client.connect(ConfigInstance.GetString("Redis_ServerIP", "127.0.0.1"), ConfigInstance.GetInt("Redis_ServerPort", 6379));
+	if (!client.is_connected()) return;
+	
+	auto has_auth = client.auth(ConfigInstance.GetString("Redis_Password", "!QAZ%TGB&UJM9ol."));
+	if (has_auth.get().ko()) 
+	{
+		DEBUG_ASSERT(false);
+		return;
+	}
+
+	client.set("room_history:" + std::to_string(GetID()), _history.SerializeAsString());
+	client.commit();
 }
 
 void Room::BroadCast(pb::Message* message, int64_t exclude_player_id)
@@ -578,9 +595,8 @@ void Room::Update()
 {
 	auto curr_time = CommonTimerInstance.GetTime();
 
-	if (_dismiss_time > 0 && _dismiss_time <= curr_time) 
+	if (!_is_dismiss && _dismiss_time > 0 && _dismiss_time <= curr_time) //非已确认解散，系统才自动解散
 	{
-		LOG(INFO, "时间到，自动解散房间:{}", GetID());
 		DoDisMiss(); //解散
 	}
 }

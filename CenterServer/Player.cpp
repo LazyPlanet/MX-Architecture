@@ -779,12 +779,23 @@ void Player::BattleHistory(int32_t start_index, int32_t end_index)
 
 	if (end_index == 0) end_index = _stuff.room_history().size();
 	if (start_index == 0) start_index = end_index - historty_count;
+	
+	cpp_redis::future_client client;
+	client.connect(ConfigInstance.GetString("Redis_ServerIP", "127.0.0.1"), ConfigInstance.GetInt("Redis_ServerPort", 6379));
+	if (!client.is_connected()) return;
+	
+	auto has_auth = client.auth(ConfigInstance.GetString("Redis_Password", "!QAZ%TGB&UJM9ol."));
+	if (has_auth.get().ko()) 
+	{
+		DEBUG_ASSERT(false);
+		return;
+	}
 
 	Asset::BattleHistory message;
 	message.set_start_index(start_index);
 	message.set_end_index(end_index);
 
-	auto redis = make_unique<Redis>();
+	//auto redis = make_unique<Redis>();
 
 	for (int32_t i = end_index - 1; i >= start_index; --i)
 	{
@@ -795,8 +806,25 @@ void Player::BattleHistory(int32_t start_index, int32_t end_index)
 		}
 
 		Asset::RoomHistory history;
-		auto success = redis->GetRoomHistory(_stuff.room_history(i), history);
-		if (success != REDIS_REPLY_STRING) continue;
+		//auto success = redis->GetRoomHistory(_stuff.room_history(i), history);
+		//if (success != REDIS_REPLY_STRING) continue;
+
+		auto get = client.get("room_history:" + std::to_string(_stuff.room_history(i)));
+		cpp_redis::reply reply = get.get();
+		client.commit();
+
+		if (!reply.is_string()) 
+		{
+			DEBUG_ASSERT(false);
+			return;
+		}
+
+		auto success = history.ParseFromString(reply.as_string());
+		if (!success)
+		{
+			DEBUG_ASSERT(false);
+			return;
+		}
 
 		auto record = message.mutable_history_list()->Add();
 		record->CopyFrom(history);
