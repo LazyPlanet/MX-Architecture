@@ -3851,7 +3851,7 @@ void Player::ClearCards()
 	_tuoguan_server = false;
 	_jinbao = false;
 	_oper_type = Asset::PAI_OPER_TYPE_BEGIN; //初始化操作
-	_player_prop.Clear(); //准备//离开//临时状态
+	_player_prop.clear_game_oper_state(); //准备//离开
 }
 	
 void Player::OnGameOver()
