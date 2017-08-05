@@ -655,6 +655,8 @@ void RoomManager::Update(int32_t diff)
 
 	for (auto it = _rooms.begin(); it != _rooms.end(); )
 	{
+		it->second->Update();
+
 		if (it->second->IsExpired() && it->second->IsEmpty())
 		{
 			LOG(INFO, "Remove room_id:{} for empty and expired.", it->second->GetID());
