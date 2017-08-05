@@ -137,6 +137,8 @@ int32_t Player::Logout(pb::Message* message)
 	{
 		if (_game) //游戏中
 		{
+			SetOffline(); //玩家状态
+
 			ERROR("player_id:{} logout game when in room:{}", _player_id, _room->GetID()); //玩家逃跑
 
 			//_tuoguan_server = true; //服务器托管
@@ -3831,6 +3833,8 @@ void Player::ClearCards()
 		ERROR("玩家:{}清理牌数据失败", _player_id);
 		return;
 	}
+	
+	_fan_list.clear(); 
 
 	_cards_inhand.clear();	//清理手里牌
 	_cards_outhand.clear(); //清理墙外牌
@@ -3841,14 +3845,13 @@ void Player::ClearCards()
 	_jiangang = 0; //清理旋风杠
 	_fenggang = 0; //清理旋风杠
 	
-	_player_prop.clear_game_oper_state(); //准备//离开
-	_fan_list.clear(); 
 	_oper_count_tingpai = 0;
 	_oper_count = 0; 
 	_has_ting = false;
 	_tuoguan_server = false;
 	_jinbao = false;
-	_oper_type = Asset::PAI_OPER_TYPE_BEGIN;
+	_oper_type = Asset::PAI_OPER_TYPE_BEGIN; //初始化操作
+	_player_prop.Clear(); //准备//离开//临时状态
 }
 	
 void Player::OnGameOver()

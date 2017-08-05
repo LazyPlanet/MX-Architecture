@@ -155,6 +155,9 @@ public:
 	virtual bool CmdBuySomething(pb::Message* message);
 	//是否在线
 	bool IsOnline() { return _stuff.login_time() != 0; }
+	//是否离线//房间内离线状态处理
+	bool IsOffline() { return _player_prop.offline(); }
+	void SetOffline(bool offline = true) { _player_prop.set_offline(offline); }
 	//签到
 	virtual int32_t CmdSign(pb::Message* message);
 	//获取玩家基础属性

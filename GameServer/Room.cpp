@@ -122,6 +122,8 @@ bool Room::Enter(std::shared_ptr<Player> player)
 void Room::OnReEnter(std::shared_ptr<Player> player)
 {
 	if (!player) return;
+
+	player->SetOffline(false); //回到房间内
 				
 	SyncRoom();
 
@@ -392,7 +394,12 @@ void Room::OnGameOver(int64_t player_id)
 
 	LOG(INFO, "整局结算，胡牌玩家:{} 数据:{}", player_id, message.ShortDebugString());
 
-	BroadCast(message);
+	for (auto player : _players)
+	{
+		if (!player || player->IsOffline()) continue;
+
+		player->SendProtocol(message);
+	}
 	
 	auto redis = make_unique<Redis>();
 	redis->SaveRoomHistory(GetID(), _history); //存盘
