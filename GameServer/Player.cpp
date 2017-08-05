@@ -189,7 +189,7 @@ int32_t Player::OnLogout()
 	
 	ClearCards();
 
-	if (!_game && _room) _room.reset();
+	if (!_game && _room) ResetRoom();
 	
 	Save(true);	//存档数据库
 
@@ -755,10 +755,11 @@ int32_t Player::CmdEnterRoom(pb::Message* message)
 		auto locate_room = RoomInstance.Get(enter_room->room().room_id());
 		if (!locate_room)
 		{
-			_room.reset();
-
 			enter_room->set_error_code(Asset::ERROR_ROOM_NOT_FOUNT); //是否可以进入场景//房间
 			SendProtocol(message);
+
+			ResetRoom(); //房间已经解散
+			SetOffline(false); //恢复在线状态
 
 			return Asset::ERROR_ROOM_NOT_FOUNT;
 		}
@@ -1135,10 +1136,9 @@ void Player::BroadCastCommonProp(Asset::MSG_TYPE type)
 
 void Player::OnLeaveRoom()
 {
-	if (_room) _room.reset();
-
 	_stuff.clear_room_id(); //用于处理玩家断线重入房间
 
+	ResetRoom();
 	ClearCards();  //游戏数据
 	
 	Asset::RoomState room_state;
