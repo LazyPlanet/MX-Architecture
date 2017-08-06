@@ -294,8 +294,6 @@ void Game::OnPaiOperate(std::shared_ptr<Player> player, pb::Message* message)
 			else if (CheckLiuJu())
 			{
 				OnGameOver(0); 
-				
-				_liuju = true;
 			}
 			else
 			{
@@ -548,7 +546,15 @@ void Game::OnPaiOperate(std::shared_ptr<Player> player, pb::Message* message)
 		
 		case Asset::PAI_OPER_TYPE_GIVEUP: //放弃
 		{
-			if (SendCheckRtn()) return;
+			if (SendCheckRtn()) 
+			{
+				return;
+			}
+			else if (IsLiuJu())
+			{
+				OnLiuJu();
+				return;
+			}
 			
 			auto next_player_index = (_curr_player_index + 1) % MAX_PLAYER_COUNT; //如果有玩家放弃操作，则继续下个玩家
 
@@ -1304,14 +1310,15 @@ bool Game::CheckLiuJu()
 	if (!_room) return false;
 
 	if (_cards.size() > size_t(g_const->liuju_count() + 4)) return false;
-
-	Asset::LiuJu message;
-
-	auto next_player_index = (_curr_player_index + 1) % MAX_PLAYER_COUNT;
+				
+	_liuju = true;
 
 	//
 	//1.流局分张
 	//
+	Asset::LiuJu message;
+	auto next_player_index = (_curr_player_index + 1) % MAX_PLAYER_COUNT;
+
 	for (int32_t i = next_player_index; i < MAX_PLAYER_COUNT + next_player_index; ++i)
 	{
 		auto cur_index = i % MAX_PLAYER_COUNT;
@@ -1322,40 +1329,70 @@ bool Game::CheckLiuJu()
 			DEBUG_ASSERT(false);
 			return false;
 		}
-
-		Asset::PaiOperationAlert alert;
-				
+		
 		auto cards = FaPai(1); 
+		player->OnFaPai(cards); //放入玩家牌内
+		
 		auto card = GameInstance.GetCard(cards[0]); //玩家待抓的牌
 
+		//
+		//各个玩家分张
+		//
 		auto ju_element = message.mutable_elements()->Add();
-		ju_element->mutable_pai()->CopyFrom(card); //玩家分的牌
-		ju_element->set_player_id(player->GetID()); //玩家角色ID
+		ju_element->mutable_pai()->CopyFrom(card); 
+		ju_element->set_player_id(player->GetID()); 
+		
+		//
+		//缓存所有操作
+		//
+		Asset::PaiOperationList pai_operation;
+		pai_operation.set_player_id(player->GetID());
+		pai_operation.set_from_player_id(player->GetID());
+		pai_operation.mutable_pai()->CopyFrom(card);
 
 		if (player->CheckHuPai(card)) 
 		{
-			auto pai_perator = alert.mutable_pais()->Add();
-			pai_perator->mutable_pai()->CopyFrom(card);
-			pai_perator->mutable_oper_list()->Add(Asset::PAI_OPER_TYPE_HUPAI);
+			pai_operation.mutable_oper_list()->Add(Asset::PAI_OPER_TYPE_HUPAI);
+			_oper_list.push_back(pai_operation);
 		}
 		else if (player->CheckBaoHu(card))
 		{
-			auto pai_perator = alert.mutable_pais()->Add();
-			pai_perator->mutable_pai()->CopyFrom(card);
-			pai_perator->mutable_oper_list()->Add(Asset::PAI_OPER_TYPE_HUPAI);
+			pai_operation.mutable_oper_list()->Add(Asset::PAI_OPER_TYPE_HUPAI);
+			_oper_list.push_back(pai_operation);
 		}
 	}
 	
 	BroadCast(message);
 	
 	//
-	//2.推到牌
+	//2.胡牌检查
+	//
+	
+	if (_oper_list.size()) 
+	{
+		SendCheckRtn(); //胡牌提示
+	}
+	else
+	{
+		OnLiuJu();
+	}
+
+	return true;
+}
+	
+void Game::OnLiuJu()
+{
+	if (!_room) return;
+		
+	//
+	//推到牌
 	//
 	PaiPushDown();
 	
 	//
-	//3.记录本次积分
+	//记录本次积分
 	//
+
 	Asset::GameCalculate game_calculate;
 	game_calculate.set_calculte_type(Asset::CALCULATE_TYPE_LIUJU);
 	game_calculate.mutable_baopai()->CopyFrom(_baopai);
@@ -1375,8 +1412,6 @@ bool Game::CheckLiuJu()
 	_room->AddGameRecord(game_calculate.record()); //本局记录
 
 	LOG(INFO, "流局结算:{}", game_calculate.ShortDebugString());
-
-	return true;
 }
 
 std::vector<int32_t> Game::FaPai(size_t card_count)

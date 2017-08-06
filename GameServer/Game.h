@@ -103,6 +103,7 @@ public:
 
 	bool CheckLiuJu(); //流局检查
 	bool IsLiuJu() { return _liuju; } //是否流局
+	void OnLiuJu(); //流局 
 
 	int32_t GetRemainCount() { return _cards.size(); } //当前剩余牌数量
 	bool SanJiaBi(int64_t hupai_player_id); //三家闭门
