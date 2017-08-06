@@ -683,15 +683,8 @@ bool Game::SanJiaBi(int64_t hupai_player_id)
 	return true;
 }
 	
-void Game::Calculate(int64_t hupai_player_id/*胡牌玩家*/, int64_t dianpao_player_id/*点炮玩家*/, std::unordered_set<int32_t>& fan_list)
+void Game::PaiPushDown()
 {
-	if (!_room) return;
-
-	DEBUG("玩家胡牌, 胡牌玩家:{} 点炮玩家:{}", hupai_player_id, dianpao_player_id);
-
-	//
-	//1.推到牌
-	//
 	Asset::PaiPushDown proto;
 
 	for (int i = 0; i < MAX_PLAYER_COUNT; ++i)
@@ -723,6 +716,18 @@ void Game::Calculate(int64_t hupai_player_id/*胡牌玩家*/, int64_t dianpao_pl
 	}
 
 	BroadCast(proto);
+}
+	
+void Game::Calculate(int64_t hupai_player_id/*胡牌玩家*/, int64_t dianpao_player_id/*点炮玩家*/, std::unordered_set<int32_t>& fan_list)
+{
+	if (!_room) return;
+
+	DEBUG("玩家胡牌, 胡牌玩家:{} 点炮玩家:{}", hupai_player_id, dianpao_player_id);
+
+	//
+	//1.推到牌
+	//
+	PaiPushDown();
 
 	//
 	//2.结算
@@ -1298,8 +1303,6 @@ bool Game::CheckLiuJu()
 {
 	if (!_room) return false;
 
-	DEBUG("流局检查, 当前牌数量:{} 配置流局牌数量:{}", _cards.size(), g_const->liuju_count());
-
 	if (_cards.size() > size_t(g_const->liuju_count() + 4)) return false;
 
 	Asset::LiuJu message;
@@ -1345,10 +1348,13 @@ bool Game::CheckLiuJu()
 	
 	BroadCast(message);
 	
-	DEBUG("流局检查, 当前牌数量:{} 配置流局牌数量:{}", _cards.size(), g_const->liuju_count());
+	//
+	//2.推到牌
+	//
+	PaiPushDown();
 	
 	//
-	//记录本次积分
+	//3.记录本次积分
 	//
 	Asset::GameCalculate game_calculate;
 	game_calculate.set_calculte_type(Asset::CALCULATE_TYPE_LIUJU);
