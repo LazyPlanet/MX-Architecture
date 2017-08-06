@@ -3845,8 +3845,9 @@ void Player::ClearCards()
 	
 	_fan_list.clear(); 
 
-	_cards_inhand.clear();	//清理手里牌
+	_cards_inhand.clear(); //清理手里牌
 	_cards_outhand.clear(); //清理墙外牌
+	_cards_pool.clear(); //牌池
  
  	_minggang.clear(); //清理杠牌
 	_angang.clear(); //清理杠牌

@@ -235,7 +235,7 @@ private:
 	bool _jinbao = false;
 
 	//玩家牌数据
-	std::vector<Asset::PaiElement> _cards_pool; //牌池//玩家已经打的牌缓存
+	std::list<Asset::PaiElement> _cards_pool; //牌池//玩家已经打的牌缓存
 	std::map<int32_t/*麻将牌类型*/, std::vector<int32_t>/*牌值*/> _cards_inhand; //玩家手里的牌
 	std::map<int32_t/*麻将牌类型*/, std::vector<int32_t>/*牌值*/> _cards_outhand; //玩家墙外牌
 	std::vector<Asset::PaiElement> _minggang; //明杠
@@ -378,7 +378,8 @@ public:
 	const std::map<int32_t, std::vector<int32_t>>& GetCardsOuthand() { return _cards_outhand; }
 
 	void Add2CardsPool(Asset::PaiElement pai) { _cards_pool.push_back(pai); }
-	const std::vector<Asset::PaiElement>& GetCardsPool() { return _cards_pool; }
+	const std::list<Asset::PaiElement>& GetCardsPool() { return _cards_pool; }
+	void CardsPoolPop() { _cards_pool.pop_back(); }
 
 	void ClearCards(); //删除玩家牌(包括手里牌、墙外牌)
 	void OnGameOver(); //游戏结束
