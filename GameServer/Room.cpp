@@ -52,8 +52,6 @@ Asset::ERROR_CODE Room::TryEnter(std::shared_ptr<Player> player)
 //
 bool Room::IsFull() 
 { 
-	std::lock_guard<std::mutex> lock(_mutex);
-
 	if (_players.size() < (size_t)MAX_PLAYER_COUNT) return false;
 
 	for (auto player : _players)
