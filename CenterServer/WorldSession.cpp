@@ -222,8 +222,8 @@ void WorldSession::OnProcessMessage(const Asset::Meta& meta)
 		
 			//redis->SaveUser(login->account().username(), _user); //账号数据存盘
 			
-			client.set("user:" + login->account().username(), _user.SerializeAsString());
-			client.commit();
+			auto set = client.set("user:" + login->account().username(), _user.SerializeAsString());
+			client.sync_commit();
 
 			PLAYER(_user); //账号查询
 			

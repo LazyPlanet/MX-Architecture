@@ -770,6 +770,8 @@ int32_t Player::CmdGetBattleHistory(pb::Message* message)
 
 void Player::BattleHistory(int32_t start_index, int32_t end_index)
 {
+	return;
+
 	if (start_index > end_index || start_index < 0 || end_index < 0) return;
 
 	int32_t historty_count = std::min(_stuff.room_history().size(), 5); //最多显示5条记录
@@ -808,22 +810,29 @@ void Player::BattleHistory(int32_t start_index, int32_t end_index)
 		Asset::RoomHistory history;
 		//auto success = redis->GetRoomHistory(_stuff.room_history(i), history);
 		//if (success != REDIS_REPLY_STRING) continue;
+		
 
-		auto get = client.get("room_history:" + std::to_string(_stuff.room_history(i)));
+		auto room_id = _stuff.room_history(i);
+
+		DEBUG("玩家:{}获取房间:{}历史战绩", _player_id, room_id);
+
+		auto get = client.get("room_history:" + std::to_string(room_id));
 		cpp_redis::reply reply = get.get();
 		client.commit();
 
 		if (!reply.is_string()) 
 		{
-			DEBUG_ASSERT(false);
-			return;
+			ERROR("房间:{}没有数据", room_id);
+			//DEBUG_ASSERT(false);
+			continue;
 		}
 
 		auto success = history.ParseFromString(reply.as_string());
 		if (!success)
 		{
-			DEBUG_ASSERT(false);
-			return;
+			//DEBUG_ASSERT(false);
+			ERROR("房间:{}没有数据", room_id);
+			continue;
 		}
 
 		auto record = message.mutable_history_list()->Add();
