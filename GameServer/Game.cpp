@@ -293,6 +293,8 @@ void Game::OnPaiOperate(std::shared_ptr<Player> player, pb::Message* message)
 			}
 			else if (CheckLiuJu())
 			{
+				if (SendCheckRtn()) return;
+
 				OnGameOver(0); 
 			}
 			else
@@ -1350,7 +1352,7 @@ bool Game::CheckLiuJu()
 		pai_operation.set_from_player_id(player->GetID());
 		pai_operation.mutable_pai()->CopyFrom(card);
 
-		if (player->CheckHuPai(card)) 
+		if (player->CheckZiMo(card)) 
 		{
 			pai_operation.mutable_oper_list()->Add(Asset::PAI_OPER_TYPE_HUPAI);
 			_oper_list.push_back(pai_operation);
@@ -1368,14 +1370,9 @@ bool Game::CheckLiuJu()
 	//2.胡牌检查
 	//
 	
-	if (_oper_list.size()) 
-	{
-		SendCheckRtn(); //胡牌提示
-	}
-	else
-	{
-		OnLiuJu();
-	}
+	if (_oper_list.size()) return true; //玩家要进行操作
+
+	OnLiuJu();
 
 	return true;
 }
