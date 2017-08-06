@@ -358,7 +358,7 @@ void Game::OnPaiOperate(std::shared_ptr<Player> player, pb::Message* message)
 				}
 				
 				//
-				//杠检查:包括明杠和暗杠
+				//明杠和暗杠检查
 				//
 				::google::protobuf::RepeatedField<Asset::PaiOperationAlert_AlertElement> gang_list;
 				if (player_next->CheckAllGangPai(gang_list)) 
@@ -588,9 +588,7 @@ void Game::OnPaiOperate(std::shared_ptr<Player> player, pb::Message* message)
 			player_next->OnFaPai(cards); //放入玩家牌里面
 
 			//
-			//玩家摇色子，摸宝在OnFaPai进行处理
-			//
-			//此时可以解决，玩家摸宝之后进行抓牌正好抓到宝胡
+			//玩家摸宝之后进行抓牌正好抓到宝胡
 			//
 			if (player_next->CheckBaoHu(card)) //宝胡
 			{

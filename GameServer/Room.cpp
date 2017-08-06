@@ -52,6 +52,8 @@ Asset::ERROR_CODE Room::TryEnter(std::shared_ptr<Player> player)
 //
 bool Room::IsFull() 
 { 
+	std::lock_guard<std::mutex> lock(_mutex);
+
 	if (_players.size() < (size_t)MAX_PLAYER_COUNT) return false;
 
 	for (auto player : _players)
@@ -229,6 +231,8 @@ std::shared_ptr<Player> Room::GetPlayer(int64_t player_id)
 
 void Room::OnPlayerOperate(std::shared_ptr<Player> player, pb::Message* message)
 {
+	std::lock_guard<std::mutex> lock(_mutex);
+
 	if (!player || !message) return;
 
 	auto game_operate = dynamic_cast<Asset::GameOperation*>(message);

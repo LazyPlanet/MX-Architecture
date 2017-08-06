@@ -379,7 +379,10 @@ public:
 
 	void Add2CardsPool(Asset::PaiElement pai) { _cards_pool.push_back(pai); }
 	const std::list<Asset::PaiElement>& GetCardsPool() { return _cards_pool; }
-	void CardsPoolPop() { _cards_pool.pop_back(); }
+	void CardsPoolPop() { 
+		if (_cards_pool.size() == 0) return;
+		_cards_pool.pop_back(); 
+	}
 
 	void ClearCards(); //删除玩家牌(包括手里牌、墙外牌)
 	void OnGameOver(); //游戏结束
