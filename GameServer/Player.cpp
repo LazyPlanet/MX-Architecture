@@ -2761,7 +2761,8 @@ void Player::OnChiPai(const Asset::PaiElement& pai, pb::Message* message)
 			for (const auto& card : cards)
 			{
 				_cards_outhand[card.card_type()].push_back(card.card_value());
-				_game->Add2CardsPool(card.card_type(), card.card_value());
+
+				if (card.card_type() != pai.card_type() && card.card_value() != pai.card_value()) _game->Add2CardsPool(card.card_type(), card.card_value());
 			}
 		}
 		else
@@ -2836,10 +2837,10 @@ void Player::OnPengPai(const Asset::PaiElement& pai)
 			}
 
 			for (int i = 0; i < 3; ++i)
-			{
 				_cards_outhand[pai.card_type()].push_back(pai.card_value());
+			
+			for (int i = 0; i < 2; ++i)
 				_game->Add2CardsPool(pai.card_type(), pai.card_value());
-			}
 		}
 		else
 		{
@@ -3361,7 +3362,11 @@ void Player::OnGangFengPai()
 			for (int32_t card_value = 1; card_value <= 4; ++card_value) //东南西北
 			{
 				auto it_if = std::find(it->second.begin(), it->second.end(), card_value);
-				if (it_if != it->second.end())  it->second.erase(it_if); //删除
+				if (it_if != it->second.end())  
+				{	
+					_game->Add2CardsPool(Asset::CARD_TYPE_FENG, card_value);
+					it->second.erase(it_if); //删除
+				}
 			}
 		}
 		else
@@ -3454,7 +3459,11 @@ void Player::OnGangJianPai()
 			for (auto card_value = 1; card_value <= 3; ++card_value) //中发白
 			{
 				auto it_if = std::find(it->second.begin(), it->second.end(), card_value);
-				if (it_if != it->second.end())  it->second.erase(it_if); //删除
+				if (it_if != it->second.end())  
+				{
+					_game->Add2CardsPool(Asset::CARD_TYPE_JIAN, card_value);
+					it->second.erase(it_if); //删除
+				}
 			}
 		}
 		else
