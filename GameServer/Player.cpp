@@ -103,7 +103,11 @@ int32_t Player::Save(bool force)
 
 	auto redis = make_unique<Redis>();
 	auto success = redis->SavePlayer(_player_id, _stuff);
-	if (!success) return 2;
+	if (!success) 
+	{
+		DEBUG_ASSERT(false);
+		return 2;
+	}
 
 	_dirty = false;
 
@@ -1440,8 +1444,10 @@ bool Player::AddRoomRecord(int64_t room_id)
 { 
 	Asset::BattleList message;
 	for (auto id : _stuff.room_history()) message.mutable_room_list()->Add(id);
-
+	message.mutable_room_list()->Add(room_id);
 	SendProtocol(message);
+
+	DEBUG("当前玩家:{}历史战绩:{}", _player_id, message.ShortDebugString());
 	
 	_stuff.mutable_room_history()->Add(room_id); 
 	_dirty = true; 

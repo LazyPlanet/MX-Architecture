@@ -106,7 +106,11 @@ int32_t Player::Save(bool force)
 
 	auto redis = make_unique<Redis>();
 	auto success = redis->SavePlayer(_player_id, _stuff); 
-	if (!success) return 3;
+	if (!success) 
+	{
+		DEBUG_ASSERT(false);
+		return 3;
+	}
 
 	_dirty = false;
 	
@@ -770,8 +774,6 @@ int32_t Player::CmdGetBattleHistory(pb::Message* message)
 
 void Player::BattleHistory(int32_t start_index, int32_t end_index)
 {
-	return;
-
 	if (start_index > end_index || start_index < 0 || end_index < 0) return;
 
 	int32_t historty_count = std::min(_stuff.room_history().size(), 5); //最多显示5条记录
