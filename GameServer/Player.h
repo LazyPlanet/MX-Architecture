@@ -236,6 +236,7 @@ private:
 
 	//玩家牌数据
 	std::list<Asset::PaiElement> _cards_pool; //牌池//玩家已经打的牌缓存
+	std::vector<Asset::PaiElement> _cards_hu; //听牌之后能胡的牌
 	std::map<int32_t/*麻将牌类型*/, std::vector<int32_t>/*牌值*/> _cards_inhand; //玩家手里的牌
 	std::map<int32_t/*麻将牌类型*/, std::vector<int32_t>/*牌值*/> _cards_outhand; //玩家墙外牌
 	std::vector<Asset::PaiElement> _minggang; //明杠
@@ -279,7 +280,7 @@ public:
 
 	std::vector<Asset::PAI_OPER_TYPE> CheckPai(const Asset::PaiElement& pai, int64_t from_player_id);
 
-	bool CheckBaoHu(const Asset::PaiElement& pai);
+	bool CheckBaoHu(const Asset::PaiElement& pai, bool has_fapai = true);
 	bool LookAtBaopai(bool has_saizi);
 	void ResetBaopai();
 	void ResetLookAtBaopai() { _oper_count_tingpai = 1; }
@@ -290,9 +291,7 @@ public:
 	bool CanHuPai(std::vector<Card_t>& cards, bool use_pair = false);
 	bool CheckZiMo(); //胡牌检查-玩家手里现有牌检查
 	bool CheckZiMo(const Asset::PaiElement& pai); //胡牌检查-玩家手里现有牌检查
-	bool CheckHuPai(const Asset::PaiElement& pai, bool check_zibo = false); //胡牌
-	//bool CheckHuPai(std::unordered_set<int32_t>& fan_list); //胡牌且算番数
-	//bool CheckHuPai(const Asset::PaiElement& pai, std::unordered_set<int32_t>& fan_list); //胡牌且算番数
+	bool CheckHuPai(const Asset::PaiElement& pai, bool check_zibo = false); //胡牌//番数
 	bool CheckHuPai(const std::map<int32_t, std::vector<int32_t>>& cards_inhand, //玩家手里的牌
 			const std::map<int32_t, std::vector<int32_t>>& cards_outhand, //玩家墙外牌
 			const std::vector<Asset::PaiElement>& minggang, //明杠

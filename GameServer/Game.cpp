@@ -557,6 +557,12 @@ void Game::OnPaiOperate(std::shared_ptr<Player> player, pb::Message* message)
 				OnLiuJu();
 				return;
 			}
+			else if (CheckLiuJu())
+			{
+				if (SendCheckRtn()) return;
+				OnLiuJu();
+				return;
+			}
 			
 			auto next_player_index = (_curr_player_index + 1) % MAX_PLAYER_COUNT; //如果有玩家放弃操作，则继续下个玩家
 
@@ -1331,7 +1337,7 @@ bool Game::CheckLiuJu()
 		}
 		
 		auto cards = FaPai(1); 
-		player->OnFaPai(cards); //放入玩家牌内
+		//player->OnFaPai(cards); //放入玩家牌内
 		
 		auto card = GameInstance.GetCard(cards[0]); //玩家待抓的牌
 
@@ -1350,7 +1356,7 @@ bool Game::CheckLiuJu()
 		pai_operation.set_from_player_id(player->GetID());
 		pai_operation.mutable_pai()->CopyFrom(card);
 
-		if (player->CheckZiMo(card)) 
+		if (player->CheckZiMo(card) || player->CheckHuPai(card)) 
 		{
 			pai_operation.mutable_oper_list()->Add(Asset::PAI_OPER_TYPE_HUPAI);
 			_oper_list.push_back(pai_operation);
