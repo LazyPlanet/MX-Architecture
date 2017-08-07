@@ -19,8 +19,6 @@
 namespace Adoter
 {
 
-#define MAX_DATA_SIZE 8192
-
 template<class T, class S = boost::asio::ip::tcp::socket>
 class Socket : public std::enable_shared_from_this<T>
 {

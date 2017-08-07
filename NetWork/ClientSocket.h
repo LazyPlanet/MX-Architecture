@@ -17,8 +17,6 @@
 namespace Adoter 
 {
 
-#define MAX_DATA_SIZE 8192
-
 class ClientSocket : public std::enable_shared_from_this<ClientSocket>
 {
 public:
