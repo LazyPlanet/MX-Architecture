@@ -15,13 +15,16 @@
 
 namespace Adoter
 {
+
+#define MAX_DATA_SIZE 16384  
+
 //////////////////////////////////////////////////////////////////////////
 /////各种日志的宏定义/////
 //////////////////////////////////////////////////////////////////////////
 
 //调试日志
 #define DEBUG(fmt, ...) { \
-	auto debug = ConfigInstance.GetBool("DebugModel", true); \
+	auto debug = ConfigInstance.GetBool("ConsoleLog", true); \
 	if (debug) { \
 		spdlog::get("console")->debug("[file:#{} func:#{} line:#{}] " fmt, __FILE__, __func__, __LINE__, ##__VA_ARGS__); \
 	}\
