@@ -1602,13 +1602,23 @@ bool Player::CheckBaoHu(const Asset::PaiElement& pai, bool has_fapai)
 	//
 	//玩家不可能有两张宝牌
 	//
+	bool deleted = false;
+
 	auto it = std::find(_cards_inhand[pai.card_type()].begin(), _cards_inhand[pai.card_type()].end(), pai.card_value());
 	if (it != _cards_inhand[pai.card_type()].end()) //宝牌已经在墙内
 	{
 		_cards_inhand[pai.card_type()].erase(it);
+		deleted = true;
 	}
-		
-	return CheckHuPai(card, false);
+
+	bool hupai = CheckHuPai(card, false);
+
+	if (deleted)
+	{
+		_cards_inhand[pai.card_type()].push_back(pai.card_value());
+	}
+
+	return hupai;
 }
 	
 bool Player::CheckHuPai(const std::map<int32_t, std::vector<int32_t>>& cards_inhand, //玩家手里的牌
@@ -1821,7 +1831,7 @@ bool Player::CheckZiMo(const Asset::PaiElement& pai)
 	return CheckHuPai(pai, true);
 }
 	
-bool Player::CheckHuPai(const Asset::PaiElement& pai/*, std::unordered_set<int32_t>& _fan_list*/, bool check_zibo)
+bool Player::CheckHuPai(const Asset::PaiElement& pai, bool check_zibo)
 {
 	if (!_room || !_game)
 	{
@@ -2195,19 +2205,19 @@ bool Player::CheckHuPai(const Asset::PaiElement& pai/*, std::unordered_set<int32
 		}
 	}
 	
-	if (zhanlihu)
+	if (zhanlihu) //站立胡
 	{
 		_fan_list.emplace(Asset::FAN_TYPE_ZHAN_LI);
 	}
-	if (duanmen) 
+	if (duanmen) //断门
 	{
 		_fan_list.emplace(Asset::FAN_TYPE_DUAN_MEN);
 	}
-	if (yise) 
+	if (yise) //清一色
 	{
 		_fan_list.emplace(Asset::FAN_TYPE_QING_YI_SE);
 	}
-	if (piao) 
+	if (piao) //飘胡
 	{
 		_fan_list.emplace(Asset::FAN_TYPE_PIAO_HU);
 	}
@@ -2222,6 +2232,10 @@ bool Player::CheckHuPai(const Asset::PaiElement& pai/*, std::unordered_set<int32
 	if (IsMingPiao()) //明飘
 	{
 		_fan_list.emplace(Asset::FAN_TYPE_MING_PIAO);
+	}
+	if (IsDanDiao()) //单调
+	{
+		_fan_list.emplace(Asset::FAN_TYPE_JIA_HU_NORMAL);
 	}
 	
 	return true;
@@ -3238,10 +3252,11 @@ bool Player::CheckTingPai(std::vector<Asset::PaiElement>& pais)
 	auto it_baohu = std::find(options.extend_type().begin(), options.extend_type().end(), Asset::ROOM_EXTEND_TYPE_BAOPAI);
 	if (it_baohu == options.extend_type().end()) return false; //不带宝胡，绝对不可能听牌
 	
-	std::map<int32_t, std::vector<int32_t>> cards_inhand, cards_outhand; 
-	std::vector<Asset::PaiElement> minggang, angang; 
-	int32_t jiangang = 0, fenggang = 0; 
+	//std::map<int32_t, std::vector<int32_t>> cards_inhand, cards_outhand; 
+	//std::vector<Asset::PaiElement> minggang, angang; 
+	//int32_t jiangang = 0, fenggang = 0; 
 	
+	/*
 	try {
 		cards_inhand = _cards_inhand; //玩家手里牌
 		cards_outhand = _cards_outhand; //玩家墙外牌
@@ -3255,6 +3270,14 @@ bool Player::CheckTingPai(std::vector<Asset::PaiElement>& pais)
 		ERROR("player_id:{} try locked failed, error:{}", _player_id, error.what());
 		return false;
 	}
+	*/
+
+	auto cards_inhand = _cards_inhand; //玩家手里牌
+	auto cards_outhand = _cards_outhand; //玩家墙外牌
+	auto minggang = _minggang; //明杠
+	auto angang = _angang; //暗杠
+	auto jiangang = _jiangang; //旋风杠，本质是明杠
+	auto fenggang = _fenggang; //旋风杠，本质是暗杠
 	
 	auto card_list = cards_inhand; //复制当前牌
 
@@ -3852,11 +3875,11 @@ void Player::ClearCards()
 		return;
 	}
 	
-	_fan_list.clear(); 
-
+	_fan_list.clear(); //番数
 	_cards_inhand.clear(); //清理手里牌
 	_cards_outhand.clear(); //清理墙外牌
 	_cards_pool.clear(); //牌池
+	_cards_hu.clear(); //胡牌
  
  	_minggang.clear(); //清理杠牌
 	_angang.clear(); //清理杠牌
