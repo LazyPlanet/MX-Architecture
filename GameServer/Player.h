@@ -347,7 +347,7 @@ public:
 
 	bool IsMingPiao(); //是否明飘
 	bool IsSiGuiYi(); //是否四归一 
-	bool IsDanDiao() { return _cards_hu.size() == 1; } //是否单调
+	bool IsDanDiao(); //是否单调
 
 	int32_t GetMingGangCount() { return _minggang.size(); } //明杠数量
 	int32_t GetAnGangCount() { return _angang.size(); } //暗杠数量
