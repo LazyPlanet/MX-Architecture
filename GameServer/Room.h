@@ -25,6 +25,7 @@ private:
 private:
 	std::mutex _mutex;
 	Asset::Room _stuff; //数据
+	std::shared_ptr<Game> _game = nullptr; 
 	std::vector<std::shared_ptr<Game>> _games; //游戏列表
 	std::vector<std::shared_ptr<Player>> _players; //房间中的玩家：按照进房间的顺序，东南西北
 	Asset::RoomHistory _history;

@@ -133,10 +133,8 @@ bool CenterSession::StartSend()
 {
 	bool started = false;
 
-	//_mutex.lock();
 	std::deque<std::string> send_list;
 	send_list.swap(_send_list);
-	//_mutex.unlock();
 
 	while (IsConnected() && send_list.size())
 	{
@@ -184,6 +182,8 @@ void CenterSession::OnReadSome(const boost::system::error_code& error, std::size
 		Close(error.message());
 		return;
 	}
+	
+	//std::lock_guard<std::mutex> lock(_mutex);
 
 	for (size_t index = 0; index < bytes_transferred;)
 	{

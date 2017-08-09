@@ -120,7 +120,7 @@ int32_t Player::OnLogin()
 {
 	if (Load()) return 1;
 
-	ClearCards();
+	//ClearCards();
 	
 	PlayerInstance.Emplace(_player_id, shared_from_this()); //玩家管理
 	SetLocalServer(ConfigInstance.GetInt("ServerID", 1));
@@ -191,7 +191,7 @@ int32_t Player::OnLogout()
 	_stuff.set_login_time(0);
 	_stuff.set_logout_time(CommonTimerInstance.GetTime());
 	
-	ClearCards();
+	//ClearCards();
 
 	if (!_game && _room) ResetRoom();
 	
@@ -523,7 +523,8 @@ int32_t Player::CmdGameOperate(pb::Message* message)
 	
 void Player::OnGameStart()
 {
-	_player_prop.clear_game_oper_state(); 
+	ClearCards();  //游戏数据
+	//_player_prop.clear_game_oper_state(); 
 }
 
 int32_t Player::CmdPaiOperate(pb::Message* message)
@@ -539,7 +540,7 @@ int32_t Player::CmdPaiOperate(pb::Message* message)
 
 	if (!pai_operate->position()) pai_operate->set_position(GetPosition()); //设置玩家座位
 	
-	TRACE("Receive from player_id:{} operation: {}.", _player_id, pai_operate->DebugString());
+	DEBUG("Receive from player_id:{} operation: {}.", _player_id, pai_operate->DebugString());
 
 	PrintPai(); //打印玩家当前手里的牌数据
 
@@ -559,14 +560,19 @@ int32_t Player::CmdPaiOperate(pb::Message* message)
 				return 3; //没有这张牌
 			}
 
+			pais.erase(it); //打出牌
+
+			Add2CardsPool(pai);
+
+			/*
 			try {
 				std::unique_lock<std::mutex> lock(_card_lock, std::defer_lock);
 
 				if (lock.try_lock()) 
 				{
 					pais.erase(it); //打出牌
+
 					Add2CardsPool(pai);
-					TRACE("Delete card from player_id:{} card_type:{} card_value:{} for dapai.", _player_id, pai.card_type(), pai.card_value());
 				}
 				else
 				{
@@ -579,6 +585,7 @@ int32_t Player::CmdPaiOperate(pb::Message* message)
 				ERROR("Delete card from player_id:{} card_type:{} card_value:{} error.", _player_id, pai.card_type(), pai.card_value(), error.what());
 				return 10;
 			}
+			*/
 		}
 		break;
 		
@@ -2654,10 +2661,16 @@ bool Player::IsSiGuiYi()
 }
 
 //
-//东西南北中发白单粘不算夹胡，只算饼条万
+//东西南北中发白单粘不算夹胡
+//
+//只算饼条万
+//
+//2017-8-9 23:10 功能注释
 //	
 bool Player::IsDanDiao() 
 { 
+	return false;
+
 	if (_cards_hu.size() != 1) return false;
 
 	auto pai = _cards_hu[0];
@@ -3877,11 +3890,13 @@ void Player::PrintPai()
 
 void Player::ClearCards() 
 {
+	/*
 	if (_game) 
 	{
 		ERROR("玩家:{}清理牌数据失败", _player_id);
 		return;
 	}
+	*/
 	
 	_fan_list.clear(); //番数
 	_cards_inhand.clear(); //清理手里牌
@@ -3902,11 +3917,13 @@ void Player::ClearCards()
 	_jinbao = false;
 	_oper_type = Asset::PAI_OPER_TYPE_BEGIN; //初始化操作
 	_player_prop.clear_game_oper_state(); //准备//离开
+
+	if (_game) _game.reset();
 }
 	
 void Player::OnGameOver()
 {
-	if (_game) _game.reset();
+	//if (_game) _game.reset();
 
 	ClearCards();
 	

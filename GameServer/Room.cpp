@@ -122,7 +122,7 @@ bool Room::Enter(std::shared_ptr<Player> player)
 	
 void Room::OnReEnter(std::shared_ptr<Player> player)
 {
-	if (!player) return;
+	if (!player || !_game == 0) return;
 
 	player->SetOffline(false); //回到房间内
 				
@@ -138,6 +138,8 @@ void Room::OnReEnter(std::shared_ptr<Player> player)
 		player_list->set_player_id(player->GetID());
 		player_list->set_position(player->GetPosition());
 		player_list->set_pai_count_inhand(player->GetCardCount());
+
+		if (player->HasTingPai()) player_list->mutable_baopai()->CopyFrom(_game->GetBaoPai());
 
 		if (player->GetID() == player->GetID())
 		{
@@ -246,13 +248,13 @@ void Room::OnPlayerOperate(std::shared_ptr<Player> player, pb::Message* message)
 		{
 			if (!CanStarGame()) return;
 
-			auto game = std::make_shared<Game>();
+			_game = std::make_shared<Game>();
 
-			game->Init(shared_from_this()); //洗牌
+			_game->Init(shared_from_this()); //洗牌
 
-			game->Start(_players); //开始游戏
+			_game->Start(_players); //开始游戏
 
-			_games.push_back(game); //游戏
+			_games.push_back(_game); //游戏
 
 			OnGameStart();
 		}
