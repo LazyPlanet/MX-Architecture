@@ -122,13 +122,21 @@ bool Room::Enter(std::shared_ptr<Player> player)
 	
 void Room::OnReEnter(std::shared_ptr<Player> player)
 {
-	if (!player || !_game == 0) return;
+	if (!player || !_game) return;
 
 	player->SetOffline(false); //回到房间内
 				
 	SyncRoom();
 
 	Asset::RoomAll message;
+	message.set_current_rounds(_games.size());
+	message.set_zhuang_position(Asset::POSITION_TYPE(_banker_index + 1));
+	message.set_curr_operator_position(Asset::POSITION_TYPE(_game->GetCurrPlayerIndex() + 1));
+	for (const auto& record : _history.list())
+	{	
+		auto hist_record = message.mutable_list()->Add();
+		hist_record->CopyFrom(record);
+	}
 
 	for (auto player : _players)
 	{
@@ -189,12 +197,6 @@ void Room::OnReEnter(std::shared_ptr<Player> player)
 		}
 	}
 
-	if (_games.size() > 0)
-	{
-		auto curr_game = _games[_games.size() - 1];
-		if (curr_game)
-			message.set_curr_operator_position(Asset::POSITION_TYPE(curr_game->GetCurrPlayerIndex() + 1));
-	}
 
 	player->SendProtocol(message);
 }
