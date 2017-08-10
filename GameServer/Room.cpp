@@ -331,7 +331,9 @@ bool Room::Remove(int64_t player_id)
 			
 		player->OnLeaveRoom(); //玩家退出房间
 
-		player = nullptr; //player.reset();
+		//player = nullptr; 
+		
+		player.reset();
 
 		//_players.erase(it); //删除玩家
 
@@ -496,6 +498,8 @@ void Room::DoDisMiss()
 	
 void Room::KickOutPlayer(int64_t player_id)
 {
+	std::lock_guard<std::mutex> lock(_mutex);
+
 	for (auto player : _players)
 	{
 		if (!player) continue;
