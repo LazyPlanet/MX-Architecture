@@ -1463,7 +1463,14 @@ const std::string Player::GetNickName()
 {
 	auto wechat = GetWechat();
 
-	return wechat.nickname();
+	auto name = wechat.nickname();
+
+	//
+	//如果微信名为空，则用基本属性数据
+	//
+	if (name.empty()) name = GetName();
+
+	return name;
 }
 
 const std::string Player::GetHeadImag()
