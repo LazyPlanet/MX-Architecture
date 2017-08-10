@@ -853,7 +853,7 @@ int32_t Player::CmdEnterRoom(pb::Message* message)
 			if (result != Asset::ERROR_SUCCESS) //不允许进入
 			{
 				AlertMessage(result);
-				//return result;
+				return result;
 			}
 
 			//进入匹配
