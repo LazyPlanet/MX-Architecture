@@ -50,7 +50,7 @@ extern const Asset::CommonConst* g_const;
 class Player : public std::enable_shared_from_this<Player>
 {
 	typedef std::function<int32_t(pb::Message*)> CallBack;
-	std::unordered_map<int32_t, CallBack>  _callbacks;	//每个协议的回调函数，不要传入引用
+	unordered_map<int32_t, CallBack>  _callbacks;	//每个协议的回调函数，不要传入引用
 private:
 	int64_t _player_id = 0; //玩家ID
 	Asset::Player _stuff; //玩家数据，存盘数据
@@ -72,9 +72,11 @@ public:
 	
 	void AddHandler(Asset::META_TYPE message_type, CallBack callback)
 	{
-		if (_callbacks.find(message_type) != _callbacks.end()) return;
+		int32_t type_t = message_type;
 
-		_callbacks.emplace(message_type, callback);
+		if (_callbacks.find(type_t) != _callbacks.end()) return;
+
+		_callbacks.emplace(type_t, callback);
 	}
 
 	CallBack& GetMethod(int32_t message_type)

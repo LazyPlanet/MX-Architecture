@@ -400,7 +400,7 @@ bool Player::SendProtocol2GameServer(const pb::Message& message)
 	meta.set_stuff(message.SerializeAsString());
 	meta.set_player_id(_player_id); 
 
-	DEBUG("玩家{}发送协议{}到逻辑服务器", _player_id, message.ShortDebugString());
+	DEBUG("玩家:{}发送协议:{}到游戏逻辑服务器", _player_id, message.ShortDebugString());
 
 	_gs_session->SendMeta(meta); 
 
@@ -523,6 +523,8 @@ bool Player::HandleProtocol(int32_t type_t, pb::Message* message)
 	}
 	else
 	{
+		ERROR("玩家:{}协议处理错误:{}", _player_id, type_t);
+
 		CallBack& callback = GetMethod(type_t); 
 		callback(std::forward<pb::Message*>(message));	
 	}

@@ -26,6 +26,8 @@ bool WorldSession::OnInnerProcess(const Asset::Meta& meta)
 
 			SetRoleType(Asset::ROLE_TYPE_GAME_SERVER, message.global_id());
 			WorldSessionInstance.AddServer(message.global_id(), shared_from_this());
+					
+			LOG(INFO, "注册逻辑服务器:{}", message.global_id());
 
 			SendProtocol(message);
 		}

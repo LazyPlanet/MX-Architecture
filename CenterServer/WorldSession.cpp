@@ -749,7 +749,11 @@ void WorldSessionManager::BroadCast(const pb::Message* message)
 
 int64_t WorldSessionManager::RandomServer()
 {
-	if (_server_list.size() == 0) return 0;
+	if (_server_list.size() == 0) 
+	{
+		LOG(ERROR, "当前游戏逻辑服务器列表为空");
+		return 0;
+	}
 
 	std::vector<int32_t> server_list;
 	for (auto it = _server_list.begin(); it != _server_list.end(); ++it) server_list.push_back(it->first);
