@@ -467,7 +467,7 @@ void Game::OnPaiOperate(std::shared_ptr<Player> player, pb::Message* message)
 				if (Asset::PAI_OPER_TYPE_GANGPAI == pai_operate->oper_type()) //明杠删除牌池
 				{
 					auto from_player = GetPlayer(_oper_limit.player_id());
-					if (from_player) from_player->CardsPoolPop();
+					//if (from_player) from_player->CardsPoolPop();
 				}
 
 				ClearOperation(); //清理缓存以及等待玩家操作的状态
@@ -504,7 +504,7 @@ void Game::OnPaiOperate(std::shared_ptr<Player> player, pb::Message* message)
 				}
 				
 				auto from_player = GetPlayer(_oper_limit.player_id());
-				if (from_player) from_player->CardsPoolPop();
+				//if (from_player) from_player->CardsPoolPop();
 
 				ClearOperation(); //清理缓存以及等待玩家操作的状态
 			}
@@ -539,7 +539,7 @@ void Game::OnPaiOperate(std::shared_ptr<Player> player, pb::Message* message)
 				}
 				
 				auto from_player = GetPlayer(_oper_limit.player_id());
-				if (from_player) from_player->CardsPoolPop();
+				//if (from_player) from_player->CardsPoolPop();
 
 				ClearOperation(); //清理缓存以及等待玩家操作的状态
 			}

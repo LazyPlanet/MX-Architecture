@@ -183,7 +183,7 @@ void CenterSession::OnReadSome(const boost::system::error_code& error, std::size
 		return;
 	}
 	
-	std::lock_guard<std::mutex> lock(_mutex);
+	//std::lock_guard<std::mutex> lock(_mutex);
 
 	for (size_t index = 0; index < bytes_transferred;)
 	{
