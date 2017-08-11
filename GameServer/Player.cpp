@@ -685,11 +685,16 @@ int32_t Player::CmdPaiOperate(pb::Message* message)
 		break;
 	}
 
+	_game->OnPaiOperate(shared_from_this(), message);
+	
 	++_oper_count;
 
+	//
+	//处理杠流泪场景，须在_game->OnPaiOperate下进行判断
+	//
+	//玩家抓到杠之后，进行打牌，记录上次牌状态
+	//
 	if (pai_operate->oper_type() != Asset::PAI_OPER_TYPE_HUPAI) _oper_type = pai_operate->oper_type(); //记录上次牌操作
-	
-	_game->OnPaiOperate(shared_from_this(), message);
 
 	return 0;
 }

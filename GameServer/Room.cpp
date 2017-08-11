@@ -132,6 +132,10 @@ void Room::OnReEnter(std::shared_ptr<Player> op_player)
 	message.set_current_rounds(_games.size());
 	message.set_zhuang_position(Asset::POSITION_TYPE(_banker_index + 1));
 	message.set_curr_operator_position(Asset::POSITION_TYPE(_game->GetCurrPlayerIndex() + 1));
+	message.set_remain_cards_count(_game->GetRemainCount());
+
+	if (op_player->HasTingPai()) message.mutable_baopai()->CopyFrom(_game->GetBaoPai()); //宝牌
+
 	for (const auto& record : _history.list())
 	{	
 		auto hist_record = message.mutable_list()->Add();
@@ -147,7 +151,7 @@ void Room::OnReEnter(std::shared_ptr<Player> op_player)
 		player_list->set_position(player->GetPosition());
 		player_list->set_pai_count_inhand(player->GetCardCount());
 
-		if (player->HasTingPai()) player_list->mutable_baopai()->CopyFrom(_game->GetBaoPai());
+		if (player->HasTingPai()) player_list->set_tingpai(true);
 
 		if (op_player->GetID() == player->GetID())
 		{
