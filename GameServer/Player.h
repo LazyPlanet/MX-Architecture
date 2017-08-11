@@ -235,6 +235,7 @@ private:
 	std::unordered_set<int32_t> _fan_list = {}; //番型缓存
 	bool _debug_model = false;
 	bool _jinbao = false;
+	Asset::PaiElement _baopai; //宝牌
 
 	//玩家牌数据
 	std::list<Asset::PaiElement> _cards_pool; //牌池//玩家已经打的牌缓存

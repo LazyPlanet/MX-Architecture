@@ -3765,15 +3765,18 @@ bool Player::LookAtBaopai(bool has_saizi)
 	if (!_game) return false;
 
 	auto baopai = _game->GetBaoPai();
-	
-	DEBUG("玩家:{}看宝牌:{}", _player_id, baopai.ShortDebugString());
 
-	Asset::RandomSaizi proto;
-	proto.set_has_rand_saizi(has_saizi);
-	proto.set_reason_type(Asset::RandomSaizi_REASON_TYPE_REASON_TYPE_TINGPAI);
-	proto.mutable_random_result()->Add(_game->GetRandResult());
-	proto.mutable_pai()->CopyFrom(baopai);
-	SendProtocol(proto); //通知Client
+	if (baopai.card_type() != _baopai.card_type() && baopai.card_value() != _baopai.card_value())
+	{
+		Asset::RandomSaizi proto;
+		proto.set_has_rand_saizi(has_saizi);
+		proto.set_reason_type(Asset::RandomSaizi_REASON_TYPE_REASON_TYPE_TINGPAI);
+		proto.mutable_random_result()->Add(_game->GetRandResult());
+		proto.mutable_pai()->CopyFrom(baopai);
+		SendProtocol(proto); //通知Client
+	}
+	
+	_baopai = baopai; //设置宝牌
 
 	if (CheckHuPai(baopai)) 
 	{
@@ -3924,6 +3927,7 @@ void Player::ClearCards()
 	_jinbao = false;
 	_oper_type = Asset::PAI_OPER_TYPE_BEGIN; //初始化操作
 	_player_prop.clear_game_oper_state(); //准备//离开
+	_baopai.Clear();
 
 	if (_game) _game.reset();
 }
