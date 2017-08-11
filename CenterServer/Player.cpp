@@ -387,7 +387,11 @@ void Player::SendMeta(const Asset::Meta& meta)
 bool Player::SendProtocol2GameServer(const pb::Message& message)
 {
 	auto _gs_session = WorldSessionInstance.GetServerSession(GetLocalServer());
-	if (!_gs_session) return false;
+	if (!_gs_session) 
+	{
+		LOG(ERROR, "玩家:{}未能找到合适发逻辑服务器，当前服务器:{}", _player_id, _stuff.server_id());
+		return false;
+	}
 
 	const pb::FieldDescriptor* field = message.GetDescriptor()->FindFieldByName("type_t");
 	if (!field) return false;

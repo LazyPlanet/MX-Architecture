@@ -378,7 +378,7 @@ int32_t Player::CmdCreateRoom(pb::Message* message)
 	//
 	//如果不用，请勿忘注释
 	//
-	DebugCommand();
+	//DebugCommand();
 
 	Asset::CreateRoom* create_room = dynamic_cast<Asset::CreateRoom*>(message);
 	if (!create_room) return 1;
