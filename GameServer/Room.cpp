@@ -120,11 +120,11 @@ bool Room::Enter(std::shared_ptr<Player> player)
 	return true;
 }
 	
-void Room::OnReEnter(std::shared_ptr<Player> player)
+void Room::OnReEnter(std::shared_ptr<Player> op_player)
 {
-	if (!player || !_game) return;
+	if (!op_player || !_game) return;
 
-	player->SetOffline(false); //回到房间内
+	op_player->SetOffline(false); //回到房间内
 				
 	SyncRoom();
 
@@ -149,7 +149,7 @@ void Room::OnReEnter(std::shared_ptr<Player> player)
 
 		if (player->HasTingPai()) player_list->mutable_baopai()->CopyFrom(_game->GetBaoPai());
 
-		if (player->GetID() == player->GetID())
+		if (op_player->GetID() == player->GetID())
 		{
 			auto cards_inhand = player->GetCardsInhand();
 			for (auto cards : cards_inhand)
@@ -197,8 +197,7 @@ void Room::OnReEnter(std::shared_ptr<Player> player)
 		}
 	}
 
-
-	player->SendProtocol(message);
+	op_player->SendProtocol(message);
 }
 
 void Room::OnPlayerLeave(int64_t player_id)

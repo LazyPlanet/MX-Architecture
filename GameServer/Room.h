@@ -55,7 +55,7 @@ public:
 public:
 	Asset::ERROR_CODE TryEnter(std::shared_ptr<Player> player);
 	bool Enter(std::shared_ptr<Player> player);
-	void OnReEnter(std::shared_ptr<Player> player);
+	void OnReEnter(std::shared_ptr<Player> op_player);
 
 	void OnPlayerLeave(int64_t player_id);
 
