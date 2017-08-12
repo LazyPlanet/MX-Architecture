@@ -404,6 +404,7 @@ void WorldSession::OnProcessMessage(const Asset::Meta& meta)
 			if (!enter_room) return; 
 
 			auto room_id = enter_room->room().room_id();
+			auto room_type = enter_room->room().room_type();
 			auto server_id = room_id >> 16;
 
 			auto game_server = WorldSessionInstance.GetServerSession(server_id);
