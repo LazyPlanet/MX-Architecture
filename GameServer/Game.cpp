@@ -1392,16 +1392,20 @@ void Game::OnOperateTimeOut()
 {
 }
 
-std::vector<int32_t> Game::TailPai(size_t card_count)
+std::vector<int32_t> Game::TailPai(int32_t card_count)
 {
 	std::vector<int32_t> cards;
 	
-	if (_cards.size() < card_count) return cards;
+	if (_cards.size() < (size_t)card_count) return cards;
 
-	for (size_t i = 0; i < card_count; ++i)
+	for (int32_t i = 0; i < card_count; ++i)
 	{
-		int32_t value = _cards.back();	
-		cards.push_back(value);
+		if (_random_result - 1 != i) //随机的宝牌不再从后面抓
+		{
+			int32_t value = _cards.back();	
+			cards.push_back(value);
+		}
+
 		_cards.pop_back();
 	}
 

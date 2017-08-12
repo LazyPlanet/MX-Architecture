@@ -36,7 +36,7 @@ private:
 
 	Asset::PaiOperationLimit _oper_limit; //牌操作限制
 	Asset::PaiElement _baopai; //宝牌
-	int32_t _random_result = 0; //宝牌随机
+	int32_t _random_result = 0; //宝牌随机：1~6
 	
 	std::vector<Asset::PaiOperationList> _oper_list; //可操作列表
 
@@ -53,7 +53,7 @@ public:
 	void ClearState(); //清理状态
 
 	virtual std::vector<int32_t> FaPai(size_t card_count); //发牌
-	virtual std::vector<int32_t> TailPai(size_t card_count); //后楼发牌
+	virtual std::vector<int32_t> TailPai(int32_t card_count); //后楼发牌
 	void FaPaiAndCommonCheck();
 
 	virtual void Add2CardsPool(Asset::PaiElement pai) { _cards_pool.push_back(pai); }

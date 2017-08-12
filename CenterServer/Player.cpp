@@ -379,7 +379,13 @@ void Player::SendProtocol(const pb::Message& message)
 	
 void Player::SendMeta(const Asset::Meta& meta)
 {
-	if (!Connected()) return;
+	if (!Connected()) 
+	{
+		LOG(ERROR, "玩家:{}未能找到合适发逻辑服务器，当前服务器:{}", _player_id, _stuff.server_id());
+		return;
+	}
+	
+	DEBUG("玩家:{}发送协议:{}到游戏逻辑服务器", _player_id, meta.ShortDebugString());
 
 	GetSession()->SendMeta(meta);
 }
