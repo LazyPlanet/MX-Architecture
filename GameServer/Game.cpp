@@ -239,6 +239,91 @@ bool Game::CanPaiOperate(std::shared_ptr<Player> player)
 			player->GetID(), _oper_limit.player_id());
 	return false;
 }
+	
+void Game::OnPlayerReEnter(std::shared_ptr<Player> player)
+{
+	if (!player) return;
+	
+	if (!CanPaiOperate(player)) return; //尚未轮到该玩家操作
+
+	//
+	//玩家手里如果不是[ 13 10 7 4 1 ]数量的牌，则认为须打牌
+	//
+	if (!player->CheckCardsInhand()) return;
+
+	auto cards = FaPai(1); 
+	auto card = GameInstance.GetCard(cards[0]); //玩家待抓的牌
+
+	Asset::PaiOperationAlert alert;
+
+	//胡牌检查
+	if (player->CheckHuPai(card)) //自摸
+	{
+		auto pai_perator = alert.mutable_pais()->Add();
+		pai_perator->mutable_pai()->CopyFrom(card);
+		pai_perator->mutable_oper_list()->Add(Asset::PAI_OPER_TYPE_HUPAI);
+	}
+
+	player->OnFaPai(cards); //放入玩家牌里面
+
+	if (player->HasTuoGuan()) return; //托管检查，防止递归
+	
+	//
+	//玩家摸宝之后进行抓牌正好抓到宝胡
+	//
+	if (player->CheckBaoHu(card)) //宝胡
+	{
+		auto pai_perator = alert.mutable_pais()->Add();
+		pai_perator->mutable_pai()->CopyFrom(card);
+		pai_perator->mutable_oper_list()->Add(Asset::PAI_OPER_TYPE_HUPAI);
+	}
+
+	//
+	//听牌检查
+	//
+	std::vector<Asset::PaiElement> ting_list;
+	if (player->CheckTingPai(ting_list))
+	{
+		for (auto pai : ting_list) 
+		{
+			auto pai_perator = alert.mutable_pais()->Add();
+			pai_perator->mutable_pai()->CopyFrom(pai);
+			pai_perator->mutable_oper_list()->Add(Asset::PAI_OPER_TYPE_TINGPAI);
+		}
+	}
+	
+	//
+	//明杠和暗杠检查
+	//
+	::google::protobuf::RepeatedField<Asset::PaiOperationAlert_AlertElement> gang_list;
+	if (player->CheckAllGangPai(gang_list)) 
+	{
+		for (auto gang : gang_list) 
+		{
+			auto pai_perator = alert.mutable_pais()->Add();
+			pai_perator->CopyFrom(gang);
+		}
+	}
+	
+	//
+	//旋风杠检查
+	//
+	auto xf_gang = player->CheckXuanFeng();
+	if (xf_gang)
+	{
+		auto pai_perator = alert.mutable_pais()->Add();
+		pai_perator->mutable_oper_list()->Add((Asset::PAI_OPER_TYPE)xf_gang);
+	}
+
+	if (alert.pais().size()) 
+	{
+		player->SendProtocol(alert); //提示Client
+
+		_oper_limit.set_player_id(player->GetID()); //当前可操作玩家
+		_oper_limit.set_from_player_id(player->GetID()); //当前牌来自玩家，自己抓牌
+		_oper_limit.set_time_out(CommonTimerInstance.GetTime() + 30); //8秒后超时
+	}
+}
 
 void Game::OnPaiOperate(std::shared_ptr<Player> player, pb::Message* message)
 {
@@ -332,9 +417,7 @@ void Game::OnPaiOperate(std::shared_ptr<Player> player, pb::Message* message)
 				if (player_next->HasTuoGuan()) return; //托管检查，防止递归
 				
 				//
-				//玩家摇色子，摸宝在OnFaPai进行处理
-				//
-				//此时可以解决，玩家摸宝之后进行抓牌正好抓到宝胡
+				//玩家摸宝之后进行抓牌正好抓到宝胡
 				//
 				if (player_next->CheckBaoHu(card)) //宝胡
 				{
@@ -1424,6 +1507,10 @@ std::vector<int32_t> Game::FaPai(size_t card_count)
 	}
 	
 	return cards;
+}
+	
+void Game::FaPaiAndCommonCheck()
+{
 }
 	
 std::shared_ptr<Player> Game::GetNextPlayer(int64_t player_id)

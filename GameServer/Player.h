@@ -377,6 +377,8 @@ public:
 	void SynchronizePai(); //同步玩家牌给Client
 
 	int32_t GetCardCount();	//获取当前玩家手中牌数
+	bool CheckCardsInhand(); //手牌数量检查
+
 	const std::map<int32_t, std::vector<int32_t>>& GetCardsInhand() { return _cards_inhand; }
 	const std::map<int32_t, std::vector<int32_t>>& GetCardsOuthand() { return _cards_outhand; }
 

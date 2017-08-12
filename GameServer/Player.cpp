@@ -139,7 +139,7 @@ int32_t Player::Logout(pb::Message* message)
 	//
 	if (_room) 
 	{
-		if (_game) //游戏中
+		if (_game && _room->GetRemainCount() > 0) //游戏中，且尚未对局完成，则不让退出房间
 		{
 			SetOffline(); //玩家状态
 
@@ -4071,6 +4071,15 @@ const Asset::WechatUnion Player::GetWechat()
 	redis->GetUser(_stuff.account(), user);
 
 	return user.wechat();
+}
+	
+bool Player::CheckCardsInhand()
+{
+	auto count = GetCardCount(); //牌数量
+
+	if (count == 13 || count == 10 || count == 7 || count == 4 || count == 1) return true;
+
+	return false;
 }
 
 void PlayerManager::Update(int32_t diff)

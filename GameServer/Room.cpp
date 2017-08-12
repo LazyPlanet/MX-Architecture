@@ -125,9 +125,15 @@ void Room::OnReEnter(std::shared_ptr<Player> op_player)
 	if (!op_player || !_game) return;
 
 	op_player->SetOffline(false); //回到房间内
-				
+
+	//
+	//同步玩家信息
+	//
 	SyncRoom();
 
+	//
+	//同步牌局//玩家牌信息
+	//
 	Asset::RoomAll message;
 	message.set_current_rounds(_games.size());
 	message.set_zhuang_position(Asset::POSITION_TYPE(_banker_index + 1));
@@ -202,6 +208,8 @@ void Room::OnReEnter(std::shared_ptr<Player> op_player)
 	}
 
 	op_player->SendProtocol(message);
+
+	_game->OnPlayerReEnter(op_player); //玩家操作
 }
 
 void Room::OnPlayerLeave(int64_t player_id)
