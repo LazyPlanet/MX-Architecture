@@ -466,8 +466,8 @@ void Game::OnPaiOperate(std::shared_ptr<Player> player, pb::Message* message)
 				
 				if (Asset::PAI_OPER_TYPE_GANGPAI == pai_operate->oper_type()) //明杠删除牌池
 				{
-					auto from_player = GetPlayer(_oper_limit.player_id());
-					//if (from_player) from_player->CardsPoolPop();
+					auto from_player = GetPlayer(_oper_limit.from_player_id());
+					if (from_player) from_player->CardsPoolPop();
 				}
 
 				ClearOperation(); //清理缓存以及等待玩家操作的状态
@@ -503,8 +503,8 @@ void Game::OnPaiOperate(std::shared_ptr<Player> player, pb::Message* message)
 					if (alert.pais().size()) player->SendProtocol(alert); //提示Client
 				}
 				
-				auto from_player = GetPlayer(_oper_limit.player_id());
-				//if (from_player) from_player->CardsPoolPop();
+				auto from_player = GetPlayer(_oper_limit.from_player_id());
+				if (from_player) from_player->CardsPoolPop();
 
 				ClearOperation(); //清理缓存以及等待玩家操作的状态
 			}
@@ -538,8 +538,8 @@ void Game::OnPaiOperate(std::shared_ptr<Player> player, pb::Message* message)
 					if (alert.pais().size()) player->SendProtocol(alert); //提示Client
 				}
 				
-				auto from_player = GetPlayer(_oper_limit.player_id());
-				//if (from_player) from_player->CardsPoolPop();
+				auto from_player = GetPlayer(_oper_limit.from_player_id());
+				if (from_player) from_player->CardsPoolPop();
 
 				ClearOperation(); //清理缓存以及等待玩家操作的状态
 			}
@@ -1218,12 +1218,7 @@ bool Game::SendCheckRtn()
 		return player_id == operation.player_id();
 	});
 
-	if (it != _oper_list.end()) 
-	{
-		DEBUG("player_id:{} from_player_id:{} card_type:{} card_value:{} oper_type:{}",
-				player_id, _oper_limit.from_player_id(), _oper_limit.pai().card_type(), _oper_limit.pai().card_value(), _oper_limit.oper_type());
-		_oper_list.erase(it);
-	}
+	if (it != _oper_list.end()) _oper_list.erase(it);
 
 	return true;
 }
