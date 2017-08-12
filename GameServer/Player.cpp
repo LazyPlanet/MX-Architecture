@@ -694,7 +694,11 @@ int32_t Player::CmdPaiOperate(pb::Message* message)
 	//
 	//玩家抓到杠之后，进行打牌，记录上次牌状态
 	//
-	if (pai_operate->oper_type() != Asset::PAI_OPER_TYPE_HUPAI) _oper_type = pai_operate->oper_type(); //记录上次牌操作
+	if (pai_operate->oper_type() != Asset::PAI_OPER_TYPE_HUPAI) 
+	{
+		_last_oper_type = _oper_type;
+		_oper_type = pai_operate->oper_type(); //记录上次牌操作
+	}
 
 	return 0;
 }
@@ -2693,7 +2697,8 @@ bool Player::IsDanDiao()
 	
 bool Player::IsGangOperation()
 {
-	if (_oper_type == Asset::PAI_OPER_TYPE_GANGPAI || _oper_type == Asset::PAI_OPER_TYPE_ANGANGPAI || _oper_type == Asset::PAI_OPER_TYPE_XUANFENG_FENG) 
+	if (_last_oper_type == Asset::PAI_OPER_TYPE_GANGPAI || _last_oper_type == Asset::PAI_OPER_TYPE_ANGANGPAI 
+			|| _last_oper_type == Asset::PAI_OPER_TYPE_XUANFENG_FENG) 
 		return true;
 	return false;
 }
@@ -3930,7 +3935,7 @@ void Player::ClearCards()
 	_has_ting = false;
 	_tuoguan_server = false;
 	_jinbao = false;
-	_oper_type = Asset::PAI_OPER_TYPE_BEGIN; //初始化操作
+	_last_oper_type = _oper_type = Asset::PAI_OPER_TYPE_BEGIN; //初始化操作
 	_player_prop.clear_game_oper_state(); //准备//离开
 	_baopai.Clear();
 
