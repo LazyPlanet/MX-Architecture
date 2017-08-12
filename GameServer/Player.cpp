@@ -378,7 +378,7 @@ int32_t Player::CmdCreateRoom(pb::Message* message)
 	//
 	//如果不用，请勿忘注释
 	//
-	//DebugCommand();
+	DebugCommand();
 
 	Asset::CreateRoom* create_room = dynamic_cast<Asset::CreateRoom*>(message);
 	if (!create_room) return 1;
@@ -2057,12 +2057,15 @@ bool Player::CheckHuPai(const Asset::PaiElement& pai, bool check_zibo)
 	//胡牌时至少有刻子或杠，或有中发白
 	//
 	bool has_ke = false;
-	int32_t ke_count = 0; 
+	int32_t ke_count = 0, shunzi_count = 0; 
 
 	for (auto r : _hu_result)
 	{
 		 bool is_ke = std::get<1>(r);
 		 if (is_ke) ++ke_count;
+		 
+		 bool is_shunzi = std::get<2>(r);
+		 if (is_shunzi) ++shunzi_count;
 	}
 
 	if (ke_count) has_ke = true;
@@ -2081,14 +2084,11 @@ bool Player::CheckHuPai(const Asset::PaiElement& pai, bool check_zibo)
 	//飘胡检查，严重依赖上面的刻的数量
 	//
 
-	auto ke_total = ke_count + _jiangang + _fenggang + _minggang.size() + _angang.size();
-		
-	DEBUG("player_id:{} ke_total:{} ke_count:{} jiangang_count:{} fenggang_count:{} minggang.size():{} angang.size():{}", 
-			_player_id, ke_total, ke_count, _jiangang, _fenggang, _minggang.size(), _angang.size());
+	//auto ke_total = ke_count + _jiangang + _fenggang + _minggang.size() + _angang.size();
 
-	if (ke_total == 4) 
+	if (shunzi_count == 0) 
 	{
-		piao = true; //TODO：玩家吃了三套副一样的..
+		piao = true; //未能处理：玩家吃了三套副一样的，如 7 7 7 8 8 8 9 9 9
 	}
 
 	//
@@ -2446,12 +2446,15 @@ bool Player::DebugCheckHuPai(const Asset::PaiElement& pai, bool check_zibo)
 	//胡牌时至少有刻子或杠，或有中发白
 	//
 	bool has_ke = false;
-	int32_t ke_count = 0; 
+	int32_t ke_count = 0, shunzi_count = 0; 
 
 	for (auto r : _hu_result)
 	{
 		 bool is_ke = std::get<1>(r);
 		 if (is_ke) ++ke_count;
+
+		 bool is_shunzi = std::get<2>(r);
+		 if (is_shunzi) ++shunzi_count;
 	}
 
 	if (ke_count) has_ke = true;
@@ -2470,14 +2473,11 @@ bool Player::DebugCheckHuPai(const Asset::PaiElement& pai, bool check_zibo)
 	//飘胡检查，严重依赖上面的刻的数量
 	//
 
-	auto ke_total = ke_count + _jiangang + _fenggang + _minggang.size() + _angang.size();
+	//auto ke_total = ke_count + _jiangang + _fenggang + _minggang.size() + _angang.size();
 		
-	WARN("player_id:{} ke_total:{} ke_count:{} jiangang_count:{} fenggang_count:{} minggang.size():{} angang.size():{}", 
-			_player_id, ke_total, ke_count, _jiangang, _fenggang, _minggang.size(), _angang.size());
-
-	if (ke_total == 4) 
+	if (shunzi_count == 0) 
 	{
-		piao = true; //TODO：玩家吃了三套副一样的..
+		piao = true; //未能处理：玩家吃了三套副一样的，如 7 7 7 8 8 8 9 9 9
 	}
 
 	//
@@ -4025,14 +4025,14 @@ void Player::DebugCommand()
 	_debug_model = true;
 
 	_cards_outhand = {
-		{ 1, { 3, 4, 5, 8, 8, 8} },
+		{ 1, { 1, 2, 3} },
 	}; 
 
 	_cards_inhand = {
-		{ 1, { 4, 5, 6} },
-		{ 2, { 6, 7, 8} },
-		{ 3, { 6, 6, 6} },
-		{ 4, { 1, 1} },
+		//{ 1, { 4, 5, 6} },
+		{ 2, { 3, 3, 3, 3, 4, 5} },
+		{ 3, { 6, 6 } },
+		{ 4, { 1, 1, 1} },
 	};
 	
 	/*
@@ -4043,7 +4043,8 @@ void Player::DebugCommand()
 	*/
 
 	Asset::PaiElement pai;
-	pai.set_card_value(5);
+	pai.set_card_type((Asset::CARD_TYPE)2);
+	pai.set_card_value(3);
 
 	bool can_hu = DebugCheckHuPai(pai, true);	
 	if (can_hu)
