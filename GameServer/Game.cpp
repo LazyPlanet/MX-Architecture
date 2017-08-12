@@ -382,7 +382,10 @@ void Game::OnPaiOperate(std::shared_ptr<Player> player, pb::Message* message)
 		case Asset::PAI_OPER_TYPE_DAPAI: //打牌
 		case Asset::PAI_OPER_TYPE_TINGPAI: //听牌
 		{
-			Add2CardsPool(pai); //牌池缓存
+			//
+			//加入牌池
+			//
+			Add2CardsPool(pai);
 
 			//
 			//(1) 检查各个玩家手里的牌是否满足胡、杠、碰、吃
@@ -1255,6 +1258,22 @@ void Game::BroadCast(pb::Message* message, int64_t exclude_player_id)
 		return;
 	}
 	_room->BroadCast(message, exclude_player_id);
+}
+
+void Game::Add2CardsPool(Asset::PaiElement pai) 
+{ 
+	DEBUG("加入牌池数据:{}", pai.ShortDebugString());
+
+	_cards_pool.push_back(pai); 
+}
+
+void Game::Add2CardsPool(Asset::CARD_TYPE card_type, int32_t card_value) 
+{
+	Asset::PaiElement pai;
+	pai.set_card_type(card_type);
+	pai.set_card_value(card_value);
+
+	Add2CardsPool(pai);
 }
 
 void Game::BroadCast(pb::Message& message, int64_t exclude_player_id)

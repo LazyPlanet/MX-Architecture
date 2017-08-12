@@ -652,6 +652,7 @@ int32_t Player::CmdPaiOperate(pb::Message* message)
 				DEBUG_ASSERT(false);
 				return 8; //不能听牌
 			}
+			/*
 					
 			try {
 				std::unique_lock<std::mutex> lock(_card_lock, std::defer_lock);
@@ -673,6 +674,11 @@ int32_t Player::CmdPaiOperate(pb::Message* message)
 				ERROR("Delete card from player_id:{} card_type:{} card_value:{} error.", _player_id, pai.card_type(), pai.card_value(), error.what());
 					return 10;
 			}
+			*/
+			
+			pais.erase(it); //删除牌
+
+			Add2CardsPool(pai);
 
 			OnTingPai();
 		}
@@ -2850,7 +2856,7 @@ void Player::OnChiPai(const Asset::PaiElement& pai, pb::Message* message)
 			{
 				_cards_outhand[card.card_type()].push_back(card.card_value());
 
-				if (card.card_type() != pai.card_type() && card.card_value() != pai.card_value()) _game->Add2CardsPool(card.card_type(), card.card_value());
+				if (card.card_type() != pai.card_type() || card.card_value() != pai.card_value()) _game->Add2CardsPool(card.card_type(), card.card_value());
 			}
 		}
 		else
@@ -2924,11 +2930,9 @@ void Player::OnPengPai(const Asset::PaiElement& pai)
 				DEBUG("delete card from player_id:{} card_type:{} card_vale:{}", _player_id, pai.card_type(), pai.card_value());
 			}
 
-			for (int i = 0; i < 3; ++i)
-				_cards_outhand[pai.card_type()].push_back(pai.card_value());
+			for (int i = 0; i < 3; ++i) _cards_outhand[pai.card_type()].push_back(pai.card_value());
 			
-			for (int i = 0; i < 2; ++i)
-				_game->Add2CardsPool(pai.card_type(), pai.card_value());
+			for (int i = 0; i < 2; ++i) _game->Add2CardsPool(pai);
 		}
 		else
 		{
@@ -3776,7 +3780,7 @@ bool Player::LookAtBaopai(bool has_saizi)
 
 	auto baopai = _game->GetBaoPai();
 
-	if (baopai.card_type() != _baopai.card_type() && baopai.card_value() != _baopai.card_value())
+	if (baopai.card_type() != _baopai.card_type() || baopai.card_value() != _baopai.card_value())
 	{
 		Asset::RandomSaizi proto;
 		proto.set_has_rand_saizi(has_saizi);

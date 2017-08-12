@@ -56,13 +56,8 @@ public:
 	virtual std::vector<int32_t> TailPai(int32_t card_count); //后楼发牌
 	void FaPaiAndCommonCheck();
 
-	virtual void Add2CardsPool(Asset::PaiElement pai) { _cards_pool.push_back(pai); }
-	virtual void Add2CardsPool(Asset::CARD_TYPE card_type, int32_t card_value) { 
-		Asset::PaiElement pai;
-		pai.set_card_type(card_type);
-		pai.set_card_value(card_value);
-		_cards_pool.push_back(pai); 
-	}
+	virtual void Add2CardsPool(Asset::PaiElement pai);
+	virtual void Add2CardsPool(Asset::CARD_TYPE card_type, int32_t card_value);
 	
 	void OnPaiOperate(std::shared_ptr<Player> player, pb::Message* message); //玩家牌操作响应
 	bool CanPaiOperate(std::shared_ptr<Player> player); //检查玩家是否具有操作权限
