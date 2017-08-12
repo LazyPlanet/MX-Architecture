@@ -246,6 +246,25 @@ void Game::OnPlayerReEnter(std::shared_ptr<Player> player)
 	
 	if (!CanPaiOperate(player)) return; //尚未轮到该玩家操作
 
+	auto player_index = GetPlayerOrder(player->GetID());
+	//
+	//如果轮到玩家的是胡//杠//碰则直接放弃
+	//
+	if (_curr_player_index != player_index && _oper_limit.player_id() == player->GetID() && (_oper_limit.oper_type() == Asset::PAI_OPER_TYPE_HUPAI || 
+				_oper_limit.oper_type() == Asset::PAI_OPER_TYPE_GANGPAI || _oper_limit.oper_type() == Asset::PAI_OPER_TYPE_PENGPAI))
+	{
+		Asset::PaiOperation pai_operation; 
+		pai_operation.set_oper_type(Asset::PAI_OPER_TYPE_GIVEUP);
+		pai_operation.set_position(player->GetPosition());
+		pai_operation.mutable_pai()->CopyFrom(_oper_limit.pai());
+
+		player->CmdPaiOperate(&pai_operation);
+
+		DEBUG("玩家:{}重入房间，操作放弃:{}", player->GetID(), _oper_limit.ShortDebugString());
+
+		return;
+	}
+
 	//
 	//玩家手里如果不是[ 13 10 7 4 1 ]数量的牌，则认为须打牌
 	//
