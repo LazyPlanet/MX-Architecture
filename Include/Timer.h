@@ -35,7 +35,7 @@ public:
 	//
 	inline std::time_t GetTime()
 	{
-		boost::posix_time::ptime ptime(boost::posix_time::second_clock::local_time()); //universal_time: Get the UTC time.
+		boost::posix_time::ptime ptime(boost::posix_time::second_clock::universal_time()); //universal_time: Get the UTC time.
 		std::time_t time = boost::posix_time::to_time_t(ptime);
 		return time;
 	}
