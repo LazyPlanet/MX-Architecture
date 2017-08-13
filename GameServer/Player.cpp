@@ -391,9 +391,10 @@ int32_t Player::CmdCreateRoom(pb::Message* message)
 	{
 		auto room = RoomInstance.Get(_room->GetID());
 
-		if (room) //房间尚未解散
+		if (room && room->GetRemainCount() > 0) //房间尚未解散
 		{
-			AlertMessage(Asset::ERROR_ROOM_HAS_BEEN_IN);
+			SendRoomIn();
+
 			return 2;
 		}
 	}
@@ -801,7 +802,7 @@ int32_t Player::CmdEnterRoom(pb::Message* message)
 		}
 		else
 		{
-			AlertMessage(Asset::ERROR_ROOM_HAS_BEEN_IN);
+			SendRoomIn();
 
 			return Asset::ERROR_ROOM_HAS_BEEN_IN;
 		}
@@ -1167,8 +1168,9 @@ void Player::OnLeaveRoom(Asset::GAME_OPER_TYPE reason)
 
 	ResetRoom();
 	ClearCards();  //游戏数据
-	
+
 	Asset::RoomState room_state;
+	room_state.set_room_id(0);
 	room_state.set_oper_type(reason);
 	SendProtocol(room_state);
 }
@@ -4119,6 +4121,16 @@ bool Player::CheckCardsInhand()
 	if (count == 13 || count == 10 || count == 7 || count == 4 || count == 1) return true;
 
 	return false;
+}
+	
+void Player::SendRoomIn()
+{
+	Asset::RoomState proto;
+	proto.set_room_id(0);
+
+	if (_room) proto.set_room_id(_room->GetID());
+
+	SendProtocol(proto);
 }
 
 void PlayerManager::Update(int32_t diff)

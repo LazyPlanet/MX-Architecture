@@ -365,9 +365,11 @@ public:
 
 	void PreCheckOnFaPai(); //发牌前置检查
 	void NormalCheckAfterFaPai(const Asset::PaiElement& pai); //发牌后，玩家手里牌通用检查
+
 	bool IsReady() { return _player_prop.game_oper_state() == Asset::GAME_OPER_TYPE_START; } //是否已经在准备状态 
 	bool AgreeDisMiss() { return _player_prop.game_oper_state() == Asset::GAME_OPER_TYPE_DISMISS_AGREE; } //是否同意解散 
 	void ClearDisMiss() { _player_prop.clear_game_oper_state(); }
+
 	Asset::GAME_OPER_TYPE GetOperState() { return _player_prop.game_oper_state(); }
 	void SetOperState(Asset::GAME_OPER_TYPE oper_type) { return _player_prop.set_game_oper_state(oper_type); }
 
@@ -401,6 +403,7 @@ public:
 	bool IsGangOperation(); //上次牌是否杠操作
 
 	bool AddRoomRecord(int64_t room_id);
+	void SendRoomIn();
 };
 
 /////////////////////////////////////////////////////
