@@ -3150,6 +3150,8 @@ void Player::OnGangPai(const Asset::PaiElement& pai, int64_t from_player_id)
 	}
 	
 	auto cards = _game->TailPai(1); //从后楼给玩家取一张牌
+	if (cards.size() == 0) return;
+
 	OnFaPai(cards);
 	
 	Asset::PaiOperationAlert alert;
@@ -3482,6 +3484,8 @@ void Player::OnGangFengPai()
 	++_fenggang;
 	
 	auto cards = _game->TailPai(1); //从后楼给玩家取一张牌
+	if (cards.size() == 0) return;
+
 	OnFaPai(cards);
 
 	if (cards.size() == 0) return;

@@ -1419,11 +1419,19 @@ std::vector<int32_t> Game::TailPai(int32_t card_count)
 
 	for (int32_t i = 0; i < card_count; ++i)
 	{
-		if (_random_result - 1 != i) //随机的宝牌不再从后面抓
+		if (_random_result - 1 != i || _random_result_list.find(i) == _random_result_list.end()) //随机的宝牌不再从后面抓
 		{
 			int32_t value = _cards.back();	
 			cards.push_back(value);
 		}
+
+		_cards.pop_back();
+	}
+
+	if (cards.size() == 0)
+	{
+		int32_t value = _cards.back();	
+		cards.push_back(value);
 
 		_cards.pop_back();
 	}
@@ -1657,6 +1665,7 @@ void Game::OnTingPai(std::shared_ptr<Player> player)
 	do {
 		_random_result = CommonUtil::Random(1, 6);
 		_baopai = GetBaoPai(_random_result);
+		_random_result_list.emplace(_random_result - 1);
 	} while(GetRemainBaopai() <= 0); //直到产生还有剩余的宝牌
 }
 

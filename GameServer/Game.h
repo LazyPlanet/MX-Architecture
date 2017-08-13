@@ -37,6 +37,7 @@ private:
 	Asset::PaiOperationLimit _oper_limit; //牌操作限制
 	Asset::PaiElement _baopai; //宝牌
 	int32_t _random_result = 0; //宝牌随机：1~6
+	std::unordered_set<int32_t> _random_result_list; //宝牌历史随机结果
 	
 	std::vector<Asset::PaiOperationList> _oper_list; //可操作列表
 
