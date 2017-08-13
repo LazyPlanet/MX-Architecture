@@ -35,9 +35,10 @@ public:
 	//
 	inline std::time_t GetTime()
 	{
-		boost::posix_time::ptime ptime(boost::posix_time::second_clock::universal_time()); //universal_time: Get the UTC time.
-		std::time_t time = boost::posix_time::to_time_t(ptime);
-		return time;
+		//boost::posix_time::ptime ptime(boost::posix_time::second_clock::universal_time()); //local_time// universal_time: Get the UTC time.
+		//std::time_t time = boost::posix_time::to_time_t(ptime);
+		std::time_t now_time = time(nullptr);
+		return now_time;
 	}
 
 	inline int32_t GetTimeDiff(int32_t old_time, int32_t new_time)
