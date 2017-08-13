@@ -181,9 +181,12 @@ void Room::OnReEnter(std::shared_ptr<Player> op_player)
 		{
 			if (cards.second.size() == 0) continue;
 
-			auto pais = player_list->mutable_pai_outhand()->Add();
-			pais->set_card_type((Asset::CARD_TYPE)cards.first);
-			for (auto card_value : cards.second) pais->mutable_cards()->Add(card_value);
+			for (auto card_value : cards.second) 
+			{
+				auto pai = player_list->mutable_pai_outhand()->Add();
+				pai->set_card_type((Asset::CARD_TYPE)cards.first);
+				pai->set_card_value(card_value);
+			}
 		}
 
 		const auto minggang = player->GetMingGang();
