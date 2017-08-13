@@ -41,7 +41,9 @@ public:
 
 	virtual int64_t GetID() { return _stuff.room_id(); }
 	virtual void SetID(int64_t room_id) { return _stuff.set_room_id(room_id); }
+
 	virtual Asset::Room Get() { return _stuff; } //数据
+	virtual Asset::ROOM_TYPE GetType() { return _stuff.room_type(); } //数据
 	
 	const Asset::RoomOptions& GetOptions() { return _stuff.options(); } //额外番型
 	void SetOption(const Asset::RoomOptions& options) {	_stuff.mutable_options()->CopyFrom(options);}

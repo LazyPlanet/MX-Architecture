@@ -1195,7 +1195,48 @@ void Game::Calculate(int64_t hupai_player_id/*胡牌玩家*/, int64_t dianpao_pl
 			});
 	if (max_fan_it != record->details().end()) message.set_max_fan_type(max_fan_it->fan_type());
 
-	_room->AddGameRecord(message.record()); //本局记录
+	//
+	//好友房//匹配房记录消耗
+	//
+	auto room_type = _room->GetType();
+
+	if (Asset::ROOM_TYPE_FRIEND == room_type)   
+	{
+		_room->AddGameRecord(message.record()); //本局记录
+	}
+	else
+	{
+		const auto& messages = AssetInstance.GetMessagesByType(Asset::ASSET_TYPE_ROOM);
+
+		auto it = std::find_if(messages.begin(), messages.end(), [room_type](pb::Message* message){
+			auto room_limit = dynamic_cast<Asset::RoomLimit*>(message);
+			if (!room_limit) return false;
+
+			return room_type == room_limit->room_type();
+		});
+
+		if (it == messages.end()) return;
+		
+		auto room_limit = dynamic_cast<Asset::RoomLimit*>(*it);
+		if (!room_limit) return;
+
+		for (auto player : _players)
+		{
+			if (!player) continue;
+
+			auto record = get_record(player->GetID()); 
+			if (record == message.mutable_record()->mutable_list()->end()) continue;
+			
+			auto total_score = record->score();
+			auto consume_count = total_score * room_limit->base_count();
+			
+			auto beans_count = player->GetHuanledou();
+			if (beans_count < consume_count) consume_count = beans_count; //如果玩家欢乐豆不足，则扣成0
+
+			auto consume_real = player->ConsumeHuanledou(Asset::HUANLEDOU_CHANGED_TYPE_GAME, consume_count); //消耗
+			if (consume_count != consume_real) continue;
+		}
+	}
 	
 	BroadCast(message);
 				
