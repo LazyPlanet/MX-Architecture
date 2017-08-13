@@ -403,25 +403,42 @@ void WorldSession::OnProcessMessage(const Asset::Meta& meta)
 			Asset::EnterRoom* enter_room = dynamic_cast<Asset::EnterRoom*>(message);
 			if (!enter_room) return; 
 
-			auto room_id = enter_room->room().room_id();
 			auto room_type = enter_room->room().room_type();
-			auto server_id = room_id >> 16;
+			int64_t server_id = 0;
 
-			auto game_server = WorldSessionInstance.GetServerSession(server_id);
-			if (!game_server) 
+			if (Asset::ROOM_TYPE_FRIEND == room_type)
 			{
-				enter_room->set_error_code(Asset::ERROR_ROOM_NOT_FOUNT);
-				SendProtocol(message);
-				return;
+				auto room_id = enter_room->room().room_id();
+				server_id = room_id >> 16;
+
+				auto game_server = WorldSessionInstance.GetServerSession(server_id);
+				if (!game_server) 
+				{
+					enter_room->set_error_code(Asset::ERROR_ROOM_NOT_FOUNT);
+					SendProtocol(message);
+					return;
+				}
 			}
-			
+			else
+			{
+				server_id = WorldSessionInstance.RandomServer(); //随机一个逻辑服务器
+				if (server_id == 0) 
+				{
+					LOG(ERROR, "玩家:{}进入匹配房未能分配到逻辑服务器", _player->GetID());
+					DEBUG_ASSERT(false);
+				}
+			}
+				
 			auto curr_server = WorldSessionInstance.GetGameServerSession(_player->GetID());
 			if (curr_server && curr_server->GetID() != server_id) //不是当前游戏逻辑服务器
 			{
+				//
 				//通知当前游戏逻辑服务器下线
+				//
 				Asset::KickOutPlayer kickout_player; 
 				kickout_player.set_player_id(_player->GetID());
 				kickout_player.set_reason(Asset::KICK_OUT_REASON_CHANGE_SERVER);
+
 				_player->SendProtocol2GameServer(kickout_player); 
 			}
 	
