@@ -943,7 +943,7 @@ void Player::SendProtocol(const pb::Message& message)
 {
 	if (!g_center_session) 
 	{
-		LOG(ERROR, "玩家{}尚未建立连接", _player_id);
+		LOG(ERROR, "玩家{}尚未建立连接，目前所在服务器:{}", _player_id, _stuff.server_id());
 		return; //尚未建立网络连接
 	}
 
@@ -964,7 +964,7 @@ void Player::SendProtocol(const pb::Message& message)
 
 	g_center_session->AsyncSendMessage(content);
 
-	DEBUG("玩家:{} 发送协议内容:{}", _player_id, message.ShortDebugString());
+	DEBUG("玩家:{} 发送协议，类型:{} 内容:{}", _player_id, type_t, message.ShortDebugString());
 }
 
 void Player::Send2Roomers(pb::Message& message, int64_t exclude_player_id) 
