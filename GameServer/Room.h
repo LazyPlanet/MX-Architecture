@@ -26,6 +26,7 @@ private:
 	std::mutex _mutex;
 	Asset::Room _stuff; //数据
 	std::shared_ptr<Game> _game = nullptr; 
+	std::shared_ptr<Player> _hoster = nullptr; 
 	std::vector<std::shared_ptr<Game>> _games; //游戏列表
 	std::vector<std::shared_ptr<Player>> _players; //房间中的玩家：按照进房间的顺序，东南西北
 	Asset::RoomHistory _history;
@@ -59,7 +60,7 @@ public:
 
 	void OnPlayerLeave(int64_t player_id);
 
-	void OnCreated(); 
+	void OnCreated(std::shared_ptr<Player> hoster = nullptr); 
 	void Update();
 
 	bool IsFull(); //是否已满

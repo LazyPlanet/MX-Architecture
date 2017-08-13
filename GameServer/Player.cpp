@@ -221,7 +221,11 @@ int64_t Player::ConsumeRoomCard(Asset::ROOM_CARD_CHANGED_TYPE changed_type, int6
 {
 	if (count <= 0) return 0;
 
-	if (!CheckRoomCard(count)) return 0;
+	if (!CheckRoomCard(count)) 
+	{
+		LOG(INFO, "消耗玩家:{}房卡，消耗类型:{} 数量:{}失败", _player_id, changed_type, count);
+		return 0;
+	}
 
 	_stuff.mutable_common_prop()->set_room_card_count(_stuff.common_prop().room_card_count() - count);
 	_dirty = true;
@@ -422,12 +426,14 @@ int32_t Player::CmdCreateRoom(pb::Message* message)
 			return 5;
 		}
 
+		/*
 		auto consume_real = ConsumeRoomCard(Asset::ROOM_CARD_CHANGED_TYPE_OPEN_ROOM, consume_count); //消耗
 		if (consume_count != consume_real)
 		{
 			LOG(ERROR, "Consume room card error, consume_count:{} consume_real:{}", consume_count, consume_real);
 			return 6;
 		}
+		*/
 	}
 
 	int64_t room_id = RoomInstance.CreateRoom();
@@ -453,7 +459,7 @@ void Player::OnCreateRoom(Asset::CreateRoom* create_room)
 	asset_room.CopyFrom(create_room->room());
 
 	_room = std::make_shared<Room>(asset_room);
-	_room->OnCreated();
+	_room->OnCreated(shared_from_this());
 
 	RoomInstance.OnCreateRoom(_room); //房间管理
 }

@@ -10,6 +10,7 @@
 #include "CommonUtil.h"
 #include "RedisManager.h"
 #include "Timer.h"
+#include "Activity.h"
 
 namespace Adoter
 {
@@ -561,8 +562,10 @@ void Room::SyncRoom()
 	BroadCast(message);
 }
 
-void Room::OnCreated() 
+void Room::OnCreated(std::shared_ptr<Player> hoster) 
 { 
+	_hoster = hoster;
+
 	auto curr_time = CommonTimerInstance.GetTime();
 	SetTime(curr_time + g_const->room_last_time());
 	
@@ -579,7 +582,35 @@ bool Room::CanStarGame()
 	{
 		if (!player) return false;
 
-		if (!player->IsReady()) return false; //需要所有玩家都是准备状态
+		if (!player->IsReady()) return false; //玩家都是准备状态
+	}
+	
+	//
+	//开始游戏，消耗房卡
+	//
+	auto activity_id = g_const->room_card_limit_free_activity_id();
+	if (ActivityInstance.IsOpen(activity_id)) return true;
+
+	if (_hoster)
+	{
+		const auto room_card = dynamic_cast<const Asset::Item_RoomCard*>(AssetInstance.Get(g_const->room_card_id()));
+		if (!room_card) return false;
+
+		auto rounds = room_card->rounds(); //该张房卡可以玩多少局麻将
+		if (rounds <= 0) return false;
+
+		auto open_rands = GetOptions().open_rands(); //局数
+		auto consume_count = open_rands / rounds; //待消耗房卡数
+		auto consume_real = _hoster->ConsumeRoomCard(Asset::ROOM_CARD_CHANGED_TYPE_OPEN_ROOM, consume_count); //消耗
+		if (consume_count != consume_real)
+		{
+			LOG(ERROR, "消耗玩家:{}房卡错误，需要消耗:{} 实际消耗:{}", _hoster->GetID(), consume_count, consume_real);
+			return false;
+		}
+	}
+	else
+	{
+		LOG(INFO, "房间:{}尚未消耗房卡进行开房", GetID()); //记录
 	}
 
 	return true;
