@@ -1664,6 +1664,13 @@ void Game::OnRefreshBaopai(int64_t player_id, int32_t random_result)
 	}
 }
 	
+void Game::OnPlayerLookAtBaopai(int64_t player_id, Asset::RandomSaizi proto)
+{
+	proto.mutable_pai()->Clear();
+	
+	BroadCast(proto, player_id);
+}
+	
 void Game::OnTingPai(std::shared_ptr<Player> player)
 {
 	if (!player) return;

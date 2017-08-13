@@ -97,6 +97,7 @@ public:
 	} 
 	bool HasBaopai() { return _baopai.card_type() != 0 && _baopai.card_value() != 0; } //当前是否含有宝牌
 	void OnRefreshBaopai(int64_t player_id, int32_t random_result); //刷新宝牌
+	void OnPlayerLookAtBaopai(int64_t player_id, Asset::RandomSaizi proto);
 	int32_t GetRemainBaopai(); //剩余宝牌数量
 
 	void SetRandResult(int32_t random_result) { _random_result = random_result; }

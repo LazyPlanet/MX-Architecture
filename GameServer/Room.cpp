@@ -196,7 +196,7 @@ void Room::OnReEnter(std::shared_ptr<Player> op_player)
 		const auto angang = player->GetAnGang();
 		for (auto gang : angang)
 		{
-			auto pai = player_list->mutable_minggang_list()->Add();
+			auto pai = player_list->mutable_angang_list()->Add();
 			pai->CopyFrom(gang);
 		}
 

@@ -3819,6 +3819,8 @@ bool Player::LookAtBaopai(bool has_saizi)
 		proto.mutable_random_result()->Add(_game->GetRandResult());
 		proto.mutable_pai()->CopyFrom(baopai);
 		SendProtocol(proto); //通知Client
+
+		if (has_saizi) _game->OnPlayerLookAtBaopai(_player_id, proto);
 	}
 	
 	_baopai = baopai; //设置宝牌
