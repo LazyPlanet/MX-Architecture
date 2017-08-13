@@ -90,7 +90,7 @@ public:
 	//获取房间中的玩家
 	std::shared_ptr<Player> GetPlayer(int64_t player_id);
 	//删除玩家
-	bool Remove(int64_t player_id);
+	bool Remove(int64_t player_id, Asset::GAME_OPER_TYPE reason = Asset::GAME_OPER_TYPE_LEAVE);
 	void KickOutPlayer(int64_t player_id = 0);
 	//游戏开始
 	void OnGameStart();

@@ -1161,7 +1161,7 @@ void Player::BroadCastCommonProp(Asset::MSG_TYPE type)
 	this->BroadCast(item); //通知给房间玩家
 }
 
-void Player::OnLeaveRoom()
+void Player::OnLeaveRoom(Asset::GAME_OPER_TYPE reason)
 {
 	_stuff.clear_room_id(); //用于处理玩家断线重入房间
 
@@ -1169,7 +1169,7 @@ void Player::OnLeaveRoom()
 	ClearCards();  //游戏数据
 	
 	Asset::RoomState room_state;
-	room_state.set_oper_type(Asset::GAME_OPER_TYPE_LEAVE);
+	room_state.set_oper_type(reason);
 	SendProtocol(room_state);
 }
 	

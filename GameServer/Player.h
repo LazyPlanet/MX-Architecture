@@ -141,7 +141,7 @@ public:
 	virtual int32_t OnLogout();
 	//离开房间
 	virtual int32_t CmdLeaveRoom(pb::Message* message);
-	virtual void OnLeaveRoom();
+	virtual void OnLeaveRoom(Asset::GAME_OPER_TYPE reason = Asset::GAME_OPER_TYPE_LEAVE);
 	//加载数据	
 	virtual int32_t Load();
 	//保存数据

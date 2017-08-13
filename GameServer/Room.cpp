@@ -276,13 +276,30 @@ void Room::OnPlayerOperate(std::shared_ptr<Player> player, pb::Message* message)
 
 		case Asset::GAME_OPER_TYPE_LEAVE: //离开游戏
 		{
-			Remove(player->GetID()); //玩家退出房间
+			if (_games.size() != 0 && GetRemainCount() > 0) return; //没有开局，且没有对战完，则不允许退出
+			//
+			//如果房主离开房间，且此时尚未开局，则直接解散
+			//
+			if (IsHoster(player->GetID()))
+			{
+				KickOutPlayer();
+			}
+			else
+			{
+				Remove(player->GetID(), Asset::GAME_OPER_TYPE_LEAVE); //玩家退出房间
+			}
 		}
 		break;
 		
 		case Asset::GAME_OPER_TYPE_KICKOUT: //踢人
 		{
-			Remove(game_operate->destination_player_id()); //玩家退出房间
+			if (!IsHoster(player->GetID()))
+			{
+				player->AlertMessage(Asset::ERROR_ROOM_NO_PERMISSION);
+				return;
+			}
+
+			Remove(game_operate->destination_player_id(), Asset::GAME_OPER_TYPE_KICKOUT); //玩家退出房间
 		}
 		break;
 
@@ -305,7 +322,7 @@ void Room::OnPlayerOperate(std::shared_ptr<Player> player, pb::Message* message)
 			//
 			if (IsHoster(player->GetID()) && _games.size() == 0)
 			{
-				DoDisMiss();
+				KickOutPlayer();
 			}
 			else if (CanDisMiss()) 
 			{
@@ -334,7 +351,7 @@ int32_t Room::GetRemainCount()
 	return _stuff.options().open_rands() - _games.size(); 
 }
 
-bool Room::Remove(int64_t player_id)
+bool Room::Remove(int64_t player_id, Asset::GAME_OPER_TYPE reason)
 {
 	for (size_t i = 0; i < _players.size(); ++i)
 	{
@@ -343,7 +360,7 @@ bool Room::Remove(int64_t player_id)
 
 		if (player->GetID() != player_id) continue;
 			
-		player->OnLeaveRoom(); //玩家退出房间
+		player->OnLeaveRoom(reason); //玩家退出房间
 
 		//player = nullptr; 
 		
@@ -509,7 +526,7 @@ void Room::DoDisMiss()
 	
 void Room::KickOutPlayer(int64_t player_id)
 {
-	std::lock_guard<std::mutex> lock(_mutex);
+	//std::lock_guard<std::mutex> lock(_mutex);
 
 	for (auto player : _players)
 	{
@@ -517,7 +534,7 @@ void Room::KickOutPlayer(int64_t player_id)
 
 		if (player_id != 0 && player->GetID() != player_id) continue;
 
-		Remove(player->GetID()); //踢人
+		Remove(player->GetID(), Asset::GAME_OPER_TYPE_HOSTER_DISMISS); //踢人
 	}
 
 	RoomInstance.OnDisMiss(GetID());
