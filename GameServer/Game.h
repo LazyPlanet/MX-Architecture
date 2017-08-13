@@ -38,6 +38,8 @@ private:
 	Asset::PaiElement _baopai; //宝牌
 	int32_t _random_result = 0; //宝牌随机：1~6
 	std::unordered_set<int32_t> _random_result_list; //宝牌历史随机结果
+
+	std::vector<int32_t> _saizi_random_result; //开局股子缓存
 	
 	std::vector<Asset::PaiOperationList> _oper_list; //可操作列表
 
@@ -99,6 +101,7 @@ public:
 
 	void SetRandResult(int32_t random_result) { _random_result = random_result; }
 	int32_t GetRandResult() { return _random_result; }
+	const std::vector<int32_t>& GetSaizi() { return _saizi_random_result; }
 
 	bool CheckLiuJu(); //流局检查
 	bool IsLiuJu() { return _liuju; } //是否流局

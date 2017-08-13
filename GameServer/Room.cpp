@@ -143,6 +143,9 @@ void Room::OnReEnter(std::shared_ptr<Player> op_player)
 
 	if (op_player->HasTingPai()) message.mutable_baopai()->CopyFrom(_game->GetBaoPai()); //宝牌
 
+	for (auto saizi : _game->GetSaizi())
+		message.mutable_saizi_random_result()->Add(saizi);
+
 	for (const auto& record : _history.list())
 	{	
 		auto hist_record = message.mutable_list()->Add();
@@ -276,7 +279,7 @@ void Room::OnPlayerOperate(std::shared_ptr<Player> player, pb::Message* message)
 
 		case Asset::GAME_OPER_TYPE_LEAVE: //离开游戏
 		{
-			if (_games.size() != 0 && GetRemainCount() > 0) return; //没有开局，且没有对战完，则不允许退出
+			if (!HasDisMiss() && _games.size() != 0 && GetRemainCount() > 0) return; //没有开局，且没有对战完，则不允许退出
 			//
 			//如果房主离开房间，且此时尚未开局，则直接解散
 			//

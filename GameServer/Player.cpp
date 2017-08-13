@@ -3858,7 +3858,7 @@ void Player::OnTingPai()
 //
 void Player::ResetBaopai()
 {
-	if (!_has_ting) return;
+	if (!_game || !_has_ting) return;
 		
 	DEBUG("玩家:{}重置宝牌", _player_id);
 
@@ -3881,6 +3881,15 @@ void Player::ResetBaopai()
 			return;
 		}
 	}
+}
+	
+void Player::ResetLookAtBaopai() 
+{ 
+	if (!_game) return;
+
+	_baopai = _game->GetBaoPai();
+
+	_oper_count_tingpai = 1; 
 }
 	
 void Player::SynchronizePai()

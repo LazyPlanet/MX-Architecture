@@ -119,6 +119,8 @@ void Game::OnStart()
 	{
 		int32_t result = CommonUtil::Random(1, 6);
 		saizi.mutable_random_result()->Add(result);
+		
+		_saizi_random_result.push_back(result);
 	}
 	_room->BroadCast(saizi);
 }
@@ -1640,15 +1642,24 @@ void Game::OnRefreshBaopai(int64_t player_id, int32_t random_result)
 	proto.set_reason_type(Asset::RandomSaizi_REASON_TYPE_REASON_TYPE_TINGPAI);
 	proto.mutable_random_result()->Add(random_result);
 	proto.set_has_rand_saizi(true);
-	proto.mutable_pai()->CopyFrom(_baopai);
 
 	DEBUG("刷新宝牌，玩家:{} 随机值:{}", player_id, random_result);
 
 	for (auto player : _players)
 	{
-		if (!player || !player->IsTingPai()) continue;
+		if (!player) continue;
 
-		player->ResetLookAtBaopai(); //玩家可以重新查看宝牌
+		if (player->IsTingPai())
+		{
+			player->ResetLookAtBaopai(); //玩家可以重新查看宝牌
+
+			proto.mutable_pai()->CopyFrom(_baopai);
+		}
+		else
+		{
+			proto.mutable_pai()->Clear();
+		}
+
 		player->SendProtocol(proto); 
 	}
 }

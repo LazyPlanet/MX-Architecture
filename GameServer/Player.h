@@ -288,7 +288,7 @@ public:
 	bool CheckBaoHu(const Asset::PaiElement& pai, bool has_fapai = true);
 	bool LookAtBaopai(bool has_saizi);
 	void ResetBaopai();
-	void ResetLookAtBaopai() { _oper_count_tingpai = 1; }
+	void ResetLookAtBaopai();
 
 	bool IsJinbao() { return _jinbao; }
 	void Jinbao() { _jinbao = true; }
