@@ -393,7 +393,7 @@ int32_t Player::CmdCreateRoom(pb::Message* message)
 
 		if (room && room->GetRemainCount() > 0) //房间尚未解散
 		{
-			SendRoomIn();
+			SendRoomState();
 
 			return 2;
 		}
@@ -802,7 +802,7 @@ int32_t Player::CmdEnterRoom(pb::Message* message)
 		}
 		else
 		{
-			SendRoomIn();
+			SendRoomState();
 
 			return Asset::ERROR_ROOM_HAS_BEEN_IN;
 		}
@@ -4123,7 +4123,7 @@ bool Player::CheckCardsInhand()
 	return false;
 }
 	
-void Player::SendRoomIn()
+void Player::SendRoomState()
 {
 	Asset::RoomState proto;
 	proto.set_room_id(0);

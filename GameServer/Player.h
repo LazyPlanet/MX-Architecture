@@ -403,7 +403,7 @@ public:
 	bool IsGangOperation(); //上次牌是否杠操作
 
 	bool AddRoomRecord(int64_t room_id);
-	void SendRoomIn();
+	void SendRoomState();
 };
 
 /////////////////////////////////////////////////////
