@@ -422,9 +422,6 @@ void Room::OnGameOver(int64_t player_id)
 		player->SendProtocol(message);
 	}
 	
-	//auto redis = make_unique<Redis>();
-	//redis->SaveRoomHistory(GetID(), _history); //存盘
-
 	_history.Clear();
 	_bankers.clear();
 	_hupai_players.clear();
