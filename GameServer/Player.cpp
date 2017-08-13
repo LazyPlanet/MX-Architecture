@@ -3004,7 +3004,11 @@ bool Player::CheckAllGangPai(::google::protobuf::RepeatedField<Asset::PaiOperati
 {
 	if (!CheckMingPiao(Asset::PAI_OPER_TYPE_GANGPAI)) return false; //明飘检查
 
-	/////手里有4张牌，即暗杠检查
+	//
+	//牌内检查
+	//
+	//有4张牌，即暗杠检查
+	//
 	for (auto cards : _cards_inhand)
 	{
 		auto card_type = cards.first;
@@ -3032,7 +3036,11 @@ bool Player::CheckAllGangPai(::google::protobuf::RepeatedField<Asset::PaiOperati
 		}
 	}
 
-	/////手里有1张牌，牌面有3张碰牌，即明杠检查
+	//
+	//牌外检查
+	//
+	//牌内有1张牌，牌外有3张碰牌，即明杠检查
+	//
 	for (auto cards : _cards_outhand)
 	{
 		DEBUG_ASSERT(cards.second.size() % 3 == 0);
@@ -3055,7 +3063,17 @@ bool Player::CheckAllGangPai(::google::protobuf::RepeatedField<Asset::PaiOperati
 			pai.set_card_type((Asset::CARD_TYPE)card_type);
 			pai.set_card_value(card_value);
 			
-			//明杠
+			//
+			//明杠，不能改变现有听牌的牌型
+			//
+			if (HasTingPai())
+			{
+				if (_zhuapai.card_type() != card_type || _zhuapai.card_value() != card_value) 
+				{
+					LOG(ERROR, "玩家:{}杠牌检查，不能改变现有听牌牌型:{} 当前抓牌:{}", _player_id, pai.ShortDebugString(), _zhuapai.ShortDebugString());
+					continue;
+				}
+			}
 			auto gang = gang_list.Add();
 			gang->mutable_pai()->CopyFrom(pai); 
 			gang->mutable_oper_list()->Add(Asset::PAI_OPER_TYPE_GANGPAI);
@@ -3729,6 +3747,7 @@ int32_t Player::OnFaPai(std::vector<int32_t>& cards)
 	else if (cards.size() == 1)
 	{
 		auto card = GameInstance.GetCard(cards[0]);
+		_zhuapai = card;
 
 		if (card.card_type() == 0 || card.card_type() == 0)
 		{
@@ -3948,6 +3967,7 @@ void Player::ClearCards()
 	_last_oper_type = _oper_type = Asset::PAI_OPER_TYPE_BEGIN; //初始化操作
 	_player_prop.clear_game_oper_state(); //准备//离开
 	_baopai.Clear();
+	_zhuapai.Clear();
 
 	if (_game) _game.reset();
 }
