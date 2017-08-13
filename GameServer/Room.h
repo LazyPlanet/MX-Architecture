@@ -67,6 +67,7 @@ public:
 	bool IsEmpty(); //是否没人
 
 	bool CanStarGame(); //能否开启游戏
+
 	bool CanDisMiss(); //能否解散
 	int32_t GetRemainCount(); //剩余游戏次数
 	int32_t GetGamesCount() { return _games.size(); }

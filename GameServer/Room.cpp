@@ -585,34 +585,85 @@ bool Room::CanStarGame()
 		if (!player->IsReady()) return false; //玩家都是准备状态
 	}
 	
+	auto room_type = _stuff.room_type();
+	
 	//
-	//开始游戏，消耗房卡
+	//开始游戏，消耗房卡//欢乐豆
 	//
-	auto activity_id = g_const->room_card_limit_free_activity_id();
-	if (ActivityInstance.IsOpen(activity_id)) return true;
-
-	if (_hoster)
+	if (Asset::ROOM_TYPE_FRIEND == room_type)
 	{
-		const auto room_card = dynamic_cast<const Asset::Item_RoomCard*>(AssetInstance.Get(g_const->room_card_id()));
-		if (!room_card) return false;
+		auto activity_id = g_const->room_card_limit_free_activity_id();
+		if (ActivityInstance.IsOpen(activity_id)) return true;
 
-		auto rounds = room_card->rounds(); //该张房卡可以玩多少局麻将
-		if (rounds <= 0) return false;
-
-		auto open_rands = GetOptions().open_rands(); //局数
-		auto consume_count = open_rands / rounds; //待消耗房卡数
-		auto consume_real = _hoster->ConsumeRoomCard(Asset::ROOM_CARD_CHANGED_TYPE_OPEN_ROOM, consume_count); //消耗
-		if (consume_count != consume_real)
+		if (_hoster)
 		{
-			LOG(ERROR, "消耗玩家:{}房卡错误，需要消耗:{} 实际消耗:{}", _hoster->GetID(), consume_count, consume_real);
-			return false;
+			const auto room_card = dynamic_cast<const Asset::Item_RoomCard*>(AssetInstance.Get(g_const->room_card_id()));
+			if (!room_card) return false;
+
+			auto rounds = room_card->rounds(); //该张房卡可以玩多少局麻将
+			if (rounds <= 0) return false;
+
+			auto open_rands = GetOptions().open_rands(); //局数
+			auto consume_count = open_rands / rounds; //待消耗房卡数
+			auto consume_real = _hoster->ConsumeRoomCard(Asset::ROOM_CARD_CHANGED_TYPE_OPEN_ROOM, consume_count); //消耗
+			if (consume_count != consume_real)
+			{
+				LOG(ERROR, "消耗玩家:{}房卡错误，需要消耗:{} 实际消耗:{}", _hoster->GetID(), consume_count, consume_real);
+				return false;
+			}
+		}
+		else
+		{
+			LOG(INFO, "房间:{}尚未消耗房卡进行开房", GetID()); //记录
 		}
 	}
 	else
 	{
-		LOG(INFO, "房间:{}尚未消耗房卡进行开房", GetID()); //记录
-	}
+		const auto& messages = AssetInstance.GetMessagesByType(Asset::ASSET_TYPE_ROOM);
 
+		auto it = std::find_if(messages.begin(), messages.end(), [room_type](pb::Message* message){
+			auto room_limit = dynamic_cast<Asset::RoomLimit*>(message);
+			if (!room_limit) return false;
+
+			return room_type == room_limit->room_type();
+		});
+
+		if (it == messages.end()) return false;
+		
+		auto room_limit = dynamic_cast<Asset::RoomLimit*>(*it);
+		if (!room_limit) return false;
+
+		//
+		//欢乐豆检查
+		//
+		for (auto player : _players)
+		{
+			if (!player) 
+			{
+				DEBUG_ASSERT(false && "开局失败，未能找到玩家");
+				return false;
+			}
+		
+			auto beans_count = player->GetHuanledou();
+			if (beans_count < room_limit->cost_count()) return false;
+		}
+		
+		//
+		//欢乐豆消耗
+		//
+		for (auto player : _players)
+		{
+			if (!player) 
+			{
+				DEBUG_ASSERT(false && "开局失败，未能找到玩家");
+				return false;
+			}
+			
+			auto real_cost = player->ConsumeHuanledou(Asset::HUANLEDOU_CHANGED_TYPE_ROOM_TICKET, room_limit->cost_count());
+			if (room_limit->cost_count() != real_cost) return false;
+		}
+	}
+	
 	return true;
 }
 
