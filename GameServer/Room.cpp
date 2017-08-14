@@ -288,13 +288,13 @@ void Room::OnPlayerOperate(std::shared_ptr<Player> player, pb::Message* message)
 			//
 			if (IsHoster(player->GetID()))
 			{
-				if (GetRemainCount() <= 0) //对局结束
+				if (_games.size() == 0) //尚未开局
 				{
-					Remove(player->GetID(), Asset::GAME_OPER_TYPE_LEAVE); //玩家退出房间
+					KickOutPlayer();
 				}
 				else
 				{
-					KickOutPlayer();
+					Remove(player->GetID(), Asset::GAME_OPER_TYPE_LEAVE); //玩家退出房间
 				}
 			}
 			else
