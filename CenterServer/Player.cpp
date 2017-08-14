@@ -395,7 +395,7 @@ bool Player::SendProtocol2GameServer(const pb::Message& message)
 	auto _gs_session = WorldSessionInstance.GetServerSession(GetLocalServer());
 	if (!_gs_session) 
 	{
-		LOG(ERROR, "玩家:{}未能找到合适发逻辑服务器，当前服务器:{}", _player_id, _stuff.server_id());
+		LOG(ERROR, "玩家:{}未能找到合适发逻辑服务器，当前服务器:{}，协议内容:{}", _player_id, _stuff.server_id(), message.ShortDebugString());
 		return false;
 	}
 
