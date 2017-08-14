@@ -3949,6 +3949,24 @@ void Player::PrintPai()
 		
 	LOG(INFO, "player_id:{} has cards:{}", _player_id, card_value_list.str());
 }
+	
+void Player::SetOffline(bool offline)
+{ 
+	if (!_room) return;
+
+	_player_prop.set_offline(offline); 
+
+	if (offline) 
+	{
+		SetOperState(Asset::GAME_OPER_TYPE_OFFLINE);
+	}
+	else
+	{
+		SetOperState(Asset::GAME_OPER_TYPE_ONLINE);
+	}
+
+	_room->OnPlayerStateChanged();
+}
 
 void Player::ClearCards() 
 {

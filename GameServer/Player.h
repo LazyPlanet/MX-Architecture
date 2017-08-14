@@ -159,7 +159,7 @@ public:
 	bool IsOnline() { return _stuff.login_time() != 0; }
 	//是否离线//房间内离线状态处理
 	bool IsOffline() { return _player_prop.offline(); }
-	void SetOffline(bool offline = true) { _player_prop.set_offline(offline); }
+	void SetOffline(bool offline = true);
 	//签到
 	virtual int32_t CmdSign(pb::Message* message);
 	//获取玩家基础属性
@@ -292,6 +292,8 @@ public:
 
 	bool IsJinbao() { return _jinbao; }
 	void Jinbao() { _jinbao = true; }
+	
+	const Asset::PaiElement& GetZhuaPai() { return _zhuapai; }
 
 	bool CanHuPai(std::vector<Card_t>& cards, bool use_pair = false);
 	bool CheckZiMo(); //胡牌检查-玩家手里现有牌检查

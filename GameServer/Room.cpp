@@ -141,7 +141,11 @@ void Room::OnReEnter(std::shared_ptr<Player> op_player)
 	message.set_curr_operator_position(Asset::POSITION_TYPE(_game->GetCurrPlayerIndex() + 1));
 	message.set_remain_cards_count(_game->GetRemainCount());
 
-	if (op_player->HasTingPai()) message.mutable_baopai()->CopyFrom(_game->GetBaoPai()); //宝牌
+	if (op_player->HasTingPai()) 
+	{
+		message.mutable_baopai()->CopyFrom(_game->GetBaoPai()); //宝牌
+		message.mutable_zhuapai()->CopyFrom(op_player->GetZhuaPai()); //上次抓牌，提示Client显示
+	}
 
 	for (auto saizi : _game->GetSaizi())
 		message.mutable_saizi_random_result()->Add(saizi);
@@ -390,6 +394,22 @@ bool Room::Remove(int64_t player_id, Asset::GAME_OPER_TYPE reason)
 
 	return false;
 }
+	
+void Room::OnPlayerStateChanged()
+{
+	Asset::RoomInformation message;
+			
+	for (auto player : _players)
+	{
+		if (!player) continue;
+
+		auto p = message.mutable_player_list()->Add();
+		p->set_position(player->GetPosition());
+		p->set_oper_type(player->GetOperState());
+	}
+
+	BroadCast(message);
+}
 
 void Room::OnGameStart()
 {
@@ -398,6 +418,15 @@ void Room::OnGameStart()
 	game_start.set_current_rounds(_games.size());
 
 	BroadCast(game_start);
+
+	for (auto player : _players)
+	{
+		if (!player) continue;
+
+		player->SetOperState(Asset::GAME_OPER_TYPE_ONLINE);
+	}
+
+	OnPlayerStateChanged();
 }
 
 void Room::OnGameOver(int64_t player_id)

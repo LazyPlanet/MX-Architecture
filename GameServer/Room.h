@@ -94,6 +94,7 @@ public:
 	void KickOutPlayer(int64_t player_id = 0);
 	//游戏开始
 	void OnGameStart();
+	void OnPlayerStateChanged();
 	//游戏结束
 	void OnGameOver(int64_t player_id = 0/*胡牌玩家*/);
 	
