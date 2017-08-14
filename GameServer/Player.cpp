@@ -707,7 +707,7 @@ int32_t Player::CmdPaiOperate(pb::Message* message)
 	//
 	//玩家抓到杠之后，进行打牌，记录上次牌状态
 	//
-	if (pai_operate->oper_type() != Asset::PAI_OPER_TYPE_HUPAI) 
+	//if (pai_operate->oper_type() != Asset::PAI_OPER_TYPE_HUPAI) 
 	{
 		_last_oper_type = _oper_type;
 		_oper_type = pai_operate->oper_type(); //记录上次牌操作
@@ -2709,6 +2709,13 @@ bool Player::IsDanDiao()
 	return true;
 } 
 	
+//
+//1.杠->打牌->点炮 流泪
+//
+//2.杠->胡牌 杠上开
+//
+//检查的都是上一把是否是杠操作
+//
 bool Player::IsGangOperation()
 {
 	if (_last_oper_type == Asset::PAI_OPER_TYPE_GANGPAI || _last_oper_type == Asset::PAI_OPER_TYPE_ANGANGPAI 
