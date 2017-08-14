@@ -830,6 +830,14 @@ void Game::Calculate(int64_t hupai_player_id/*胡牌玩家*/, int64_t dianpao_pl
 		fan_list.emplace(Asset::FAN_TYPE_ZHUANG);
 	}
 
+	auto hu_player = GetPlayer(hupai_player_id);
+	if (!hu_player) return;
+
+	if (dianpao_player_id == hupai_player_id && hu_player->IsGangOperation()) //杠上开
+	{
+		fan_list.emplace(Asset::FAN_TYPE_GANG_SHANG_KAI);
+	}
+
 	Asset::GameCalculate message;
 	message.set_calculte_type(Asset::CALCULATE_TYPE_HUPAI);
 	message.mutable_baopai()->CopyFrom(_baopai);

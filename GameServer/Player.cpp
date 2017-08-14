@@ -2253,10 +2253,6 @@ bool Player::CheckHuPai(const Asset::PaiElement& pai, bool check_zibo)
 	{
 		_fan_list.emplace(Asset::FAN_TYPE_PIAO_HU);
 	}
-	if (IsGangOperation()) //杠上开
-	{
-		_fan_list.emplace(Asset::FAN_TYPE_GANG_SHANG_KAI);
-	}
 	if (_game->IsLiuJu()) //海底捞月
 	{
 		_fan_list.emplace(Asset::FAN_TYPE_HAI_DI_LAO);
