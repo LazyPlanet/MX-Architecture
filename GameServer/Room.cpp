@@ -144,7 +144,11 @@ void Room::OnReEnter(std::shared_ptr<Player> op_player)
 	if (op_player->HasTingPai()) 
 	{
 		message.mutable_baopai()->CopyFrom(_game->GetBaoPai()); //宝牌
-		message.mutable_zhuapai()->CopyFrom(op_player->GetZhuaPai()); //上次抓牌，提示Client显示
+
+		if (!op_player->CheckCardsInhand())
+		{
+			message.mutable_zhuapai()->CopyFrom(op_player->GetZhuaPai()); //上次抓牌，提示Client显示
+		}
 	}
 
 	for (auto saizi : _game->GetSaizi())
@@ -425,8 +429,6 @@ void Room::OnGameStart()
 
 		player->SetOperState(Asset::GAME_OPER_TYPE_ONLINE);
 	}
-
-	OnPlayerStateChanged();
 }
 
 void Room::OnGameOver(int64_t player_id)

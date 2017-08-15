@@ -193,7 +193,7 @@ int32_t Player::OnLogout()
 	
 	//ClearCards();
 
-	if (!_game && _room) ResetRoom();
+	if (!_game && _room && (_room->GetRemainCount() <= 0 || _room->HasDisMiss())) ResetRoom();
 	
 	Save(true);	//存档数据库
 
