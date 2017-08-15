@@ -698,8 +698,6 @@ int32_t Player::CmdPaiOperate(pb::Message* message)
 		break;
 	}
 
-	_game->OnPaiOperate(shared_from_this(), message);
-	
 	++_oper_count;
 
 	//
@@ -711,7 +709,11 @@ int32_t Player::CmdPaiOperate(pb::Message* message)
 	{
 		_last_oper_type = _oper_type;
 		_oper_type = pai_operate->oper_type(); //记录上次牌操作
+
+		DEBUG("玩家:{}上次牌操作:{}, 此次牌操作:{}", _player_id, _last_oper_type, _oper_type);
 	}
+	
+	_game->OnPaiOperate(shared_from_this(), message);
 
 	return 0;
 }

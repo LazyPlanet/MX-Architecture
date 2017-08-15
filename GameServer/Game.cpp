@@ -226,8 +226,17 @@ void Game::OnPlayerReEnter(std::shared_ptr<Player> player)
 	//
 	if (!player->CheckCardsInhand()) return;
 
+	//
+	//如果缓存其他玩家操作，则认为没轮到自己操作
+	//
+	//比如，上家打牌，下家碰，打牌之后下家有吃碰操作的时候回来还会多一张牌出来
+	//
+	if (_oper_limit.player_id() != 0 && _oper_limit.player_id() != player->GetID()) return;
+
 	auto cards = FaPai(1); 
 	auto card = GameInstance.GetCard(cards[0]); //玩家待抓的牌
+		
+	DEBUG("玩家:{}重入房间，进行发牌:{} 缓存操作:{} 当前索引:{} 玩家索引:{}", player->GetID(), card.ShortDebugString(), _oper_limit.ShortDebugString(), _curr_player_index, player_index);
 
 	Asset::PaiOperationAlert alert;
 
@@ -362,6 +371,8 @@ void Game::OnPaiOperate(std::shared_ptr<Player> player, pb::Message* message)
 			}
 			else
 			{
+				ClearOperation();
+
 				auto next_player_index = (_curr_player_index + 1) % MAX_PLAYER_COUNT; 
 
 				auto player_next = GetPlayerByOrder(next_player_index);
@@ -740,7 +751,8 @@ void Game::OnPaiOperate(std::shared_ptr<Player> player, pb::Message* message)
 
 void Game::ClearOperation()
 {
-	DEBUG("_oper_limit:{}", _oper_limit.DebugString());
+	DEBUG("清理缓存状态，_oper_limit:{}", _oper_limit.DebugString());
+
 	_oper_limit.Clear(); //清理状态
 }
 	
