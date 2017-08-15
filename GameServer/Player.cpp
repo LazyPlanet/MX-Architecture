@@ -3959,13 +3959,13 @@ void Player::SetOffline(bool offline)
 	if (offline) 
 	{
 		SetOperState(Asset::GAME_OPER_TYPE_OFFLINE);
+
+		_room->OnPlayerStateChanged();
 	}
 	else
 	{
 		SetOperState(Asset::GAME_OPER_TYPE_ONLINE);
 	}
-
-	_room->OnPlayerStateChanged();
 }
 
 void Player::ClearCards() 
