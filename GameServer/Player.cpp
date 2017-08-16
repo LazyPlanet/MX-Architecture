@@ -528,6 +528,15 @@ int32_t Player::CmdGameOperate(pb::Message* message)
 	return 0;
 }
 	
+void Player::SetStreakWins(int32_t count) 
+{ 
+	int32_t curr_count = _stuff.common_prop().streak_wins();
+	if (count <= curr_count) return;
+
+	_stuff.mutable_common_prop()->set_streak_wins(count); 
+	_dirty = true; 
+}
+	
 void Player::OnGameStart()
 {
 	AddTotalRounds(); //对战局数
@@ -2979,7 +2988,7 @@ bool Player::CheckGangPai(const Asset::PaiElement& pai, int64_t from_player_id)
 	auto jiangang = _jiangang; //旋风杠，本质是明杠
 	auto fenggang = _fenggang; //旋风杠，本质是暗杠
 
-	auto has_gang = false;
+	auto has_gang = false; //是否含有杠牌
 
 	auto it = cards_inhand.find(pai.card_type());
 	int32_t card_value = pai.card_value();
@@ -2993,7 +3002,7 @@ bool Player::CheckGangPai(const Asset::PaiElement& pai, int64_t from_player_id)
 	//
 	//玩家自己抓牌
 	//
-	if (from_player_id == _player_id) 
+	if (!has_gang && from_player_id == _player_id) 
 	{
 		auto it = cards_outhand.find(pai.card_type()); //牌面的牌不做排序,顺序必须3张
 

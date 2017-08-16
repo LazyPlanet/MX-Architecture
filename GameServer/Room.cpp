@@ -435,19 +435,34 @@ void Room::OnGameStart()
 	
 void Room::AddHupai(int64_t player_id) 
 { 
+	if (player_id <= 0) return;
+
 	++_hupai_players[player_id]; 
 
 	auto player = GetPlayer(player_id);
 	if (!player) return;
 
 	player->AddTotalWinRounds();
+	player->SetStreakWins(1);
 }
 
 void Room::OnGameOver(int64_t player_id)
 {
 	AddHupai(player_id); //记录
 
-	if (player_id != 0 && _banker != player_id) _banker_index = (_banker_index + 1) % MAX_PLAYER_COUNT; //下庄
+	if (player_id != 0 && _banker != player_id) 
+	{
+		_banker_index = (_banker_index + 1) % MAX_PLAYER_COUNT; //下庄
+
+		auto player = GetPlayer(player_id);
+		if (player) player->SetStreakWins(_streak_wins[player_id]); //最高连胜
+
+		_streak_wins[player_id] = 0;
+	}
+	else
+	{
+		++_streak_wins[player_id];
+	}
 
 	if (GetRemainCount() > 0 && !_is_dismiss) return; //没有对局结束，且没有解散房间
 
@@ -499,6 +514,7 @@ void Room::OnGameOver(int64_t player_id)
 	_bankers.clear();
 	_hupai_players.clear();
 	_dianpao_players.clear();
+	_streak_wins.clear();
 }
 
 void Room::AddGameRecord(const Asset::GameRecord& record)

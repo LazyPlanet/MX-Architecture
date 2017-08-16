@@ -33,6 +33,7 @@ private:
 	std::unordered_map<int64_t, int32_t> _hupai_players;
 	std::unordered_map<int64_t, int32_t> _dianpao_players;
 	std::unordered_map<int64_t, int32_t> _bankers;
+	std::unordered_map<int64_t, int32_t> _streak_wins;
 	bool _is_dismiss = false;
 	int32_t _dismiss_time = 0; //解散房间时间
 	int32_t _dismiss_cooldown = 0; //解散冷却时间

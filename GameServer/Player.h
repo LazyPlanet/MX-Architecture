@@ -231,7 +231,8 @@ public:
 	//获胜局信息
 	void AddTotalRounds() { _stuff.mutable_common_prop()->set_total_rounds(_stuff.common_prop().total_rounds() + 1); _dirty = true; }
 	void AddTotalWinRounds() { _stuff.mutable_common_prop()->set_total_win_rounds(_stuff.common_prop().total_win_rounds() + 1); _dirty = true; }
-	void SetStreakWins(int32_t count) { _stuff.mutable_common_prop()->set_streak_wins(count); _dirty = true; }
+	void SetStreakWins(int32_t count); //最高连胜
+	void AddStreakWins() { _stuff.mutable_common_prop()->set_streak_wins(_stuff.common_prop().streak_wins() + 1); _dirty = true; }; //最高连胜
 ///////游戏逻辑定义
 private:
 	std::mutex _card_lock;
