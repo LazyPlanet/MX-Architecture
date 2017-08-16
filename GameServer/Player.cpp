@@ -1514,6 +1514,17 @@ const std::string Player::GetHeadImag()
 
 	return wechat.headimgurl();
 }
+	
+const std::string Player::GetIpAddress()
+{
+	if (!_user.has_client_info() || !_user.client_info().has_client_ip())
+	{
+		auto redis = make_unique<Redis>();
+		redis->GetUser(_stuff.account(), _user);
+	}
+
+	return _user.client_info().client_ip();
+}
 
 /////////////////////////////////////////////////////
 //游戏逻辑定义
@@ -4256,11 +4267,13 @@ void Player::DebugCommand()
 	
 const Asset::WechatUnion Player::GetWechat() 
 { 
-	Asset::User user;
-	auto redis = make_unique<Redis>();
-	redis->GetUser(_stuff.account(), user);
+	if (!_user.has_wechat())
+	{
+		auto redis = make_unique<Redis>();
+		redis->GetUser(_stuff.account(), _user);
+	}
 
-	return user.wechat();
+	return _user.wechat();
 }
 	
 bool Player::CheckCardsInhand()

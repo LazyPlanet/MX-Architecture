@@ -52,9 +52,10 @@ class Player : public std::enable_shared_from_this<Player>
 	typedef std::function<int32_t(pb::Message*)> CallBack;
 	unordered_map<int32_t, CallBack>  _callbacks;	//每个协议的回调函数，不要传入引用
 private:
-	int64_t _player_id = 0; //玩家ID
+	int64_t _player_id = 0; //玩家全局唯一标识
 	Asset::Player _stuff; //玩家数据，存盘数据
 	Asset::PlayerProp _player_prop; //玩家临时状态，不进行存盘
+	Asset::User _user; //账号信息
 
 	int64_t _heart_count = 0; //心跳次数
 	int32_t _hi_time = 0; 
@@ -97,6 +98,7 @@ public:
 	const Asset::WechatUnion GetWechat();
 	const std::string GetNickName();
 	const std::string GetHeadImag();
+	const std::string GetIpAddress();
 
 	int32_t GetLocalServer() { return _stuff.server_id(); } //玩家当前所在服务器
 	void SetLocalServer(int32_t server_id) { return _stuff.set_server_id(server_id); }

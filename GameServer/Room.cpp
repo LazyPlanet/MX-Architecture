@@ -628,6 +628,7 @@ void Room::SyncRoom()
 		p->set_oper_type(player->GetOperState());
 		p->mutable_common_prop()->CopyFrom(player->CommonProp());
 		p->mutable_wechat()->CopyFrom(player->GetWechat());
+		p->set_ip_address(player->GetIpAddress());
 	
 		for (auto dis_player : _players)
 		{

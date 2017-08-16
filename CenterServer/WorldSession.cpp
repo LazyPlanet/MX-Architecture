@@ -220,6 +220,11 @@ void WorldSession::OnProcessMessage(const Asset::Meta& meta)
 			if (!_user.has_wechat_token()) _user.mutable_wechat_token()->CopyFrom(_access_token);
 			if (!_user.has_wechat()) _user.mutable_wechat()->CopyFrom(_wechat); //微信数据
 		
+			//
+			//Client数据
+			//
+			_user.mutable_client_info()->set_client_ip(_ip_address);
+		
 			//redis->SaveUser(login->account().username(), _user); //账号数据存盘
 			
 			auto set = client.set("user:" + login->account().username(), _user.SerializeAsString());
