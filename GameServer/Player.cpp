@@ -530,8 +530,9 @@ int32_t Player::CmdGameOperate(pb::Message* message)
 	
 void Player::OnGameStart()
 {
+	AddTotalRounds(); //对战局数
+
 	ClearCards();  //游戏数据
-	//_player_prop.clear_game_oper_state(); 
 }
 
 int32_t Player::CmdPaiOperate(pb::Message* message)

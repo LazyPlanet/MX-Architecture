@@ -52,7 +52,7 @@ public:
 	void SetTime(int32_t expired_time) { _expired_time = expired_time; }
 
 	void AddGameRecord(const Asset::GameRecord& record); //记录
-	void AddHupai(int64_t player_id) { ++_hupai_players[player_id]; }
+	void AddHupai(int64_t player_id);
 	void AddDianpao(int64_t player_id) { ++_dianpao_players[player_id]; }
 	void AddBanker(int64_t player_id) { ++_bankers[player_id]; }
 public:

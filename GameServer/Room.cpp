@@ -432,6 +432,16 @@ void Room::OnGameStart()
 		player->SetOperState(Asset::GAME_OPER_TYPE_ONLINE);
 	}
 }
+	
+void Room::AddHupai(int64_t player_id) 
+{ 
+	++_hupai_players[player_id]; 
+
+	auto player = GetPlayer(player_id);
+	if (!player) return;
+
+	player->AddTotalWinRounds();
+}
 
 void Room::OnGameOver(int64_t player_id)
 {
