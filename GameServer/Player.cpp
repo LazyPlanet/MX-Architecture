@@ -2970,22 +2970,35 @@ bool Player::CheckGangPai(const Asset::PaiElement& pai, int64_t from_player_id)
 	if (_tuoguan_server) return false;
 
 	if (!CheckMingPiao(Asset::PAI_OPER_TYPE_GANGPAI)) return false; //明飘检查
+	
+	auto cards_inhand = _cards_inhand; //玩家手里牌
+	auto cards_outhand = _cards_outhand; //玩家墙外牌
+	auto minggang = _minggang; //明杠
+	auto angang = _angang; //暗杠
+	auto jiangang = _jiangang; //旋风杠，本质是明杠
+	auto fenggang = _fenggang; //旋风杠，本质是暗杠
 
-	auto it = _cards_inhand.find(pai.card_type());
+	auto has_gang = false;
+
+	auto it = cards_inhand.find(pai.card_type());
 	int32_t card_value = pai.card_value();
 
-	if (it != _cards_inhand.end()) 
+	if (it != cards_inhand.end()) 
 	{
 		int32_t count = std::count(it->second.begin(), it->second.end(), card_value);
-		if (count == 3 /*牌是来自其他玩家*/ || count == 4 /*牌是玩家自己抓的*/) return true;  //玩家手里需要有3|4张牌
+		if (count == 3 || count == 4) has_gang = true;  //有杠
 	}
 
-	if (from_player_id == _player_id) //玩家自己抓牌
+	//
+	//玩家自己抓牌
+	//
+	if (from_player_id == _player_id) 
 	{
-		auto it = _cards_outhand.find(pai.card_type()); //牌面的牌不做排序,顺序必须3张
+		auto it = cards_outhand.find(pai.card_type()); //牌面的牌不做排序,顺序必须3张
+
+		DEBUG_ASSERT(it->second.size() % 3 == 0);
 
 		auto first_it = std::find(it->second.begin(), it->second.end(), card_value);
-
 		if (first_it == it->second.end()) return false;
 
 		auto second_it = ++first_it;
@@ -2994,12 +3007,55 @@ bool Player::CheckGangPai(const Asset::PaiElement& pai, int64_t from_player_id)
 		auto third_it = ++second_it;
 		if (third_it == it->second.end()) return false;
 		
-		if ((*first_it == *second_it) && (*second_it == *third_it)) return true;  //玩家牌面有3张牌
+		if ((*first_it == *second_it) && (*second_it == *third_it)) has_gang = true;  //玩家牌面有3张牌
 	}
-		
-	return false;
+			
+	if (has_gang)
+	{
+		auto remove_it = std::remove(it->second.begin(), it->second.end(), card_value); //删除杠牌
+		if (remove_it != it->second.end()) it->second.erase(remove_it, it->second.end());
+	}
+
+	//
+	//防止杠后听牌牌型不一致的场景
+	//
+	if (has_gang && HasTingPai()) has_gang = CanTingPai(cards_inhand, cards_outhand, minggang, angang, jiangang, fenggang); 
+
+	return has_gang;
 }
 
+bool Player::CanTingIfRemove(const Asset::PaiElement& pai)
+{
+	if (_tuoguan_server) return false;
+
+	if (!CheckMingPiao(Asset::PAI_OPER_TYPE_GANGPAI)) return false; //明飘检查
+	
+	auto cards_inhand = _cards_inhand; //玩家手里牌
+	auto cards_outhand = _cards_outhand; //玩家墙外牌
+	auto minggang = _minggang; //明杠
+	auto angang = _angang; //暗杠
+	auto jiangang = _jiangang; //旋风杠，本质是明杠
+	auto fenggang = _fenggang; //旋风杠，本质是暗杠
+
+	auto it = cards_inhand.find(pai.card_type());
+	if (it == cards_inhand.end()) return false;
+
+	int32_t card_value = pai.card_value();
+
+	auto remove_it = std::remove(it->second.begin(), it->second.end(), card_value); //删除杠牌
+	it->second.erase(remove_it, it->second.end());
+
+	//
+	//防止杠后听牌牌型不一致的场景
+	//
+	return CanTingPai(cards_inhand, cards_outhand, minggang, angang, jiangang, fenggang); 
+}
+
+//
+//检查玩家可能的杠牌
+//
+//比如,玩家碰3个4饼,牌内4 5 6饼套副条件下不杠的情况,每次进行检查
+//
 bool Player::CheckAllGangPai(::google::protobuf::RepeatedField<Asset::PaiOperationAlert_AlertElement>& gang_list)
 {
 	if (!CheckMingPiao(Asset::PAI_OPER_TYPE_GANGPAI)) return false; //明飘检查
@@ -3021,6 +3077,8 @@ bool Player::CheckAllGangPai(::google::protobuf::RepeatedField<Asset::PaiOperati
 				Asset::PaiElement pai;
 				pai.set_card_type((Asset::CARD_TYPE)card_type);
 				pai.set_card_value(card_value);
+
+				if (HasTingPai() && CanTingIfRemove(pai)) continue; //防止杠后听牌不一致
 
 				auto it = std::find_if(gang_list.begin(), gang_list.end(), [card_type, card_value](const Asset::PaiOperationAlert_AlertElement& element){
 					return card_type == element.pai().card_type() && card_value == element.pai().card_value();
@@ -3238,7 +3296,7 @@ int32_t Player::CheckXuanFeng()
 
 bool Player::CanTingPai(const Asset::PaiElement& pai)
 {
-	if (!_room) return false;
+	if (!_room || !_game) return false;
 
 	_cards_hu.clear();
 
@@ -3302,6 +3360,60 @@ bool Player::CanTingPai(const Asset::PaiElement& pai)
 	return _cards_hu.size() > 0;
 }
 
+bool Player::CanTingPai(std::map<int32_t, std::vector<int32_t>> cards_inhand, //玩家手里的牌
+		std::map<int32_t, std::vector<int32_t>> cards_outhand, //玩家墙外牌
+		std::vector<Asset::PaiElement> minggang, //明杠
+		std::vector<Asset::PaiElement> angang, //暗杠
+		int32_t jiangang, //旋风杠，本质是明杠
+		int32_t fenggang) //旋风杠，本质是暗杠
+{
+	if (!_room || !_game) return false;
+
+	auto options = _room->GetOptions();
+	
+	auto it_baohu = std::find(options.extend_type().begin(), options.extend_type().end(), Asset::ROOM_EXTEND_TYPE_BAOPAI);
+	if (it_baohu == options.extend_type().end()) return false; //不带宝胡，绝对不可能听牌
+
+	std::vector<Asset::PaiElement> cards_hu;
+
+	//能否胡万饼条
+	for (int card_type = Asset::CARD_TYPE_WANZI; card_type <= Asset::CARD_TYPE_TIAOZI; ++card_type)
+	{
+		for (int card_value = 1; card_value <= 9; ++card_value)
+		{
+			Asset::PaiElement pai;
+			pai.set_card_type((Asset::CARD_TYPE)card_type);
+			pai.set_card_value(card_value);
+
+			if (CheckHuPai(cards_inhand, cards_outhand, minggang, angang, jiangang, fenggang, pai)) 
+				cards_hu.push_back(pai);
+		}
+	}
+	
+	//能否胡风牌
+	for (int card_value = 1; card_value <= 4; ++card_value)
+	{
+		Asset::PaiElement pai;
+		pai.set_card_type(Asset::CARD_TYPE_FENG);
+		pai.set_card_value(card_value);
+
+		if (CheckHuPai(cards_inhand, cards_outhand, minggang, angang, jiangang, fenggang, pai))
+			cards_hu.push_back(pai);
+	}
+
+	//能否胡箭牌
+	for (int card_value = 1; card_value <= 3; ++card_value)
+	{
+		Asset::PaiElement pai;
+		pai.set_card_type(Asset::CARD_TYPE_JIAN);
+		pai.set_card_value(card_value);
+
+		if (CheckHuPai(cards_inhand, cards_outhand, minggang, angang, jiangang, fenggang, pai)) 
+			cards_hu.push_back(pai);
+	}
+	
+	return cards_hu.size() > 0;
+}
 
 //玩家能不能听牌的检查
 //
@@ -3311,7 +3423,7 @@ bool Player::CanTingPai(const Asset::PaiElement& pai)
 	
 bool Player::CheckTingPai(std::vector<Asset::PaiElement>& pais)
 {
-	if (!_room) return false;
+	if (!_room || !_game) return false;
 
 	if (_has_ting || _tuoguan_server) return false; //已经听牌，不再提示
 

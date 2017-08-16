@@ -227,6 +227,11 @@ public:
 	//通用奖励
 	Asset::ERROR_CODE DeliverReward(int64_t global_id);
 	void SyncCommonReward(int64_t common_reward_id);
+
+	//获胜局信息
+	void AddTotalRounds() { _stuff.mutable_common_prop()->set_total_rounds(_stuff.common_prop().total_rounds() + 1); _dirty = true; }
+	void AddTotalWinRounds() { _stuff.mutable_common_prop()->set_total_win_rounds(_stuff.common_prop().total_win_rounds() + 1); _dirty = true; }
+	void SetStreakWins(int32_t count) { _stuff.mutable_common_prop()->set_streak_wins(count); _dirty = true; }
 ///////游戏逻辑定义
 private:
 	std::mutex _card_lock;
@@ -333,6 +338,13 @@ public:
 	int32_t CheckXuanFeng(); //检查旋风杠
 	
 	bool CanTingPai(const Asset::PaiElement& pai);
+	bool CanTingIfRemove(const Asset::PaiElement& pai);
+	bool CanTingPai(const std::map<int32_t, std::vector<int32_t>> cards_inhand, //玩家手里的牌
+			std::map<int32_t, std::vector<int32_t>> cards_outhand, //玩家墙外牌
+			std::vector<Asset::PaiElement> minggang, //明杠
+			std::vector<Asset::PaiElement> angang, //暗杠
+			int32_t jiangang, //旋风杠，本质是明杠
+			int32_t fenggang); //旋风杠，本质是暗杠
 	bool CheckTingPai(std::vector<Asset::PaiElement>& pais/*应该打出的牌数据*/); //是否可以听牌：能不能听牌，主要是看是否给牌可以胡
 
 	bool CheckPengPai(const Asset::PaiElement& pai); //是否可以碰牌
