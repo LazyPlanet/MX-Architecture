@@ -2165,14 +2165,14 @@ bool Player::CheckHuPai(const Asset::PaiElement& pai, bool check_zibo)
 
 		if (check_zibo)
 		{
-			auto it = std::find(cards_inhand_check[pai.card_type()].begin(), cards_inhand_check[pai.card_type()].end(), pai.card_value());
-			if (it == cards_inhand_check[pai.card_type()].end())
+			auto it = std::find(cards_inhand_check[_zhuapai.card_type()].begin(), cards_inhand_check[_zhuapai.card_type()].end(), _zhuapai.card_value());
+			if (it == cards_inhand_check[_zhuapai.card_type()].end())
 			{
 				DEBUG_ASSERT(false && "未能找到牌");
 				return false;
 			}
 
-			cards_inhand_check[pai.card_type()].erase(it);
+			cards_inhand_check[_zhuapai.card_type()].erase(it);
 		}
 	
 		std::vector<Card_t> card_list;
@@ -2544,14 +2544,14 @@ bool Player::DebugCheckHuPai(const Asset::PaiElement& pai, bool check_zibo)
 		
 		if (check_zibo)
 		{
-			auto it = std::find(cards_inhand_check[pai.card_type()].begin(), cards_inhand_check[pai.card_type()].end(), pai.card_value());
-			if (it == cards_inhand_check[pai.card_type()].end())
+			auto it = std::find(cards_inhand_check[_zhuapai.card_type()].begin(), cards_inhand_check[_zhuapai.card_type()].end(), _zhuapai.card_value());
+			if (it == cards_inhand_check[_zhuapai.card_type()].end())
 			{
 				DEBUG_ASSERT(false && "未能找到牌");
 				return false;
 			}
 
-			cards_inhand_check[pai.card_type()].erase(it);
+			cards_inhand_check[_zhuapai.card_type()].erase(it);
 		}
 	
 		std::vector<Card_t> card_list;
@@ -2730,6 +2730,8 @@ bool Player::IsDanDiao()
 //
 bool Player::IsGangOperation()
 {
+	DEBUG("玩家:{} 当前操作类型:{} 上一次操作类型:{}", _player_id, _oper_type, _last_oper_type);
+
 	if (_last_oper_type == Asset::PAI_OPER_TYPE_GANGPAI || _last_oper_type == Asset::PAI_OPER_TYPE_ANGANGPAI 
 			|| _last_oper_type == Asset::PAI_OPER_TYPE_XUANFENG_FENG) 
 		return true;
