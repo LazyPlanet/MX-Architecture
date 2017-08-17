@@ -1267,7 +1267,7 @@ void Game::Calculate(int64_t hupai_player_id/*胡牌玩家*/, int64_t dianpao_pl
 				
 	OnGameOver(hupai_player_id); //结算之后才是真正结束
 	
-	LOG(INFO, "胡牌结算:{}", message.ShortDebugString());
+	LOG(INFO, "房间:{} 胡牌结算:{}", _room->GetID(), message.ShortDebugString());
 }
 	
 void Game::BroadCast(pb::Message* message, int64_t exclude_player_id)

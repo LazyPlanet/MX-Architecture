@@ -475,6 +475,10 @@ void Room::OnGameOver(int64_t player_id)
 		player->AddRoomRecord(GetID());
 	}
 
+	//
+	//总结算界面弹出
+	//
+
 	Asset::RoomCalculate message;
 	message.set_calculte_type(Asset::CALCULATE_TYPE_FULL);
 	if (_is_dismiss) message.set_calculte_type(Asset::CALCULATE_TYPE_DISMISS);
@@ -521,23 +525,28 @@ void Room::AddGameRecord(const Asset::GameRecord& record)
 {
 	_history.mutable_list()->Add()->CopyFrom(record);
 
+	int64_t room_id = GetID();
+	
 	cpp_redis::future_client client;
 	client.connect(ConfigInstance.GetString("Redis_ServerIP", "127.0.0.1"), ConfigInstance.GetInt("Redis_ServerPort", 6379));
-	if (!client.is_connected()) return;
+	if (!client.is_connected()) 
+	{
+		LOG(ERROR, "房间:{} 存储战绩信息:{} 当前历史战绩信息:{} 错误:未能建立连接", room_id, record.ShortDebugString(), _history.ShortDebugString());
+		return;
+	}
 	
 	auto has_auth = client.auth(ConfigInstance.GetString("Redis_Password", "!QAZ%TGB&UJM9ol."));
 	if (has_auth.get().ko()) 
 	{
-		DEBUG_ASSERT(false);
+		LOG(ERROR, "房间:{} 存储战绩信息:{} 当前历史战绩信息:{} 错误:数据库密码错误", room_id, record.ShortDebugString(), _history.ShortDebugString());
 		return;
 	}
 
-	int64_t room_id = GetID();
-	
 	LOG(INFO, "房间:{} 存储战绩信息:{} 当前历史战绩信息:{}", room_id, record.ShortDebugString(), _history.ShortDebugString());
 
 	auto set = client.set("room_history:" + std::to_string(room_id), _history.SerializeAsString());
-	client.sync_commit();
+	//client.sync_commit();
+	client.commit();
 
 	DEBUG("存储战绩信息:{} 结果:{}", _history.ShortDebugString(), set.get());
 }

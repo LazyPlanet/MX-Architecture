@@ -3007,12 +3007,18 @@ bool Player::CheckGangPai(const Asset::PaiElement& pai, int64_t from_player_id)
 	if (it != cards_inhand.end()) 
 	{
 		int32_t count = std::count(it->second.begin(), it->second.end(), card_value);
-		if (count == 3 || count == 4) has_gang = true;  //有杠
+		if (count == 3)
+		{
+			has_gang = true;  
+			minggang.push_back(pai);
+		}
+		else if (count == 4) 
+		{
+			has_gang = true;  
+			angang.push_back(pai);
+		}
 	}
 
-	//
-	//玩家自己抓牌
-	//
 	if (!has_gang && from_player_id == _player_id) 
 	{
 		auto it = cards_outhand.find(pai.card_type()); //牌面的牌不做排序,顺序必须3张
@@ -3028,7 +3034,11 @@ bool Player::CheckGangPai(const Asset::PaiElement& pai, int64_t from_player_id)
 		auto third_it = ++second_it;
 		if (third_it == it->second.end()) return false;
 		
-		if ((*first_it == *second_it) && (*second_it == *third_it)) has_gang = true;  //玩家牌面有3张牌
+		if ((*first_it == *second_it) && (*second_it == *third_it)) 
+		{
+			has_gang = true;  //玩家牌面有3张牌
+			minggang.push_back(pai);
+		}
 	}
 			
 	if (has_gang)
@@ -3040,12 +3050,17 @@ bool Player::CheckGangPai(const Asset::PaiElement& pai, int64_t from_player_id)
 	//
 	//防止杠后听牌牌型不一致的场景
 	//
-	if (has_gang && HasTingPai()) has_gang = CanTingPai(cards_inhand, cards_outhand, minggang, angang, jiangang, fenggang); 
+	if (has_gang && HasTingPai()) 
+	{
+		has_gang = CanTingPai(cards_inhand, cards_outhand, minggang, angang, jiangang, fenggang); 
+
+		LOG(ERROR, "玩家:{}杠牌之后，能听牌:{}，不能杠牌:{}", _player_id, has_gang, pai.ShortDebugString());
+	}
 
 	return has_gang;
 }
 
-bool Player::CanTingIfRemove(const Asset::PaiElement& pai)
+bool Player::CanTingIfGang(const Asset::PaiElement& pai)
 {
 	if (_tuoguan_server) return false;
 
@@ -3099,7 +3114,7 @@ bool Player::CheckAllGangPai(::google::protobuf::RepeatedField<Asset::PaiOperati
 				pai.set_card_type((Asset::CARD_TYPE)card_type);
 				pai.set_card_value(card_value);
 
-				if (HasTingPai() && CanTingIfRemove(pai)) continue; //防止杠后听牌不一致
+				if (HasTingPai() && CanTingIfGang(pai)) continue; //防止杠后听牌不一致
 
 				auto it = std::find_if(gang_list.begin(), gang_list.end(), [card_type, card_value](const Asset::PaiOperationAlert_AlertElement& element){
 					return card_type == element.pai().card_type() && card_value == element.pai().card_value();

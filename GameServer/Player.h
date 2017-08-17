@@ -341,7 +341,7 @@ public:
 	int32_t CheckXuanFeng(); //检查旋风杠
 	
 	bool CanTingPai(const Asset::PaiElement& pai);
-	bool CanTingIfRemove(const Asset::PaiElement& pai);
+	bool CanTingIfGang(const Asset::PaiElement& pai);
 	bool CanTingPai(const std::map<int32_t, std::vector<int32_t>> cards_inhand, //玩家手里的牌
 			std::map<int32_t, std::vector<int32_t>> cards_outhand, //玩家墙外牌
 			std::vector<Asset::PaiElement> minggang, //明杠
