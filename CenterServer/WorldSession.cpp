@@ -183,6 +183,11 @@ void WorldSession::OnProcessMessage(const Asset::Meta& meta)
 			}
 
 			//
+			//Client数据
+			//
+			_user.mutable_client_info()->set_client_ip(_ip_address);
+
+			//
 			//如果账号下没有角色，则创建一个
 			//
 			//对于需要玩家自定义角色数据的游戏，此处要单独处理，比如需要选择性别
@@ -271,6 +276,8 @@ void WorldSession::OnProcessMessage(const Asset::Meta& meta)
 		{
 			Asset::ReConnect* connect = dynamic_cast<Asset::ReConnect*>(message);
 			if (!connect) return; 
+
+			WARN("玩家:{}断线重连", connect->player_id());
 
 			_player = PlayerInstance.Get(connect->player_id());
 

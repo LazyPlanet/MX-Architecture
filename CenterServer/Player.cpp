@@ -134,7 +134,7 @@ int32_t Player::OnLogout()
 	Save(true);	//存档数据库
 
 	WorldSessionInstance.RemovePlayer(_player_id); //网络会话数据
-	PlayerInstance.Erase(_player_id); //玩家管理
+	PlayerInstance.Remove(_player_id); //玩家管理
 
 	DEBUG("player_id:{} stuff:{} leave game and scene.", _player_id, _stuff.ShortDebugString());
 
@@ -143,6 +143,8 @@ int32_t Player::OnLogout()
 
 int32_t Player::OnEnterGame() 
 {
+	DEBUG("玩家:{}进入游戏", _player_id);
+
 	if (!_loaded)
 	{
 		if (Load())
@@ -175,7 +177,7 @@ int32_t Player::OnLogin()
 
 	BattleHistory(); //历史对战表
 
-	DEBUG("玩家:{}登陆加载数据，数据内容:{}", _player_id, _stuff.ShortDebugString());
+	DEBUG("玩家:{}登陆加载数据成功，数据内容:{}", _player_id, _stuff.ShortDebugString());
 	return 0;
 }
 
@@ -880,14 +882,37 @@ void Player::OnKickOut(Asset::KICK_OUT_REASON reason)
 	
 void PlayerManager::Emplace(int64_t player_id, std::shared_ptr<Player> player)
 {
-	if (!player) return;
+	if (!player) 
+	{
+		ERROR("插入玩家:{}失败", player_id);
+		return;
+	}
+
+	WARN("插入玩家:{}成功", player_id);
 
 	_players[player_id] = player;
 }
 
 std::shared_ptr<Player> PlayerManager::GetPlayer(int64_t player_id)
 {
-	return _players[player_id];
+	for (auto it = _players.begin(); it != _players.end(); )
+	{
+		if (!it->second)
+		{
+			DEBUG("玩家:{}已经退出", it->first);
+
+			it = _players.erase(it);
+		}
+		else
+		{
+			++it;
+		}
+	}
+
+	auto it = _players.find(player_id);
+	if (it == _players.end()) return nullptr;
+
+	return it->second;
 }
 
 std::shared_ptr<Player> PlayerManager::Get(int64_t player_id)
@@ -902,16 +927,20 @@ bool PlayerManager::Has(int64_t player_id)
 	return player != nullptr;
 }
 
-void PlayerManager::Erase(int64_t player_id)
+void PlayerManager::Remove(int64_t player_id)
 {
+	if (player_id <= 0) return;
+
+	ERROR("删除玩家:{}", player_id);
+
 	_players.erase(player_id);
 }
 
-void PlayerManager::Erase(std::shared_ptr<Player> player)
+void PlayerManager::Remove(std::shared_ptr<Player> player)
 {
 	if (!player) return;
 
-	_players.erase(player->GetID());
+	Remove(player->GetID());
 }
 	
 void PlayerManager::BroadCast(const pb::Message& message)

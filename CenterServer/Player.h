@@ -196,8 +196,8 @@ public:
 		return _instance;
 	}
 
-	void Erase(int64_t player_id);
-	void Erase(std::shared_ptr<Player> player);
+	void Remove(int64_t player_id);
+	void Remove(std::shared_ptr<Player> player);
 	void Emplace(int64_t player_id, std::shared_ptr<Player> player);
 	bool Has(int64_t player_id);
 	std::shared_ptr<Player> GetPlayer(int64_t player_id);
