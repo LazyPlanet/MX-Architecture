@@ -220,13 +220,6 @@ void WorldSession::OnProcessMessage(const Asset::Meta& meta)
 			if (!_user.has_wechat_token()) _user.mutable_wechat_token()->CopyFrom(_access_token);
 			if (!_user.has_wechat()) _user.mutable_wechat()->CopyFrom(_wechat); //微信数据
 		
-			//
-			//Client数据
-			//
-			_user.mutable_client_info()->set_client_ip(_ip_address);
-		
-			//redis->SaveUser(login->account().username(), _user); //账号数据存盘
-			
 			auto set = client.set("user:" + login->account().username(), _user.SerializeAsString());
 			client.sync_commit();
 
@@ -463,11 +456,13 @@ void WorldSession::OnProcessMessage(const Asset::Meta& meta)
 
 			DEBUG("设置位置信息:player_id:{} message:{}", _player->GetID(), message->ShortDebugString());
 
-			_user.mutable_client_info()->CopyFrom(client_data->client_info());
+			_user.mutable_client_info()->set_client_ip(_ip_address);
+			_user.mutable_client_info()->mutable_location()->CopyFrom(client_data->client_info().location());
 				
 			auto redis = make_unique<Redis>();
 			redis->SetLocation(_player->GetID(), client_data->client_info().location()); //位置信息
 
+			client_data->mutable_client_info()->CopyFrom(_user.client_info());
 			SendProtocol(message);
 		}
 		else if (Asset::META_TYPE_SHARE_SAY_HI == meta.type_t() && _role_type == Asset::ROLE_TYPE_GAME_SERVER) //心跳
