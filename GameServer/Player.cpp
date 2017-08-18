@@ -2746,8 +2746,16 @@ bool Player::IsGangOperation()
 bool Player::CheckMingPiao(const Asset::PAI_OPER_TYPE& oper_type)
 {
 	auto curr_count = GetCardCount();
-
-	if (curr_count > 4) return true; //当前超过4张牌，显然不可能手把一
+	
+	if (Asset::PAI_OPER_TYPE_ANGANGPAI == oper_type)
+	{
+		if (curr_count > 5) return true; //当前超过5张牌，暗杠不可能手把一
+	}
+	else
+	{
+		if (curr_count > 4) return true; //当前超过4张牌，显然不可能手把一
+	}
+	
 
 	switch (oper_type)
 	{
@@ -2758,8 +2766,12 @@ bool Player::CheckMingPiao(const Asset::PAI_OPER_TYPE& oper_type)
 		break;
 		
 		case Asset::PAI_OPER_TYPE_PENGPAI: //碰牌
-		case Asset::PAI_OPER_TYPE_GANGPAI: //杠牌
+		case Asset::PAI_OPER_TYPE_GANGPAI: //明杠牌
+		case Asset::PAI_OPER_TYPE_ANGANGPAI: //暗杠牌(唯一可能是5张牌)
 		{
+			//
+			//牌外必须都是碰的3张一样
+			//
 			for (auto cards : _cards_outhand)
 			{
 				for (auto it = cards.second.begin(); it != cards.second.end(); it += 3)
@@ -2992,7 +3004,7 @@ bool Player::CheckGangPai(const Asset::PaiElement& pai, int64_t from_player_id)
 {
 	if (_tuoguan_server) return false;
 
-	if (!CheckMingPiao(Asset::PAI_OPER_TYPE_GANGPAI)) return false; //明飘检查
+	//if (!CheckMingPiao(Asset::PAI_OPER_TYPE_GANGPAI)) return false; //明飘检查
 	
 	auto cards_inhand = _cards_inhand; //玩家手里牌
 	auto cards_outhand = _cards_outhand; //玩家墙外牌
@@ -3009,18 +3021,20 @@ bool Player::CheckGangPai(const Asset::PaiElement& pai, int64_t from_player_id)
 	if (it != cards_inhand.end()) 
 	{
 		int32_t count = std::count(it->second.begin(), it->second.end(), card_value);
-		if (count == 3)
+		if (count == 3 && CheckMingPiao(Asset::PAI_OPER_TYPE_GANGPAI))
 		{
 			has_gang = true;  
 			minggang.push_back(pai);
 		}
-		else if (count == 4) 
+		else if (count == 4 && CheckMingPiao(Asset::PAI_OPER_TYPE_ANGANGPAI)) 
 		{
 			has_gang = true;  
 			angang.push_back(pai);
 		}
 	}
 
+	if (!CheckMingPiao(Asset::PAI_OPER_TYPE_GANGPAI)) return false; //明飘检查
+	
 	if (!has_gang && from_player_id == _player_id) 
 	{
 		auto it = cards_outhand.find(pai.card_type()); //牌面的牌不做排序,顺序必须3张
@@ -3110,7 +3124,7 @@ bool Player::CheckAllGangPai(::google::protobuf::RepeatedField<Asset::PaiOperati
 		for (auto card_value : cards.second)
 		{
 			auto count = std::count(cards.second.begin(), cards.second.end(), card_value);
-			if (count == 4) 
+			if (count == 4 && CheckMingPiao(Asset::PAI_OPER_TYPE_ANGANGPAI)) 
 			{
 				Asset::PaiElement pai;
 				pai.set_card_type((Asset::CARD_TYPE)card_type);
