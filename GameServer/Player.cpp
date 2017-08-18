@@ -788,37 +788,43 @@ int32_t Player::CmdEnterRoom(pb::Message* message)
 	//
 	//房间重入检查
 	//
-	if (_room) 
+	do 
 	{
-		DEBUG("玩家:{}重入房间:{} 数据:{}", _player_id, _room->GetID(), enter_room->ShortDebugString());
-			
-		auto locate_room = RoomInstance.Get(enter_room->room().room_id());
-		if (!locate_room)
+		if (_room) 
 		{
-			enter_room->set_error_code(Asset::ERROR_ROOM_NOT_FOUNT); //是否可以进入场景//房间
-			SendProtocol(message);
+			DEBUG("玩家:{}重入房间:{} 数据:{}", _player_id, _room->GetID(), enter_room->ShortDebugString());
+				
+			auto locate_room = RoomInstance.Get(enter_room->room().room_id());
+			if (!locate_room)
+			{
+				enter_room->set_error_code(Asset::ERROR_ROOM_NOT_FOUNT); //是否可以进入场景//房间
+				SendProtocol(message);
 
-			ResetRoom(); //房间已经解散
-			SetOffline(false); //恢复在线状态
+				ResetRoom(); //房间已经解散
+				SetOffline(false); //恢复在线状态
 
-			return Asset::ERROR_ROOM_NOT_FOUNT;
+				return Asset::ERROR_ROOM_NOT_FOUNT;
+			}
+
+			if (_room->GetID() == enter_room->room().room_id()) //重入房间
+			{
+				enter_room->mutable_room()->CopyFrom(_room->Get());
+				enter_room->set_error_code(Asset::ERROR_SUCCESS); //是否可以进入场景//房间
+				SendProtocol(message);
+
+				return Asset::ERROR_SUCCESS;
+			}
+			else
+			{
+				locate_room = RoomInstance.Get(_room->GetID());
+				if (!locate_room) break; //房间已经不存在
+
+				SendRoomState();
+
+				return Asset::ERROR_ROOM_HAS_BEEN_IN;
+			}
 		}
-
-		if (_room->GetID() == enter_room->room().room_id()) //重入房间
-		{
-			enter_room->mutable_room()->CopyFrom(_room->Get());
-			enter_room->set_error_code(Asset::ERROR_SUCCESS); //是否可以进入场景//房间
-			SendProtocol(message);
-
-			return Asset::ERROR_SUCCESS;
-		}
-		else
-		{
-			SendRoomState();
-
-			return Asset::ERROR_ROOM_HAS_BEEN_IN;
-		}
-	}
+	} while (false);
 
 	//
 	//房间正常进入
