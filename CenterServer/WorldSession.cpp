@@ -29,9 +29,10 @@ void WorldSession::InitializeHandler(const boost::system::error_code error, cons
 	{
 		if (error)
 		{
-			if (error != boost::asio::error::connection_reset)
+			ERROR("客户端地址:{} 端口:{} 玩家:{}断开连接，错误码:{} 错误描述:{}", _ip_address, _remote_endpoint.port(), _player ? _player->GetID() : 0, error.value(), error.message());
+			
+			//if (error != boost::asio::error::connection_reset)
 			{
-				ERROR("客户端地址:{} 端口:{} 玩家:{}断开连接，错误码:{}", _ip_address, _remote_endpoint.port(), _player ? _player->GetID() : 0, error.message());
 				KickOutPlayer(Asset::KICK_OUT_REASON_DISCONNECT);
 				return;
 			}
@@ -300,6 +301,10 @@ void WorldSession::OnProcessMessage(const Asset::Meta& meta)
 					LOG(ERROR, "玩家断线重连，角色ID:{} 加载数据失败", connect->player_id());
 					return;
 				}
+			}
+			else
+			{
+				_player->SetSession(shared_from_this());	
 			}
 
 			_player->SetLocalServer(ConfigInstance.GetInt("ServerID", 1));
