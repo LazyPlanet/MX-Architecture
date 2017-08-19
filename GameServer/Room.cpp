@@ -41,7 +41,7 @@ Asset::ERROR_CODE Room::TryEnter(std::shared_ptr<Player> player)
 	
 	if (IsFull()) return Asset::ERROR_ROOM_IS_FULL; //房间已满
 
-	DEBUG("player_id:{} enter room:{} success.", player->GetID(), GetID());
+	DEBUG("玩家:{}进入房间:{}成功", player->GetID(), GetID());
 
 	return Asset::ERROR_SUCCESS;
 }
