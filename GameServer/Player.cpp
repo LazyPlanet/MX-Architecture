@@ -817,7 +817,11 @@ int32_t Player::CmdEnterRoom(pb::Message* message)
 			else
 			{
 				locate_room = RoomInstance.Get(_room->GetID());
-				if (!locate_room) break; //房间已经不存在
+				if (!locate_room) 
+				{
+					_room.reset();
+					break; //房间已经不存在
+				}
 
 				SendRoomState();
 

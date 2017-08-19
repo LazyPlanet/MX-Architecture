@@ -29,9 +29,12 @@ void WorldSession::InitializeHandler(const boost::system::error_code error, cons
 	{
 		if (error)
 		{
-			ERROR("Remote client disconnect, remote_ip:{} port:{}, player_id:{}", _ip_address, _remote_endpoint.port(), _player ? _player->GetID() : 0);
-			KickOutPlayer(Asset::KICK_OUT_REASON_DISCONNECT);
-			return;
+			if (error != boost::asio::error::connection_reset)
+			{
+				ERROR("客户端地址:{} 端口:{} 玩家:{}断开连接，错误码:{}", _ip_address, _remote_endpoint.port(), _player ? _player->GetID() : 0, error.message());
+				KickOutPlayer(Asset::KICK_OUT_REASON_DISCONNECT);
+				return;
+			}
 		}
 		else
 		{
@@ -67,7 +70,7 @@ void WorldSession::InitializeHandler(const boost::system::error_code error, cons
 	}
 	catch (std::exception& e)
 	{
-		LOG(INFO, "Remote client disconnect, remote_ip:{}, error:{}, player_id:{}", _ip_address, e.what(), _player ? _player->GetID() : 0);
+		ERROR("客户端地址:{} 端口:{} 玩家:{}断开连接，错误码:{}", _ip_address, _remote_endpoint.port(), _player ? _player->GetID() : 0, e.what());
 		KickOutPlayer(Asset::KICK_OUT_REASON_DISCONNECT);
 		return;
 	}
