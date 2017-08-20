@@ -672,6 +672,8 @@ void Room::OnCreated(std::shared_ptr<Player> hoster)
 	
 bool Room::CanStarGame()
 {
+	if (!_hoster) return false;
+
 	if (_players.size() != MAX_PLAYER_COUNT) return false;
 
 	for (auto player : _players)
@@ -691,7 +693,7 @@ bool Room::CanStarGame()
 		auto activity_id = g_const->room_card_limit_free_activity_id();
 		if (ActivityInstance.IsOpen(activity_id)) return true;
 
-		if (_hoster)
+		if (_hoster && _games.size() == 0) //开局消耗
 		{
 			const auto room_card = dynamic_cast<const Asset::Item_RoomCard*>(AssetInstance.Get(g_const->room_card_id()));
 			if (!room_card) return false;
@@ -708,9 +710,9 @@ bool Room::CanStarGame()
 				return false;
 			}
 		}
-		else
+		else if (_games.size() == 0)
 		{
-			LOG(INFO, "房间:{}尚未消耗房卡进行开房", GetID()); //记录
+			LOG(ERROR, "房间:{}尚未消耗房卡进行开房, 房主:{}", GetID(), _hoster->GetID()); //记录
 		}
 	}
 	else
