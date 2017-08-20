@@ -539,7 +539,8 @@ void Player::SetStreakWins(int32_t count)
 	
 void Player::OnGameStart()
 {
-	AddTotalRounds(); //对战局数
+	AddTotalRounds(); //总对战局数
+	if (_room && _room->IsFriend()) AddFriendRoomRounds(); //好友房对战局数
 
 	ClearCards();  //游戏数据
 }
