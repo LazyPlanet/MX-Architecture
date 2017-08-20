@@ -115,9 +115,9 @@ bool Room::Enter(std::shared_ptr<Player> player)
 	
 	DEBUG("curr_count:{} curr_enter:{} position:{}", _players.size(), player->GetID(), player->GetPosition());
 
-	player->ClearCards(); //每次进房初始化状态
+	//player->ClearCards(); //每次进房初始化状态
 
-	SyncRoom(); //同步当前房间内玩家数据
+	//SyncRoom(); //同步当前房间内玩家数据
 	return true;
 }
 	
@@ -851,13 +851,13 @@ std::shared_ptr<Room> RoomManager::CreateRoom(const Asset::Room& room)
 
 bool RoomManager::OnCreateRoom(std::shared_ptr<Room> room)
 {
-	if (_rooms.find(room->GetID()) != _rooms.end()) 
-	{
-		ERROR("room:{} has exist.", room->GetID());
-		return false;
-	}
+	if (!room) return false;
 
-	_rooms.emplace(room->GetID(), room);
+	auto room_id = room->GetID();
+
+	if (_rooms.find(room_id) != _rooms.end()) return false;
+	_rooms.emplace(room_id, room);
+
 	return true;
 }
 

@@ -459,10 +459,10 @@ void Player::OnCreateRoom(Asset::CreateRoom* create_room)
 	Asset::Room asset_room;
 	asset_room.CopyFrom(create_room->room());
 
-	_room = std::make_shared<Room>(asset_room);
-	_room->OnCreated(shared_from_this());
+	auto room = std::make_shared<Room>(asset_room);
+	room->OnCreated(shared_from_this());
 
-	RoomInstance.OnCreateRoom(_room); //房间管理
+	RoomInstance.OnCreateRoom(room); //房间管理
 }
 
 int32_t Player::CmdGameOperate(pb::Message* message)
@@ -879,9 +879,14 @@ int32_t Player::CmdEnterRoom(pb::Message* message)
 			}
 			else
 			{
-				auto ret = locate_room->TryEnter(shared_from_this()); //玩家进入房间
+				auto enter_status = locate_room->TryEnter(shared_from_this()); //玩家进入房间
 				enter_room->mutable_room()->CopyFrom(locate_room->Get());
-				enter_room->set_error_code(ret); //是否可以进入场景//房间
+				enter_room->set_error_code(enter_status); //是否可以进入场景//房间
+
+				if (enter_status == Asset::ERROR_SUCCESS || enter_status == Asset::ERROR_ROOM_HAS_BEEN_IN) 
+				{
+					locate_room->Enter(shared_from_this()); //玩家进入房间
+				}
 			}
 
 			SendProtocol(enter_room);
@@ -1366,6 +1371,7 @@ int32_t Player::CmdLoadScene(pb::Message* message)
 				return 3; //非法的房间 
 			}
 			
+			/*
 			auto enter_status = locate_room->TryEnter(shared_from_this()); //玩家进入房间
 
 			if (enter_status != Asset::ERROR_SUCCESS && enter_status != Asset::ERROR_ROOM_HAS_BEEN_IN) 
@@ -1380,7 +1386,8 @@ int32_t Player::CmdLoadScene(pb::Message* message)
 				DEBUG_ASSERT(false);
 				return 5;
 			}
-			
+			*/
+
 			SetRoom(locate_room);
 				
 			DEBUG("player_id:{} enter room:{} success.", _player_id, room_id);
@@ -1409,6 +1416,10 @@ int32_t Player::CmdLoadScene(pb::Message* message)
 void Player::OnEnterScene(int64_t room_id)
 {
 	SendPlayer(); //发送数据给Client
+	
+	ClearCards(); //每次进房初始化状态
+
+	if (_room) _room->SyncRoom(); //同步当前房间内玩家数据
 }
 
 int32_t Player::CmdLuckyPlate(pb::Message* message)
