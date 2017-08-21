@@ -139,7 +139,7 @@ int32_t Player::Logout(pb::Message* message)
 	//
 	if (_room) 
 	{
-		if (_game && _room->GetRemainCount() > 0) //游戏中，且尚未对局完成，则不让退出房间
+		if (_game || _room->GetRemainCount() > 0) //游戏中，或尚未对局完成，则不让退出房间
 		{
 			SetOffline(); //玩家状态
 
@@ -1371,6 +1371,8 @@ int32_t Player::CmdLoadScene(pb::Message* message)
 				DEBUG_ASSERT(false);
 				return 3; //非法的房间 
 			}
+
+			bool is_reenter = (_room == nullptr ? false : room_id == _room->GetID());
 			
 			/*
 			auto enter_status = locate_room->TryEnter(shared_from_this()); //玩家进入房间
@@ -1400,7 +1402,7 @@ int32_t Player::CmdLoadScene(pb::Message* message)
 
 			SetDirty();
 			
-			OnEnterScene(room_id); //进入房间//场景回调
+			OnEnterScene(is_reenter); //进入房间//场景回调
 		}
 		break;
 		
@@ -1414,13 +1416,18 @@ int32_t Player::CmdLoadScene(pb::Message* message)
 	return 0;
 }
 
-void Player::OnEnterScene(int64_t room_id)
+void Player::OnEnterScene(bool is_reenter)
 {
 	SendPlayer(); //发送数据给Client
 	
 	ClearCards(); //每次进房初始化状态
 
-	if (_room) _room->SyncRoom(); //同步当前房间内玩家数据
+	if (_room) 
+	{
+		_room->SyncRoom(); //同步当前房间内玩家数据
+
+		if (is_reenter) _room->OnReEnter(shared_from_this()); //房间重入
+	}
 }
 
 int32_t Player::CmdLuckyPlate(pb::Message* message)

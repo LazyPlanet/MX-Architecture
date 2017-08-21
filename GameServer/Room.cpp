@@ -123,7 +123,9 @@ bool Room::Enter(std::shared_ptr<Player> player)
 	
 void Room::OnReEnter(std::shared_ptr<Player> op_player)
 {
-	if (!op_player || !_game) return;
+	if (!op_player) return;
+
+	DEBUG("玩家:{}重入房间:{}", op_player->GetID(), GetID());
 
 	op_player->SetOffline(false); //回到房间内
 
@@ -133,13 +135,31 @@ void Room::OnReEnter(std::shared_ptr<Player> op_player)
 	SyncRoom();
 
 	//
-	//同步牌局//玩家牌信息
+	//房间内玩家数据推送
 	//
 	Asset::RoomAll message;
 	message.set_current_rounds(_games.size());
 	message.set_zhuang_position(Asset::POSITION_TYPE(_banker_index + 1));
+	
+	for (const auto& record : _history.list())
+	{	
+		auto hist_record = message.mutable_list()->Add();
+		hist_record->CopyFrom(record);
+	}
+
+	if (!_game)
+	{
+		op_player->SendProtocol(message);
+		return;
+	}
+
+	//牌局通用信息
 	message.set_curr_operator_position(Asset::POSITION_TYPE(_game->GetCurrPlayerIndex() + 1));
 	message.set_remain_cards_count(_game->GetRemainCount());
+
+	//
+	//牌局相关数据推送
+	//
 
 	if (op_player->HasTingPai()) 
 	{
@@ -153,12 +173,6 @@ void Room::OnReEnter(std::shared_ptr<Player> op_player)
 
 	for (auto saizi : _game->GetSaizi())
 		message.mutable_saizi_random_result()->Add(saizi);
-
-	for (const auto& record : _history.list())
-	{	
-		auto hist_record = message.mutable_list()->Add();
-		hist_record->CopyFrom(record);
-	}
 
 	for (auto player : _players)
 	{
@@ -221,6 +235,8 @@ void Room::OnReEnter(std::shared_ptr<Player> op_player)
 			pai->CopyFrom(pai_element);
 		}
 	}
+
+	DEBUG("玩家:{}重入房间:{} 协议内容:{}", op_player->GetID(), GetID(), message.ShortDebugString());
 
 	op_player->SendProtocol(message);
 
@@ -513,6 +529,8 @@ void Room::OnGameOver(int64_t player_id)
 
 		player->SendProtocol(message);
 	}
+	
+	if (_game) _game.reset();
 	
 	_history.Clear();
 	_bankers.clear();
