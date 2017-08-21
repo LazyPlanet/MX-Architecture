@@ -187,8 +187,8 @@ void Room::OnReEnter(std::shared_ptr<Player> op_player)
 
 		if (op_player->GetID() == player->GetID())
 		{
-			auto cards_inhand = player->GetCardsInhand();
-			for (auto cards : cards_inhand)
+			const auto& cards_inhand = player->GetCardsInhand();
+			for (const auto& cards : cards_inhand)
 			{
 				if (cards.second.size() == 0) continue;
 

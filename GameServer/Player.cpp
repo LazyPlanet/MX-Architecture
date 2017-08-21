@@ -1420,7 +1420,7 @@ void Player::OnEnterScene(bool is_reenter)
 {
 	SendPlayer(); //发送数据给Client
 	
-	ClearCards(); //每次进房初始化状态
+	if (!is_reenter) ClearCards(); //第一次进房间初始化牌局状态
 
 	if (_room) 
 	{
@@ -1428,6 +1428,8 @@ void Player::OnEnterScene(bool is_reenter)
 
 		if (is_reenter) _room->OnReEnter(shared_from_this()); //房间重入
 	}
+
+	DEBUG("玩家:{}进入房间,是否重入:{}", _player_id, is_reenter);
 }
 
 int32_t Player::CmdLuckyPlate(pb::Message* message)
@@ -4172,6 +4174,8 @@ void Player::ClearCards()
 		return;
 	}
 	*/
+		
+	WARN("玩家:{}清理牌数据", _player_id);
 	
 	_fan_list.clear(); //番数
 	_cards_inhand.clear(); //清理手里牌
