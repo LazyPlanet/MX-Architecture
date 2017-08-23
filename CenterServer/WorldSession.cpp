@@ -191,6 +191,10 @@ void WorldSession::OnProcessMessage(const Asset::Meta& meta)
 			//
 			_user.mutable_client_info()->set_client_ip(_ip_address);
 
+			Asset::UpdateClientData client_data;
+			client_data.mutable_client_info()->CopyFrom(_user.client_info());
+			SendProtocol(client_data);
+
 			//
 			//如果账号下没有角色，则创建一个
 			//
