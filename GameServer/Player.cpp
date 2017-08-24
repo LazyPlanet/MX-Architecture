@@ -3834,6 +3834,7 @@ int32_t Player::OnFaPai(std::vector<int32_t>& cards)
 		}
 	}
 
+	/*
 	try {
 		std::unique_lock<std::mutex> lock(_card_lock, std::defer_lock);
 
@@ -3862,6 +3863,43 @@ int32_t Player::OnFaPai(std::vector<int32_t>& cards)
 	{
 		ERROR("player get cards, player_id:{} error:{}.", _player_id, error.what());
 		return 4;
+	}
+	*/
+
+
+	if (_player_id == 262197 && _cards_inhand.size() == 0)
+	{
+		_cards_inhand = {
+		{ 1, { 8, 8, 8, 8} },
+		{ 2, { 3, 3, 3, 5, 6} },
+		{ 3, { 1, 1, 4, 5, 6} },
+		//{ 4, { 1, 2, 3, 4} },
+		//{ 5, { 1, 2, 3} },
+		
+		};
+		
+		/*
+		_cards_outhand = {
+		{ 2, { 8, 8, 8, 4, 5, 6} },
+		{ 4, { 2, 2, 2 } },
+		};
+		*/
+	}
+
+	else
+	{
+		for (auto card_index : cards) //发牌到玩家手里
+		{
+			auto card = GameInstance.GetCard(card_index);
+			if (card.card_type() == 0 || card.card_value() == 0) return 2; //数据有误
+
+			_cards_inhand[card.card_type()].push_back(card.card_value()); //插入玩家手牌
+		}
+	}
+
+	for (auto& cards : _cards_inhand) //整理牌
+	{
+		std::sort(cards.second.begin(), cards.second.end(), [](int x, int y){ return x < y; }); //由小到大
 	}
 
 	for (auto& cards : _cards_inhand) //整理牌
@@ -3940,7 +3978,7 @@ int32_t Player::OnFaPai(std::vector<int32_t>& cards)
 
 			if (alert.pais().size()) SendProtocol(alert); //上来即有旋风杠或者胡牌
 			
-			_xf_gang.clear();
+			//_xf_gang.clear(); //庄家直接清理 
 		}
 	}
 	else if (cards.size() == 1)

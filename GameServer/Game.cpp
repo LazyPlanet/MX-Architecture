@@ -1437,17 +1437,22 @@ std::vector<int32_t> Game::TailPai(int32_t card_count)
 	
 	if (_cards.size() < (size_t)card_count) return cards;
 
-	for (int32_t i = 0; i < card_count; ++i)
-	{
-		if (_random_result - 1 != i || _random_result_list.find(i) == _random_result_list.end()) //随机的宝牌不再从后面抓
+	int32_t tail_index = 0;
+
+	do {
+		++tail_index;
+
+		if (/*_random_result - 1 != tail_index || */_random_result_list.find(tail_index) == _random_result_list.end()) //随机的宝牌不再从后面抓
 		{
 			int32_t value = _cards.back();	
 			cards.push_back(value);
 		}
 
 		_cards.pop_back();
-	}
 
+	} while((int32_t)cards.size() != card_count);
+
+	/*
 	if (cards.size() == 0)
 	{
 		int32_t value = _cards.back();	
@@ -1455,7 +1460,7 @@ std::vector<int32_t> Game::TailPai(int32_t card_count)
 
 		_cards.pop_back();
 	}
-
+	*/
 	return cards;
 }
 	
@@ -1638,6 +1643,8 @@ bool Game::IsBanker(int64_t player_id)
 
 Asset::PaiElement Game::GetBaoPai(int32_t tail_index)
 {
+	_random_result_list.emplace(tail_index); //范围:1~6
+
 	std::vector<int32_t> list(_cards.begin(), _cards.end());
 
 	auto card_index = list.size() - tail_index; 
@@ -1701,7 +1708,6 @@ void Game::OnTingPai(std::shared_ptr<Player> player)
 	do {
 		_random_result = CommonUtil::Random(1, 6);
 		_baopai = GetBaoPai(_random_result);
-		_random_result_list.emplace(_random_result - 1);
 	} while(GetRemainBaopai() <= 0); //直到产生还有剩余的宝牌
 }
 

@@ -464,6 +464,8 @@ void Room::AddHupai(int64_t player_id)
 
 void Room::OnGameOver(int64_t player_id)
 {
+	if (_game) _game.reset();
+	
 	AddHupai(player_id); //记录
 
 	if (player_id != 0 && _banker != player_id) 
@@ -529,8 +531,6 @@ void Room::OnGameOver(int64_t player_id)
 
 		player->SendProtocol(message);
 	}
-	
-	if (_game) _game.reset();
 	
 	_history.Clear();
 	_bankers.clear();
@@ -612,6 +612,8 @@ void Room::OnDisMiss()
 		list->set_position(player->GetPosition());
 		list->set_oper_type(player->GetOperState());
 	}
+
+	DEBUG("解散房间:{} 协议:{}", GetID(), proto.ShortDebugString());
 
 	BroadCast(proto); //投票状态
 }
