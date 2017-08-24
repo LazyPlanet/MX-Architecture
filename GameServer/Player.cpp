@@ -3128,6 +3128,7 @@ bool Player::CanTingIfGang(const Asset::PaiElement& pai)
 	auto remove_it = std::remove(it->second.begin(), it->second.end(), card_value); //删除杠牌
 	it->second.erase(remove_it, it->second.end());
 
+	angang.push_back(pai);
 	//
 	//防止杠后听牌牌型不一致的场景
 	//
@@ -3161,7 +3162,7 @@ bool Player::CheckAllGangPai(::google::protobuf::RepeatedField<Asset::PaiOperati
 				pai.set_card_type((Asset::CARD_TYPE)card_type);
 				pai.set_card_value(card_value);
 
-				if (HasTingPai() && CanTingIfGang(pai)) continue; //防止杠后听牌不一致
+				if (HasTingPai() && !CanTingIfGang(pai)) continue; //防止杠后听牌不一致
 
 				auto it = std::find_if(gang_list.begin(), gang_list.end(), [card_type, card_value](const Asset::PaiOperationAlert_AlertElement& element){
 					return card_type == element.pai().card_type() && card_value == element.pai().card_value();
@@ -3306,6 +3307,16 @@ void Player::OnGangPai(const Asset::PaiElement& pai, int64_t from_player_id)
 	{
 		auto pai_perator = alert.mutable_pais()->Add();
 		pai_perator->mutable_oper_list()->Add((Asset::PAI_OPER_TYPE)gang);
+	}
+
+	RepeatedField<Asset::PaiOperationAlert_AlertElement> gang_list;
+	if (CheckAllGangPai(gang_list)) //杠检查(明杠和暗杠)
+	{
+		for (auto gang : gang_list) 
+		{
+			auto pai_perator = alert.mutable_pais()->Add();
+			pai_perator->CopyFrom(gang);
+		}
 	}
 	//
 	//自摸检查
@@ -3867,25 +3878,22 @@ int32_t Player::OnFaPai(std::vector<int32_t>& cards)
 	*/
 
 
-	if (_player_id == 262197 && _cards_inhand.size() == 0)
+	if (false/*_player_id == 262152 && _cards_inhand.size() == 0*/)
 	{
 		_cards_inhand = {
-		{ 1, { 8, 8, 8, 8} },
-		{ 2, { 3, 3, 3, 5, 6} },
-		{ 3, { 1, 1, 4, 5, 6} },
-		//{ 4, { 1, 2, 3, 4} },
-		//{ 5, { 1, 2, 3} },
+			{ 1, { 4, 4, 4} },
+			{ 2, { 3, 3, 3} },
+			{ 3, { 2, 2, 3, 4, 5} },
+			{ 4, { 4, 4} },
+			//{ 5, { 1, 2, 3} },
 		
 		};
 		
-		/*
 		_cards_outhand = {
-		{ 2, { 8, 8, 8, 4, 5, 6} },
-		{ 4, { 2, 2, 2 } },
+			//{ 1, { 7, 8, 9} },
+			//{ 4, { 2, 2, 2 } },
 		};
-		*/
 	}
-
 	else
 	{
 		for (auto card_index : cards) //发牌到玩家手里
