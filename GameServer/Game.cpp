@@ -370,7 +370,7 @@ void Game::OnPaiOperate(std::shared_ptr<Player> player, pb::Message* message)
 			{
 				if (SendCheckRtn()) return;
 
-				OnGameOver(0); 
+				OnLiuJu();
 			}
 			else
 			{
@@ -630,12 +630,15 @@ void Game::OnPaiOperate(std::shared_ptr<Player> player, pb::Message* message)
 			else if (IsLiuJu())
 			{
 				OnLiuJu();
+
 				return;
 			}
 			else if (CheckLiuJu())
 			{
 				if (SendCheckRtn()) return;
+
 				OnLiuJu();
+
 				return;
 			}
 			
@@ -1529,8 +1532,6 @@ bool Game::CheckLiuJu()
 	
 	if (_oper_list.size()) return true; //玩家要进行操作
 
-	OnLiuJu();
-
 	return true;
 }
 	
@@ -1564,6 +1565,8 @@ void Game::OnLiuJu()
 	BroadCast(game_calculate);
 	
 	_room->AddGameRecord(game_calculate.record()); //本局记录
+	
+	OnGameOver(0); 
 
 	LOG(INFO, "流局结算:{}", game_calculate.ShortDebugString());
 }
