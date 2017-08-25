@@ -1208,6 +1208,13 @@ void Player::BroadCast(Asset::MsgItem& item)
 	if (!_room) return;
 	
 }	
+	
+void Player::ResetRoom() 
+{ 
+	if (_room) _room.reset(); 
+	
+	_stuff.clear_room_id(); //状态初始化
+}
 
 void Player::AlertMessage(Asset::ERROR_CODE error_code, Asset::ERROR_TYPE error_type/*= Asset::ERROR_TYPE_NORMAL*/, 
 		Asset::ERROR_SHOW_TYPE error_show_type/* = Asset::ERROR_SHOW_TYPE_CHAT*/)
@@ -3100,8 +3107,6 @@ bool Player::CheckGangPai(const Asset::PaiElement& pai, int64_t from_player_id)
 	if (has_gang && HasTingPai()) 
 	{
 		has_gang = CanTingPai(cards_inhand, cards_outhand, minggang, angang, jiangang, fenggang); 
-
-		LOG(ERROR, "玩家:{}杠牌之后，能听牌:{}，不能杠牌:{}", _player_id, has_gang, pai.ShortDebugString());
 	}
 
 	return has_gang;

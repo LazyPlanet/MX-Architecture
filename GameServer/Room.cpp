@@ -482,7 +482,7 @@ void Room::OnGameOver(int64_t player_id)
 		++_streak_wins[player_id];
 	}
 
-	if (GetRemainCount() > 0 && !_is_dismiss) return; //没有对局结束，且没有解散房间
+	if (GetRemainCount() > 0 && !HasDisMiss()) return; //没有对局结束，且没有解散房间
 
 	if (_games.size() == 0) return; //没有对局
 	
@@ -499,7 +499,7 @@ void Room::OnGameOver(int64_t player_id)
 
 	Asset::RoomCalculate message;
 	message.set_calculte_type(Asset::CALCULATE_TYPE_FULL);
-	if (_is_dismiss) message.set_calculte_type(Asset::CALCULATE_TYPE_DISMISS);
+	if (HasDisMiss()) message.set_calculte_type(Asset::CALCULATE_TYPE_DISMISS);
 
 	for (auto player : _players)
 	{
@@ -710,6 +710,12 @@ bool Room::CanStarGame()
 	//
 	if (Asset::ROOM_TYPE_FRIEND == room_type)
 	{
+		if (GetRemainCount() <= 0) 
+		{
+			LOG(ERROR, "房间:{}牌局结束，不能继续进行游戏，总局数:{} 当前局数:{}", GetID(), _stuff.options().open_rands(), _games.size());
+			return false;
+		}
+
 		auto activity_id = g_const->room_card_limit_free_activity_id();
 		if (ActivityInstance.IsOpen(activity_id)) return true;
 

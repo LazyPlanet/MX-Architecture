@@ -285,7 +285,7 @@ public:
 	virtual int32_t GetRoomID() { return _player_prop.room_id(); }
 	virtual bool HasRoom() { return _room != nullptr; }
 	virtual void SetRoom(std::shared_ptr<Room> room) { _room = room; }
-	virtual void ResetRoom() { if (_room) _room.reset(); }
+	virtual void ResetRoom();
 
 	void SetGame(std::shared_ptr<Game> game) { _game = game; }
 	bool IsInGame() { return _game != nullptr; }
