@@ -132,7 +132,7 @@ bool ServerSession::OnInnerProcess(const Asset::InnerMeta& meta)
 				}
 				else if (Asset::COMMAND_ERROR_CODE_PLAYER_ONLINE != error_code) //在线
 				{
-					ERROR("Server:{} server send gmt message:{} error_code:{}", _ip_address, message.ShortDebugString(), error_code);
+					LOG(ERROR, "Server:{} server send gmt message:{} error_code:{}", _ip_address, message.ShortDebugString(), error_code);
 				}
 			}
 			else //处理游戏服务器发送的数据

@@ -39,7 +39,7 @@ void GmtSession::OnConnected()
 
 bool GmtSession::OnInnerProcess(const Asset::InnerMeta& meta)
 {
-	LOG(INFO, "Receive message:{} from server:{}", meta.ShortDebugString(), _ip_address);
+	DEBUG("接收GMT服务器:{}协议:{}", _ip_address, meta.ShortDebugString());
 
 	switch (meta.type_t())
 	{
@@ -186,6 +186,8 @@ Asset::COMMAND_ERROR_CODE GmtSession::OnSendMail(const Asset::SendMail& command)
 			
 Asset::COMMAND_ERROR_CODE GmtSession::OnCommandProcess(const Asset::Command& command)
 {
+	LOG(INFO, "接收GMT指令:{}", command.ShortDebugString());
+
 	auto player_id = command.player_id();
 	if (player_id <= 0) //玩家角色校验
 	{
