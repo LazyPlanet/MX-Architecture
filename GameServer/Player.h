@@ -156,7 +156,7 @@ public:
 	//玩家心跳周期为10MS，如果该函数返回FALSE则表示掉线
 	virtual bool Update();
 	//购买商品
-	virtual bool CmdBuySomething(pb::Message* message);
+	virtual int32_t CmdBuySomething(pb::Message* message);
 	//是否在线
 	bool IsOnline() { return _stuff.login_time() != 0; }
 	//是否离线//房间内离线状态处理
@@ -177,6 +177,8 @@ public:
 
 	//踢下线
 	virtual int32_t OnKickOut(pb::Message* message);
+	//玩家状态变化
+	virtual int32_t OnPlayerStateChanged(pb::Message* message);
 public:
 	//获取所有包裹
 	const Asset::Inventory& GetInventory() { return _stuff.inventory();	}
@@ -269,13 +271,18 @@ private:
 	Asset::PAI_OPER_TYPE _last_oper_type; //玩家上次操作类型，主要用于处理杠上开的番次
 
 public:
+	//
 	//玩家操作
+	//
 	virtual int32_t CmdGameOperate(pb::Message* message); //游戏操作
 	virtual int32_t CmdPaiOperate(pb::Message* message); //牌操作
 	virtual int32_t CmdGetReward(pb::Message* message); //领取奖励
 	virtual int32_t CmdLoadScene(pb::Message* message); //加载场景
 	virtual int32_t CmdLuckyPlate(pb::Message* message); //幸运转盘
 	virtual int32_t CmdSaizi(pb::Message* message); //打股子
+	virtual int32_t CmdGetRoomData(pb::Message* message); //获取房间数据
+
+	//进入房间回调
 	void OnEnterScene(bool is_reenter);
 	//获取房间
 	virtual std::shared_ptr<Room> GetRoom() { return _room; }	//获取当前房间

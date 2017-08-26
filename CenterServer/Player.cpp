@@ -741,9 +741,13 @@ int32_t Player::CmdSayHi(pb::Message* message)
         {
             ++_over_speed_pings;
 			
-            int32_t max_allowed = 3;
+            static int32_t max_allowed = 3;
 
-            if (max_allowed && _over_speed_pings > max_allowed) return 2;
+            if (max_allowed && _over_speed_pings > max_allowed) 
+			{
+				SetOffline(); //玩家离线
+				return 2;
+			}
 	    }
 	    else
 		{
@@ -751,9 +755,9 @@ int32_t Player::CmdSayHi(pb::Message* message)
 		}
 	}
 
-	if (!_session) return false;
+	//if (!_session) return false;
 
-	SayHi();
+	//SayHi();
 
 	return 0;
 }
@@ -765,7 +769,7 @@ void Player::SayHi()
 
 	SendProtocol(message);
 
-	DEBUG("player_id:{} _heart_count:{}", _player_id, _heart_count);
+	DEBUG("玩家:{} 心跳数:{} PING值:{}", _player_id, _heart_count, _over_speed_pings);
 }
 	
 int32_t Player::CmdGameSetting(pb::Message* message)
@@ -878,6 +882,28 @@ void Player::OnKickOut(Asset::KICK_OUT_REASON reason)
 	SendProtocol2GameServer(kickout_player); 
 
 	Logout(nullptr);
+}
+
+void Player::SetOffline(bool offline)
+{
+	//
+	//状态不变，则不进行推送
+	//
+	if (offline && _player_state == Asset::GAME_OPER_TYPE_OFFLINE) return;
+	else if (_player_state == Asset::GAME_OPER_TYPE_ONLINE) return;
+
+	if (offline)
+	{
+		_player_state = Asset::GAME_OPER_TYPE_OFFLINE;
+	}
+	else
+	{
+		_player_state = Asset::GAME_OPER_TYPE_ONLINE;
+	}
+				
+	Asset::PlayerState state;
+	state.set_oper_type(_player_state);
+	SendProtocol2GameServer(state);
 }
 	
 void PlayerManager::Emplace(int64_t player_id, std::shared_ptr<Player> player)

@@ -43,9 +43,11 @@ Player::Player()
 	//AddHandler(Asset::META_TYPE_C2S_ENTER_GAME, std::bind(&Player::CmdEnterGame, this, std::placeholders::_1));
 	AddHandler(Asset::META_TYPE_C2S_GET_REWARD, std::bind(&Player::CmdGetReward, this, std::placeholders::_1));
 	AddHandler(Asset::META_TYPE_C2S_LOAD_SCENE, std::bind(&Player::CmdLoadScene, this, std::placeholders::_1));
+	AddHandler(Asset::META_TYPE_C2S_GET_ROOM_DATA, std::bind(&Player::CmdGetRoomData, this, std::placeholders::_1));
 	
 	//中心服务器协议处理
 	AddHandler(Asset::META_TYPE_S2S_KICKOUT_PLAYER, std::bind(&Player::OnKickOut, this, std::placeholders::_1));
+	AddHandler(Asset::META_TYPE_S2S_PLAYER_STATE, std::bind(&Player::OnPlayerStateChanged, this, std::placeholders::_1));
 }
 	
 Player::Player(int64_t player_id) : Player()/*委派构造函数*/
@@ -1330,20 +1332,37 @@ int32_t Player::CmdGetReward(pb::Message* message)
 	return 0;
 }
 
-bool Player::CmdBuySomething(pb::Message* message)
+int32_t Player::CmdBuySomething(pb::Message* message)
 {
 	auto some_thing = dynamic_cast<Asset::BuySomething*>(message);
-	if (some_thing) return false;
+	if (!some_thing) return 1;
 
 	int64_t mall_id = some_thing->mall_id();
-	if (mall_id <= 0) return false;
+	if (mall_id <= 0) return 2;
 
 	auto ret = MallInstance.BuySomething(shared_from_this(), mall_id);
 	some_thing->set_result(ret);
 
 	SendProtocol(some_thing); //返回给Client
 
-	return true;
+	return 0;
+}
+	
+int32_t Player::CmdGetRoomData(pb::Message* message)
+{
+	auto get_data = dynamic_cast<Asset::GetRoomData*>(message);
+	if (!get_data) return 1;
+
+	if (!_room || _room->GetID() != get_data->room_id())
+	{
+		SendRoomState(); //估计房间已经解散
+	}
+	else
+	{
+		_room->OnReEnter(shared_from_this());
+	}
+
+	return 0;
 }
 
 int32_t Player::CmdLoadScene(pb::Message* message)
@@ -3883,7 +3902,7 @@ int32_t Player::OnFaPai(std::vector<int32_t>& cards)
 	*/
 
 
-	if (false/*_player_id == 262152 && _cards_inhand.size() == 0*/)
+	if (_player_id == 262152 && _cards_inhand.size() == 0)
 	{
 		_cards_inhand = {
 			{ 1, { 4, 4, 4} },
@@ -4317,9 +4336,31 @@ int32_t Player::OnKickOut(pb::Message* message)
 	const auto kick_out = dynamic_cast<const Asset::KickOutPlayer*>(message);
 	if (!kick_out) return 1;
 	
-	DEBUG("player_id:{} has been kickout for:{}", _player_id, kick_out->reason());
+	DEBUG("玩家:{} 被踢下线，原因:{}", _player_id, kick_out->reason());
 
 	Logout(nullptr);
+
+	return 0;
+}
+	
+int32_t Player::OnPlayerStateChanged(pb::Message* message)
+{
+	const auto state = dynamic_cast<const Asset::PlayerState*>(message);
+	if (!state) return 1;
+
+	switch (state->oper_type())
+	{
+		case Asset::GAME_OPER_TYPE_OFFLINE:
+		{
+			SetOffline(); //玩家离线
+		}
+		break;
+
+		default:
+		{
+		}
+		break;
+	}
 
 	return 0;
 }

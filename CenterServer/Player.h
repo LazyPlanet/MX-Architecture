@@ -22,6 +22,7 @@ class Player : public std::enable_shared_from_this<Player>
 private:
 	int64_t _player_id = 0; //玩家ID
 	Asset::Player _stuff; //玩家数据，存盘数据
+	Asset::GAME_OPER_TYPE _player_state; //玩家状态//在线//离线
 
 	int64_t _heart_count = 0; //心跳次数
 	std::chrono::steady_clock::time_point _last_hi_time; 
@@ -140,10 +141,9 @@ public:
 	const Asset::Inventory_Element& GetInventory(Asset::INVENTORY_TYPE type) { return _stuff.inventory().inventory(type); }	
 	Asset::Inventory_Element* GetMutableInventory(Asset::INVENTORY_TYPE type) { return _stuff.mutable_inventory()->mutable_inventory(type);	}	
 	//通用错误码提示
-	void AlertMessage(Asset::ERROR_CODE error_code, Asset::ERROR_TYPE error_type = Asset::ERROR_TYPE_NORMAL, Asset::ERROR_SHOW_TYPE error_show_type = Asset::ERROR_SHOW_TYPE_CHAT);
-	void OnKickOut(Asset::KICK_OUT_REASON reason);
+	void AlertMessage(Asset::ERROR_CODE error_code, Asset::ERROR_TYPE error_type = Asset::ERROR_TYPE_NORMAL, 
+			Asset::ERROR_SHOW_TYPE error_show_type = Asset::ERROR_SHOW_TYPE_CHAT);
 
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	//
 	// 欢乐豆相关
 	//
@@ -168,7 +168,9 @@ public:
 	bool CheckRoomCard(int64_t count); //房卡是否足够
 	int64_t GetRoomCard(); //获取房卡数量
 
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	//
+	//游戏常规逻辑定义
+	//
 
 	//通用限制
 	const Asset::PlayerCommonLimit& GetCommonLimit() { return _stuff.common_limit(); }
@@ -180,8 +182,12 @@ public:
 	//通用奖励
 	Asset::ERROR_CODE DeliverReward(int64_t global_id);
 	void SyncCommonReward(int64_t common_reward_id);
-
+	//历史战绩
 	void BattleHistory(int32_t start_index = 0, int32_t end_index = 0);
+	//踢人
+	void OnKickOut(Asset::KICK_OUT_REASON reason);
+	//玩家离线
+	void SetOffline(bool offline = true);
 };
 
 class PlayerManager : public std::enable_shared_from_this<PlayerManager>
