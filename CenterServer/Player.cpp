@@ -749,12 +749,12 @@ void Player::SayHi()
 
 		if (max_allowed && _pings_count > max_allowed) 
 		{
-			SetOffline(); //玩家离线
+			//SetOffline(); //玩家离线
 		}
 	}
 	else
 	{
-		SetOffline(false); //玩家上线
+		//SetOffline(false); //玩家上线
 		
 		_pings_count = 0;
 	}
