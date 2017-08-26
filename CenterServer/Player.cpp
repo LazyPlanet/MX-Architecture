@@ -20,6 +20,8 @@ namespace Adoter
 namespace spd = spdlog;
 extern const Asset::CommonConst* g_const;
 
+using namespace std::chrono;
+
 Player::Player()
 {
 	//协议默认处理函数
@@ -176,6 +178,8 @@ int32_t Player::OnLogin()
 	ActivityInstance.OnPlayerLogin(shared_from_this()); //活动数据
 
 	BattleHistory(); //历史对战表
+
+	SetOffline(false); //上线
 
 	DEBUG("玩家:{}登陆加载数据成功，数据内容:{}", _player_id, _stuff.ShortDebugString());
 	return 0;
@@ -480,14 +484,14 @@ bool Player::Update()
 		if (_dirty) Save(); //触发存盘
 	}
 	
-	if (_heart_count % 10000 == 0) //100s
+	if (_heart_count % 500 == 0) //5s
 	{
 		SayHi();
 	}
 
 	if (_heart_count % 6000 == 0) //1min
 	{
-		TRACE("heart_count:{} player_id:{}", _heart_count, _player_id);
+		DEBUG("玩家:{}心跳:{}", _player_id, _heart_count);
 	}
 
 	return true;
@@ -723,56 +727,43 @@ int32_t Player::CmdSayHi(pb::Message* message)
 	auto say_hi = dynamic_cast<const Asset::SayHi*>(message);
 	if (!say_hi) return 1;
     
-	using namespace std::chrono;
+	_pings_count = 0;
+    //_hi_time = steady_clock::now();
+	_hi_time = CommonTimerInstance.GetTime(); 
 
-    if (_last_hi_time == steady_clock::time_point())
-    {
-        _last_hi_time = steady_clock::now();
-	}
-	else
-	{
-        steady_clock::time_point now = steady_clock::now();
-
-        steady_clock::duration duration_pass = now - _last_hi_time;
-
-        _last_hi_time = now;
-
-        if (duration_pass > seconds(10))
-        {
-            ++_over_speed_pings;
-			
-            static int32_t max_allowed = 3;
-
-            if (max_allowed && _over_speed_pings > max_allowed) 
-			{
-				SetOffline(); //玩家离线
-
-				return 2;
-			}
-	    }
-	    else
-		{
-			SetOffline(false);
-			
-			_over_speed_pings = 0;
-		}
-	}
-
-	//if (!_session) return false;
-
-	//SayHi();
+	DEBUG("玩家:{}心跳", _player_id);
 
 	return 0;
 }
 	
 void Player::SayHi()
 {
+	auto curr_time = CommonTimerInstance.GetTime();
+	auto duration_pass = curr_time - _hi_time;
+
+	if (duration_pass > 10)
+	{
+		++_pings_count;
+		
+		static int32_t max_allowed = 3;
+
+		if (max_allowed && _pings_count > max_allowed) 
+		{
+			SetOffline(); //玩家离线
+		}
+	}
+	else
+	{
+		SetOffline(false); //玩家上线
+		
+		_pings_count = 0;
+	}
+	
 	Asset::SayHi message;
 	message.set_heart_count(_heart_count);
-
 	SendProtocol(message);
 
-	DEBUG("玩家:{} 心跳数:{} PING值:{}", _player_id, _heart_count, _over_speed_pings);
+	DEBUG("玩家:{} 心跳数:{} PING值:{} 间隔:{} 当前时间:{} 心跳时间:{}", _player_id, _heart_count, _pings_count, duration_pass, curr_time, _hi_time);
 }
 	
 int32_t Player::CmdGameSetting(pb::Message* message)
@@ -898,10 +889,14 @@ void Player::SetOffline(bool offline)
 	if (offline)
 	{
 		_player_state = Asset::GAME_OPER_TYPE_OFFLINE;
+
+		ERROR("玩家:{}离线", _player_id);
 	}
 	else
 	{
 		_player_state = Asset::GAME_OPER_TYPE_ONLINE;
+
+		WARN("玩家:{}上线", _player_id);
 	}
 				
 	Asset::PlayerState state;

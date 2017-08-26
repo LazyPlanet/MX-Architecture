@@ -25,8 +25,9 @@ private:
 	Asset::GAME_OPER_TYPE _player_state; //玩家状态//在线//离线
 
 	int64_t _heart_count = 0; //心跳次数
-	std::chrono::steady_clock::time_point _last_hi_time; 
-	int32_t _over_speed_pings = 0;
+	//std::chrono::steady_clock::time_point _hi_time; //上次就接收Client心跳时间
+	std::time_t _hi_time;
+	int32_t _pings_count = 0;
 	bool _dirty = false; //脏数据
 	bool _loaded = false; //数据是否加载
 
