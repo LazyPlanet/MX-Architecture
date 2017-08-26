@@ -746,11 +746,14 @@ int32_t Player::CmdSayHi(pb::Message* message)
             if (max_allowed && _over_speed_pings > max_allowed) 
 			{
 				SetOffline(); //玩家离线
+
 				return 2;
 			}
 	    }
 	    else
 		{
+			SetOffline(false);
+			
 			_over_speed_pings = 0;
 		}
 	}
