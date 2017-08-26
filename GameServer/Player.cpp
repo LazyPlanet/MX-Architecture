@@ -3366,12 +3366,12 @@ bool Player::CanTingPai(const Asset::PaiElement& pai)
 {
 	if (!_room || !_game) return false;
 
-	_cards_hu.clear();
-
 	auto options = _room->GetOptions();
 	
 	auto it_baohu = std::find(options.extend_type().begin(), options.extend_type().end(), Asset::ROOM_EXTEND_TYPE_BAOPAI);
 	if (it_baohu == options.extend_type().end()) return false; //不带宝胡，绝对不可能听牌
+	
+	std::vector<Asset::PaiElement> cards_hu;
 
 	auto cards_inhand = _cards_inhand; //玩家手里牌
 	auto cards_outhand = _cards_outhand; //玩家墙外牌
@@ -3399,7 +3399,7 @@ bool Player::CanTingPai(const Asset::PaiElement& pai)
 			pai.set_card_value(card_value);
 
 			if (CheckHuPai(cards_inhand, cards_outhand, minggang, angang, jiangang, fenggang, pai)) 
-				_cards_hu.push_back(pai);
+				cards_hu.push_back(pai);
 		}
 	}
 	
@@ -3411,7 +3411,7 @@ bool Player::CanTingPai(const Asset::PaiElement& pai)
 		pai.set_card_value(card_value);
 
 		if (CheckHuPai(cards_inhand, cards_outhand, minggang, angang, jiangang, fenggang, pai))
-			_cards_hu.push_back(pai);
+			cards_hu.push_back(pai);
 	}
 
 	//能否胡箭牌
@@ -3422,10 +3422,31 @@ bool Player::CanTingPai(const Asset::PaiElement& pai)
 		pai.set_card_value(card_value);
 
 		if (CheckHuPai(cards_inhand, cards_outhand, minggang, angang, jiangang, fenggang, pai)) 
-			_cards_hu.push_back(pai);
+			cards_hu.push_back(pai);
 	}
-	
-	return _cards_hu.size() > 0;
+
+	if (_cards_hu.size() > 0 && cards_hu.size() > 0)
+	{
+		for (auto card_hu : _cards_hu)
+		{
+			auto it = std::find_if(cards_hu.begin(), cards_hu.end(), [&card_hu](const Asset::PaiElement& pai){
+					return card_hu.card_type() == pai.card_type() && card_hu.card_value() == pai.card_value();
+				});
+			if (it == cards_hu.end()) return false; //不能换听
+		}
+
+		for (auto card_hu : cards_hu)
+		{
+			auto it = std::find_if(_cards_hu.begin(), _cards_hu.end(), [&card_hu](const Asset::PaiElement& pai){
+					return card_hu.card_type() == pai.card_type() && card_hu.card_value() == pai.card_value();
+				});
+			if (it == _cards_hu.end()) return false; //不能换听
+		}
+	}
+
+	if (cards_hu.size() > 0 && _cards_hu.size() == 0) _cards_hu = cards_hu; //胡牌缓存
+
+	return cards_hu.size() > 0;
 }
 
 bool Player::CanTingPai(std::map<int32_t, std::vector<int32_t>> cards_inhand, //玩家手里的牌
@@ -3479,6 +3500,27 @@ bool Player::CanTingPai(std::map<int32_t, std::vector<int32_t>> cards_inhand, //
 		if (CheckHuPai(cards_inhand, cards_outhand, minggang, angang, jiangang, fenggang, pai)) 
 			cards_hu.push_back(pai);
 	}
+	
+	if (_cards_hu.size() > 0 && cards_hu.size() > 0)
+	{
+		for (auto card_hu : _cards_hu)
+		{
+			auto it = std::find_if(cards_hu.begin(), cards_hu.end(), [&card_hu](const Asset::PaiElement& pai){
+					return card_hu.card_type() == pai.card_type() && card_hu.card_value() == pai.card_value();
+				});
+			if (it == cards_hu.end()) return false; //不能换听
+		}
+		
+		for (auto card_hu : cards_hu)
+		{
+			auto it = std::find_if(_cards_hu.begin(), _cards_hu.end(), [&card_hu](const Asset::PaiElement& pai){
+					return card_hu.card_type() == pai.card_type() && card_hu.card_value() == pai.card_value();
+				});
+			if (it == _cards_hu.end()) return false; //不能换听
+		}
+	}
+
+	if (cards_hu.size() > 0 && _cards_hu.size() == 0) _cards_hu = cards_hu; //胡牌缓存
 	
 	return cards_hu.size() > 0;
 }
