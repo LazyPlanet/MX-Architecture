@@ -583,29 +583,6 @@ int32_t Player::CmdPaiOperate(pb::Message* message)
 			pais.erase(it); //打出牌
 
 			Add2CardsPool(pai);
-
-			/*
-			try {
-				std::unique_lock<std::mutex> lock(_card_lock, std::defer_lock);
-
-				if (lock.try_lock()) 
-				{
-					pais.erase(it); //打出牌
-
-					Add2CardsPool(pai);
-				}
-				else
-				{
-					ERROR("player_id:{} try locked failed.", _player_id);
-					return 10;
-				}
-			}
-			catch(const std::system_error& error)
-			{
-				ERROR("Delete card from player_id:{} card_type:{} card_value:{} error.", _player_id, pai.card_type(), pai.card_value(), error.what());
-				return 10;
-			}
-			*/
 		}
 		break;
 		
@@ -672,30 +649,7 @@ int32_t Player::CmdPaiOperate(pb::Message* message)
 				DEBUG_ASSERT(false);
 				return 8; //不能听牌
 			}
-			/*
-					
-			try {
-				std::unique_lock<std::mutex> lock(_card_lock, std::defer_lock);
-			
-				if (lock.try_lock()) 
-				{
-					pais.erase(it); //删除牌
-					Add2CardsPool(pai);
-					TRACE("Delete card from player_id:{} card_type:{} card_value:{} for dapai.", _player_id, pai.card_type(), pai.card_value());
-				}
-				else
-				{
-					ERROR("player_id:{} try locked failed.", _player_id);
-					return 10;
-				}
-			}
-			catch(const std::system_error& error)
-			{
-				ERROR("Delete card from player_id:{} card_type:{} card_value:{} error.", _player_id, pai.card_type(), pai.card_value(), error.what());
-					return 10;
-			}
-			*/
-			
+
 			pais.erase(it); //删除牌
 
 			Add2CardsPool(pai);
@@ -1636,11 +1590,7 @@ bool Player::CanHuPai(std::vector<Card_t>& cards, bool use_pair)
 
 	if (size <= 2) 
 	{
-		if (size == 1) 
-		{
-			CRITICAL("size==1");
-			return false;	
-		}
+		if (size == 1) return false;	
 
 		return size == 0 || cards[0] == cards[1]; 
 	}
@@ -3550,26 +3500,6 @@ bool Player::CheckTingPai(std::vector<Asset::PaiElement>& pais)
 	auto it_baohu = std::find(options.extend_type().begin(), options.extend_type().end(), Asset::ROOM_EXTEND_TYPE_BAOPAI);
 	if (it_baohu == options.extend_type().end()) return false; //不带宝胡，绝对不可能听牌
 	
-	//std::map<int32_t, std::vector<int32_t>> cards_inhand, cards_outhand; 
-	//std::vector<Asset::PaiElement> minggang, angang; 
-	//int32_t jiangang = 0, fenggang = 0; 
-	
-	/*
-	try {
-		cards_inhand = _cards_inhand; //玩家手里牌
-		cards_outhand = _cards_outhand; //玩家墙外牌
-		minggang = _minggang; //明杠
-		angang = _angang; //暗杠
-		jiangang = _jiangang; //旋风杠，本质是明杠
-		fenggang = _fenggang; //旋风杠，本质是暗杠
-	}
-	catch(const std::system_error& error)
-	{
-		ERROR("player_id:{} try locked failed, error:{}", _player_id, error.what());
-		return false;
-	}
-	*/
-
 	auto cards_inhand = _cards_inhand; //玩家手里牌
 	auto cards_outhand = _cards_outhand; //玩家墙外牌
 	auto minggang = _minggang; //明杠
@@ -3868,39 +3798,6 @@ int32_t Player::OnFaPai(std::vector<int32_t>& cards)
 			}
 		}
 	}
-
-	/*
-	try {
-		std::unique_lock<std::mutex> lock(_card_lock, std::defer_lock);
-
-		if (lock.try_lock())
-		{
-			for (auto card_index : cards) //发牌到玩家手里
-			{
-				auto card = GameInstance.GetCard(card_index);
-				if (card.card_type() == 0 || card.card_value() == 0) return 2; //数据有误
-
-				_cards_inhand[card.card_type()].push_back(card.card_value()); //插入玩家手牌
-			}
-
-			for (auto& cards : _cards_inhand) //整理牌
-			{
-				std::sort(cards.second.begin(), cards.second.end(), [](int x, int y){ return x < y; }); //由小到大
-			}
-		}
-		else
-		{
-			ERROR("player_id:{} try locked failed.", _player_id);
-			return 3;
-		}
-	}
-	catch(const std::system_error& error)
-	{
-		ERROR("player get cards, player_id:{} error:{}.", _player_id, error.what());
-		return 4;
-	}
-	*/
-
 
 	if (false && _player_id == 262147 && _cards_inhand.size() == 0)
 	{
