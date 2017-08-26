@@ -1783,7 +1783,7 @@ bool Player::CheckHuPai(const std::map<int32_t, std::vector<int32_t>>& cards_inh
 		auto it_tiaozi = std::find_if(gang_list.begin(), gang_list.end(), [](const Asset::PaiElement& pai){
 					return pai.card_type() == Asset::CARD_TYPE_TIAOZI;
 				});
-		if (cards[Asset::CARD_TYPE_TIAOZI].size() > 0 || it_bingzi != gang_list.end()) ++has_count; 
+		if (cards[Asset::CARD_TYPE_TIAOZI].size() > 0 || it_tiaozi != gang_list.end()) ++has_count; 
 
 		auto it_duanmen = std::find(options.extend_type().begin(), options.extend_type().end(), Asset::ROOM_EXTEND_TYPE_DUANMEN);
 		if (it_duanmen == options.extend_type().end()) //不可以缺门
@@ -2399,7 +2399,7 @@ bool Player::DebugCheckHuPai(const Asset::PaiElement& pai, bool check_zibo)
 		auto it_tiaozi = std::find_if(gang_list.begin(), gang_list.end(), [](const Asset::PaiElement& pai){
 					return pai.card_type() == Asset::CARD_TYPE_TIAOZI;
 				});
-		if (cards[Asset::CARD_TYPE_TIAOZI].size() > 0 || it_bingzi != gang_list.end()) ++has_count; 
+		if (cards[Asset::CARD_TYPE_TIAOZI].size() > 0 || it_tiaozi != gang_list.end()) ++has_count; 
 
 		auto it_duanmen = std::find(options.extend_type().begin(), options.extend_type().end(), Asset::ROOM_EXTEND_TYPE_DUANMEN);
 		if (it_duanmen == options.extend_type().end()) //不可以缺门
@@ -3902,21 +3902,27 @@ int32_t Player::OnFaPai(std::vector<int32_t>& cards)
 	*/
 
 
-	if (_player_id == 262152 && _cards_inhand.size() == 0)
+	if (_player_id == 262147 && _cards_inhand.size() == 0)
 	{
 		_cards_inhand = {
-			{ 1, { 4, 4, 4} },
-			{ 2, { 3, 3, 3} },
-			{ 3, { 2, 2, 3, 4, 5} },
-			{ 4, { 4, 4} },
-			//{ 5, { 1, 2, 3} },
+			//{ 1, { 2} },
+			{ 2, { 2, 3, 4, 5, 6, 7} },
+			//{ 3, { 2, 2, 3, 4, 5} },
+			//{ 4, { 4, 4} },
+			{ 5, { 1} },
 		
 		};
 		
 		_cards_outhand = {
-			//{ 1, { 7, 8, 9} },
+			{ 2, { 5, 6, 7} },
 			//{ 4, { 2, 2, 2 } },
 		};
+
+		Asset::PaiElement gang;
+		gang.set_card_type((Asset::CARD_TYPE)2);
+		gang.set_card_value(9);
+
+		_minggang.push_back(gang);
 	}
 	else
 	{
