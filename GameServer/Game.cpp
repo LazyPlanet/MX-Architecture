@@ -240,16 +240,17 @@ void Game::OnPlayerReEnter(std::shared_ptr<Player> player)
 
 	Asset::PaiOperationAlert alert;
 
+	//
 	//胡牌检查
 	//
-	/*
+	//注意：自摸和其他玩家点炮之间的检查顺序
+	//
 	if (player->CheckHuPai(card)) //自摸
 	{
 		auto pai_perator = alert.mutable_pais()->Add();
 		pai_perator->mutable_pai()->CopyFrom(card);
 		pai_perator->mutable_oper_list()->Add(Asset::PAI_OPER_TYPE_HUPAI);
 	}
-	*/
 
 	player->OnFaPai(cards); //放入玩家牌里面
 
@@ -258,7 +259,7 @@ void Game::OnPlayerReEnter(std::shared_ptr<Player> player)
 	//
 	//玩家摸宝之后进行抓牌正好抓到宝胡
 	//
-	if (player->CheckZiMo(card) || player->CheckBaoHu(card) || player->CheckHuPai(card)) //宝胡
+	if (player->CheckZiMo(card) || player->CheckBaoHu(card)/* || player->CheckHuPai(card)*/) //宝胡
 	{
 		auto pai_perator = alert.mutable_pais()->Add();
 		pai_perator->mutable_pai()->CopyFrom(card);
@@ -1512,7 +1513,7 @@ bool Game::CheckLiuJu()
 		pai_operation.set_from_player_id(player->GetID());
 		pai_operation.mutable_pai()->CopyFrom(card);
 
-		if (player->CheckZiMo(card) || player->CheckHuPai(card)) 
+		if (/*player->CheckZiMo(card) || */player->CheckHuPai(card)) 
 		{
 			pai_operation.mutable_oper_list()->Add(Asset::PAI_OPER_TYPE_HUPAI);
 			_oper_list.push_back(pai_operation);
