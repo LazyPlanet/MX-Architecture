@@ -724,6 +724,7 @@ int32_t Player::CmdLuckyPlate(pb::Message* message)
 
 int32_t Player::CmdSayHi(pb::Message* message)
 {
+	/*
 	auto say_hi = dynamic_cast<const Asset::SayHi*>(message);
 	if (!say_hi) return 1;
     
@@ -732,12 +733,14 @@ int32_t Player::CmdSayHi(pb::Message* message)
 	_hi_time = CommonTimerInstance.GetTime(); 
 
 	DEBUG("玩家:{}心跳", _player_id);
+	*/
 
 	return 0;
 }
 	
 void Player::SayHi()
 {
+	/*
 	auto curr_time = CommonTimerInstance.GetTime();
 	auto duration_pass = curr_time - _hi_time;
 
@@ -758,12 +761,11 @@ void Player::SayHi()
 		
 		_pings_count = 0;
 	}
-	
+	*/
+
 	Asset::SayHi message;
 	message.set_heart_count(_heart_count);
 	SendProtocol(message);
-
-	DEBUG("玩家:{} 心跳数:{} PING值:{} 间隔:{} 当前时间:{} 心跳时间:{}", _player_id, _heart_count, _pings_count, duration_pass, curr_time, _hi_time);
 }
 	
 int32_t Player::CmdGameSetting(pb::Message* message)

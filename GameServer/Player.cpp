@@ -987,7 +987,7 @@ bool Player::Update()
 	
 		if (_dirty) Save(); //触发存盘
 	
-		//SayHi(); //逻辑服务器不进行玩家心跳
+		SayHi(); //逻辑服务器不进行心跳检查
 	}
 
 	if (_heart_count % 60 == 0) //1min
@@ -4231,21 +4231,44 @@ int32_t Player::CmdSayHi(pb::Message* message)
 	auto say_hi = dynamic_cast<const Asset::SayHi*>(message);
 	if (!say_hi) return 1;
 
-	auto hi_time = CommonTimerInstance.GetTime();
+	//auto hi_time = CommonTimerInstance.GetTime();
+	_hi_time = CommonTimerInstance.GetTime();
 
-	DEBUG("player_id:{} hi_time:{} last_hi_time:{}", _player_id, hi_time, _hi_time);
+	DEBUG("玩家:{} 收到心跳:{}", _player_id, _hi_time);
 	return 0;
 }
 	
 void Player::SayHi()
 {
-	_hi_time = CommonTimerInstance.GetTime();
-	
-	DEBUG("player_id:{} hi_time:{}", _player_id, _hi_time);
+	auto curr_time = CommonTimerInstance.GetTime();
+	auto duration_pass = curr_time - _hi_time;
 
+	if (duration_pass > 10)
+	{
+		++_pings_count;
+		
+		static int32_t max_allowed = 3;
+
+		if (max_allowed && _pings_count > max_allowed) 
+		{
+			SetOffline(); //玩家离线
+		}
+	}
+	else
+	{
+		SetOffline(false); //玩家上线
+		
+		_pings_count = 0;
+	}
+	
+	
+	DEBUG("玩家:{} 发送心跳:{}", _player_id, _hi_time);
+
+	/*
 	Asset::SayHi message;
 	message.set_heart_count(_heart_count);
 	SendProtocol(message);
+	*/
 }
 	
 int32_t Player::CmdGameSetting(pb::Message* message)

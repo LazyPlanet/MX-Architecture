@@ -59,6 +59,7 @@ private:
 
 	int64_t _heart_count = 0; //心跳次数
 	int32_t _hi_time = 0; 
+	int32_t _pings_count = 0;
 	bool _dirty = false; //脏数据
 	CallBack _method; //协议处理回调函数
 public:
