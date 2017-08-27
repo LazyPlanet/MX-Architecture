@@ -26,7 +26,7 @@ private:
 
 	int64_t _heart_count = 0; //心跳次数
 	//std::chrono::steady_clock::time_point _hi_time; //上次就接收Client心跳时间
-	std::time_t _hi_time;
+	std::time_t _hi_time = 0;
 	int32_t _pings_count = 0;
 	bool _dirty = false; //脏数据
 	bool _loaded = false; //数据是否加载
