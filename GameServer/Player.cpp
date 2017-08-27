@@ -4166,6 +4166,14 @@ void Player::SetOffline(bool offline)
 { 
 	if (!_room) return;
 
+	if (!_game && (_player_prop.game_oper_state() == Asset::GAME_OPER_TYPE_START ||
+				_player_prop.game_oper_state() == Asset::GAME_OPER_TYPE_DISMISS_AGREE)) return;
+
+	if ((offline && _player_prop.game_oper_state() == Asset::GAME_OPER_TYPE_OFFLINE) || //已经是离线状态
+			(!offline && _player_prop.game_oper_state() == Asset::GAME_OPER_TYPE_ONLINE)) return; //已经是在线状态
+
+	DEBUG("玩家:{}状态变化:{} 是否离线:{}", _player_id, _player_prop.game_oper_state(), offline);
+
 	_player_prop.set_offline(offline); 
 
 	if (offline) 

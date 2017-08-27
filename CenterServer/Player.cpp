@@ -179,7 +179,7 @@ int32_t Player::OnLogin()
 
 	BattleHistory(); //历史对战表
 
-	SetOffline(false); //上线
+	//SetOffline(false); //上线
 
 	DEBUG("玩家:{}登陆加载数据成功，数据内容:{}", _player_id, _stuff.ShortDebugString());
 	return 0;
