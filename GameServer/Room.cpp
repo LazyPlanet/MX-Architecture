@@ -560,13 +560,10 @@ void Room::AddGameRecord(const Asset::GameRecord& record)
 		return;
 	}
 
-	LOG(INFO, "房间:{} 存储战绩信息:{} 当前历史战绩信息:{}", room_id, record.ShortDebugString(), _history.ShortDebugString());
-
 	auto set = client.set("room_history:" + std::to_string(room_id), _history.SerializeAsString());
-	//client.sync_commit();
 	client.commit();
 
-	DEBUG("存储战绩信息:{} 结果:{}", _history.ShortDebugString(), set.get());
+	LOG(INFO, "房间:{} 结果:{} 存储战绩信息:{} 当前历史战绩信息:{}", room_id, set.get(), record.ShortDebugString(), _history.ShortDebugString());
 }
 
 void Room::BroadCast(pb::Message* message, int64_t exclude_player_id)
