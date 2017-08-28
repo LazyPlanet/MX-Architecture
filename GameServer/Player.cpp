@@ -1592,12 +1592,10 @@ bool Player::CanHuPai(std::vector<Card_t>& cards, bool use_pair)
 	{
 		if (size == 1) return false;	
 
-		if (size == 0) return true;
-
-		return !use_pair && cards[0] == cards[1]; 
+		return size == 0 || cards[0] == cards[1]; 
 	}
 
-	static bool pair = false; //对子，如果要胡牌，必须只有一个对子
+	bool pair = false; //对子，如果要胡牌，必须只有一个对子
 	bool straight = false; //顺子//一套副
 
 	if (!use_pair)
@@ -4169,11 +4167,11 @@ void Player::SetOffline(bool offline)
 { 
 	if (!_room) return;
 
-	if (!_game && (_player_prop.game_oper_state() == Asset::GAME_OPER_TYPE_START ||
-				_player_prop.game_oper_state() == Asset::GAME_OPER_TYPE_DISMISS_AGREE)) return;
+	//if (!_game && (_player_prop.game_oper_state() == Asset::GAME_OPER_TYPE_START ||
+	//			_player_prop.game_oper_state() == Asset::GAME_OPER_TYPE_DISMISS_AGREE)) return;
 
-	if ((offline && _player_prop.game_oper_state() == Asset::GAME_OPER_TYPE_OFFLINE) || //已经是离线状态
-			(!offline && _player_prop.game_oper_state() == Asset::GAME_OPER_TYPE_ONLINE)) return; //已经是在线状态
+	//if ((offline && _player_prop.game_oper_state() == Asset::GAME_OPER_TYPE_OFFLINE) || //已经是离线状态
+	//		(!offline && _player_prop.game_oper_state() == Asset::GAME_OPER_TYPE_ONLINE)) return; //已经是在线状态
 
 	DEBUG("玩家:{}状态变化:{} 是否离线:{}", _player_id, _player_prop.game_oper_state(), offline);
 
@@ -4262,12 +4260,12 @@ void Player::SayHi()
 
 		if (max_allowed && _pings_count > max_allowed) 
 		{
-			SetOffline(); //玩家离线
+			//SetOffline(); //玩家离线
 		}
 	}
 	else
 	{
-		SetOffline(false); //玩家上线
+		//SetOffline(false); //玩家上线
 		
 		_pings_count = 0;
 	}

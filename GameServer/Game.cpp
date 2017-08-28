@@ -393,21 +393,21 @@ void Game::OnPaiOperate(std::shared_ptr<Player> player, pb::Message* message)
 				auto cards = FaPai(1); 
 				auto card = GameInstance.GetCard(cards[0]); //玩家待抓的牌
 
+				if (player_next->HasTuoGuan()) _curr_player_index = next_player_index; //托管检查
+
+				player_next->OnFaPai(cards); //放入玩家牌里面
+
+				//if (player_next->HasTuoGuan()) return; //托管检查，防止递归
+				
 				Asset::PaiOperationAlert alert;
 
 				//胡牌检查
-				if (player_next->CheckHuPai(card)) //自摸
+				if (!player_next->IsJinbao() && player_next->CheckZiMo()) //自摸
 				{
 					auto pai_perator = alert.mutable_pais()->Add();
 					pai_perator->mutable_pai()->CopyFrom(card);
 					pai_perator->mutable_oper_list()->Add(Asset::PAI_OPER_TYPE_HUPAI);
 				}
-
-				if (player_next->HasTuoGuan()) _curr_player_index = next_player_index; //托管检查
-
-				player_next->OnFaPai(cards); //放入玩家牌里面
-
-				if (player_next->HasTuoGuan()) return; //托管检查，防止递归
 				
 				//
 				//玩家摸宝之后进行抓牌正好抓到宝胡
