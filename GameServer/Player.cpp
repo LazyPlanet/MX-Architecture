@@ -1528,11 +1528,11 @@ const std::string Player::GetHeadImag()
 	
 const std::string Player::GetIpAddress()
 {
-	if (!_user.has_client_info() || !_user.client_info().has_client_ip())
-	{
+	//if (!_user.has_client_info() || !_user.client_info().has_client_ip())
+	//{
 		auto redis = make_unique<Redis>();
 		redis->GetUser(_stuff.account(), _user);
-	}
+	//}
 
 	return _user.client_info().client_ip();
 }
