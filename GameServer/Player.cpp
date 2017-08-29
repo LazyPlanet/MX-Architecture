@@ -4163,6 +4163,13 @@ void Player::PrintPai()
 	LOG(INFO, "player_id:{} has cards:{}", _player_id, card_value_list.str());
 }
 	
+Asset::GAME_OPER_TYPE Player::GetOperState() 
+{ 
+	if (_player_prop.offline()) return Asset::GAME_OPER_TYPE_OFFLINE;
+
+	return _player_prop.game_oper_state(); 
+}
+	
 void Player::SetOffline(bool offline)
 { 
 	if (!_room) return;
@@ -4175,17 +4182,19 @@ void Player::SetOffline(bool offline)
 
 	DEBUG("玩家:{}状态变化:{} 是否离线:{}", _player_id, _player_prop.game_oper_state(), offline);
 
+	if (offline == _player_prop.offline()) return; //状态尚未发生变化
+
 	_player_prop.set_offline(offline); 
 
 	if (offline) 
 	{
-		SetOperState(Asset::GAME_OPER_TYPE_OFFLINE);
+		//SetOperState(Asset::GAME_OPER_TYPE_OFFLINE);
 
 		_room->OnPlayerStateChanged();
 	}
 	else
 	{
-		SetOperState(Asset::GAME_OPER_TYPE_ONLINE);
+		//SetOperState(Asset::GAME_OPER_TYPE_ONLINE);
 	}
 }
 
@@ -4260,12 +4269,12 @@ void Player::SayHi()
 
 		if (max_allowed && _pings_count > max_allowed) 
 		{
-			//SetOffline(); //玩家离线
+			SetOffline(); //玩家离线
 		}
 	}
 	else
 	{
-		//SetOffline(false); //玩家上线
+		SetOffline(false); //玩家上线
 		
 		_pings_count = 0;
 	}

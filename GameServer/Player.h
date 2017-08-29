@@ -396,7 +396,7 @@ public:
 	bool AgreeDisMiss() { return _player_prop.game_oper_state() == Asset::GAME_OPER_TYPE_DISMISS_AGREE; } //是否同意解散 
 	void ClearDisMiss() { _player_prop.clear_game_oper_state(); }
 
-	Asset::GAME_OPER_TYPE GetOperState() { return _player_prop.game_oper_state(); }
+	Asset::GAME_OPER_TYPE GetOperState();
 	void SetOperState(Asset::GAME_OPER_TYPE oper_type) { return _player_prop.set_game_oper_state(oper_type); }
 
 	//获取//设置玩家座次
