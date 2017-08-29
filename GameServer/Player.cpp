@@ -1150,9 +1150,14 @@ void Player::OnLeaveRoom(Asset::GAME_OPER_TYPE reason)
 {
 	_stuff.clear_room_id(); //用于处理玩家断线重入房间
 
+	//重置房间数据
 	ResetRoom();
-	ClearCards();  //游戏数据
+	//游戏数据
+	ClearCards();  
+	//逻辑服务器的退出房间，则退出
+	OnLogout();
 
+	//房间状态同步
 	Asset::RoomState room_state;
 	room_state.set_room_id(0);
 	room_state.set_oper_type(reason);
@@ -4172,7 +4177,10 @@ Asset::GAME_OPER_TYPE Player::GetOperState()
 	
 void Player::SetOffline(bool offline)
 { 
-	if (!_room) return;
+	if (!_room) 
+	{
+		return;
+	}
 
 	//if (!_game && (_player_prop.game_oper_state() == Asset::GAME_OPER_TYPE_START ||
 	//			_player_prop.game_oper_state() == Asset::GAME_OPER_TYPE_DISMISS_AGREE)) return;

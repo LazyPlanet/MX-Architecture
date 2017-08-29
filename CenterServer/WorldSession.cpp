@@ -21,6 +21,8 @@ WorldSession::WorldSession(boost::asio::ip::tcp::socket&& socket) : Socket(std::
 {
 	_remote_endpoint = _socket.remote_endpoint();
 	_ip_address = _remote_endpoint.address().to_string();
+			
+	DEBUG("地址:{} 端口:{} 连接成功", _ip_address, _remote_endpoint.port());
 }
 
 void WorldSession::InitializeHandler(const boost::system::error_code error, const std::size_t bytes_transferred)
@@ -29,7 +31,7 @@ void WorldSession::InitializeHandler(const boost::system::error_code error, cons
 	{
 		if (error)
 		{
-			ERROR("客户端地址:{} 端口:{} 玩家:{}断开连接，错误码:{} 错误描述:{}", _ip_address, _remote_endpoint.port(), _player ? _player->GetID() : 0, error.value(), error.message());
+			ERROR("地址:{} 端口:{} 玩家:{}断开连接，错误码:{} 错误描述:{}", _ip_address, _remote_endpoint.port(), _player ? _player->GetID() : 0, error.value(), error.message());
 			
 			//if (error != boost::asio::error::connection_reset)
 			{
@@ -71,12 +73,11 @@ void WorldSession::InitializeHandler(const boost::system::error_code error, cons
 	}
 	catch (std::exception& e)
 	{
-		ERROR("客户端地址:{} 端口:{} 玩家:{}断开连接，错误码:{}", _ip_address, _remote_endpoint.port(), _player ? _player->GetID() : 0, e.what());
+		ERROR("地址:{} 端口:{} 玩家:{}断开连接，错误码:{}", _ip_address, _remote_endpoint.port(), _player ? _player->GetID() : 0, e.what());
 		KickOutPlayer(Asset::KICK_OUT_REASON_DISCONNECT);
 		return;
 	}
 
-	//WARN("中心服务器接收数据之后, 当前缓存数量大小:{} 本次接收数据大小:{}", _buffer.size(), bytes_transferred);
 	AsyncReceiveWithCallback(&WorldSession::InitializeHandler); //递归持续接收	
 }
 			
