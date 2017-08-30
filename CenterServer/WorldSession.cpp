@@ -299,11 +299,10 @@ void WorldSession::OnProcessMessage(const Asset::Meta& meta)
 
 				SetRoleType(Asset::ROLE_TYPE_PLAYER, _player->GetID());
 
-				if (_player->Load())
+				auto load_success = _player->Load();
+				if (load_success)
 				{
-					DEBUG_ASSERT(false);
-
-					LOG(ERROR, "玩家断线重连，角色ID:{} 加载数据失败", connect->player_id());
+					ERROR("玩家断线重连，角色ID:{} 加载数据失败，原因:{}", connect->player_id(), load_success);
 					return;
 				}
 			}

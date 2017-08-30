@@ -4177,10 +4177,7 @@ Asset::GAME_OPER_TYPE Player::GetOperState()
 	
 void Player::SetOffline(bool offline)
 { 
-	if (!_room) 
-	{
-		return;
-	}
+	if (!_room) return;
 
 	//if (!_game && (_player_prop.game_oper_state() == Asset::GAME_OPER_TYPE_START ||
 	//			_player_prop.game_oper_state() == Asset::GAME_OPER_TYPE_DISMISS_AGREE)) return;
@@ -4194,11 +4191,13 @@ void Player::SetOffline(bool offline)
 
 	_player_prop.set_offline(offline); 
 
+	_room->OnPlayerStateChanged();
+
 	if (offline) 
 	{
 		//SetOperState(Asset::GAME_OPER_TYPE_OFFLINE);
 
-		_room->OnPlayerStateChanged();
+		//_room->OnPlayerStateChanged();
 	}
 	else
 	{
@@ -4269,7 +4268,7 @@ void Player::SayHi()
 	auto curr_time = CommonTimerInstance.GetTime();
 	auto duration_pass = curr_time - _hi_time;
 
-	if (duration_pass > 10)
+	if (duration_pass > 5)
 	{
 		++_pings_count;
 		

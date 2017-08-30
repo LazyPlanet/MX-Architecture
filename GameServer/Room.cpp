@@ -418,12 +418,13 @@ bool Room::Remove(int64_t player_id, Asset::GAME_OPER_TYPE reason)
 void Room::OnPlayerStateChanged()
 {
 	Asset::RoomInformation message;
+	message.set_sync_type(Asset::ROOM_SYNC_TYPE_STATE_CHANGED);
 			
 	for (auto player : _players)
 	{
 		if (!player) continue;
 
-		if (!player->IsOffline()) continue;
+		//if (!player->IsOffline()) continue;
 
 		auto p = message.mutable_player_list()->Add();
 		p->set_position(player->GetPosition());
@@ -527,7 +528,7 @@ void Room::OnGameOver(int64_t player_id)
 
 	for (auto player : _players)
 	{
-		if (!player || player->IsOffline()) continue;
+		if (!player/* || player->IsOffline()*/) continue;
 
 		player->SendProtocol(message);
 	}
@@ -641,6 +642,7 @@ void Room::KickOutPlayer(int64_t player_id)
 void Room::SyncRoom()
 {
 	Asset::RoomInformation message;
+	message.set_sync_type(Asset::ROOM_SYNC_TYPE_NORMAL);
 			
 	auto redis = make_unique<Redis>();
 
