@@ -135,6 +135,8 @@ public:
 	int32_t CmdLuckyPlate(pb::Message* message);
 	//历史战绩
 	virtual int32_t CmdGetBattleHistory(pb::Message* message);
+	//充值
+	virtual int32_t CmdRecharge(pb::Message* message);
 public:
 	//获取所有包裹
 	const Asset::Inventory& GetInventory() { return _stuff.inventory();	}

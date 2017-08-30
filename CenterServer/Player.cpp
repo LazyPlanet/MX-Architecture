@@ -38,6 +38,7 @@ Player::Player()
 	//AddHandler(Asset::META_TYPE_SHARE_SAY_HI, std::bind(&Player::CmdSayHi, this, std::placeholders::_1));
 	AddHandler(Asset::META_TYPE_SHARE_GAME_SETTING, std::bind(&Player::CmdGameSetting, this, std::placeholders::_1));
 	AddHandler(Asset::META_TYPE_SHARE_ROOM_HISTORY, std::bind(&Player::CmdGetBattleHistory, this, std::placeholders::_1));
+	AddHandler(Asset::META_TYPE_SHARE_RECHARGE, std::bind(&Player::CmdRecharge, this, std::placeholders::_1));
 
 	AddHandler(Asset::META_TYPE_C2S_GET_REWARD, std::bind(&Player::CmdGetReward, this, std::placeholders::_1));
 }
@@ -289,6 +290,8 @@ int64_t Player::ConsumeDiamond(Asset::DIAMOND_CHANGED_TYPE changed_type, int64_t
 	
 	SyncCommonProperty();
 	
+	LOG(INFO, "玩家:{}消耗钻石:{}原因:{}", _player_id, count, changed_type);
+	
 	return count;
 }
 
@@ -300,6 +303,8 @@ int64_t Player::GainDiamond(Asset::DIAMOND_CHANGED_TYPE changed_type, int64_t co
 	_dirty = true;
 
 	SyncCommonProperty();
+
+	LOG(INFO, "玩家:{}获取钻石:{}原因:{}", _player_id, count, changed_type);
 	
 	return count;
 }
@@ -791,6 +796,28 @@ int32_t Player::CmdGetBattleHistory(pb::Message* message)
 	int32_t end_index = battle_history->end_index();
 
 	BattleHistory(start_index, end_index);
+
+	return 0;
+}
+	
+int32_t Player::CmdRecharge(pb::Message* message)
+{
+	auto user_recharge = dynamic_cast<const Asset::UserRecharge*>(message);
+	if (!user_recharge) return 1;
+		
+	const auto& messages = AssetInstance.GetMessagesByType(Asset::META_TYPE_SHARE_RECHARGE);
+
+	for (auto it = messages.begin(); it != messages.end(); ++it)
+	{
+		auto recharge = dynamic_cast<Asset::Recharge*>(*it);
+		if (!recharge) continue;
+
+		if (user_recharge->product_id() != recharge->product_id()) continue;
+
+		//if (recharge->price_show() != user_recharge->price()) continue; //价格不一致
+		GainDiamond(Asset::DIAMOND_CHANGED_TYPE_MALL, recharge->gain_diamond());
+		break;
+	}
 
 	return 0;
 }
