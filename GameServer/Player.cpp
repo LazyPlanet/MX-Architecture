@@ -1155,7 +1155,7 @@ void Player::OnLeaveRoom(Asset::GAME_OPER_TYPE reason)
 	//游戏数据
 	ClearCards();  
 	//逻辑服务器的退出房间，则退出
-	OnLogout();
+	//OnLogout();
 
 	//房间状态同步
 	Asset::RoomState room_state;
