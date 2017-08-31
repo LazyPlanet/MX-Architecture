@@ -4256,10 +4256,10 @@ int32_t Player::CmdSayHi(pb::Message* message)
 	auto say_hi = dynamic_cast<const Asset::SayHi*>(message);
 	if (!say_hi) return 1;
 
-	//auto hi_time = CommonTimerInstance.GetTime();
 	_hi_time = CommonTimerInstance.GetTime();
+		
+	//SetOffline(false); //玩家上线
 
-	DEBUG("玩家:{} 收到心跳:{}", _player_id, _hi_time);
 	return 0;
 }
 	

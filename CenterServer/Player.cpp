@@ -869,14 +869,14 @@ void Player::BattleHistory(int32_t start_index, int32_t end_index)
 
 		if (!reply.is_string()) 
 		{
-			ERROR("房间:{}没有数据", room_id);
+			WARN("房间:{}没有数据", room_id);
 			continue;
 		}
 
 		auto success = history.ParseFromString(reply.as_string());
 		if (!success)
 		{
-			ERROR("房间:{}没有数据", room_id);
+			WARN("房间:{}没有数据", room_id);
 			continue;
 		}
 

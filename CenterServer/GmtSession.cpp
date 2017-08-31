@@ -213,7 +213,8 @@ Asset::COMMAND_ERROR_CODE GmtSession::OnCommandProcess(const Asset::Command& com
 	if (!player_ptr->IsCenterServer()) //当前不在中心服务器，则到逻辑服务器进行处理
 	{
 		player_ptr->SendGmtProtocol(command); //转发
-		RETURN(Asset::COMMAND_ERROR_CODE_SUCCESS); //成功执行
+		//RETURN(Asset::COMMAND_ERROR_CODE_SUCCESS); //成功执行
+		return Asset::COMMAND_ERROR_CODE_SUCCESS; //不返回协议
 	}
 
 	switch(command.command_type())
