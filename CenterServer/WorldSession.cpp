@@ -312,8 +312,21 @@ void WorldSession::OnProcessMessage(const Asset::Meta& meta)
 			}
 
 			_player->SetLocalServer(ConfigInstance.GetInt("ServerID", 1));
-
 			_player->OnEnterGame();
+		}
+		else if (Asset::META_TYPE_C2S_GET_ROOM_DATA == meta.type_t()) //获取房间数据
+		{
+			auto get_data = dynamic_cast<Asset::GetRoomData*>(message);
+			if (!get_data) return;
+			
+			auto room_id = get_data->room_id();
+			auto server_id = room_id >> 16;
+
+			auto game_server = WorldSessionInstance.GetServerSession(server_id);
+			if (!game_server || !_player) return;
+
+			_player->SetLocalServer(server_id); //设置玩家当前所在服务器
+			_player->SendProtocol2GameServer(get_data); 
 		}
 		else if (Asset::META_TYPE_C2S_ENTER_GAME == meta.type_t()) //进入游戏
 		{
