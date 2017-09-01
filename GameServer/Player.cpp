@@ -38,6 +38,7 @@ Player::Player()
 	AddHandler(Asset::META_TYPE_SHARE_SAY_HI, std::bind(&Player::CmdSayHi, this, std::placeholders::_1));
 	AddHandler(Asset::META_TYPE_SHARE_GAME_SETTING, std::bind(&Player::CmdGameSetting, this, std::placeholders::_1));
 	AddHandler(Asset::META_TYPE_SHARE_SYSTEM_CHAT, std::bind(&Player::CmdSystemChat, this, std::placeholders::_1));
+	AddHandler(Asset::META_TYPE_SHARE_RECHARGE, std::bind(&Player::CmdRecharge, this, std::placeholders::_1));
 
 	//AddHandler(Asset::META_TYPE_C2S_LOGIN, std::bind(&Player::CmdLogin, this, std::placeholders::_1));
 	//AddHandler(Asset::META_TYPE_C2S_ENTER_GAME, std::bind(&Player::CmdEnterGame, this, std::placeholders::_1));
@@ -4466,6 +4467,28 @@ void PlayerManager::Update(int32_t diff)
 			it->second->Update();
 		}
 	}
+}
+
+int32_t Player::CmdRecharge(pb::Message* message)
+{
+	auto user_recharge = dynamic_cast<const Asset::UserRecharge*>(message);
+	if (!user_recharge) return 1;
+		
+	const auto& messages = AssetInstance.GetMessagesByType(Asset::META_TYPE_SHARE_RECHARGE);
+
+	for (auto it = messages.begin(); it != messages.end(); ++it)
+	{
+		auto recharge = dynamic_cast<Asset::Recharge*>(*it);
+		if (!recharge) continue;
+
+		if (user_recharge->product_id() != recharge->product_id()) continue;
+
+		//if (recharge->price_show() != user_recharge->price()) continue; //价格不一致
+		GainDiamond(Asset::DIAMOND_CHANGED_TYPE_MALL, recharge->gain_diamond());
+		break;
+	}
+
+	return 0;
 }
 
 void PlayerManager::Emplace(int64_t player_id, std::shared_ptr<Player> player)

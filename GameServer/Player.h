@@ -430,6 +430,8 @@ public:
 
 	bool AddRoomRecord(int64_t room_id);
 	void SendRoomState();
+	//充值
+	virtual int32_t CmdRecharge(pb::Message* message);
 };
 
 /////////////////////////////////////////////////////
