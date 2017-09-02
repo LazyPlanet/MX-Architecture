@@ -47,6 +47,22 @@ bool WorldSession::OnInnerProcess(const Asset::Meta& meta)
 		}
 		break;
 		
+		case Asset::META_TYPE_S2S_KICKOUT_PLAYER: //退出游戏逻辑服务器
+		{
+			Asset::KickOutPlayer message;
+			auto result = message.ParseFromString(meta.stuff());
+			if (!result) return false;
+
+			if (message.player_id() != meta.player_id()) return false;
+			
+			auto player = PlayerInstance.Get(meta.player_id());
+			if (!player) return false;
+
+			player->SetLocalServer(ConfigInstance.GetInt("ServerID", 1));
+			player->OnEnterCenter(); //进入游戏，初始化数据
+		}
+		break;
+		
 		default:
 		{
 			WARN("接收逻辑服务器协议:{}, 类型:{}, 直接进行转发", meta.ShortDebugString(), meta.type_t());

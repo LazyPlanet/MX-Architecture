@@ -189,18 +189,20 @@ int32_t Player::Logout(pb::Message* message)
 	
 int32_t Player::OnLogout()
 {
-	DEBUG("玩家:{} 退出游戏回调...", _player_id);
-
 	_stuff.set_login_time(0);
 	_stuff.set_logout_time(CommonTimerInstance.GetTime());
 	
-	//ClearCards();
-
 	if (!_game && _room && (_room->GetRemainCount() <= 0 || _room->HasDisMiss())) ResetRoom();
+	PlayerInstance.Remove(_player_id); //玩家管理
 	
 	Save(true);	//存档数据库
 
-	PlayerInstance.Remove(_player_id); //玩家管理
+	Asset::KickOutPlayer kickout_player; //通知中心服务器退出
+	kickout_player.set_player_id(_player_id);
+	kickout_player.set_reason(Asset::KICK_OUT_REASON_LOGOUT);
+	SendProtocol(kickout_player);
+	
+	DEBUG("玩家:{}退出游戏成功", _player_id);
 
 	return 0;
 }
@@ -1156,7 +1158,7 @@ void Player::OnLeaveRoom(Asset::GAME_OPER_TYPE reason)
 	//游戏数据
 	ClearCards();  
 	//逻辑服务器的退出房间，则退出
-	//OnLogout();
+	OnLogout();
 
 	//房间状态同步
 	Asset::RoomState room_state;
@@ -1302,8 +1304,9 @@ int32_t Player::CmdBuySomething(pb::Message* message)
 
 	auto ret = MallInstance.BuySomething(shared_from_this(), mall_id);
 	some_thing->set_result(ret);
-
 	SendProtocol(some_thing); //返回给Client
+
+	if (ret) AlertMessage(ret);
 
 	return 0;
 }
@@ -4474,7 +4477,7 @@ int32_t Player::CmdRecharge(pb::Message* message)
 	auto user_recharge = dynamic_cast<const Asset::UserRecharge*>(message);
 	if (!user_recharge) return 1;
 		
-	const auto& messages = AssetInstance.GetMessagesByType(Asset::META_TYPE_SHARE_RECHARGE);
+	const auto& messages = AssetInstance.GetMessagesByType(Asset::ASSET_TYPE_RECHARGE);
 
 	for (auto it = messages.begin(); it != messages.end(); ++it)
 	{

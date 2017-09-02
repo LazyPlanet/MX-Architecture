@@ -35,7 +35,7 @@ Player::Player()
 	AddHandler(Asset::META_TYPE_SHARE_BUY_SOMETHING, std::bind(&Player::CmdBuySomething, this, std::placeholders::_1));
 	AddHandler(Asset::META_TYPE_SHARE_SIGN, std::bind(&Player::CmdSign, this, std::placeholders::_1));
 	AddHandler(Asset::META_TYPE_SHARE_COMMON_PROPERTY, std::bind(&Player::CmdGetCommonProperty, this, std::placeholders::_1));
-	//AddHandler(Asset::META_TYPE_SHARE_SAY_HI, std::bind(&Player::CmdSayHi, this, std::placeholders::_1));
+	AddHandler(Asset::META_TYPE_SHARE_SAY_HI, std::bind(&Player::CmdSayHi, this, std::placeholders::_1));
 	AddHandler(Asset::META_TYPE_SHARE_GAME_SETTING, std::bind(&Player::CmdGameSetting, this, std::placeholders::_1));
 	AddHandler(Asset::META_TYPE_SHARE_ROOM_HISTORY, std::bind(&Player::CmdGetBattleHistory, this, std::placeholders::_1));
 	AddHandler(Asset::META_TYPE_SHARE_RECHARGE, std::bind(&Player::CmdRecharge, this, std::placeholders::_1));
@@ -64,30 +64,20 @@ int32_t Player::Load()
 	if (!client.is_connected()) return 2;
 	
 	auto has_auth = client.auth(ConfigInstance.GetString("Redis_Password", "!QAZ%TGB&UJM9ol."));
-	if (has_auth.get().ko()) 
-	{
-		DEBUG_ASSERT(false);
-		return 3;
-	}
+	if (has_auth.get().ko()) return 3;
 
 	auto get = client.get("player:" + std::to_string(_player_id));
 	cpp_redis::reply reply = get.get();
 	client.commit();
 
-	if (!reply.is_string()) 
-	{
-		DEBUG_ASSERT(false);
-		return 4;
-	}
+	if (!reply.is_string()) return 4;
 
 	auto success = _stuff.ParseFromString(reply.as_string());
-	if (!success)
-	{
-		DEBUG_ASSERT(false);
-		return 5;
-	}
+	if (!success) return 5;
 
 	_loaded = true;
+
+	DEBUG("玩家:{}加载数据成功", _player_id);
 
 	return 0;
 }
@@ -170,6 +160,20 @@ int32_t Player::OnEnterGame()
 	PlayerInstance.Emplace(_player_id, shared_from_this()); //玩家管理
 
 	OnLogin();
+
+	return 0;
+}
+
+int32_t Player::OnEnterCenter() 
+{
+	if (Load()) return 1;
+	
+	_stuff.set_login_time(CommonTimerInstance.GetTime());
+	_stuff.set_logout_time(0);
+
+	Save(true); //存盘
+	
+	DEBUG("玩家:{}重新进入大厅，数据内容:{}", _player_id, _stuff.ShortDebugString());
 
 	return 0;
 }
@@ -684,20 +688,21 @@ int32_t Player::CmdGetReward(pb::Message* message)
 	return 0;
 }
 	
-bool Player::CmdBuySomething(pb::Message* message)
+int32_t Player::CmdBuySomething(pb::Message* message)
 {
 	auto some_thing = dynamic_cast<Asset::BuySomething*>(message);
-	if (!some_thing) return false;
+	if (!some_thing) return 1;
 
 	int64_t mall_id = some_thing->mall_id();
-	if (mall_id <= 0) return false;
+	if (mall_id <= 0) return 2;
 
 	auto ret = MallInstance.BuySomething(shared_from_this(), mall_id);
 	some_thing->set_result(ret);
-
 	SendProtocol(some_thing); //返回给Client
 
-	return true;
+	if (ret) AlertMessage(ret);
+
+	return 0;
 }
 
 int32_t Player::CmdLuckyPlate(pb::Message* message)
@@ -729,16 +734,11 @@ int32_t Player::CmdLuckyPlate(pb::Message* message)
 
 int32_t Player::CmdSayHi(pb::Message* message)
 {
-	/*
 	auto say_hi = dynamic_cast<const Asset::SayHi*>(message);
 	if (!say_hi) return 1;
     
 	_pings_count = 0;
-    //_hi_time = steady_clock::now();
 	_hi_time = CommonTimerInstance.GetTime(); 
-
-	DEBUG("玩家:{}心跳", _player_id);
-	*/
 
 	return 0;
 }
@@ -805,7 +805,7 @@ int32_t Player::CmdRecharge(pb::Message* message)
 	auto user_recharge = dynamic_cast<const Asset::UserRecharge*>(message);
 	if (!user_recharge) return 1;
 		
-	const auto& messages = AssetInstance.GetMessagesByType(Asset::META_TYPE_SHARE_RECHARGE);
+	const auto& messages = AssetInstance.GetMessagesByType(Asset::ASSET_TYPE_RECHARGE);
 
 	for (auto it = messages.begin(); it != messages.end(); ++it)
 	{

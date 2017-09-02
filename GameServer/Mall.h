@@ -44,7 +44,7 @@ public:
 			{
 				int32_t diamond = mall->diamond();
 
-				if (diamond <= 0 || diamond < player->GetDiamond())
+				if (diamond <= 0 || player->GetDiamond() < diamond)
 				{
 					return Asset::ERROR_DIAMOND_NOT_ENOUGH; //钻石不足
 				}
@@ -52,6 +52,21 @@ public:
 				player->ConsumeDiamond(Asset::DIAMOND_CHANGED_TYPE_MALL, diamond);
 
 				player->GainHuanledou(Asset::HUANLEDOU_CHANGED_TYPE_MALL, mall->count());
+			}
+			break;
+			
+			case Asset::Mall_GOODS_TYPE_GOODS_TYPE_ROOM_CARD: //购买房卡，只能是钻石
+			{
+				int32_t diamond = mall->diamond();
+
+				if (diamond <= 0 || player->GetDiamond() < diamond)
+				{
+					return Asset::ERROR_DIAMOND_NOT_ENOUGH; //钻石不足
+				}
+
+				player->ConsumeDiamond(Asset::DIAMOND_CHANGED_TYPE_MALL, diamond);
+
+				player->GainRoomCard(Asset::ROOM_CARD_CHANGED_TYPE_MALL, mall->count());
 			}
 			break;
 			

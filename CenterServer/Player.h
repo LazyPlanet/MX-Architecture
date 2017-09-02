@@ -62,6 +62,8 @@ public:
 		return it->second;
 	}
 
+	void ResetLoad() { _loaded = false; }
+
 	Asset::Player& Get() { return _stuff; } //获取玩家数据
 
 	const Asset::CommonProp& CommonProp() { return _stuff.common_prop(); } //获取基础属性
@@ -108,6 +110,7 @@ public:
 	virtual int32_t Save(bool force = false);
 	//进入游戏
 	virtual int32_t OnEnterGame();
+	virtual int32_t OnEnterCenter();
 	//是否脏数据
 	virtual bool IsDirty() { return _dirty; }
 	virtual void SetDirty(bool dirty = true) { _dirty = dirty; }
@@ -116,7 +119,7 @@ public:
 	//玩家心跳周期为10MS，如果该函数返回FALSE则表示掉线
 	virtual bool Update();
 	//购买商品
-	virtual bool CmdBuySomething(pb::Message* message);
+	virtual int32_t CmdBuySomething(pb::Message* message);
 	//是否在线
 	bool IsOnline() { return _stuff.login_time() != 0; }
 	//签到
