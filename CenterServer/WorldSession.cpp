@@ -421,7 +421,15 @@ void WorldSession::OnProcessMessage(const Asset::Meta& meta)
 			auto redis = make_unique<Redis>();
 			redis->SaveUser(_account.username(), _user); //存盘退出
 
-			//OnLogout();
+			_player->Save(true);
+			_player.reset();
+			
+			_user.Clear();
+			_account.Clear();
+			_wechat.Clear(); 
+			_access_token.Clear();
+	
+			if (_player_list.size()) _player_list.clear(); 
 		}
 		else if (Asset::META_TYPE_SHARE_ENTER_ROOM == meta.type_t()) //进入房间：进入游戏逻辑服务器的入口
 		{
