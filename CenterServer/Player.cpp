@@ -885,6 +885,8 @@ void Player::BattleHistory(int32_t start_index, int32_t end_index)
 	
 void Player::OnKickOut(Asset::KICK_OUT_REASON reason)
 {
+	if (!IsCenterServer()) return; 
+
 	//
 	//如果玩家主动退出，数据发送失败
 	//

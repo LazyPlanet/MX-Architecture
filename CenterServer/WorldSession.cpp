@@ -306,7 +306,7 @@ void WorldSession::OnProcessMessage(const Asset::Meta& meta)
 					return;
 				}
 			}
-			else
+			//else
 			{
 				_player->SetSession(shared_from_this());	
 			}

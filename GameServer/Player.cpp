@@ -4310,9 +4310,9 @@ void Player::SayHi()
 	{
 		++_pings_count;
 		
-		static int32_t max_allowed = 3;
+		static int32_t max_allowed = 2;
 
-		if (max_allowed && _pings_count > max_allowed) 
+		if (max_allowed && _pings_count >= max_allowed) 
 		{
 			SetOffline(); //玩家离线
 		}
