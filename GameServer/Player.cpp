@@ -2961,6 +2961,8 @@ bool Player::CheckPengPai(const Asset::PaiElement& pai)
 
 void Player::OnPengPai(const Asset::PaiElement& pai)
 {
+	if (!_game) return;
+
 	if (!CheckPengPai(pai)) 
 	{
 		DEBUG_ASSERT(false);
@@ -2970,6 +2972,7 @@ void Player::OnPengPai(const Asset::PaiElement& pai)
 	auto it = _cards_inhand.find(pai.card_type());
 	if (it == _cards_inhand.end()) return; //理论上不会如此
 	
+	/*
 	try {
 		std::unique_lock<std::mutex> lock(_card_lock, std::defer_lock);
 
@@ -3003,16 +3006,47 @@ void Player::OnPengPai(const Asset::PaiElement& pai)
 		ERROR("Delete card from player_id:{} card_type:{} card_value:{} error:{}.", _player_id, pai.card_type(), pai.card_value(), error.what());
 		return;
 	}
+	*/
+
+	for (int i = 0; i < 2; ++i)
+	{
+		auto iit = std::find(it->second.begin(), it->second.end(), pai.card_value()); //从玩家手里删除
+		if (iit == it->second.end()) return;
+
+		it->second.erase(iit);
+		DEBUG("删除玩家:{}手中牌，card_type:{} card_vale:{}", _player_id, pai.card_type(), pai.card_value());
+	}
+
+	for (int i = 0; i < 3; ++i) _cards_outhand[pai.card_type()].push_back(pai.card_value());
+	for (int i = 0; i < 2; ++i) _game->Add2CardsPool(pai);
+		
+	Asset::PaiOperationAlert alert;
 	
-	///////////////////////旋风杠检查///////////////////////
+	//
+	//旋风杠检查
+	//
 	auto xuanfeng_gang = CheckXuanFeng();
 	if (xuanfeng_gang)
 	{
-		Asset::PaiOperationAlert alert;
 		auto pai_perator = alert.mutable_pais()->Add();
 		pai_perator->mutable_oper_list()->Add((Asset::PAI_OPER_TYPE)xuanfeng_gang);
-		SendProtocol(alert); //提示Client
 	}
+	//
+	//玩家杠牌检查
+	//
+	//杠检查(明杠和暗杠)
+	//
+	RepeatedField<Asset::PaiOperationAlert_AlertElement> gang_list;
+	if (CheckAllGangPai(gang_list)) 
+	{
+		for (auto gang : gang_list) 
+		{
+			auto pai_perator = alert.mutable_pais()->Add();
+			pai_perator->CopyFrom(gang);
+		}
+	}
+		
+	if (alert.pais().size()) SendProtocol(alert); //提示Client
 	
 	SynchronizePai();
 }
