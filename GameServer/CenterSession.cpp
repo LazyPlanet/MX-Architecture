@@ -242,12 +242,20 @@ bool CenterSession::Update()
 	
 	++_heart_count;
 	
-	if (_heart_count % 20 == 0) //1s
+	if (_heart_count % 60 == 0) //3s
 	{
-		for (auto player : _players)
+		for (auto it = _players.begin(); it != _players.end();)
 		{
-			if (!player.second) continue;
-			player.second->Update();
+			if (!it->second) 
+			{
+				it = _players.erase(it);
+				continue;
+			}
+			else
+			{
+				it->second->Update();
+				++it;
+			}
 		}
 	}
 

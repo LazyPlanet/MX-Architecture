@@ -540,11 +540,7 @@ bool Player::HandleProtocol(int32_t type_t, pb::Message* message)
 		if (IsCenterServer())
 		{
 			int64_t server_id = WorldSessionInstance.RandomServer(); //随机一个逻辑服务器
-			if (server_id == 0) 
-			{
-				LOG(ERROR, "玩家:{}未能分配到逻辑服务器", _player_id);
-				DEBUG_ASSERT(false);
-			}
+			if (server_id == 0) return false;
 
 			SetLocalServer(server_id);
 		}
@@ -557,8 +553,6 @@ bool Player::HandleProtocol(int32_t type_t, pb::Message* message)
 	}
 	else
 	{
-		ERROR("玩家:{}协议处理错误:{}", _player_id, type_t);
-
 		CallBack& callback = GetMethod(type_t); 
 		callback(std::forward<pb::Message*>(message));	
 	}

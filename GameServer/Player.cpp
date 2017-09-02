@@ -4450,6 +4450,8 @@ void Player::SendRoomState()
 
 void PlayerManager::Update(int32_t diff)
 {
+	return;
+
 	++_heart_count;
 
 	if (_heart_count % 20 == 0) //1s
@@ -4459,15 +4461,13 @@ void PlayerManager::Update(int32_t diff)
 			if (!it->second) 
 			{
 				it = _players.erase(it);
-				WARN("删除空指针玩家，当前玩家数量:{}", _players.size());
 				continue;
 			}
 			else
 			{
+				it->second->Update();
 				++it;
 			}
-
-			it->second->Update();
 		}
 	}
 }
@@ -4525,6 +4525,8 @@ void PlayerManager::Remove(int64_t player_id)
 	if (player) player.reset();
 	
 	_players.erase(player_id);
+
+	if (g_center_session) g_center_session->Remove(player_id);
 }
 
 void PlayerManager::Remove(std::shared_ptr<Player> player)
