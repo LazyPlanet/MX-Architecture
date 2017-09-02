@@ -170,8 +170,10 @@ int32_t Player::OnEnterCenter()
 	
 	_stuff.set_login_time(CommonTimerInstance.GetTime());
 	_stuff.set_logout_time(0);
+			
+	SetLocalServer(ConfigInstance.GetInt("ServerID", 1));
 
-	Save(true); //存盘
+	//Save(true); //存盘
 	
 	DEBUG("玩家:{}重新进入大厅，数据内容:{}", _player_id, _stuff.ShortDebugString());
 

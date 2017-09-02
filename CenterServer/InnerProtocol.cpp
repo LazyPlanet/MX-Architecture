@@ -58,7 +58,6 @@ bool WorldSession::OnInnerProcess(const Asset::Meta& meta)
 			auto player = PlayerInstance.Get(meta.player_id());
 			if (!player) return false;
 
-			player->SetLocalServer(ConfigInstance.GetInt("ServerID", 1));
 			player->OnEnterCenter(); //进入游戏，初始化数据
 		}
 		break;
