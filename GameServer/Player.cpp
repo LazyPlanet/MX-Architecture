@@ -3086,7 +3086,7 @@ bool Player::CheckGangPai(const Asset::PaiElement& pai, int64_t from_player_id)
 
 	if (!CheckMingPiao(Asset::PAI_OPER_TYPE_GANGPAI)) return false; //明飘检查
 	
-	if (!has_gang && from_player_id == _player_id) 
+	if (!has_gang/* && from_player_id == _player_id*/) 
 	{
 		auto it = cards_outhand.find(pai.card_type()); //牌面的牌不做排序,顺序必须3张
 
