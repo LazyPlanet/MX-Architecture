@@ -68,6 +68,8 @@ public:
 
 	void OnOperateTimeOut();
 	void ClearOperation();
+	void SetPaiOperation(const Asset::PaiOperationLimit& oper) { _oper_limit = oper; } //牌操作限制
+	void SetPaiOperation(int64_t player_id, int64_t from_player_id, Asset::PaiElement pai, Asset::PAI_OPER_TYPE oper_type);
 
 	bool SendCheckRtn(); //发送当前可以操作的牌数据
 	bool CheckPai(const Asset::PaiElement& pai, int64_t from_player_id); //检查牌形：返回待操作的玩家ID

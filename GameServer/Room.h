@@ -75,6 +75,7 @@ public:
 	bool CanDisMiss(); //能否解散
 	int32_t GetRemainCount(); //剩余游戏次数
 	int32_t GetGamesCount() { return _games.size(); }
+	bool HasStarted() { return _games.size() > 0; }
 
 	void OnPlayerOperate(std::shared_ptr<Player> player, pb::Message* message);
 

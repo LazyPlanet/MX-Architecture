@@ -142,7 +142,7 @@ int32_t Player::Logout(pb::Message* message)
 	//
 	if (_room) 
 	{
-		if (_game || _room->GetRemainCount() > 0) //游戏中，或尚未对局完成，则不让退出房间
+		if (_game || (_room->HasStarted() && _room->GetRemainCount() > 0)) //游戏中，或已经开局且尚未对局完成，则不让退出房间
 		{
 			SetOffline(); //玩家状态
 
@@ -192,7 +192,7 @@ int32_t Player::OnLogout()
 	_stuff.set_login_time(0);
 	_stuff.set_logout_time(CommonTimerInstance.GetTime());
 	
-	if (!_game && _room && (_room->GetRemainCount() <= 0 || _room->HasDisMiss())) ResetRoom();
+	if (!_game && _room && (!_room->HasStarted() || _room->GetRemainCount() <= 0 || _room->HasDisMiss())) ResetRoom();
 	PlayerInstance.Remove(_player_id); //玩家管理
 	
 	Save(true);	//存档数据库
@@ -3082,15 +3082,20 @@ bool Player::CheckGangPai(const Asset::PaiElement& pai, int64_t from_player_id)
 			has_gang = true;  
 			angang.push_back(pai);
 		}
+		else if (count == 1) //手里一张，杠后杠
+		{
+			from_player_id = _player_id;
+		}
 	}
 
 	if (!CheckMingPiao(Asset::PAI_OPER_TYPE_GANGPAI)) return false; //明飘检查
 	
-	if (!has_gang/* && from_player_id == _player_id*/) 
+	if (!has_gang && from_player_id == _player_id) 
 	{
 		auto it = cards_outhand.find(pai.card_type()); //牌面的牌不做排序,顺序必须3张
+		if (it == cards_outhand.end()) return false;
 
-		DEBUG_ASSERT(it->second.size() % 3 == 0);
+		if (it->second.size() % 3 != 0) return false;
 
 		auto first_it = std::find(it->second.begin(), it->second.end(), card_value);
 		if (first_it == it->second.end()) return false;

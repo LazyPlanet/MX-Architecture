@@ -1433,6 +1433,15 @@ bool Game::CheckPai(const Asset::PaiElement& pai, int64_t from_player_id)
 
 void Game::OnOperateTimeOut()
 {
+
+}
+	
+void Game::SetPaiOperation(int64_t player_id, int64_t from_player_id, Asset::PaiElement pai, Asset::PAI_OPER_TYPE oper_type)
+{
+	_oper_limit.set_player_id(player_id); 
+	_oper_limit.set_from_player_id(from_player_id); 
+	_oper_limit.mutable_pai()->CopyFrom(pai);
+	_oper_limit.set_oper_type(oper_type);
 }
 
 std::vector<int32_t> Game::TailPai(int32_t card_count)
