@@ -465,6 +465,8 @@ void Room::AddHupai(int64_t player_id)
 
 void Room::OnGameOver(int64_t player_id)
 {
+	//std::lock_guard<std::mutex> lock(_mutex);
+
 	if (_game) _game.reset();
 	
 	AddHupai(player_id); //记录
@@ -641,6 +643,8 @@ void Room::KickOutPlayer(int64_t player_id)
 	
 void Room::SyncRoom()
 {
+	//std::lock_guard<std::mutex> lock(_mutex);
+	
 	Asset::RoomInformation message;
 	message.set_sync_type(Asset::ROOM_SYNC_TYPE_NORMAL);
 			
@@ -904,12 +908,17 @@ void RoomManager::Update(int32_t diff)
 {
 	++_heart_count;
 	
-	if (_heart_count % 20 == 0) //1s
+	if (_heart_count % 20 == 0) //1秒
 	{
 	
 	}
+	
+	if (_heart_count % 1200 == 0) //1分钟
+	{
+		DEBUG("当前进行房间数量:{}", _rooms.size());
+	}
 
-	if (_heart_count % 100 == 0) //5s
+	if (_heart_count % 100 == 0) //5秒
 	{
 		for (auto it = _rooms.begin(); it != _rooms.end(); )
 		{

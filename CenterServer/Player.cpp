@@ -946,25 +946,23 @@ void Player::SetOffline(bool offline)
 	
 void PlayerManager::Emplace(int64_t player_id, std::shared_ptr<Player> player)
 {
-	if (!player) 
-	{
-		ERROR("插入玩家:{}失败", player_id);
-		return;
-	}
+	std::lock_guard<std::mutex> lock(_mutex);
 
-	WARN("插入玩家:{}成功", player_id);
+	if (!player) return;
 
 	_players[player_id] = player;
+	
+	DEBUG("插入玩家:{}成功，当前在线玩家数量:{}", player_id, _players.size());
 }
 
 std::shared_ptr<Player> PlayerManager::GetPlayer(int64_t player_id)
 {
+	std::lock_guard<std::mutex> lock(_mutex);
+
 	for (auto it = _players.begin(); it != _players.end(); )
 	{
 		if (!it->second)
 		{
-			DEBUG("玩家:{}已经退出", it->first);
-
 			it = _players.erase(it);
 		}
 		else
@@ -993,11 +991,13 @@ bool PlayerManager::Has(int64_t player_id)
 
 void PlayerManager::Remove(int64_t player_id)
 {
+	std::lock_guard<std::mutex> lock(_mutex);
+
 	if (player_id <= 0) return;
 
-	ERROR("删除玩家:{}", player_id);
-
 	_players.erase(player_id);
+	
+	DEBUG("删除玩家:{}成功，当前在线玩家数量:{}", player_id, _players.size());
 }
 
 void PlayerManager::Remove(std::shared_ptr<Player> player)

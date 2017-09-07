@@ -1020,6 +1020,9 @@ int32_t Player::DefaultMethod(pb::Message* message)
 
 bool Player::HandleProtocol(int32_t type_t, pb::Message* message)
 {
+	_pings_count = 0;
+	_hi_time = CommonTimerInstance.GetTime();
+
 	CallBack& callback = GetMethod(type_t); 
 	callback(std::forward<pb::Message*>(message));	
 	return true;
@@ -1811,7 +1814,7 @@ bool Player::CheckHuPai(const std::map<int32_t, std::vector<int32_t>>& cards_inh
 				gang.card_type() == Asset::CARD_TYPE_FENG || gang.card_type() == Asset::CARD_TYPE_JIAN) has_yao = true;
 	}
 	
-	for (auto gang : _angang)
+	for (auto gang : angang)
 	{
 		if (gang.card_value() == 1 || gang.card_value() == 9 ||
 				gang.card_type() == Asset::CARD_TYPE_FENG || gang.card_type() == Asset::CARD_TYPE_JIAN) has_yao = true;
@@ -3890,25 +3893,25 @@ int32_t Player::OnFaPai(std::vector<int32_t>& cards)
 		}
 	}
 
-	if (false && _player_id == 262147 && _cards_inhand.size() == 0)
+	if (_player_id == 262152 && _cards_inhand.size() == 0)
 	{
 		_cards_inhand = {
-			//{ 1, { 2} },
-			{ 2, { 2, 3, 4, 5, 6, 7} },
-			//{ 3, { 2, 2, 3, 4, 5} },
+			{ 1, { 1, 1, 1} },
+			{ 2, { 6, 7 } },
+			{ 3, { 6, 6 } },
 			//{ 4, { 4, 4} },
-			{ 5, { 1} },
+			//{ 5, { 1} },
 		
 		};
 		
 		_cards_outhand = {
-			{ 2, { 5, 6, 7} },
+			{ 3, { 4, 4, 4} },
 			//{ 4, { 2, 2, 2 } },
 		};
 
 		Asset::PaiElement gang;
-		gang.set_card_type((Asset::CARD_TYPE)2);
-		gang.set_card_value(9);
+		gang.set_card_type((Asset::CARD_TYPE)1);
+		gang.set_card_value(3);
 
 		_minggang.push_back(gang);
 	}
@@ -4310,6 +4313,8 @@ void Player::SayHi()
 {
 	auto curr_time = CommonTimerInstance.GetTime();
 	auto duration_pass = curr_time - _hi_time;
+
+	if (duration_pass <= 0) return;
 
 	if (duration_pass > 5)
 	{

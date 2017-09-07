@@ -408,11 +408,10 @@ void Game::OnPaiOperate(std::shared_ptr<Player> player, pb::Message* message)
 					pai_perator->mutable_pai()->CopyFrom(card);
 					pai_perator->mutable_oper_list()->Add(Asset::PAI_OPER_TYPE_HUPAI);
 				}
-				
 				//
-				//玩家摸宝之后进行抓牌正好抓到宝胡
+				//玩家进行抓牌正好抓到宝胡
 				//
-				if (player_next->CheckBaoHu(card)) //宝胡
+				else if (player_next->CheckBaoHu(card)) //宝胡
 				{
 					auto pai_perator = alert.mutable_pais()->Add();
 					pai_perator->mutable_pai()->CopyFrom(card);
