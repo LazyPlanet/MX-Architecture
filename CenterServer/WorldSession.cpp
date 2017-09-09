@@ -33,7 +33,7 @@ void WorldSession::InitializeHandler(const boost::system::error_code error, cons
 		{
 			ERROR("地址:{} 端口:{} 玩家:{}断开连接，错误码:{} 错误描述:{}", _ip_address, _remote_endpoint.port(), _player ? _player->GetID() : 0, error.value(), error.message());
 			
-			//if (error != boost::asio::error::connection_reset)
+			if (104 != error.value()) //Connection reset by peer
 			{
 				KickOutPlayer(Asset::KICK_OUT_REASON_DISCONNECT);
 				return;
@@ -533,6 +533,10 @@ void WorldSession::KickOutPlayer(Asset::KICK_OUT_REASON reason)
 	else if (_role_type == Asset::ROLE_TYPE_PLAYER) //玩家
 	{
 		if (!_player) return;
+
+		auto session = _player->GetSession();
+		if (session && session->GetRemotePoint() != GetRemotePoint()) return;
+
 		_player->OnKickOut(reason); //玩家退出登陆
 	}
 		
@@ -739,7 +743,7 @@ bool WorldSession::Update()
 
 void WorldSession::OnClose()
 {
-	KickOutPlayer(Asset::KICK_OUT_REASON_DISCONNECT);
+	//KickOutPlayer(Asset::KICK_OUT_REASON_DISCONNECT);
 }
 
 void WorldSession::SendProtocol(const pb::Message* message)

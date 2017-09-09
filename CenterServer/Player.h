@@ -121,7 +121,7 @@ public:
 	//购买商品
 	virtual int32_t CmdBuySomething(pb::Message* message);
 	//是否在线
-	bool IsOnline() { return _stuff.login_time() != 0; }
+	bool IsOnline() { return _stuff.login_time() != 0 || _player_state == Asset::GAME_OPER_TYPE_ONLINE; }
 	//签到
 	virtual int32_t CmdSign(pb::Message* message);
 	//获取玩家基础属性

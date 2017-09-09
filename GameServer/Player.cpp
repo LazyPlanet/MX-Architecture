@@ -179,6 +179,7 @@ int32_t Player::Logout(pb::Message* message)
 		else
 		{
 			_room->Remove(_player_id); //退出房间
+			return 2;
 		}
 	}
 
@@ -984,7 +985,7 @@ bool Player::Update()
 {
 	++_heart_count; //心跳
 	
-	if (_heart_count % 5 == 0) //5s
+	if (_heart_count % 3 == 0) //3s
 	{
 		CommonLimitUpdate(); //通用限制,定时更新
 	
@@ -3893,7 +3894,7 @@ int32_t Player::OnFaPai(std::vector<int32_t>& cards)
 		}
 	}
 
-	if (_player_id == 262152 && _cards_inhand.size() == 0)
+	if (false && _player_id == 262152 && _cards_inhand.size() == 0)
 	{
 		_cards_inhand = {
 			{ 1, { 1, 1, 1} },
@@ -4181,6 +4182,8 @@ void Player::SynchronizePai()
 
 void Player::PrintPai()
 {
+	return;
+
 	std::stringstream card_value_list;
 
 	for (const auto& pai : _minggang)

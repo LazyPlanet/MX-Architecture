@@ -46,6 +46,7 @@ public:
 
 	boost::asio::ip::tcp::endpoint GetRemotePoint() { return _remote_endpoint; }
 	std::string GetRemoteAddress() {return _remote_endpoint.address().to_string(); }
+	int32_t GetRemotePort() { return _remote_endpoint.port(); }
 
 	bool OnInnerProcess(const Asset::Meta& meta);
 	void OnProcessMessage(const Asset::Meta& meta);
