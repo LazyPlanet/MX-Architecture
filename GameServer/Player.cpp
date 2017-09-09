@@ -45,6 +45,7 @@ Player::Player()
 	AddHandler(Asset::META_TYPE_C2S_GET_REWARD, std::bind(&Player::CmdGetReward, this, std::placeholders::_1));
 	AddHandler(Asset::META_TYPE_C2S_LOAD_SCENE, std::bind(&Player::CmdLoadScene, this, std::placeholders::_1));
 	AddHandler(Asset::META_TYPE_C2S_GET_ROOM_DATA, std::bind(&Player::CmdGetRoomData, this, std::placeholders::_1));
+	AddHandler(Asset::META_TYPE_C2S_UPDATE_ROOM, std::bind(&Player::CmdUpdateRoom, this, std::placeholders::_1));
 	
 	//中心服务器协议处理
 	AddHandler(Asset::META_TYPE_S2S_KICKOUT_PLAYER, std::bind(&Player::OnKickOut, this, std::placeholders::_1));
@@ -1340,6 +1341,23 @@ int32_t Player::CmdGetRoomData(pb::Message* message)
 
 	return 0;
 }
+
+int32_t Player::CmdUpdateRoom(pb::Message* message)
+{
+	auto update_data = dynamic_cast<Asset::UpdateRoom*>(message);
+	if (!update_data) return 1;
+	
+	if (!_room) return 2;
+
+	if (update_data->voice_member_id() == GetVoiceMemberID()) return 3; //尚未发生变化
+
+	_player_prop.set_voice_member_id(update_data->voice_member_id());
+
+	_room->SyncRoom();
+	
+	return 0;
+}
+
 
 int32_t Player::CmdLoadScene(pb::Message* message)
 {
@@ -4294,6 +4312,7 @@ void Player::ClearCards()
 	_jinbao = false;
 	_last_oper_type = _oper_type = Asset::PAI_OPER_TYPE_BEGIN; //初始化操作
 	_player_prop.clear_game_oper_state(); //准备//离开
+	_player_prop.clear_voice_member_id(); //房间语音数据
 	_baopai.Clear();
 	_zhuapai.Clear();
 

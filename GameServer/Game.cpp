@@ -259,7 +259,7 @@ void Game::OnPlayerReEnter(std::shared_ptr<Player> player)
 	//
 	//玩家摸宝之后进行抓牌正好抓到宝胡
 	//
-	if (player->CheckZiMo(card) || player->CheckBaoHu(card)/* || player->CheckHuPai(card)*/) //宝胡
+	if (/*player->CheckZiMo(card) || */player->CheckBaoHu(card)/* || player->CheckHuPai(card)*/) //宝胡
 	{
 		auto pai_perator = alert.mutable_pais()->Add();
 		pai_perator->mutable_pai()->CopyFrom(card);
@@ -290,6 +290,8 @@ void Game::OnPlayerReEnter(std::shared_ptr<Player> player)
 		{
 			auto pai_perator = alert.mutable_pais()->Add();
 			pai_perator->CopyFrom(gang);
+		
+			_oper_limit.set_oper_type(Asset::PAI_OPER_TYPE_GANGPAI);
 		}
 	}
 	
@@ -301,6 +303,8 @@ void Game::OnPlayerReEnter(std::shared_ptr<Player> player)
 	{
 		auto pai_perator = alert.mutable_pais()->Add();
 		pai_perator->mutable_oper_list()->Add((Asset::PAI_OPER_TYPE)xf_gang);
+			
+		_oper_limit.set_oper_type(Asset::PAI_OPER_TYPE_GANGPAI);
 	}
 
 	if (alert.pais().size()) 
@@ -407,6 +411,8 @@ void Game::OnPaiOperate(std::shared_ptr<Player> player, pb::Message* message)
 					auto pai_perator = alert.mutable_pais()->Add();
 					pai_perator->mutable_pai()->CopyFrom(card);
 					pai_perator->mutable_oper_list()->Add(Asset::PAI_OPER_TYPE_HUPAI);
+						
+					_oper_limit.set_oper_type(Asset::PAI_OPER_TYPE_HUPAI);
 				}
 				//
 				//玩家进行抓牌正好抓到宝胡
@@ -416,6 +422,8 @@ void Game::OnPaiOperate(std::shared_ptr<Player> player, pb::Message* message)
 					auto pai_perator = alert.mutable_pais()->Add();
 					pai_perator->mutable_pai()->CopyFrom(card);
 					pai_perator->mutable_oper_list()->Add(Asset::PAI_OPER_TYPE_HUPAI);
+					
+					_oper_limit.set_oper_type(Asset::PAI_OPER_TYPE_HUPAI);
 				}
 
 				//
@@ -442,6 +450,8 @@ void Game::OnPaiOperate(std::shared_ptr<Player> player, pb::Message* message)
 					{
 						auto pai_perator = alert.mutable_pais()->Add();
 						pai_perator->CopyFrom(gang);
+		
+						_oper_limit.set_oper_type(Asset::PAI_OPER_TYPE_GANGPAI);
 					}
 				}
 				
@@ -453,6 +463,8 @@ void Game::OnPaiOperate(std::shared_ptr<Player> player, pb::Message* message)
 				{
 					auto pai_perator = alert.mutable_pais()->Add();
 					pai_perator->mutable_oper_list()->Add((Asset::PAI_OPER_TYPE)xf_gang);
+						
+					_oper_limit.set_oper_type(Asset::PAI_OPER_TYPE_GANGPAI);
 				}
 
 				if (alert.pais().size()) 
@@ -482,6 +494,7 @@ void Game::OnPaiOperate(std::shared_ptr<Player> player, pb::Message* message)
 					fan_list.emplace(Asset::FAN_TYPE_JIN_BAO);
 
 					_oper_limit.set_from_player_id(player->GetID());
+					_oper_limit.set_oper_type(Asset::PAI_OPER_TYPE_HUPAI);
 				}
 
 				Calculate(player->GetID(), _oper_limit.from_player_id(), fan_list); //结算
@@ -491,6 +504,7 @@ void Game::OnPaiOperate(std::shared_ptr<Player> player, pb::Message* message)
 				auto fan_list = player->GetFanList();
 
 				_oper_limit.set_from_player_id(player->GetID()); //自摸
+				_oper_limit.set_oper_type(Asset::PAI_OPER_TYPE_HUPAI);
 
 				if (player->IsJinbao()) 
 				{
@@ -506,6 +520,7 @@ void Game::OnPaiOperate(std::shared_ptr<Player> player, pb::Message* message)
 				fan_list.emplace(Asset::FAN_TYPE_LOU_BAO); 
 					
 				_oper_limit.set_from_player_id(player->GetID());
+				_oper_limit.set_oper_type(Asset::PAI_OPER_TYPE_HUPAI);
 
 				Calculate(player->GetID(), _oper_limit.from_player_id(), fan_list); //结算
 			}
@@ -667,6 +682,8 @@ void Game::OnPaiOperate(std::shared_ptr<Player> player, pb::Message* message)
 				auto pai_perator = alert.mutable_pais()->Add();
 				pai_perator->mutable_pai()->CopyFrom(card);
 				pai_perator->mutable_oper_list()->Add(Asset::PAI_OPER_TYPE_HUPAI);
+				
+				_oper_limit.set_oper_type(Asset::PAI_OPER_TYPE_HUPAI);
 			}
 
 			player_next->OnFaPai(cards); //放入玩家牌里面
@@ -679,6 +696,8 @@ void Game::OnPaiOperate(std::shared_ptr<Player> player, pb::Message* message)
 				auto pai_perator = alert.mutable_pais()->Add();
 				pai_perator->mutable_pai()->CopyFrom(card);
 				pai_perator->mutable_oper_list()->Add(Asset::PAI_OPER_TYPE_HUPAI);
+				
+				_oper_limit.set_oper_type(Asset::PAI_OPER_TYPE_HUPAI);
 			}
 			
 			std::vector<Asset::PaiElement> ting_list;
@@ -700,6 +719,8 @@ void Game::OnPaiOperate(std::shared_ptr<Player> player, pb::Message* message)
 					auto pai_perator = alert.mutable_pais()->Add();
 					pai_perator->CopyFrom(gang);
 				}
+				
+				_oper_limit.set_oper_type(Asset::PAI_OPER_TYPE_GANGPAI);
 			}
 
 			//
@@ -714,7 +735,6 @@ void Game::OnPaiOperate(std::shared_ptr<Player> player, pb::Message* message)
 				{
 					auto pai_perator = alert.mutable_pais()->Add();
 					pai_perator->mutable_oper_list()->Add((Asset::PAI_OPER_TYPE)xf_gang);
-					//player->SendProtocol(alert); //提示Client
 				}
 				if (alert.pais().size()) 
 				{
@@ -1354,6 +1374,9 @@ bool Game::SendCheckRtn()
 
 	for (auto rtn : operation.oper_list()) 
 		pai_perator->mutable_oper_list()->Add(rtn); //可操作牌类型
+
+	auto youxian = std::min(operation.oper_list().begin(), operation.oper_list().end());
+	_oper_limit.set_oper_type((Asset::PAI_OPER_TYPE)(*youxian)); //缓存操作
 
 	if (auto player_to = GetPlayer(player_id)) 
 		player_to->SendProtocol(alert); //发给目标玩家

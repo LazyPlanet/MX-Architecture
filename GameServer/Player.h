@@ -180,6 +180,8 @@ public:
 	virtual int32_t OnKickOut(pb::Message* message);
 	//玩家状态变化
 	virtual int32_t OnPlayerStateChanged(pb::Message* message);
+	//获取房间语音成员ID
+	int64_t GetVoiceMemberID() { return _player_prop.voice_member_id(); }
 public:
 	//获取所有包裹
 	const Asset::Inventory& GetInventory() { return _stuff.inventory();	}
@@ -282,6 +284,7 @@ public:
 	virtual int32_t CmdLuckyPlate(pb::Message* message); //幸运转盘
 	virtual int32_t CmdSaizi(pb::Message* message); //打股子
 	virtual int32_t CmdGetRoomData(pb::Message* message); //获取房间数据
+	virtual int32_t CmdUpdateRoom(pb::Message* message); //更新房间数据
 
 	//进入房间回调
 	void OnEnterScene(bool is_reenter);
