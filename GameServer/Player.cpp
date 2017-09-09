@@ -180,7 +180,9 @@ int32_t Player::Logout(pb::Message* message)
 		{
 			if (_room->IsHoster(_player_id))
 			{
-				_room->KickOutPlayer();
+				SetOffline(); //玩家状态
+
+				//_room->KickOutPlayer();
 			}
 			else
 			{
@@ -1327,7 +1329,7 @@ int32_t Player::CmdGetRoomData(pb::Message* message)
 	auto get_data = dynamic_cast<Asset::GetRoomData*>(message);
 	if (!get_data) return 1;
 
-	if (!_room || _room->GetID() != get_data->room_id())
+	if (!_room || _room->GetID() != get_data->room_id() || _stuff.room_id() == 0)
 	{
 		SendRoomState(); //估计房间已经解散
 	}
@@ -4498,6 +4500,7 @@ void Player::SendRoomState()
 	proto.set_room_id(0);
 
 	if (_room) proto.set_room_id(_room->GetID());
+	else proto.set_oper_type(Asset::GAME_OPER_TYPE_LEAVE);
 
 	SendProtocol(proto);
 }
