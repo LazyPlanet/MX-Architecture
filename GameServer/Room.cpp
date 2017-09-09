@@ -164,11 +164,11 @@ void Room::OnReEnter(std::shared_ptr<Player> op_player)
 	if (op_player->HasTingPai()) 
 	{
 		message.mutable_baopai()->CopyFrom(_game->GetBaoPai()); //宝牌
+	}
 
-		if (!op_player->CheckCardsInhand())
-		{
-			message.mutable_zhuapai()->CopyFrom(op_player->GetZhuaPai()); //上次抓牌，提示Client显示
-		}
+	if (!op_player->CheckCardsInhand())
+	{
+		message.mutable_zhuapai()->CopyFrom(op_player->GetZhuaPai()); //上次抓牌，提示Client显示
 	}
 
 	for (auto saizi : _game->GetSaizi())
