@@ -75,7 +75,7 @@ private:
 	boost::asio::ip::tcp::endpoint _remote_endpoint;
 
 	int64_t _global_id = 0; //逻辑服务器ID或者玩家ID
-	Asset::ROLE_TYPE _role_type; //会话类型
+	Asset::ROLE_TYPE _role_type = Asset::ROLE_TYPE_NULL; //会话类型
 	std::shared_ptr<Player> _player = nullptr; //全局玩家定义，唯一的一个Player对象
 	bool _online = true;
 

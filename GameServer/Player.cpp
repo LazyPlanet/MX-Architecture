@@ -178,7 +178,14 @@ int32_t Player::Logout(pb::Message* message)
 		}
 		else
 		{
-			_room->Remove(_player_id); //退出房间
+			if (_room->IsHoster(_player_id))
+			{
+				_room->KickOutPlayer();
+			}
+			else
+			{
+				_room->Remove(_player_id); //退出房间
+			}
 			return 2;
 		}
 	}

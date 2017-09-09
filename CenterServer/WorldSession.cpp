@@ -525,6 +525,8 @@ void WorldSession::OnProcessMessage(const Asset::Meta& meta)
 void WorldSession::KickOutPlayer(Asset::KICK_OUT_REASON reason)
 {
 	DEBUG("_role_type:{} _global_id:{} reason:{}", _role_type, _global_id, reason);
+
+	if (_global_id == 0 || _role_type == Asset::ROLE_TYPE_NULL) return;
 	
 	if (_role_type == Asset::ROLE_TYPE_GAME_SERVER) //逻辑服务器
 	{
@@ -743,7 +745,10 @@ bool WorldSession::Update()
 
 void WorldSession::OnClose()
 {
-	//KickOutPlayer(Asset::KICK_OUT_REASON_DISCONNECT);
+	Socket::OnClose();
+	
+	DEBUG("角色类型:{} 全局ID:{} 关闭网络连接", _role_type, _global_id);
+	
 }
 
 void WorldSession::SendProtocol(const pb::Message* message)
