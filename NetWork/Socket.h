@@ -191,7 +191,11 @@ public:
 	}
 
 protected:
-	virtual void OnClose() { }
+	virtual void OnClose() { 
+		_closed = true;
+		_write_queue = {};
+		_buffer = {};
+	}
 protected:
 	std::atomic<bool> _closed;    
 	std::atomic<bool> _closing;
