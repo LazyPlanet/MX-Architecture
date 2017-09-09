@@ -177,7 +177,7 @@ public:
 		int32_t server_id = ConfigInstance.GetInt("ServerID", 1); //服务器ID
 		room_id = (server_id << 16) + room_id;
 		
-		return room_id;
+		return room_id % 65536;
 	}
 
 	int32_t GetUser(std::string username, Asset::User& user)
