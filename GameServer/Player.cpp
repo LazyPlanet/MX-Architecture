@@ -1347,7 +1347,7 @@ int32_t Player::CmdUpdateRoom(pb::Message* message)
 	auto update_data = dynamic_cast<Asset::UpdateRoom*>(message);
 	if (!update_data) return 1;
 	
-	if (!_room) return 2;
+	if (!_room || !_room->IsVoiceOpen()) return 2;
 
 	if (update_data->voice_member_id() == GetVoiceMemberID()) return 3; //尚未发生变化
 

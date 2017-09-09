@@ -50,6 +50,8 @@ public:
 	const Asset::RoomOptions& GetOptions() { return _stuff.options(); } //额外番型
 	void SetOption(const Asset::RoomOptions& options) {	_stuff.mutable_options()->CopyFrom(options);}
 
+	bool IsVoiceOpen() { return _stuff.options().voice_open(); }
+
 	int32_t GetTime() { return _expired_time; } //获取过期时间
 	void SetTime(int32_t expired_time) { _expired_time = expired_time; }
 
