@@ -495,7 +495,7 @@ bool Player::Update()
 		if (_dirty) Save(); //触发存盘
 	}
 	
-	if (_heart_count % 500 == 0) //5s
+	if (_heart_count % 300 == 0) //3s
 	{
 		SayHi();
 	}
