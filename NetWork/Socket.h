@@ -114,9 +114,9 @@ public:
 		//数据包头
 		//
 		unsigned short body_size = content.size();
-		if (body_size >= MAX_DATA_SIZE) 
+		if (body_size == 0 || body_size >= MAX_DATA_SIZE) 
 		{
-			LOG(ERROR, "协议超过最大限制，当前发送协议大小:{}", body_size);
+			LOG(ERROR, "协议超过最大限制或者为空，当前发送协议大小:{}", body_size);
 			return;
 		}
 
@@ -157,6 +157,14 @@ public:
 
 			_write_queue.pop();
 			if (_closing && _write_queue.empty()) Close();
+
+			return false;
+		}
+		else if (error == boost::asio::error::broken_pipe)
+		{
+			ERROR("网络连接已断开，待发送数据长度:{} 实际发送数据长度:{} 错误码:{} 错误信息:{}", bytes_to_send, bytes_sent, error.value(), error.message());
+
+			Close();
 
 			return false;
 		}
