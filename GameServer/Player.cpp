@@ -1165,16 +1165,24 @@ void Player::BroadCastCommonProp(Asset::MSG_TYPE type)
 
 void Player::OnLeaveRoom(Asset::GAME_OPER_TYPE reason)
 {
-	_stuff.clear_room_id(); //用于处理玩家断线重入房间
-
-	//重置房间数据
+	//
+	//房间数据初始化
+	//
 	ResetRoom();
+	
+	//
 	//游戏数据
+	//
 	ClearCards();  
+
+	//
 	//逻辑服务器的退出房间，则退出
+	//
 	OnLogout();
 
+	//
 	//房间状态同步
+	//
 	Asset::RoomState room_state;
 	room_state.set_room_id(0);
 	room_state.set_oper_type(reason);
@@ -1192,6 +1200,7 @@ void Player::ResetRoom()
 	if (_room) _room.reset(); 
 	
 	_stuff.clear_room_id(); //状态初始化
+	_player_prop.clear_voice_member_id(); //房间语音数据
 }
 
 void Player::AlertMessage(Asset::ERROR_CODE error_code, Asset::ERROR_TYPE error_type/*= Asset::ERROR_TYPE_NORMAL*/, 
@@ -4312,7 +4321,6 @@ void Player::ClearCards()
 	_jinbao = false;
 	_last_oper_type = _oper_type = Asset::PAI_OPER_TYPE_BEGIN; //初始化操作
 	_player_prop.clear_game_oper_state(); //准备//离开
-	_player_prop.clear_voice_member_id(); //房间语音数据
 	_baopai.Clear();
 	_zhuapai.Clear();
 
