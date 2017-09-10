@@ -116,7 +116,7 @@ public:
 			AddSockets(); //删除不连接的SOCKET，同时更新新连接的SOCKET
 
 			_socket_list.erase(std::remove_if(_socket_list.begin(), _socket_list.end(), [this] (std::shared_ptr<SOCKET_TYPE> socket) {
-				if (!socket->Update())
+				if (socket && !socket->Update())
 				{
 					if (socket->IsOpen()) socket->Close();
 					SocketRemoved(socket);
