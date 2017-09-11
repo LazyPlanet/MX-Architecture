@@ -160,6 +160,7 @@ public:
 
 			return false;
 		}
+		/*
 		else if (error == boost::asio::error::broken_pipe)
 		{
 			ERROR("网络连接已断开，待发送数据长度:{} 实际发送数据长度:{} 错误码:{} 错误信息:{}", bytes_to_send, bytes_sent, error.value(), error.message());
@@ -168,6 +169,7 @@ public:
 
 			return false;
 		}
+		*/
 		else if (bytes_sent == 0)
 		{
 			ERROR("待发送数据长度:{} 实际发送数据长度:{} 错误码:{} 错误信息:{}", bytes_to_send, bytes_sent, error.value(), error.message());
