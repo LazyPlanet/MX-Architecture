@@ -2,9 +2,8 @@
 #include "RedisManager.h"
 #include "MXLog.h"
 #include "Player.h"
-#include "Config.h"
-#include "Timer.h"
 #include "Activity.h"
+#include "Room.h"
 
 namespace Adoter
 {
@@ -20,38 +19,13 @@ namespace Adoter
 	SendProtocol(response); \
 	return x; \
 
-GmtSession::GmtSession(boost::asio::io_service& io_service, const boost::asio::ip::tcp::endpoint& endpoint) : 
-	ClientSocket(io_service, endpoint)
-{
-	_remote_endpoint = endpoint;
-	_ip_address = endpoint.address().to_string();
-}
-	
-void GmtSession::OnConnected()
-{
-	DEBUG("连接GMT服务器:{} {}成功.", _ip_address, _remote_endpoint.port());
 
-	Asset::Register message;
-	message.set_server_type(Asset::SERVER_TYPE_GAME);
-	message.set_server_id(ConfigInstance.GetInt("ServerID", 1)); //服务器ID，全球唯一
-
-	SendProtocol(message); //注册服务器角色
-}
-
-bool GmtSession::OnInnerProcess(const Asset::InnerMeta& meta)
+bool GmtManager::OnInnerProcess(const Asset::InnerMeta& meta)
 {
 	auto debug_string = meta.ShortDebugString(); 
 
-	DEBUG("接收GMT服务器:{}协议:{}", _ip_address, debug_string);
-
 	switch (meta.type_t())
 	{
-		case Asset::INNER_TYPE_REGISTER: //注册服务器成功
-		{
-			TRACE("逻辑服务器注册到GMT服务器成功.");
-		}
-		break;
-
 		case Asset::INNER_TYPE_COMMAND: //发放钻石//房卡//欢乐豆
 		{
 			Asset::Command message;
@@ -68,19 +42,37 @@ bool GmtSession::OnInnerProcess(const Asset::InnerMeta& meta)
 			auto result = message.ParseFromString(meta.stuff());
 			if (!result) return false;
 
-			int64_t server_id = WorldSessionInstance.RandomServer();
+			//
+			//获取策划好友房数据
+			//
+			/*
+			const auto& messages = AssetInstance.GetMessagesByType(Asset::ASSET_TYPE_ROOM);
+			auto it = std::find_if(messages.begin(), messages.end(), [](pb::Message* message){
+				 auto room_limit = dynamic_cast<Asset::RoomLimit*>(message);
+				 if (!room_limit) return false;
+				 return Asset::ROOM_TYPE_FRIEND == room_limit->room_type();
+			 });
+			if (it == messages.end()) return false;
 
-			auto session = WorldSessionInstance.GetServerSession(server_id);
-			if (!session) return false;
+			auto room_limit = dynamic_cast<Asset::RoomLimit*>(*it);
+			if (!room_limit) return Asset::ERROR_ROOM_TYPE_NOT_FOUND;
+			*/
 
-			auto inner_meta_string = meta.SerializeAsString();
+			//房间属性
+			Asset::Room room;
+			room.set_room_type(Asset::ROOM_TYPE_FRIEND);
+			room.mutable_options()->CopyFrom(message.options());
 
-			Asset::GmtInnerMeta inner_meta;
-			inner_meta.set_inner_meta(inner_meta_string);
-			session->SendProtocol(inner_meta); //游戏逻辑均在逻辑服务器上进行
-		}
+			auto room_ptr = RoomInstance.CreateRoom(room);
+			if (!room_ptr) return false; //未能创建成功房间，理论不会出现
+
+			message.set_room_id(room_ptr->GetID());
+			message.set_error_code(Asset::COMMAND_ERROR_CODE_SUCCESS); //成功创建
+			message.set_server_id(ConfigInstance.GetInt("ServerID", 1));
+ 			SendProtocol(message); //发送给GTM服务器
+		}	   
 		break;
-		
+
 		case Asset::INNER_TYPE_SEND_MAIL: //发送邮件
 		{
 			Asset::SendMail message;
@@ -118,13 +110,13 @@ bool GmtSession::OnInnerProcess(const Asset::InnerMeta& meta)
 	return true;
 }
 	
-Asset::COMMAND_ERROR_CODE GmtSession::OnActivityControl(const Asset::ActivityControl& command)
+Asset::COMMAND_ERROR_CODE GmtManager::OnActivityControl(const Asset::ActivityControl& command)
 {
 	auto ret = ActivityInstance.OnActivityControl(command);
 	RETURN(ret)
 }
 
-Asset::COMMAND_ERROR_CODE GmtSession::OnSendMail(const Asset::SendMail& command)
+Asset::COMMAND_ERROR_CODE GmtManager::OnSendMail(const Asset::SendMail& command)
 {
 	const auto player_id = command.player_id(); 
 
@@ -139,12 +131,6 @@ Asset::COMMAND_ERROR_CODE GmtSession::OnSendMail(const Asset::SendMail& command)
 		if (!player_ptr) 
 		{
 			RETURN(Asset::COMMAND_ERROR_CODE_PLAYER_OFFLINE); //玩家目前不在线
-		}
-
-		if (!player_ptr->IsCenterServer()) //当前不在中心服务器，则到逻辑服务器进行处理
-		{
-			player_ptr->SendGmtProtocol(command); //转发
-			RETURN(Asset::COMMAND_ERROR_CODE_SUCCESS); //成功执行
 		}
 
 		auto& player = player_ptr->Get();
@@ -189,7 +175,7 @@ Asset::COMMAND_ERROR_CODE GmtSession::OnSendMail(const Asset::SendMail& command)
 	RETURN(Asset::COMMAND_ERROR_CODE_SUCCESS); //成功执行
 }
 			
-Asset::COMMAND_ERROR_CODE GmtSession::OnCommandProcess(const Asset::Command& command)
+Asset::COMMAND_ERROR_CODE GmtManager::OnCommandProcess(const Asset::Command& command)
 {
 	auto player_id = command.player_id();
 	if (player_id <= 0) //玩家角色校验
@@ -213,12 +199,14 @@ Asset::COMMAND_ERROR_CODE GmtSession::OnCommandProcess(const Asset::Command& com
 		RETURN(Asset::COMMAND_ERROR_CODE_PLAYER_OFFLINE); //玩家目前不在线
 	}
 			
+	/*
 	if (!player_ptr->IsCenterServer()) //当前不在中心服务器，则到逻辑服务器进行处理
 	{
 		player_ptr->SendGmtProtocol(command); //转发
 		//RETURN(Asset::COMMAND_ERROR_CODE_SUCCESS); //成功执行
 		return Asset::COMMAND_ERROR_CODE_SUCCESS; //不返回协议
 	}
+	*/
 
 	switch(command.command_type())
 	{
@@ -252,154 +240,50 @@ Asset::COMMAND_ERROR_CODE GmtSession::OnCommandProcess(const Asset::Command& com
 	RETURN(Asset::COMMAND_ERROR_CODE_SUCCESS); //执行成功
 }
 
-Asset::COMMAND_ERROR_CODE GmtSession::OnSystemBroadcast(const Asset::SystemBroadcast& command)
+Asset::COMMAND_ERROR_CODE GmtManager::OnSystemBroadcast(const Asset::SystemBroadcast& command)
 {
 	Asset::SystemBroadcasting message;
 	message.set_content(command.content());
 
-	WorldSessionInstance.BroadCast(message);
+	//WorldSessionInstance.BroadCast(message);
 
 	return Asset::COMMAND_ERROR_CODE_SUCCESS; //直接返回，不用回复给GMT服务器
 }
 	
-void GmtSession::SendInnerMeta(const Asset::InnerMeta& meta)
-{
-	std::string content = meta.SerializeAsString();
-	if (content.empty()) return;
-
-	auto debug_string = meta.ShortDebugString(); 
-	DEBUG("send message to gmt server:{} {}, message:{}", _ip_address, _remote_endpoint.port(), debug_string);
-	AsyncSendMessage(content);
-}
-
-void GmtSession::SendProtocol(pb::Message* message)
+void GmtManager::SendProtocol(pb::Message* message)
 {
 	SendProtocol(*message);
 }
 
-void GmtSession::SendProtocol(pb::Message& message)
+void GmtManager::SendProtocol(pb::Message& message)
 {
-	const pb::FieldDescriptor* field = message.GetDescriptor()->FindFieldByName("type_t");
-	if (!field) return;
-	
-	int type_t = field->default_value_enum()->number();
-	if (!Asset::INNER_TYPE_IsValid(type_t)) return;	//如果不合法，不检查会宕线
-	
-	auto inner_meta_string = message.SerializeAsString();
+    if (!g_center_session)
+    {
+        ERROR("尚未连接中心服服务器");
+        return;
+    }
 
-	Asset::InnerMeta meta;
-	meta.set_type_t((Asset::INNER_TYPE)type_t);
-	meta.set_stuff(inner_meta_string);
-	
-	auto debug_string = meta.ShortDebugString(); 
+    const pb::FieldDescriptor* field = message.GetDescriptor()->FindFieldByName("type_t");
+    if (!field) return;
 
-	std::string content = meta.SerializeAsString();
+    int type_t = field->default_value_enum()->number();
+    if (!Asset::INNER_TYPE_IsValid(type_t)) return; //如果不合法，不检查会宕线
 
-	if (content.empty()) 
-	{
-		ERROR("server:{} send nothing, message:{}", _ip_address, debug_string);
-		return;
-	}
+    auto message_string = message.SerializeAsString();
 
-	TRACE("send message to gmt server:{} {}, message:{}", _ip_address, _remote_endpoint.port(), debug_string);
-	AsyncSendMessage(content);
-}
+    Asset::InnerMeta meta;
+    meta.set_type_t((Asset::INNER_TYPE)type_t);
+    meta.set_stuff(message_string);
 
-bool GmtSession::StartSend()
-{
-	bool started = false;
+    auto meta_string = meta.SerializeAsString();
 
-	while (IsConnected())
-	{
-		if (_send_list.size())
-		{
-			auto& message = _send_list.front();
-			AsyncWriteSome(message.c_str(), message.size());
-			_send_list.pop_front();
+    Asset::GmtInnerMeta gmt_meta;
+    gmt_meta.set_inner_meta(meta_string);
 
-			started = true;
-		}
-		else
-		{
-			break;
-		}
-	}
-	return started;
-}
-
-
-void GmtSession::AsyncSendMessage(std::string message)
-{
-	if (IsClosed()) return;
-
-	_send_list.push_back(message);
-
-	StartSend();
-}
-
-void GmtSession::OnWriteSome(const boost::system::error_code& error, std::size_t bytes_transferred)
-{
-	if (!IsConnected()) return;
-
-	if (error)
-	{
-		Close(error.message());
-		CRITICAL("server:{} send success, bytes_transferred:{}, error:{}", _ip_address, bytes_transferred, error.message());
-		return;
-	}
-
-	DEBUG("server:{} send success, bytes_transferred:{}, error:{}", _ip_address, bytes_transferred, error.message());
-}
-
-bool GmtSession::StartReceive()
-{
-	if (!IsConnected()) return false;
-
-	AsynyReadSome();
-	return true;
-}
-
-void GmtSession::OnReadSome(const boost::system::error_code& error, std::size_t bytes_transferred)
-{
-	if (!IsConnected()) return;
-		
-	if (error)
-	{
-		Close(error.message());
-		return;
-	}
-	
-	DEBUG("Receive message from server:{} bytes_transferred:{} error:{}", _ip_address, bytes_transferred, error.message());
-
-	Asset::InnerMeta meta;
-	auto result = meta.ParseFromArray(_buffer.data(), bytes_transferred);
-	if (!result)
-	{
-		LOG(ERROR, "Receive message error from server:{} cannot parse from data.", _ip_address);
-		return;
-	}
-
-	_receive_list.push_back(meta);
-
-	std::deque<Asset::InnerMeta> received_messages;
-	received_messages.swap(_receive_list);
-
-	//数据处理
-	while (!IsClosed() && !received_messages.empty())
-	{
-		const auto& message = received_messages.front();
-		OnInnerProcess(message);
-		received_messages.pop_front();
-	}
-	
-	AsynyReadSome(); //继续下一次数据接收
-}
-	
-bool GmtSession::Update() 
-{
-	ClientSocket::Update();
-
-	return true;
+    auto gmt_meta_string = gmt_meta.ShortDebugString();
+    DEBUG("逻辑服务器处理GMT指令后发送数据到中心服务器:{}", gmt_meta_string);
+    
+    g_center_session->SendProtocol(gmt_meta);
 }
 
 #undef RETURN

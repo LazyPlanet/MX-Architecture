@@ -107,7 +107,10 @@ void WorldSession::OnProcessMessage(const Asset::Meta& meta)
 	if (!enum_value) return;
 
 
-	WARN("中心服务器接收数据, 玩家:{} 协议:{} {} 内容:{}", meta.player_id(), meta.type_t(), enum_value->name(), message->ShortDebugString());
+	auto message_string = message->ShortDebugString();
+	auto meta_string = meta.ShortDebugString();
+
+	//WARN("中心服务器接收数据, 玩家:{} 协议:{} {} 内容:{}", meta.player_id(), meta.type_t(), enum_value->name(), message_string);
 
 	//
 	// C2S协议可能存在两种情况：
@@ -125,11 +128,11 @@ void WorldSession::OnProcessMessage(const Asset::Meta& meta)
 		//
 		OnInnerProcess(meta); //内部处理
 
-		DEBUG("1.中心服务器接收游戏服务器内部协议:{}", meta.ShortDebugString());
+		DEBUG("1.中心服务器接收游戏服务器内部协议:{}", meta_string);
 	}
 	else if (meta.player_id() > 0)
 	{
-		DEBUG("2.中心服务器接收游戏服务器数据, 玩家:{} 协议:{}", meta.player_id(), meta.ShortDebugString());
+		DEBUG("2.中心服务器接收游戏服务器数据, 玩家:{} 协议:{}", meta.player_id(), meta_string);
 
 		auto player = PlayerInstance.Get(meta.player_id());
 		if (!player) 
@@ -149,7 +152,7 @@ void WorldSession::OnProcessMessage(const Asset::Meta& meta)
 		//来自Client协议均在此处理，逻辑程序员请勿在此后添加代码
 		//
 		
-		DEBUG("3.中心服务器接收来自Client的协议:{}", meta.ShortDebugString());
+		DEBUG("3.中心服务器接收来自Client的协议:{}", meta_string);
 		
 		if (Asset::META_TYPE_C2S_LOGIN == meta.type_t()) //账号登陆
 		{
@@ -219,14 +222,19 @@ void WorldSession::OnProcessMessage(const Asset::Meta& meta)
 				_player->Save(true); //存盘，防止数据库无数据
 				_user.mutable_player_list()->Add(player_id);
 				
-				LOG(INFO, "账号:{}下尚未创建角色，创建角色:{} 账号数据:{}", login->account().username(), player_id, _user.ShortDebugString());
+				auto user_string = _user.ShortDebugString();
+				LOG(INFO, "账号:{}下尚未创建角色，创建角色:{} 账号数据:{}", login->account().username(), player_id, user_string);
 			}
 
 			if (_player_list.size()) _player_list.clear(); 
 			for (auto player_id : _user.player_list()) _player_list.emplace(player_id); //玩家数据
 			
-			LOG(INFO, "user:{} account:{} wechat:{} token:{}", _user.ShortDebugString(), _account.ShortDebugString(), 
-					_wechat.ShortDebugString(), _access_token.ShortDebugString());
+			auto user_string = _user.ShortDebugString();
+			auto account_string = _account.ShortDebugString();
+			auto wechat_string = _wechat.ShortDebugString();
+			auto access_token_string = _access_token.ShortDebugString();
+
+			LOG(INFO, "角色:{} 账号:{} 微信:{} Token:{}", user_string, account_string, wechat_string, access_token_string);
 				
 			//
 			//账号数据存储
@@ -496,7 +504,8 @@ void WorldSession::OnProcessMessage(const Asset::Meta& meta)
 
 			if (!_player) return;
 
-			DEBUG("设置位置信息:player_id:{} message:{}", _player->GetID(), message->ShortDebugString());
+			auto player_id = _player->GetID();
+			DEBUG("设置位置信息，玩家:{} 数据:{}", player_id, message_string);
 
 			_user.mutable_client_info()->set_client_ip(_ip_address);
 			_user.mutable_client_info()->mutable_location()->CopyFrom(client_data->client_info().location());
@@ -592,7 +601,8 @@ int32_t WorldSession::OnWechatLogin(const pb::Message* message)
 			return ret;
 		}
 
-		LOG(INFO, "微信: html:{} access_token:{}", html, _access_token.ShortDebugString());
+		auto access_token_string = _access_token.ShortDebugString();
+		LOG(INFO, "微信: html:{} access_token:{}", html, access_token_string);
 
 		auto expires_in = _access_token.expires_in();
 
@@ -611,7 +621,8 @@ int32_t WorldSession::OnWechatLogin(const pb::Message* message)
 				return ret;
 			}
 
-			LOG(INFO, "微信: html:{} union_info:{} response:{}", html, _wechat.ShortDebugString(), response);
+			auto wechat_string = _wechat.ShortDebugString();
+			LOG(INFO, "微信: html:{} union_info:{} response:{}", html, wechat_string, response);
 
 			Asset::WeChatInfo proto;
 			proto.mutable_wechat()->CopyFrom(_wechat);
@@ -665,14 +676,16 @@ int32_t WorldSession::OnWechatLogin(const pb::Message* message)
 					return ret;
 				}
 
-				LOG(INFO, "微信: html:{} _wechat:{} response:{}", html, _wechat.ShortDebugString(), response);
+				auto wechat_string = _wechat.ShortDebugString();
+				LOG(INFO, "微信: html:{} _wechat:{} response:{}", html, wechat_string, response);
 
 				Asset::WeChatInfo proto;
 				proto.mutable_wechat()->CopyFrom(_wechat);
 				SendProtocol(proto); //同步Client
 			}
-			
-			LOG(INFO, "微信: html:{} refresh:{}", html, _access_token.ShortDebugString());
+				
+			auto access_token_string = _access_token.ShortDebugString();
+			LOG(INFO, "微信: html:{} refresh:{}", html, access_token_string);
 		}
 	}
 	else if (response.find("errcode") != std::string::npos)
@@ -717,15 +730,11 @@ int32_t WorldSession::OnWechatLogin(const pb::Message* message)
 		if (!success) return 3;
 	}
 	
-	DEBUG("当前账号数据:{}", _user.ShortDebugString());
-
 	if (!_user.has_wechat_token()) _user.mutable_wechat_token()->CopyFrom(_access_token);
 	if (!_user.has_wechat()) _user.mutable_wechat()->CopyFrom(_wechat); //微信数据
 
 	auto redis = make_unique<Redis>();
 	if (_access_token.has_openid())	redis->SaveUser(_access_token.openid(), _user); //账号数据存盘
-
-	DEBUG("当前账号数据:{}", _user.ShortDebugString());
 
 	return 0;
 }

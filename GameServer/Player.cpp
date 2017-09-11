@@ -72,8 +72,6 @@ int32_t Player::Load()
 	auto success = redis->GetPlayer(_player_id, _stuff);
 	if (!success) return 1;
 		
-	DEBUG("player_id:{} load info:{}", _player_id, _stuff.ShortDebugString());
-
 	//初始化包裹
 	//
 	//创建角色或者增加包裹会调用一次
@@ -115,8 +113,6 @@ int32_t Player::Save(bool force)
 
 	_dirty = false;
 
-	DEBUG("玩家:{}保存数据，数据内容:{}", _player_id, _stuff.ShortDebugString());
-		
 	return 0;
 }
 	
@@ -763,7 +759,10 @@ int32_t Player::CmdEnterRoom(pb::Message* message)
 	{
 		if (_room) 
 		{
-			DEBUG("玩家:{}重入房间:{} 数据:{}", _player_id, _room->GetID(), enter_room->ShortDebugString());
+			auto enter_room_string = enter_room->ShortDebugString();
+			auto room_id = _room->GetID();
+
+			DEBUG("玩家:{}重入房间:{} 数据:{}", _player_id, room_id, enter_room_string);
 				
 			auto locate_room = RoomInstance.Get(enter_room->room().room_id());
 			if (!locate_room)
@@ -965,7 +964,7 @@ void Player::SendProtocol(const pb::Message& message)
 
 	g_center_session->AsyncSendMessage(content);
 
-	DEBUG("玩家:{} 发送协议，类型:{} 内容:{}", _player_id, type_t, message.ShortDebugString());
+	DEBUG("玩家:{} 发送协议，类型:{} 内容:{}", _player_id, type_t, message_string);
 }
 
 void Player::Send2Roomers(pb::Message& message, int64_t exclude_player_id) 
@@ -1379,8 +1378,6 @@ int32_t Player::CmdLoadScene(pb::Message* message)
 	Asset::LoadScene* load_scene = dynamic_cast<Asset::LoadScene*>(message);
 	if (!load_scene) return 1;
 
-	TRACE("player_id:{}, curr_load_type:{} message:{}", _player_id, _player_prop.load_type(), load_scene->ShortDebugString());
-
 	switch (load_scene->load_type())
 	{
 		case Asset::LOAD_SCENE_TYPE_START: //加载开始
@@ -1550,7 +1547,8 @@ bool Player::AddRoomRecord(int64_t room_id)
 	message.mutable_room_list()->Add(room_id);
 	SendProtocol(message);
 
-	DEBUG("当前玩家:{}历史战绩:{}", _player_id, message.ShortDebugString());
+	auto message_string = message.ShortDebugString();
+	DEBUG("当前玩家:{}历史战绩:{}", _player_id, message_string);
 	
 	_stuff.mutable_room_history()->Add(room_id); 
 	_dirty = true; 
@@ -3281,7 +3279,6 @@ bool Player::CheckAllGangPai(::google::protobuf::RepeatedField<Asset::PaiOperati
 			{
 				if (_zhuapai.card_type() != card_type || _zhuapai.card_value() != card_value) 
 				{
-					LOG(ERROR, "玩家:{}杠牌检查，不能改变现有听牌牌型:{} 当前抓牌:{}", _player_id, pai.ShortDebugString(), _zhuapai.ShortDebugString());
 					continue;
 				}
 			}
@@ -4058,11 +4055,7 @@ int32_t Player::OnFaPai(std::vector<int32_t>& cards)
 		auto card = GameInstance.GetCard(cards[0]);
 		_zhuapai = card;
 
-		if (card.card_type() == 0 || card.card_type() == 0)
-		{
-			LOG(ERROR, "玩家:{} 抓到非法的牌数据:{}", _player_id, card.ShortDebugString());
-			DEBUG_ASSERT(false && "错误的牌数据");
-		}
+		if (card.card_type() == 0 || card.card_type() == 0) return 11;
 
 		notify.set_data_type(Asset::PaiNotify_CARDS_DATA_TYPE_CARDS_DATA_TYPE_FAPAI); //操作类型:发牌
 		notify.mutable_pai()->set_card_type(card.card_type());
@@ -4138,7 +4131,7 @@ bool Player::LookAtBaopai(bool has_saizi)
 		pai_perator->mutable_oper_list()->Add(Asset::PAI_OPER_TYPE_HUPAI);
 		SendProtocol(alert); //进宝 
 	
-		DEBUG("玩家:{}看宝牌:{}之后胡牌", _player_id, baopai.ShortDebugString());
+		//DEBUG("玩家:{}看宝牌:{}之后胡牌", _player_id, baopai.ShortDebugString());
 
 		return true;
 	}
@@ -4175,7 +4168,7 @@ void Player::ResetBaopai()
 
 			auto baopai = _game->GetBaoPai(result);
 
-			DEBUG("玩家{}发起换宝，当前宝牌:{}, 换之后宝牌:{} 打股子:{}", _player_id, _game->GetBaoPai().ShortDebugString(), baopai.ShortDebugString(), result);
+			//DEBUG("玩家{}发起换宝，当前宝牌:{}, 换之后宝牌:{} 打股子:{}", _player_id, _game->GetBaoPai().ShortDebugString(), baopai.ShortDebugString(), result);
 
 			_game->SetBaoPai(baopai);
 

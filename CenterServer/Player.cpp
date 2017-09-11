@@ -108,7 +108,8 @@ int32_t Player::Save(bool force)
 
 	_dirty = false;
 	
-	DEBUG("玩家:{}保存数据，数据内容:{}", _player_id, _stuff.ShortDebugString());
+	auto debug_string = _stuff.ShortDebugString();
+	DEBUG("玩家:{}保存数据，数据内容:{}", _player_id, debug_string);
 		
 	return 0;
 }
@@ -130,7 +131,8 @@ int32_t Player::OnLogout()
 	WorldSessionInstance.RemovePlayer(_player_id); //网络会话数据
 	PlayerInstance.Remove(_player_id); //玩家管理
 
-	DEBUG("player_id:{} stuff:{} leave game and scene.", _player_id, _stuff.ShortDebugString());
+	auto debug_string = _stuff.ShortDebugString();
+	DEBUG("player_id:{} stuff:{} leave game and scene.", _player_id, debug_string);
 
 	return 0;
 }
@@ -176,7 +178,8 @@ int32_t Player::OnEnterCenter()
 
 	//Save(true); //存盘
 	
-	DEBUG("玩家:{}重新进入大厅，数据内容:{}", _player_id, _stuff.ShortDebugString());
+	auto debug_string = _stuff.ShortDebugString();
+	DEBUG("玩家:{}重新进入大厅，数据内容:{}", _player_id, debug_string);
 
 	return 0;
 }
@@ -189,7 +192,8 @@ int32_t Player::OnLogin()
 
 	//SetOffline(false); //上线
 
-	DEBUG("玩家:{}登陆加载数据成功，数据内容:{}", _player_id, _stuff.ShortDebugString());
+	auto debug_string = _stuff.ShortDebugString();
+	DEBUG("玩家:{}登陆加载数据成功，数据内容:{}", _player_id, debug_string);
 	return 0;
 }
 
@@ -395,7 +399,8 @@ void Player::SendProtocol(const pb::Message& message)
 	const pb::EnumValueDescriptor* enum_value = message.GetReflection()->GetEnum(message, field);
 	if (!enum_value) return;
 
-	DEBUG("send protocol to player_id:{} protocol_name:{} content:{}", _player_id, enum_value->name().c_str(), message.ShortDebugString());
+	auto debug_string = _stuff.ShortDebugString();
+	DEBUG("send protocol to player_id:{} protocol_name:{} content:{}", _player_id, enum_value->name().c_str(), debug_string);
 }
 	
 void Player::SendMeta(const Asset::Meta& meta)
@@ -411,7 +416,8 @@ void Player::SendMeta(const Asset::Meta& meta)
 	auto session = WorldSessionInstance.GetPlayerSession(_player_id);
 	if (!session || !session->IsConnect()) return;
 	
-	DEBUG("玩家:{}发送协议:{}到游戏逻辑服务器", _player_id, meta.ShortDebugString());
+	auto debug_string = _stuff.ShortDebugString();
+	DEBUG("玩家:{}发送协议:{}到游戏逻辑服务器", _player_id, debug_string);
 
 	session->SendMeta(meta);
 }
@@ -427,10 +433,12 @@ bool Player::SendProtocol2GameServer(const pb::Message& message)
 		SetLocalServer(server_id);
 		_gs_session = WorldSessionInstance.GetServerSession(GetLocalServer());
 	}
+		
+	auto debug_string = message.ShortDebugString();
 	
 	if (!_gs_session) 
 	{
-		LOG(ERROR, "玩家:{}未能找到合适发逻辑服务器，当前服务器:{}，协议内容:{}", _player_id, _stuff.server_id(), message.ShortDebugString());
+		LOG(ERROR, "玩家:{}未能找到合适发逻辑服务器，当前服务器:{}，协议内容:{}", _player_id, _stuff.server_id(), debug_string);
 		return false;
 	}
 
@@ -447,7 +455,7 @@ bool Player::SendProtocol2GameServer(const pb::Message& message)
 	meta.set_stuff(stuff);
 	meta.set_player_id(_player_id); 
 
-	DEBUG("玩家:{}发送协议:{}到游戏逻辑服务器", _player_id, message.ShortDebugString());
+	DEBUG("玩家:{}发送协议:{}到游戏逻辑服务器", _player_id, debug_string);
 
 	_gs_session->SendMeta(meta); 
 
@@ -544,7 +552,8 @@ bool Player::HandleProtocol(int32_t type_t, pb::Message* message)
 {
 	if (!message) return false;
 
-	DEBUG("当前玩家{}所在服务器:{} 接收协议数据:{}", _player_id, _stuff.server_id(), message->ShortDebugString());
+	auto debug_string = message->ShortDebugString();
+	DEBUG("当前玩家{}所在服务器:{} 接收协议数据:{}", _player_id, _stuff.server_id(), debug_string);
 	//
 	//如果中心服务器没有协议处理回调，则发往游戏服务器进行处理
 	//

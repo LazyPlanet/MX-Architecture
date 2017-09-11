@@ -14,7 +14,9 @@ extern std::shared_ptr<GmtSession> g_gmt_client;
 
 bool WorldSession::OnInnerProcess(const Asset::Meta& meta)
 {
-	DEBUG("接收逻辑服务器数据:{}", meta.ShortDebugString());
+	auto debug_string = meta.ShortDebugString();
+
+	DEBUG("接收逻辑服务器数据:{}", debug_string);
 
 	switch (meta.type_t())
 	{
@@ -64,7 +66,7 @@ bool WorldSession::OnInnerProcess(const Asset::Meta& meta)
 		
 		default:
 		{
-			WARN("接收逻辑服务器协议:{}, 类型:{}, 直接进行转发", meta.ShortDebugString(), meta.type_t());
+			WARN("接收逻辑服务器协议:{}, 类型:{}, 直接进行转发", debug_string, meta.type_t());
 			auto player = PlayerInstance.Get(meta.player_id());
 
 			if (!player) 

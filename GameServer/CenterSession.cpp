@@ -29,7 +29,9 @@ void CenterSession::OnConnected()
 
 bool CenterSession::OnMessageProcess(const Asset::Meta& meta)
 {
-	DEBUG("接收来自中心服务器:{} {}的数据:{}", _ip_address, _remote_endpoint.port(), meta.ShortDebugString());
+	auto meta_string = meta.ShortDebugString();
+
+	DEBUG("接收来自中心服务器:{} {}的数据:{}", _ip_address, _remote_endpoint.port(), meta_string);
 
 	if (meta.type_t() == Asset::META_TYPE_S2S_REGISTER) //注册服务器成功
 	{
@@ -43,7 +45,7 @@ bool CenterSession::OnMessageProcess(const Asset::Meta& meta)
 
 		Asset::InnerMeta inner_meta;
 		inner_meta.ParseFromString(message.inner_meta());
-		GmtInstance.InnerProcess(inner_meta);
+		GmtInstance.OnInnerProcess(inner_meta);
 	}
 	else if (meta.type_t() == Asset::META_TYPE_SHARE_ENTER_ROOM) //进入游戏，从中心服务器首次进入逻辑服务器通过此处
 	{
@@ -119,15 +121,17 @@ void CenterSession::SendProtocol(pb::Message& message)
 	meta.set_type_t((Asset::META_TYPE)type_t);
 	meta.set_stuff(message_string);
 
+	auto meta_string = meta.ShortDebugString();
+
 	std::string content = meta.SerializeAsString();
 
 	if (content.empty()) 
 	{
-		ERROR("server:{} send nothing, message:{}", _ip_address, meta.ShortDebugString());
+		ERROR("server:{} send nothing, message:{}", _ip_address, meta_string);
 		return;
 	}
 
-	DEBUG("游戏逻辑服务器发送协议到中心服务器[{} {}], 协议数据:{}", _ip_address, _remote_endpoint.port(), meta.ShortDebugString());
+	DEBUG("游戏逻辑服务器发送协议到中心服务器[{} {}], 协议数据:{}", _ip_address, _remote_endpoint.port(), meta_string);
 	AsyncSendMessage(content);
 }
 

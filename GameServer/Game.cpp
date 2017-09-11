@@ -216,7 +216,10 @@ void Game::OnPlayerReEnter(std::shared_ptr<Player> player)
 
 		player->CmdPaiOperate(&pai_operation);
 
-		DEBUG("玩家:{}重入房间，操作放弃:{}", player->GetID(), _oper_limit.ShortDebugString());
+		auto oper_string = _oper_limit.ShortDebugString();
+		auto player_id = player->GetID();
+
+		DEBUG("玩家:{}重入房间，操作放弃:{}", player_id, oper_string);
 
 		return;
 	}
@@ -236,7 +239,10 @@ void Game::OnPlayerReEnter(std::shared_ptr<Player> player)
 	auto cards = FaPai(1); 
 	auto card = GameInstance.GetCard(cards[0]); //玩家待抓的牌
 		
-	DEBUG("玩家:{}重入房间，进行发牌:{} 缓存操作:{} 当前索引:{} 玩家索引:{}", player->GetID(), card.ShortDebugString(), _oper_limit.ShortDebugString(), _curr_player_index, player_index);
+	auto card_string = card.ShortDebugString();
+	auto oper_string = _oper_limit.ShortDebugString();
+
+	DEBUG("玩家:{}重入房间，进行发牌:{} 缓存操作:{} 当前索引:{} 玩家索引:{}", player->GetID(), card_string, oper_string, _curr_player_index, player_index);
 
 	Asset::PaiOperationAlert alert;
 
@@ -326,8 +332,11 @@ void Game::OnPaiOperate(std::shared_ptr<Player> player, pb::Message* message)
 	
 	auto player_index = GetPlayerOrder(player->GetID());
 
-	DEBUG("当前操作玩家ID:{} 所在的位置索引:{} 进行的操作:{} 服务器记录的当前可操作玩家索引:{} 服务器缓存玩家操作:{}", player->GetID(), player_index, 
-			pai_operate->ShortDebugString(), _curr_player_index, _oper_limit.ShortDebugString());
+	auto curr_player_id = player->GetID();
+	auto pai_operate_string = pai_operate->ShortDebugString();
+	auto oper_limit_string = _oper_limit.ShortDebugString();
+
+	DEBUG("当前操作玩家ID:{} 所在的位置索引:{} 进行的操作:{} 服务器记录的当前可操作玩家索引:{} 服务器缓存玩家操作:{}", curr_player_id, player_index, pai_operate_string, _curr_player_index, oper_limit_string);
 
 	if (!CanPaiOperate(player)) 
 	{
@@ -1290,7 +1299,10 @@ void Game::Calculate(int64_t hupai_player_id/*胡牌玩家*/, int64_t dianpao_pl
 				
 	OnGameOver(hupai_player_id); //结算之后才是真正结束
 	
-	LOG(INFO, "房间:{} 胡牌结算:{}", _room->GetID(), message.ShortDebugString());
+	auto room_id = _room->GetID();
+	auto message_string = message.ShortDebugString();
+
+	LOG(INFO, "房间:{} 胡牌结算:{}", room_id, message_string);
 }
 	
 void Game::BroadCast(pb::Message* message, int64_t exclude_player_id)
@@ -1305,8 +1317,6 @@ void Game::BroadCast(pb::Message* message, int64_t exclude_player_id)
 
 void Game::Add2CardsPool(Asset::PaiElement pai) 
 { 
-	DEBUG("加入牌池数据:{}", pai.ShortDebugString());
-
 	_cards_pool.push_back(pai); 
 }
 
@@ -1600,7 +1610,8 @@ void Game::OnLiuJu()
 	
 	OnGameOver(0); 
 
-	LOG(INFO, "流局结算:{}", game_calculate.ShortDebugString());
+	auto game_calculate_string = game_calculate.ShortDebugString();
+	LOG(INFO, "流局结算:{}", game_calculate_string);
 }
 
 std::vector<int32_t> Game::FaPai(size_t card_count)
@@ -1694,7 +1705,6 @@ int32_t Game::GetRemainBaopai()
 	auto count = std::count_if(_cards_pool.begin(), _cards_pool.end(), [&](const Asset::PaiElement& pai){
 			return _baopai.card_type() == pai.card_type() && _baopai.card_value() == pai.card_value();
 			});
-	DEBUG("获取剩余宝牌{}数量，当前牌池数量:{}", _baopai.ShortDebugString(), count);
 	return 3 - count; //墙上一张
 }
 

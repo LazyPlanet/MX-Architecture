@@ -236,7 +236,8 @@ void Room::OnReEnter(std::shared_ptr<Player> op_player)
 		}
 	}
 
-	DEBUG("玩家:{}重入房间:{} 协议内容:{}", op_player->GetID(), GetID(), message.ShortDebugString());
+	auto message_string = message.ShortDebugString();
+	DEBUG("玩家:{}重入房间:{} 协议内容:{}", op_player->GetID(), GetID(), message_string);
 
 	op_player->SendProtocol(message);
 
@@ -282,7 +283,8 @@ void Room::OnPlayerOperate(std::shared_ptr<Player> player, pb::Message* message)
 	auto game_operate = dynamic_cast<Asset::GameOperation*>(message);
 	if (!game_operate) return;
 
-	DEBUG("玩家房间内操作，玩家:{} 操作类型:{} message:{}", player->GetID(), game_operate->oper_type(), message->ShortDebugString());
+	auto message_string = message->ShortDebugString();
+	DEBUG("玩家房间内操作，玩家:{} 操作类型:{} message:{}", player->GetID(), game_operate->oper_type(), message_string);
 			
 	BroadCast(game_operate); //广播玩家操作
 	
@@ -526,7 +528,8 @@ void Room::OnGameOver(int64_t player_id)
 					record->set_score(record->score() + _history.list(i).list(j).score());
 	}
 
-	LOG(INFO, "整局结算，胡牌玩家:{} 数据:{}", player_id, message.ShortDebugString());
+	auto message_string = message.ShortDebugString();
+	LOG(INFO, "整局结算，胡牌玩家:{} 数据:{}", player_id, message_string);
 
 	for (auto player : _players)
 	{
@@ -547,33 +550,38 @@ void Room::AddGameRecord(const Asset::GameRecord& record)
 	_history.mutable_list()->Add()->CopyFrom(record);
 
 	int64_t room_id = GetID();
+	auto record_string = record.ShortDebugString();
+	auto history_string = _history.ShortDebugString();
 	
 	cpp_redis::future_client client;
 	client.connect(ConfigInstance.GetString("Redis_ServerIP", "127.0.0.1"), ConfigInstance.GetInt("Redis_ServerPort", 6379));
+
 	if (!client.is_connected()) 
 	{
-		LOG(ERROR, "房间:{} 存储战绩信息:{} 当前历史战绩信息:{} 错误:未能建立连接", room_id, record.ShortDebugString(), _history.ShortDebugString());
+		LOG(ERROR, "房间:{} 存储战绩信息:{} 当前历史战绩信息:{} 错误:未能建立连接", room_id, record_string, history_string);
 		return;
 	}
 	
 	auto has_auth = client.auth(ConfigInstance.GetString("Redis_Password", "!QAZ%TGB&UJM9ol."));
+
 	if (has_auth.get().ko()) 
 	{
-		LOG(ERROR, "房间:{} 存储战绩信息:{} 当前历史战绩信息:{} 错误:数据库密码错误", room_id, record.ShortDebugString(), _history.ShortDebugString());
+		LOG(ERROR, "房间:{} 存储战绩信息:{} 当前历史战绩信息:{} 错误:数据库密码错误", room_id, record_string, history_string);
 		return;
 	}
 
 	auto set = client.set("room_history:" + std::to_string(room_id), _history.SerializeAsString());
 	client.commit();
 
-	LOG(INFO, "房间:{} 结果:{} 存储战绩信息:{} 当前历史战绩信息:{}", room_id, set.get(), record.ShortDebugString(), _history.ShortDebugString());
+	LOG(INFO, "房间:{} 结果:{} 存储战绩信息:{} 当前历史战绩信息:{}", room_id, set.get(), record_string, history_string);
 }
 
 void Room::BroadCast(pb::Message* message, int64_t exclude_player_id)
 {
 	if (!message) return;
 			
-	DEBUG("房间内广播协议:{}", message->ShortDebugString());
+	auto debug_string = message->ShortDebugString();
+	DEBUG("房间内广播协议:{}", debug_string);
 
 	for (auto player : _players)
 	{
@@ -613,7 +621,10 @@ void Room::OnDisMiss()
 		list->set_oper_type(player->GetOperState());
 	}
 
-	DEBUG("解散房间:{} 协议:{}", GetID(), proto.ShortDebugString());
+	auto proto_string = proto.ShortDebugString();
+	auto room_id = GetID();
+
+	DEBUG("解散房间:{} 协议:{}", room_id, proto_string);
 
 	BroadCast(proto); //投票状态
 }
@@ -677,7 +688,8 @@ void Room::SyncRoom()
 		}
 	}
 
-	DEBUG("同步房间数据:{}", message.ShortDebugString());
+	auto message_string = message.ShortDebugString();
+	DEBUG("同步房间数据:{}", message_string);
 
 	BroadCast(message);
 }
