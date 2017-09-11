@@ -32,7 +32,7 @@ private:
 	bool _loaded = false; //数据是否加载
 
 	CallBack _method; //协议处理回调函数
-	std::shared_ptr<WorldSession> _session = nullptr; //Client网络连接
+	//std::shared_ptr<WorldSession> _session = nullptr; //Client网络连接//循环引用
 	//std::shared_ptr<WorldSession> _gs_session = nullptr; //游戏逻辑服务器网络连接
 
 public:
@@ -42,8 +42,8 @@ public:
 	//void SetGameServer(std::shared_ptr<WorldSession> gs_session) { _gs_session = gs_session; }
 	//std::shared_ptr<WorldSession> GetGameServer() { return _gs_session; }
 
-	const std::shared_ptr<WorldSession> GetSession() { return _session;	}
-	void SetSession(std::shared_ptr<WorldSession> session) { _session = session; }
+	//const std::shared_ptr<WorldSession> GetSession() { return _session;	}
+	//void SetSession(std::shared_ptr<WorldSession> session) { _session = session; }
 	bool Connected(); //网络是否连接
 
 	int32_t DefaultMethod(pb::Message*); //协议处理默认调用函数

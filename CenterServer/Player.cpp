@@ -46,13 +46,14 @@ Player::Player()
 Player::Player(int64_t player_id, std::shared_ptr<WorldSession> session) : Player()
 {
 	SetID(player_id);	
-	_session = session; //地址拷贝
+	//_session = session; //地址拷贝
 }
 
 bool Player::Connected() 
 { 
-	if (!_session) return false; 
-	return _session->IsConnect(); 
+	//if (!_session) return false; 
+	//return _session->IsConnect(); 
+	return false;
 }
 
 int32_t Player::Load()
@@ -156,7 +157,7 @@ int32_t Player::OnEnterGame()
 
 	PLAYER(_stuff);	//BI日志
 
-	WorldSessionInstance.AddPlayer(_player_id, _session); //网络会话数据
+	//WorldSessionInstance.AddPlayer(_player_id, _session); //网络会话数据
 	PlayerInstance.Emplace(_player_id, shared_from_this()); //玩家管理
 
 	OnLogin();
@@ -380,9 +381,12 @@ void Player::SendProtocol(const pb::Message* message)
 
 void Player::SendProtocol(const pb::Message& message)
 {
-	if (!Connected()) return;
+	//if (!Connected()) return;
 
-	GetSession()->SendProtocol(message);
+	auto session = WorldSessionInstance.GetPlayerSession(_player_id);
+	if (!session || !session->IsConnect()) return;
+
+	session->SendProtocol(message);
 
 	//调试
 	const pb::FieldDescriptor* field = message.GetDescriptor()->FindFieldByName("type_t");
@@ -396,15 +400,20 @@ void Player::SendProtocol(const pb::Message& message)
 	
 void Player::SendMeta(const Asset::Meta& meta)
 {
+	/*
 	if (!Connected()) 
 	{
-		LOG(ERROR, "玩家:{}未能找到合适发逻辑服务器，当前服务器:{}", _player_id, _stuff.server_id());
+		LOG(ERROR, "玩家:{}未能找到合适逻辑服务器，当前服务器:{}", _player_id, _stuff.server_id());
 		return;
 	}
+	*/
+	
+	auto session = WorldSessionInstance.GetPlayerSession(_player_id);
+	if (!session || !session->IsConnect()) return;
 	
 	DEBUG("玩家:{}发送协议:{}到游戏逻辑服务器", _player_id, meta.ShortDebugString());
 
-	GetSession()->SendMeta(meta);
+	session->SendMeta(meta);
 }
 	
 bool Player::SendProtocol2GameServer(const pb::Message& message)
@@ -886,7 +895,7 @@ void Player::BattleHistory(int32_t start_index, int32_t end_index)
 void Player::OnKickOut(Asset::KICK_OUT_REASON reason)
 {
 
-	DEBUG("玩家:{}被踢下线，当前网络IP:{} 端口:{}", _player_id, _session->GetRemoteAddress(), _session->GetRemotePort());
+	//DEBUG("玩家:{}被踢下线，当前网络IP:{} 端口:{}", _player_id, _session->GetRemoteAddress(), _session->GetRemotePort());
 
 	switch (reason)
 	{

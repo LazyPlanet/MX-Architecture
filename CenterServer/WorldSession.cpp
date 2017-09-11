@@ -308,7 +308,8 @@ void WorldSession::OnProcessMessage(const Asset::Meta& meta)
 			}
 			//else
 			{
-				_player->SetSession(shared_from_this());	
+				//_player->SetSession(shared_from_this());	
+				WorldSessionInstance.AddPlayer(connect->player_id(), shared_from_this()); //在线玩家
 			}
 
 			_player->SetLocalServer(ConfigInstance.GetInt("ServerID", 1));
@@ -389,7 +390,8 @@ void WorldSession::OnProcessMessage(const Asset::Meta& meta)
 			if (session) //已经在线
 			{
 				//session->KickOutPlayer(Asset::KICK_OUT_REASON_OTHER_LOGIN);
-				_player->SetSession(shared_from_this()); //重新设置网路连接会话，防止之前会话失效
+				//_player->SetSession(shared_from_this()); //重新设置网路连接会话，防止之前会话失效
+				WorldSessionInstance.AddPlayer(_player->GetID(), shared_from_this()); //在线玩家
 				LOG(ERROR, "玩家{}目前在线，被踢掉", _player->GetID());
 			}
 			//WorldSessionInstance.AddPlayer(_player->GetID(), shared_from_this()); //在线玩家
@@ -536,7 +538,10 @@ void WorldSession::KickOutPlayer(Asset::KICK_OUT_REASON reason)
 	{
 		if (!_player) return;
 
-		auto session = _player->GetSession();
+		//auto session = _player->GetSession();
+
+		auto session = WorldSessionInstance.GetPlayerSession(_player->GetID());
+
 		if (session && session->GetRemotePoint() != GetRemotePoint()) return;
 
 		_player->OnKickOut(reason); //玩家退出登陆
