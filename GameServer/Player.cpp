@@ -964,7 +964,9 @@ void Player::SendProtocol(const pb::Message& message)
 
 	g_center_session->AsyncSendMessage(content);
 
-	DEBUG("玩家:{} 发送协议，类型:{} 内容:{}", _player_id, type_t, message_string);
+	auto debug_string = message.ShortDebugString();
+
+	DEBUG("玩家:{} 发送协议，类型:{} 内容:{}", _player_id, type_t, debug_string);
 }
 
 void Player::Send2Roomers(pb::Message& message, int64_t exclude_player_id) 

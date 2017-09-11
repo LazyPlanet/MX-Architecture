@@ -43,7 +43,7 @@ Player::Player()
 	AddHandler(Asset::META_TYPE_C2S_GET_REWARD, std::bind(&Player::CmdGetReward, this, std::placeholders::_1));
 }
 
-Player::Player(int64_t player_id, std::shared_ptr<WorldSession> session) : Player()
+Player::Player(int64_t player_id/*, std::shared_ptr<WorldSession> session*/) : Player()
 {
 	SetID(player_id);	
 	//_session = session; //地址拷贝
@@ -985,6 +985,7 @@ std::shared_ptr<Player> PlayerManager::GetPlayer(int64_t player_id)
 {
 	std::lock_guard<std::mutex> lock(_mutex);
 
+	/*
 	for (auto it = _players.begin(); it != _players.end(); )
 	{
 		if (!it->second)
@@ -996,6 +997,7 @@ std::shared_ptr<Player> PlayerManager::GetPlayer(int64_t player_id)
 			++it;
 		}
 	}
+	*/
 
 	auto it = _players.find(player_id);
 	if (it == _players.end()) return nullptr;

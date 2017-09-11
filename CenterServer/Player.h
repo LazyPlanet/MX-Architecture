@@ -37,7 +37,7 @@ private:
 
 public:
 	Player();
-	Player(int64_t player_id, std::shared_ptr<WorldSession> session);
+	Player(int64_t player_id/*, std::shared_ptr<WorldSession> session*/);
 	
 	//void SetGameServer(std::shared_ptr<WorldSession> gs_session) { _gs_session = gs_session; }
 	//std::shared_ptr<WorldSession> GetGameServer() { return _gs_session; }

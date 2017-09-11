@@ -210,8 +210,10 @@ void WorldSession::OnProcessMessage(const Asset::Meta& meta)
 				int64_t player_id = redis->CreatePlayer(); //如果账号下没有角色，创建一个给Client
 				if (player_id == 0) return;
 				
-				_player = std::make_shared<Player>(player_id, shared_from_this());
+				_player = std::make_shared<Player>(player_id);
 				_player->SetLocalServer(ConfigInstance.GetInt("ServerID", 1));
+				
+				WorldSessionInstance.AddPlayer(player_id, shared_from_this()); //在线玩家
 				
 				SetRoleType(Asset::ROLE_TYPE_PLAYER, _player->GetID());
 
@@ -303,7 +305,7 @@ void WorldSession::OnProcessMessage(const Asset::Meta& meta)
 				//
 				//新增用户，必须首先进行数据加载
 				//
-				_player = std::make_shared<Player>(connect->player_id(), shared_from_this()); //服务器已经没有缓存
+				_player = std::make_shared<Player>(connect->player_id()); //服务器已经没有缓存
 
 				SetRoleType(Asset::ROLE_TYPE_PLAYER, _player->GetID());
 
@@ -358,7 +360,8 @@ void WorldSession::OnProcessMessage(const Asset::Meta& meta)
 
 			if (!_player) 
 			{
-				_player = std::make_shared<Player>(enter_game->player_id(), shared_from_this());
+				_player = std::make_shared<Player>(enter_game->player_id());
+				WorldSessionInstance.AddPlayer(enter_game->player_id(), shared_from_this()); //在线玩家
 					
 				SetRoleType(Asset::ROLE_TYPE_PLAYER, _player->GetID());
 			}
