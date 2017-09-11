@@ -113,9 +113,11 @@ void CenterSession::SendProtocol(pb::Message& message)
 		return;	//如果不合法，不检查会宕线
 	}
 	
+	auto message_string = message.SerializeAsString();
+
 	Asset::Meta meta;
 	meta.set_type_t((Asset::META_TYPE)type_t);
-	meta.set_stuff(message.SerializeAsString());
+	meta.set_stuff(message_string);
 
 	std::string content = meta.SerializeAsString();
 

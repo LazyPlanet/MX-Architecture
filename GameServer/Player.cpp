@@ -952,9 +952,11 @@ void Player::SendProtocol(const pb::Message& message)
 	int type_t = field->default_value_enum()->number();
 	if (!Asset::META_TYPE_IsValid(type_t)) return;	//如果不合法，不检查会宕线
 	
+	auto message_string = message.SerializeAsString();
+
 	Asset::Meta meta;
 	meta.set_type_t((Asset::META_TYPE)type_t);
-	meta.set_stuff(message.SerializeAsString());
+	meta.set_stuff(message_string);
 	meta.set_player_id(_player_id);
 
 	std::string content = meta.SerializeAsString();
@@ -1109,15 +1111,19 @@ bool Player::GainItem(int64_t global_item_id, int32_t count)
 		
 		if (it_item == inventory_items->end()) //没有该类型物品
 		{
+			auto message_string = message_item->SerializeAsString();
+
 			auto item_toadd = inventory_items->Add();
 			item_toadd->set_type_t((Adoter::Asset::ASSET_TYPE)type_t);
 			common_prop.set_count(count); //Asset::Item_CommonProp
-			item_toadd->set_stuff(message_item->SerializeAsString());
+			item_toadd->set_stuff(message_string);
 		}
 		else
 		{
+			auto message_string = message_item->SerializeAsString();
+
 			common_prop.set_count(common_prop.count() + count); //Asset::Item_CommonProp
-			it_item->set_stuff(message_item->SerializeAsString());
+			it_item->set_stuff(message_string);
 		}
 	}
 	catch (std::exception& e)

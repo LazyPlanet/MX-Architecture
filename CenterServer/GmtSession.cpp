@@ -70,8 +70,10 @@ bool GmtSession::OnInnerProcess(const Asset::InnerMeta& meta)
 			auto session = WorldSessionInstance.GetServerSession(server_id);
 			if (!session) return false;
 
+			auto inner_meta_string = meta.SerializeAsString();
+
 			Asset::GmtInnerMeta inner_meta;
-			inner_meta.set_inner_meta(meta.SerializeAsString());
+			inner_meta.set_inner_meta(inner_meta_string);
 			session->SendProtocol(inner_meta); //游戏逻辑均在逻辑服务器上进行
 		}
 		break;
@@ -281,9 +283,11 @@ void GmtSession::SendProtocol(pb::Message& message)
 	int type_t = field->default_value_enum()->number();
 	if (!Asset::INNER_TYPE_IsValid(type_t)) return;	//如果不合法，不检查会宕线
 	
+	auto inner_meta_string = message.SerializeAsString();
+
 	Asset::InnerMeta meta;
 	meta.set_type_t((Asset::INNER_TYPE)type_t);
-	meta.set_stuff(message.SerializeAsString());
+	meta.set_stuff(inner_meta_string);
 
 	std::string content = meta.SerializeAsString();
 

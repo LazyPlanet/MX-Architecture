@@ -439,10 +439,12 @@ bool Player::SendProtocol2GameServer(const pb::Message& message)
 	
 	int type_t = field->default_value_enum()->number();
 	if (!Asset::META_TYPE_IsValid(type_t)) return false;	//如果不合法，不检查会宕线
+
+	auto stuff = message.SerializeAsString(); //复制，防止析构
 	
 	Asset::Meta meta;
 	meta.set_type_t((Asset::META_TYPE)type_t);
-	meta.set_stuff(message.SerializeAsString());
+	meta.set_stuff(stuff);
 	meta.set_player_id(_player_id); 
 
 	DEBUG("玩家:{}发送协议:{}到游戏逻辑服务器", _player_id, message.ShortDebugString());
@@ -475,12 +477,15 @@ void Player::SendGmtProtocol(const pb::Message& message)
 	int type_t = field->default_value_enum()->number();
 	if (!Asset::INNER_TYPE_IsValid(type_t)) return;	//如果不合法，不检查会宕线
 	
+	auto stuff = message.SerializeAsString(); //复制，防止析构
+	
 	Asset::InnerMeta meta;
 	meta.set_type_t((Asset::INNER_TYPE)type_t);
-	meta.set_stuff(message.SerializeAsString());
+	meta.set_stuff(stuff);
 
+	auto inner_meta = meta.SerializeAsString();
 	Asset::GmtInnerMeta gmt_meta;
-	gmt_meta.set_inner_meta(meta.SerializeAsString());
+	gmt_meta.set_inner_meta(inner_meta);
 
 	SendProtocol2GameServer(gmt_meta);
 }
