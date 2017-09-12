@@ -899,6 +899,17 @@ void Player::BattleHistory(int32_t start_index, int32_t end_index)
 			continue;
 		}
 
+		//
+		//删除Client不用的数据
+		//
+		for (int32_t i = 0; i < history.list().size(); ++i)
+		{
+			for (int32_t j = 0; j < history.list(i).list().size(); ++j)
+			{
+				history.mutable_list(i)->mutable_list(j)->mutable_details()->Clear();
+			}
+		}
+
 		auto record = message.mutable_history_list()->Add();
 		record->CopyFrom(history);
 	}

@@ -135,7 +135,8 @@ public:
 		for (int i = 0; i < 2; ++i) buffer[i] = header[i];
 		for (int i = 0; i < body_size; ++i) buffer[i + 2] = body[i];
 
-		_write_queue.push(std::string(buffer, body_size + 2));
+		auto string_send = std::string(buffer, body_size + 2);
+		_write_queue.push(string_send);
 	}
 
 	bool HandleQueue()
@@ -143,9 +144,10 @@ public:
 		if (!_socket.is_open()) return false;
 
 		if (_write_queue.empty()) return false;
-		std::string& meta = _write_queue.front();  //其实是META数据
+		std::string meta = _write_queue.front();  //其实是META数据
 
 		std::size_t bytes_to_send = meta.size();
+		if (bytes_to_send <= 0 || bytes_to_send >= MAX_DATA_SIZE) return false;
 
 		boost::system::error_code error;
 		std::size_t bytes_sent = _socket.write_some(boost::asio::buffer(meta.c_str(), bytes_to_send), error);
