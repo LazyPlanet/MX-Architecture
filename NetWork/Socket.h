@@ -31,9 +31,11 @@ public:
 	{
 		if (_closed) 
 		{
-			ERROR("远程地址{}网络连接已经关闭", _socket.remote_endpoint().address().to_string().c_str());
+			//ERROR("远程地址{}网络连接已经关闭", _socket.remote_endpoint().address().to_string().c_str());
 			return false;
 		}
+		
+		std::lock_guard<std::mutex> lock(_send_lock);
 
 		//发送可以放到消息队列里面处理
 		if (_is_writing_async || (_write_queue.empty() && !_closing)) 
@@ -88,7 +90,7 @@ public:
 	}
 	virtual void OnSend(const boost::system::error_code& error, std::size_t bytes_transferred)
 	{
-		DEBUG("发送字节数:{} 结果:{}", bytes_transferred, error.message());
+		//DEBUG("发送字节数:{} 结果:{}", bytes_transferred, error.message());
 	}
 
 	bool AsyncProcessQueue()    
@@ -107,9 +109,13 @@ public:
 		HandleQueue();
 	}
 
-	void EnterQueue(std::string&& meta)    
+	//void EnterQueue(std::string&& meta)    
+	void EnterQueue(std::string meta)    
 	{        
-		auto content = std::move(meta);
+		std::lock_guard<std::mutex> lock(_send_lock);
+
+		//auto content = std::move(meta);
+		auto content = meta;
 		//
 		//数据包头
 		//
@@ -154,7 +160,7 @@ public:
 
 		if (error == boost::asio::error::would_block || error == boost::asio::error::try_again)
 		{
-			ERROR("待发送数据长度:{} 实际发送数据长度:{} 错误码:{} 错误信息:{}", bytes_to_send, bytes_sent, error.value(), error.message());
+			//ERROR("待发送数据长度:{} 实际发送数据长度:{} 错误码:{} 错误信息:{}", bytes_to_send, bytes_sent, error.value(), error.message());
 			return AsyncProcessQueue();
 
 			_write_queue.pop();
@@ -174,7 +180,7 @@ public:
 		*/
 		else if (bytes_sent == 0)
 		{
-			ERROR("待发送数据长度:{} 实际发送数据长度:{} 错误码:{} 错误信息:{}", bytes_to_send, bytes_sent, error.value(), error.message());
+			//ERROR("待发送数据长度:{} 实际发送数据长度:{} 错误码:{} 错误信息:{}", bytes_to_send, bytes_sent, error.value(), error.message());
 
 			_write_queue.pop();
 			if (_closing && _write_queue.empty()) Close();
@@ -183,7 +189,7 @@ public:
 		}
 		else if (bytes_sent < bytes_to_send) //一般不会出现这个情况，重新发送，记个ERROR
 		{
-			ERROR("待发送数据长度:{} 实际发送数据长度:{} 错误码:{} 错误信息:{}", bytes_to_send, bytes_sent, error.value(), error.message());
+			//ERROR("待发送数据长度:{} 实际发送数据长度:{} 错误码:{} 错误信息:{}", bytes_to_send, bytes_sent, error.value(), error.message());
 			return AsyncProcessQueue();
 		}
 
@@ -203,8 +209,8 @@ protected:
 protected:
 	std::atomic<bool> _closed;    
 	std::atomic<bool> _closing;
+	std::mutex _send_lock;
 	bool _is_writing_async = false;
-	std::mutex _mutex;
 	//接收缓存
 	std::array<unsigned char, MAX_DATA_SIZE> _buffer;
 	//发送队列
@@ -231,7 +237,7 @@ public:
 		}
 		catch (const boost::system::system_error& error)
 		{
-			ERROR("服务器启动失败，地址:{} 端口:{} 错误码:{}", bind_ip, port, error.what());
+			//ERROR("服务器启动失败，地址:{} 端口:{} 错误码:{}", bind_ip, port, error.what());
 			return false;
 		}
 
@@ -279,7 +285,7 @@ public:
 		}        
 		catch (const boost::system::system_error& error)        
 		{            
-			ERROR("开启网络失败，系统错误:{}", error.what());
+			//ERROR("开启网络失败，系统错误:{}", error.what());
 		}
 	}
 	

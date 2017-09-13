@@ -399,7 +399,7 @@ void Player::SendProtocol(const pb::Message& message)
 	const pb::EnumValueDescriptor* enum_value = message.GetReflection()->GetEnum(message, field);
 	if (!enum_value) return;
 
-	auto debug_string = _stuff.ShortDebugString();
+	auto debug_string = message.ShortDebugString();
 	DEBUG("send protocol to player_id:{} protocol_name:{} content:{}", _player_id, enum_value->name().c_str(), debug_string);
 }
 	
@@ -996,7 +996,6 @@ std::shared_ptr<Player> PlayerManager::GetPlayer(int64_t player_id)
 {
 	std::lock_guard<std::mutex> lock(_mutex);
 
-	/*
 	for (auto it = _players.begin(); it != _players.end(); )
 	{
 		if (!it->second)
@@ -1008,7 +1007,6 @@ std::shared_ptr<Player> PlayerManager::GetPlayer(int64_t player_id)
 			++it;
 		}
 	}
-	*/
 
 	auto it = _players.find(player_id);
 	if (it == _players.end()) return nullptr;
@@ -1034,7 +1032,12 @@ void PlayerManager::Remove(int64_t player_id)
 
 	if (player_id <= 0) return;
 
-	_players.erase(player_id);
+	auto it = _players.find(player_id);
+	if (it == _players.end()) return;
+		
+	if (it->second) it->second.reset();
+
+	_players.erase(it);
 	
 	DEBUG("删除玩家:{}成功，当前在线玩家数量:{}", player_id, _players.size());
 }

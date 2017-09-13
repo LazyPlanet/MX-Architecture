@@ -554,7 +554,11 @@ void WorldSession::KickOutPlayer(Asset::KICK_OUT_REASON reason)
 
 		auto session = WorldSessionInstance.GetPlayerSession(_player->GetID());
 
-		if (session && session->GetRemotePoint() != GetRemotePoint()) return;
+		if (session && session->GetRemotePoint() != GetRemotePoint()) 
+		{
+			WorldSessionInstance.AddPlayer(_global_id, shared_from_this()); //在线玩家
+			return;
+		}
 
 		_player->OnKickOut(reason); //玩家退出登陆
 	}
@@ -791,7 +795,8 @@ void WorldSession::SendProtocol(const pb::Message& message)
 
 	if (content.empty()) return;
 
-	EnterQueue(std::move(content));
+	//EnterQueue(std::move(content));
+	EnterQueue(content);
 }
 
 void WorldSession::SendMeta(const Asset::Meta& meta)
@@ -800,7 +805,8 @@ void WorldSession::SendMeta(const Asset::Meta& meta)
 
 	if (content.empty()) return;
 
-	EnterQueue(std::move(content));
+	//EnterQueue(std::move(content));
+	EnterQueue(content);
 }
 
 void WorldSessionManager::BroadCast2GameServer(const pb::Message* message)
@@ -876,6 +882,38 @@ bool WorldSessionManager::StartNetwork(boost::asio::io_service& io_service, cons
 	_acceptor->SetSocketFactory(std::bind(&SuperSocketManager::GetSocketForAccept, this));    
 	_acceptor->AsyncAcceptWithCallback<&OnSocketAccept>();    
 	return true;
+}
+	
+void WorldSessionManager::AddPlayer(int64_t player_id, std::shared_ptr<WorldSession> session) 
+{ 
+	std::lock_guard<std::mutex> lock(_client_mutex);
+
+	auto it = _client_list.find(player_id);
+	if (it != _client_list.end() && it->second) it->second.reset();
+
+	_client_list[player_id] = session; 
+}
+
+void WorldSessionManager::RemovePlayer(int64_t player_id) 
+{ 
+	std::lock_guard<std::mutex> lock(_client_mutex);
+
+	auto it = _client_list.find(player_id);
+	if (it == _client_list.end()) return;
+	
+	if (it->second) it->second.reset();
+
+	_client_list.erase(it); 
+}
+	
+std::shared_ptr<WorldSession> WorldSessionManager::GetPlayerSession(int64_t player_id) 
+{ 
+	std::lock_guard<std::mutex> lock(_client_mutex);
+
+	auto it = _client_list.find(player_id);
+	if (it == _client_list.end()) return nullptr;
+
+	return it->second;
 }
 
 }

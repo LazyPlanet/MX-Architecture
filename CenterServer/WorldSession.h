@@ -86,7 +86,7 @@ class WorldSessionManager : public SocketManager<WorldSession>
 {
 	typedef SocketManager<WorldSession> SuperSocketManager;
 private:
-	std::mutex _mutex;
+	std::mutex _client_mutex;
 	//
 	//理论上服务器ID和玩家ID不会重复
 	//
@@ -102,10 +102,12 @@ public:
 		return _instance;
 	}
 
+	//
 	//玩家大厅会话
-	void AddPlayer(int64_t player_id, std::shared_ptr<WorldSession> session) { _client_list[player_id] = session; }
-	void RemovePlayer(int64_t player_id) { _client_list.erase(player_id); }
-	std::shared_ptr<WorldSession> GetPlayerSession(int64_t player_id) { return _client_list[player_id]; }
+	//
+	void AddPlayer(int64_t player_id, std::shared_ptr<WorldSession> session);
+	void RemovePlayer(int64_t player_id);
+	std::shared_ptr<WorldSession> GetPlayerSession(int64_t player_id);
 
 	//逻辑服务器会话
 	void AddServer(int64_t server_id, std::shared_ptr<WorldSession> session) {	_server_list[server_id] = session;}	
