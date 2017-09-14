@@ -137,7 +137,7 @@ int32_t Player::OnLogout()
 	return 0;
 }
 
-int32_t Player::OnEnterGame() 
+int32_t Player::OnEnterGame(bool is_login) 
 {
 	DEBUG("玩家:{}进入游戏", _player_id);
 
@@ -150,7 +150,7 @@ int32_t Player::OnEnterGame()
 		}
 	}
 
-	SendPlayer(); //发送数据给玩家
+	if (is_login) SendPlayer(); //发送数据给玩家
 	
 	_stuff.set_login_time(CommonTimerInstance.GetTime());
 	_stuff.set_logout_time(0);
@@ -159,10 +159,9 @@ int32_t Player::OnEnterGame()
 
 	PLAYER(_stuff);	//BI日志
 
-	//WorldSessionInstance.AddPlayer(_player_id, _session); //网络会话数据
 	PlayerInstance.Emplace(_player_id, shared_from_this()); //玩家管理
 
-	OnLogin();
+	OnLogin(is_login);
 
 	return 0;
 }
@@ -184,16 +183,12 @@ int32_t Player::OnEnterCenter()
 	return 0;
 }
 	
-int32_t Player::OnLogin()
+int32_t Player::OnLogin(bool is_login)
 {
 	ActivityInstance.OnPlayerLogin(shared_from_this()); //活动数据
 
-	BattleHistory(); //历史对战表
+	if (is_login) BattleHistory(); //历史对战表
 
-	//SetOffline(false); //上线
-
-	auto debug_string = _stuff.ShortDebugString();
-	DEBUG("玩家:{}登陆加载数据成功，数据内容:{}", _player_id, debug_string);
 	return 0;
 }
 
@@ -517,7 +512,7 @@ bool Player::Update()
 		if (_dirty) Save(); //触发存盘
 	}
 	
-	if (_heart_count % 300 == 0) //3s
+	if (_heart_count % 500 == 0) //5s
 	{
 		SayHi();
 	}

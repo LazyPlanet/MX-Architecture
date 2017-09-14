@@ -323,7 +323,7 @@ void WorldSession::OnProcessMessage(const Asset::Meta& meta)
 			}
 
 			_player->SetLocalServer(ConfigInstance.GetInt("ServerID", 1));
-			_player->OnEnterGame();
+			_player->OnEnterGame(false);
 		}
 		else if (Asset::META_TYPE_C2S_GET_ROOM_DATA == meta.type_t()) //获取房间数据
 		{

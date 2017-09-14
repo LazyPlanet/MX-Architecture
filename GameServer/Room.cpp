@@ -145,6 +145,9 @@ void Room::OnReEnter(std::shared_ptr<Player> op_player)
 	{	
 		auto hist_record = message.mutable_list()->Add();
 		hist_record->CopyFrom(record);
+
+		for (int32_t i = 0; i < hist_record->list().size(); ++i)
+			hist_record->mutable_list(i)->mutable_details()->Clear();
 	}
 
 	if (!_game)

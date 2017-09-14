@@ -1003,7 +1003,10 @@ bool Player::Update()
 		CommonLimitUpdate(); //通用限制,定时更新
 	
 		if (_dirty) Save(); //触发存盘
+	}
 	
+	if (_heart_count % 5 == 0) //5s
+	{
 		SayHi(); //逻辑服务器不进行心跳检查
 	}
 
@@ -1034,6 +1037,8 @@ int32_t Player::DefaultMethod(pb::Message* message)
 
 bool Player::HandleProtocol(int32_t type_t, pb::Message* message)
 {
+	SetOffline(false); //玩家在线
+
 	_pings_count = 0;
 	_hi_time = CommonTimerInstance.GetTime();
 

@@ -103,13 +103,13 @@ public:
 	//玩家登出
 	virtual int32_t Logout(pb::Message* message);
 	virtual int32_t OnLogout();
-	virtual int32_t OnLogin();
+	virtual int32_t OnLogin(bool is_login = true);
 	//加载数据	
 	virtual int32_t Load();
 	//保存数据
 	virtual int32_t Save(bool force = false);
 	//进入游戏
-	virtual int32_t OnEnterGame();
+	virtual int32_t OnEnterGame(bool is_login = true);
 	virtual int32_t OnEnterCenter();
 	//是否脏数据
 	virtual bool IsDirty() { return _dirty; }

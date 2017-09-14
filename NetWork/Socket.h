@@ -160,7 +160,7 @@ public:
 
 		if (error == boost::asio::error::would_block || error == boost::asio::error::try_again)
 		{
-			//ERROR("待发送数据长度:{} 实际发送数据长度:{} 错误码:{} 错误信息:{}", bytes_to_send, bytes_sent, error.value(), error.message());
+			ERROR("待发送数据长度:{} 实际发送数据长度:{} 错误码:{} 错误信息:{}", bytes_to_send, bytes_sent, error.value(), error.message());
 			return AsyncProcessQueue();
 
 			_write_queue.pop();
@@ -180,7 +180,7 @@ public:
 		*/
 		else if (bytes_sent == 0)
 		{
-			//ERROR("待发送数据长度:{} 实际发送数据长度:{} 错误码:{} 错误信息:{}", bytes_to_send, bytes_sent, error.value(), error.message());
+			ERROR("待发送数据长度:{} 实际发送数据长度:{} 错误码:{} 错误信息:{}", bytes_to_send, bytes_sent, error.value(), error.message());
 
 			_write_queue.pop();
 			if (_closing && _write_queue.empty()) Close();
@@ -189,7 +189,7 @@ public:
 		}
 		else if (bytes_sent < bytes_to_send) //一般不会出现这个情况，重新发送，记个ERROR
 		{
-			//ERROR("待发送数据长度:{} 实际发送数据长度:{} 错误码:{} 错误信息:{}", bytes_to_send, bytes_sent, error.value(), error.message());
+			ERROR("待发送数据长度:{} 实际发送数据长度:{} 错误码:{} 错误信息:{}", bytes_to_send, bytes_sent, error.value(), error.message());
 			return AsyncProcessQueue();
 		}
 
