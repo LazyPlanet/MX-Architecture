@@ -78,6 +78,7 @@ public:
 	int32_t GetRemainCount(); //剩余游戏次数
 	int32_t GetGamesCount() { return _games.size(); }
 	bool HasStarted() { return _games.size() > 0; }
+	std::shared_ptr<Game> GetGame() { return _game; }
 
 	void OnPlayerOperate(std::shared_ptr<Player> player, pb::Message* message);
 

@@ -184,12 +184,13 @@ int32_t Player::Logout(pb::Message* message)
 			else
 			{
 				_room->Remove(_player_id); //退出房间
+
+				return 2;
 			}
-			return 2;
 		}
 	}
 
-	OnLogout();
+	OnLogout(); //否则房主不会退出
 	
 	return 0;
 }
