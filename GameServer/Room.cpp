@@ -940,10 +940,9 @@ void RoomManager::Update(int32_t diff)
 		{
 			it->second->Update();
 
-			if ((it->second->IsExpired() && it->second->IsEmpty()) || it->second->HasDisMiss() || (it->second->GetRemainCount() <= 0 && !it->second->GetGame()))
+			if ((it->second->IsExpired() && it->second->IsEmpty()) || it->second->HasDisMiss() || 
+					(it->second->IsEmpty() && it->second->GetRemainCount() <= 0 && !it->second->GetGame()))
 			{
-				//LOG(INFO, "Remove room_id:{} for empty and expired.", it->second->GetID());
-
 				it = _rooms.erase(it);
 			}
 			else

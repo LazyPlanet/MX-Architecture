@@ -269,7 +269,9 @@ void WorldSession::OnProcessMessage(const Asset::Meta& meta)
 			Asset::WechatLogin* login = dynamic_cast<Asset::WechatLogin*>(message);
 			if (!login) return; 
 
-			OnWechatLogin(message); //初始化账号信息
+			//OnWechatLogin(message); //初始化账号信息
+
+			_user.mutable_wechat()->CopyFrom(login->wechat()); //微信数据
 		}
 		else if (Asset::META_TYPE_SHARE_GUEST_LOGIN == meta.type_t()) //游客登陆
 		{

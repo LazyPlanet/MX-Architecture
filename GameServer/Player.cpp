@@ -3327,6 +3327,7 @@ void Player::OnGangPai(const Asset::PaiElement& pai, int64_t from_player_id)
 	else if (count == 4)
 		_angang.push_back(pai);
 	
+	/*
 	try {
 		std::unique_lock<std::mutex> lock(_card_lock, std::defer_lock);
 
@@ -3347,6 +3348,10 @@ void Player::OnGangPai(const Asset::PaiElement& pai, int64_t from_player_id)
 		ERROR("Delete card from player_id:{} card_type:{} card_value:{} error:{}.", _player_id, card_type, card_value, error.what());
 		return;
 	}
+	*/
+			
+	auto remove_it = std::remove(it->second.begin(), it->second.end(), card_value); //从玩家手里删除
+	it->second.erase(remove_it, it->second.end());
 	
 	//
 	//墙外满足杠牌
