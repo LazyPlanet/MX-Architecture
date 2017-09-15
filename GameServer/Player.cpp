@@ -4230,8 +4230,6 @@ void Player::SynchronizePai()
 
 void Player::PrintPai()
 {
-	return;
-
 	std::stringstream card_value_list;
 
 	for (const auto& pai : _minggang)

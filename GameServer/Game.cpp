@@ -219,7 +219,7 @@ void Game::OnPlayerReEnter(std::shared_ptr<Player> player)
 		auto oper_string = _oper_limit.ShortDebugString();
 		auto player_id = player->GetID();
 
-		DEBUG("玩家:{}重入房间，操作放弃:{}", player_id, oper_string);
+		DEBUG("玩家:{}重入房间，操作放弃:{} 当前玩家索引:{} 操作玩家索引:{}", player_id, oper_string, _curr_player_index, player_index);
 
 		return;
 	}
@@ -665,14 +665,18 @@ void Game::OnPaiOperate(std::shared_ptr<Player> player, pb::Message* message)
 
 				return;
 			}
-			
+	
 			auto next_player_index = (_curr_player_index + 1) % MAX_PLAYER_COUNT; //如果有玩家放弃操作，则继续下个玩家
 
 			auto player_next = GetPlayerByOrder(next_player_index);
-			if (!player_next) 
+			if (!player_next) return; 
+			
+			if (player->GetID() == player_next->GetID() && !player_next->CheckCardsInhand()) 
 			{
-				DEBUG_ASSERT(false);
-				return; 
+				ERROR("玩家:{}放弃操作，当前牌数量不能再次发牌", player->GetID());
+
+				_curr_player_index = next_player_index;
+				return;
 			}
 			
 			DEBUG("oper_limit.player_id:{} player_id:{} next_player_id:{} _curr_player_index:{} next_player_index:{}",
