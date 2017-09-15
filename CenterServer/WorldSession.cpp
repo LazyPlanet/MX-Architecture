@@ -579,6 +579,7 @@ void WorldSession::OnLogout()
 	
 int32_t WorldSession::OnWechatLogin(const pb::Message* message)
 {
+	/*
 	const Asset::WechatLogin* login = dynamic_cast<const Asset::WechatLogin*>(message);
 	if (!login) return 1; 
 
@@ -744,6 +745,7 @@ int32_t WorldSession::OnWechatLogin(const pb::Message* message)
 
 	auto redis = make_unique<Redis>();
 	if (_access_token.has_openid())	redis->SaveUser(_access_token.openid(), _user); //账号数据存盘
+	*/
 
 	return 0;
 }
