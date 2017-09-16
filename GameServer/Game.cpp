@@ -494,7 +494,7 @@ void Game::OnPaiOperate(std::shared_ptr<Player> player, pb::Message* message)
 		
 		case Asset::PAI_OPER_TYPE_HUPAI: //胡牌
 		{
-			if (player->CheckHuPai(pai)) //玩家点炮
+			if (player->CheckHuPai(pai) && player->CheckCardsInhand()) //玩家点炮
 			{
 				auto fan_list = player->GetFanList();
 
@@ -522,7 +522,7 @@ void Game::OnPaiOperate(std::shared_ptr<Player> player, pb::Message* message)
 
 				Calculate(player->GetID(), _oper_limit.from_player_id(), fan_list); //结算
 			}
-			else if (player->CheckBaoHu(pai)) //宝胡
+			else if (player->CheckBaoHu(pai) && player->HasPai(_baopai)) //宝胡
 			{
 				auto fan_list = player->GetFanList();
 

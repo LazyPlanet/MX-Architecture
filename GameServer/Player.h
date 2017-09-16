@@ -314,6 +314,7 @@ public:
 	void Jinbao() { _jinbao = true; }
 	
 	const Asset::PaiElement& GetZhuaPai() { return _zhuapai; }
+	bool HasPai(const Asset::PaiElement& pai);
 
 	bool CanHuPai(std::vector<Card_t>& cards, bool use_pair = false);
 	bool CheckZiMo(); //胡牌检查-玩家手里现有牌检查
@@ -411,6 +412,7 @@ public:
 
 	int32_t GetCardCount();	//获取当前玩家手中牌数
 	bool CheckCardsInhand(); //手牌数量检查
+	bool CheckHuCardsInhand(); //手牌胡牌数量检查
 
 	const std::map<int32_t, std::vector<int32_t>>& GetCardsInhand() { return _cards_inhand; }
 	const std::map<int32_t, std::vector<int32_t>>& GetCardsOuthand() { return _cards_outhand; }

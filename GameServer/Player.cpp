@@ -1630,6 +1630,19 @@ std::vector<Asset::PAI_OPER_TYPE> Player::CheckPai(const Asset::PaiElement& pai,
 		
 	return rtn_check;
 }
+	
+bool Player::HasPai(const Asset::PaiElement& pai)
+{
+	if (pai.card_type() <= 0 || pai.card_value() == 0) return false;
+
+	auto type_it = _cards_inhand.find(pai.card_type());
+	if (type_it == _cards_inhand.end()) return false;
+
+	auto value_it = std::find(type_it->second.begin(), type_it->second.end(), pai.card_value());
+	if (value_it == type_it->second.end()) return false;
+
+	return true;
+}
 
 //假定牌是排序过的, 且胡牌规则为 n*AAA+m*ABC+DD
 //
@@ -1643,7 +1656,6 @@ std::vector<Asset::PAI_OPER_TYPE> Player::CheckPai(const Asset::PaiElement& pai,
 //接下来递归判断剩下牌型是否能和, 注意对子只能用一次.
 //
 //下面的算法是可以直接判断是否牌型是否和牌的，不局限于14张牌(3n+2即可)
-
 
 bool Player::CanHuPai(std::vector<Card_t>& cards, bool use_pair)
 {
@@ -4529,6 +4541,15 @@ bool Player::CheckCardsInhand()
 	auto count = GetCardCount(); //牌数量
 
 	if (count == 13 || count == 10 || count == 7 || count == 4 || count == 1) return true;
+
+	return false;
+}
+
+bool Player::CheckHuCardsInhand()
+{
+	auto count = GetCardCount(); //牌数量
+
+	if (count == 14 || count == 11 || count == 8 || count == 5 || count == 2) return true;
 
 	return false;
 }
