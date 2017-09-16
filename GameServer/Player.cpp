@@ -3093,6 +3093,8 @@ void Player::OnPengPai(const Asset::PaiElement& pai)
 	{
 		for (auto gang : gang_list) 
 		{
+			if (gang.pai().card_type() == pai.card_type() && gang.pai().card_value() == pai.card_value()) continue;
+
 			auto pai_perator = alert.mutable_pais()->Add();
 			pai_perator->CopyFrom(gang);
 		}
