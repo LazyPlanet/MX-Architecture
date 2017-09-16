@@ -3375,7 +3375,7 @@ void Player::OnGangPai(const Asset::PaiElement& pai, int64_t from_player_id)
 	auto cards = _game->TailPai(1); //从后楼给玩家取一张牌
 	if (cards.size() == 0) return;
 
-	OnFaPai(cards);
+	OnFaPai(cards); //发送到玩家手中
 	
 	Asset::PaiOperationAlert alert;
 	std::vector<Asset::PaiElement> pais;

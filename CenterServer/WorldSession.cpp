@@ -47,7 +47,7 @@ void WorldSession::InitializeHandler(const boost::system::error_code error, cons
 					
 				if (body_size > MAX_DATA_SIZE)
 				{
-					LOG(ERROR, "接收来自地址:{} 端口:{} 太大的包长:{} 丢弃.", _ip_address, _remote_endpoint.port(), body_size)
+					LOG(ERROR, "接收来自地址:{} 端口:{} 玩家:{} 太大的包长:{} 丢弃.", _ip_address, _remote_endpoint.port(), _player ? _player->GetID() : 0, body_size)
 					AsyncReceiveWithCallback(&WorldSession::InitializeHandler); //递归持续接收	
 					return;
 				}
@@ -60,7 +60,7 @@ void WorldSession::InitializeHandler(const boost::system::error_code error, cons
 
 				if (!result) 
 				{
-					LOG(ERROR, "接收来自地址:{} 端口:{} 转换Protobuff数据失败.", _ip_address, _remote_endpoint.port())
+					LOG(ERROR, "接收来自地址:{} 端口:{} 玩家:{} 转换Protobuff数据失败.", _ip_address, _remote_endpoint.port(), _player ? _player->GetID() : 0);
 					AsyncReceiveWithCallback(&WorldSession::InitializeHandler); //递归持续接收	
 					return; //非法协议
 				}
