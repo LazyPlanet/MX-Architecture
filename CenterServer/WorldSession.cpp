@@ -233,16 +233,16 @@ void WorldSession::OnProcessMessage(const Asset::Meta& meta)
 			
 			auto user_string = _user.ShortDebugString();
 			auto account_string = _account.ShortDebugString();
-			auto wechat_string = _wechat.ShortDebugString();
-			auto access_token_string = _access_token.ShortDebugString();
+			//auto wechat_string = _wechat.ShortDebugString();
+			//auto access_token_string = _access_token.ShortDebugString();
 
-			LOG(INFO, "角色:{} 账号:{} 微信:{} Token:{}", user_string, account_string, wechat_string, access_token_string);
+			//LOG(INFO, "角色:{} 账号:{} 微信:{} Token:{}", user_string, account_string, wechat_string, access_token_string);
 				
 			//
 			//账号数据存储
 			//
-			if (!_user.has_wechat_token()) _user.mutable_wechat_token()->CopyFrom(_access_token);
-			if (!_user.has_wechat()) _user.mutable_wechat()->CopyFrom(_wechat); //微信数据
+			//if (!_user.has_wechat_token()) _user.mutable_wechat_token()->CopyFrom(_access_token);
+			//if (!_user.has_wechat()) _user.mutable_wechat()->CopyFrom(_wechat); //微信数据
 		
 			auto set = client.set("user:" + login->account().username(), _user.SerializeAsString());
 			client.sync_commit();
@@ -269,9 +269,7 @@ void WorldSession::OnProcessMessage(const Asset::Meta& meta)
 			Asset::WechatLogin* login = dynamic_cast<Asset::WechatLogin*>(message);
 			if (!login) return; 
 
-			//OnWechatLogin(message); //初始化账号信息
-
-			_user.mutable_wechat()->CopyFrom(login->wechat()); //微信数据
+			OnWechatLogin(message); //初始化账号信息
 		}
 		else if (Asset::META_TYPE_SHARE_GUEST_LOGIN == meta.type_t()) //游客登陆
 		{
@@ -441,8 +439,8 @@ void WorldSession::OnProcessMessage(const Asset::Meta& meta)
 			
 			_user.Clear();
 			_account.Clear();
-			_wechat.Clear(); 
-			_access_token.Clear();
+			//_wechat.Clear(); 
+			//_access_token.Clear();
 	
 			if (_player_list.size()) _player_list.clear(); 
 		}
@@ -579,11 +577,12 @@ void WorldSession::OnLogout()
 	
 int32_t WorldSession::OnWechatLogin(const pb::Message* message)
 {
-	/*
 	const Asset::WechatLogin* login = dynamic_cast<const Asset::WechatLogin*>(message);
 	if (!login) return 1; 
 
-	const auto& access_code = login->access_code();
+	_user.mutable_wechat()->CopyFrom(login->wechat()); //微信数据
+
+	/*const auto& access_code = login->access_code();
 
 	CkHttp http;
 	std::string err;
@@ -711,6 +710,7 @@ int32_t WorldSession::OnWechatLogin(const pb::Message* message)
 		proto.mutable_wechat_error()->CopyFrom(wechat_error);
 		SendProtocol(proto); //同步Client
 	}
+	*/
 			
 	//
 	//1.必须先进行数据加载，初始化_user数据，防止已经存在玩家数据覆盖
@@ -726,11 +726,11 @@ int32_t WorldSession::OnWechatLogin(const pb::Message* message)
 
 	if (has_auth.get().ko()) 
 	{
-		DEBUG_ASSERT(false);
+		LOG(ERROR, "Redis数据库密码错误");
 		return 2;
 	}
 
-	auto get = client.get("user:" + _access_token.openid());
+	auto get = client.get("user:" + _user.wechat().openid());
 	cpp_redis::reply reply = get.get();
 	client.commit();
 
@@ -739,13 +739,14 @@ int32_t WorldSession::OnWechatLogin(const pb::Message* message)
 		auto success = _user.ParseFromString(reply.as_string()); //现有账号的数据加载
 		if (!success) return 3;
 	}
-	
-	if (!_user.has_wechat_token()) _user.mutable_wechat_token()->CopyFrom(_access_token);
-	if (!_user.has_wechat()) _user.mutable_wechat()->CopyFrom(_wechat); //微信数据
+	else
+	{
+		//if (!_user.has_wechat_token()) _user.mutable_wechat_token()->CopyFrom(_access_token);
+		//if (!_user.has_wechat()) _user.mutable_wechat()->CopyFrom(_wechat); //微信数据
 
-	auto redis = make_unique<Redis>();
-	if (_access_token.has_openid())	redis->SaveUser(_access_token.openid(), _user); //账号数据存盘
-	*/
+		auto redis = make_unique<Redis>();
+		if (_user.wechat().has_openid()) redis->SaveUser(_user.wechat().openid(), _user); //账号数据存盘
+	}
 
 	return 0;
 }

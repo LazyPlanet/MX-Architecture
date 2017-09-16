@@ -63,8 +63,8 @@ public:
 	const Asset::WechatUnion& GetWechat() { return _user.wechat(); }
 	bool IsWechat() { return _account.account_type() == Asset::ACCOUNT_TYPE_WECHAT; }
 private:
-	Asset::WechatUnion _wechat; //微信数据
-	Asset::WechatAccessToken _access_token;
+	//Asset::WechatUnion _wechat; //微信数据
+	//Asset::WechatAccessToken _access_token;
 	
 	Asset::User _user; 
 	Asset::Account _account;
