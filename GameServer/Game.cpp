@@ -238,6 +238,8 @@ void Game::OnPlayerReEnter(std::shared_ptr<Player> player)
 
 	auto cards = FaPai(1); 
 	auto card = GameInstance.GetCard(cards[0]); //玩家待抓的牌
+	
+	player->OnFaPai(cards); //放入玩家牌里面
 		
 	auto card_string = card.ShortDebugString();
 	auto oper_string = _oper_limit.ShortDebugString();
@@ -251,21 +253,19 @@ void Game::OnPlayerReEnter(std::shared_ptr<Player> player)
 	//
 	//注意：自摸和其他玩家点炮之间的检查顺序
 	//
-	if (player->CheckHuPai(card)) //自摸
+	if (player->CheckZiMo()) //自摸检查
 	{
 		auto pai_perator = alert.mutable_pais()->Add();
 		pai_perator->mutable_pai()->CopyFrom(card);
 		pai_perator->mutable_oper_list()->Add(Asset::PAI_OPER_TYPE_HUPAI);
 	}
 
-	player->OnFaPai(cards); //放入玩家牌里面
-
-	if (player->HasTuoGuan()) return; //托管检查，防止递归
+	//if (player->HasTuoGuan()) return; //托管检查，防止递归
 	
 	//
 	//玩家摸宝之后进行抓牌正好抓到宝胡
 	//
-	if (/*player->CheckZiMo(card) || */player->CheckBaoHu(card)/* || player->CheckHuPai(card)*/) //宝胡
+	else if (/*player->CheckZiMo(card) || */player->CheckBaoHu(card)/* || player->CheckHuPai(card)*/) //宝胡
 	{
 		auto pai_perator = alert.mutable_pais()->Add();
 		pai_perator->mutable_pai()->CopyFrom(card);
@@ -535,8 +535,11 @@ void Game::OnPaiOperate(std::shared_ptr<Player> player, pb::Message* message)
 			}
 			else
 			{
-				player->AlertMessage(Asset::ERROR_GAME_PAI_UNSATISFIED); //没有牌满足条件
+				player->PrintPai(); //打印玩家牌
+				LOG(ERROR, "玩家:{}胡牌不满足条件，可能是外挂行为, 胡牌, 牌类型:{} 牌值:{}", player->GetID(), pai.card_type(), pai.card_value());
 				
+				player->AlertMessage(Asset::ERROR_GAME_PAI_UNSATISFIED); //没有牌满足条件
+
 				auto player_next = GetNextPlayer(player->GetID());
 				if (!player_next) return; 
 				
@@ -684,13 +687,15 @@ void Game::OnPaiOperate(std::shared_ptr<Player> player, pb::Message* message)
 
 			auto cards = FaPai(1); 
 			auto card = GameInstance.GetCard(cards[0]); //玩家待抓的牌
+			
+			player_next->OnFaPai(cards); //放入玩家牌里面
 
 			Asset::PaiOperationAlert alert;
 
 			//
 			//胡牌检查
 			//
-			if (player_next->CheckHuPai(card)) //自摸检查，但该张牌尚未在玩家牌内
+			if (player_next->CheckZiMo()) //自摸检查
 			{
 				auto pai_perator = alert.mutable_pais()->Add();
 				pai_perator->mutable_pai()->CopyFrom(card);
@@ -699,12 +704,10 @@ void Game::OnPaiOperate(std::shared_ptr<Player> player, pb::Message* message)
 				_oper_limit.set_oper_type(Asset::PAI_OPER_TYPE_HUPAI);
 			}
 
-			player_next->OnFaPai(cards); //放入玩家牌里面
-
 			//
 			//玩家摸宝之后进行抓牌正好抓到宝胡
 			//
-			if (player_next->CheckBaoHu(card)) //宝胡
+			else if (player_next->CheckBaoHu(card)) //宝胡
 			{
 				auto pai_perator = alert.mutable_pais()->Add();
 				pai_perator->mutable_pai()->CopyFrom(card);
