@@ -149,7 +149,19 @@ void Room::OnReEnter(std::shared_ptr<Player> op_player)
 		hist_record->CopyFrom(record);
 
 		for (int32_t i = 0; i < hist_record->list().size(); ++i)
+		{
+			if (message.player_list().size() < MAX_PLAYER_COUNT)
+			{
+				auto player_brief = message.mutable_player_brief_list()->Add();
+				player_brief->set_player_id(hist_record->list(i).player_id());
+				player_brief->set_nickname(hist_record->list(i).nickname());
+				player_brief->set_headimgurl(hist_record->list(i).headimgurl());
+			}
+
+			hist_record->mutable_list(i)->clear_nickname();
+			hist_record->mutable_list(i)->clear_headimgurl();
 			hist_record->mutable_list(i)->mutable_details()->Clear();
+		}
 	}
 
 	if (!_game)
