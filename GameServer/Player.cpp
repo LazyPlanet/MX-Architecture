@@ -856,6 +856,7 @@ int32_t Player::CmdEnterRoom(pb::Message* message)
 
 				if (enter_status == Asset::ERROR_SUCCESS || enter_status == Asset::ERROR_ROOM_HAS_BEEN_IN) 
 				{
+					enter_room->set_error_code(Asset::ERROR_SUCCESS);
 					locate_room->Enter(shared_from_this()); //玩家进入房间
 				}
 			}

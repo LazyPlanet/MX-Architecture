@@ -93,10 +93,10 @@ bool Room::Enter(std::shared_ptr<Player> player)
 		{
 			auto& player_in = _players[i];
 
-			if (!player_in)
+			if (!player_in && enter_status != Asset::ERROR_ROOM_HAS_BEEN_IN) //当前玩家尚未在房间内，则选择新位置
 			{
 				player_in = player;
-				player->SetPosition((Asset::POSITION_TYPE)(i+1)); //设置位置
+				player->SetPosition((Asset::POSITION_TYPE)(i + 1)); //设置位置
 				break;
 			}
 			else if (player_in->GetID() == player->GetID()) //当前还在房间内
@@ -107,7 +107,7 @@ bool Room::Enter(std::shared_ptr<Player> player)
 			}
 		}
 	}
-	else
+	else if (enter_status != Asset::ERROR_ROOM_HAS_BEEN_IN)
 	{
 		_players.push_back(player); //进入房间
 		player->SetPosition((Asset::POSITION_TYPE)_players.size()); //设置位置
@@ -133,6 +133,8 @@ void Room::OnReEnter(std::shared_ptr<Player> op_player)
 	//同步玩家信息
 	//
 	SyncRoom();
+
+	if (!HasStarted()) return; //尚未开局
 
 	//
 	//房间内玩家数据推送
