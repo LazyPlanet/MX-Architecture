@@ -3925,6 +3925,20 @@ void Player::PreCheckOnFaPai()
 void Player::NormalCheckAfterFaPai(const Asset::PaiElement& pai)
 {
 }
+	
+int32_t Player::OnFaPai(const Asset::PaiElement& pai)
+{
+	if (pai.card_type() == 0 || pai.card_value() == 0) return 1; //数据有误
+
+	_cards_inhand[pai.card_type()].push_back(pai.card_value()); 
+
+	for (auto& cards : _cards_inhand) //整理牌
+	{
+		std::sort(cards.second.begin(), cards.second.end(), [](int x, int y){ return x < y; }); //由小到大
+	}
+
+	return 0;
+}
 
 int32_t Player::OnFaPai(std::vector<int32_t>& cards)
 {

@@ -302,6 +302,7 @@ public:
 	bool IsInGame() { return _game != nullptr; }
 
 	virtual int32_t OnFaPai(std::vector<int32_t>& cards); //发牌
+	virtual int32_t OnFaPai(const Asset::PaiElement& pai); //纯粹发牌，没有逻辑
 
 	std::vector<Asset::PAI_OPER_TYPE> CheckPai(const Asset::PaiElement& pai, int64_t from_player_id);
 

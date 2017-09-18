@@ -1535,16 +1535,17 @@ bool Game::CheckLiuJu()
 		auto cur_index = i % MAX_PLAYER_COUNT;
 
 		auto player = GetPlayerByOrder(cur_index);
-		if (!player)
-		{
-			DEBUG_ASSERT(false);
-			return false;
-		}
+		if (!player) return false;
 		
 		auto cards = FaPai(1); 
-		//player->OnFaPai(cards); //放入玩家牌内
+		const Asset::PaiElement card = GameInstance.GetCard(cards[0]); //玩家待抓的牌
 		
-		auto card = GameInstance.GetCard(cards[0]); //玩家待抓的牌
+		int32_t rst = player->OnFaPai(card); //放入玩家牌内
+		if (rst)
+		{
+			auto player_id = player->GetID();
+			LOG(ERROR, "玩家:{}流局抓牌出现问题，牌数据:[{} {}}错误码:{}", player_id, card.card_type(), card.card_value(), rst);
+		}
 
 		//
 		//各个玩家分张
@@ -1561,7 +1562,7 @@ bool Game::CheckLiuJu()
 		pai_operation.set_from_player_id(player->GetID());
 		pai_operation.mutable_pai()->CopyFrom(card);
 
-		if (/*player->CheckZiMo(card) || */player->CheckHuPai(card)) 
+		if (player->CheckZiMo()/* || player->CheckHuPai(card)*/) 
 		{
 			pai_operation.mutable_oper_list()->Add(Asset::PAI_OPER_TYPE_HUPAI);
 			_oper_list.push_back(pai_operation);
