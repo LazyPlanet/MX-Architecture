@@ -201,7 +201,15 @@ int32_t Player::OnLogout()
 	_stuff.set_login_time(0);
 	_stuff.set_logout_time(CommonTimerInstance.GetTime());
 	
-	if (!_game && _room && (!_room->HasStarted() || _room->GetRemainCount() <= 0 || _room->HasDisMiss())) ResetRoom();
+	if (!_game && _room && (!_room->HasStarted() || _room->GetRemainCount() <= 0 || _room->HasDisMiss())) 
+	{
+		ResetRoom();
+	}
+	else if (!_room && _stuff.room_id()) //进入房间后加载场景失败
+	{
+		auto room = RoomInstance.Get(_stuff.room_id());
+		if (room) room->Remove(_player_id);
+	}
 	PlayerInstance.Remove(_player_id); //玩家管理
 	
 	Save(true);	//存档数据库
@@ -1216,13 +1224,13 @@ void Player::ResetRoom()
 { 
 	if (_room) 
 	{
-		_room->Remove(_player_id); //删除玩家
+		//_room->Remove(_player_id); //删除玩家
 		_room.reset(); //刷新房间信息
 	}
 	else if (_stuff.room_id()) //进入房间后加载场景失败
 	{
-		auto room = RoomInstance.Get(_stuff.room_id());
-		if (room) room->Remove(_player_id);
+		//auto room = RoomInstance.Get(_stuff.room_id());
+		//if (room) room->Remove(_player_id);
 	}
 
 	_stuff.clear_room_id(); //状态初始化
