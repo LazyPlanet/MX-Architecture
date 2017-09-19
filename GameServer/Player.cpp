@@ -2270,7 +2270,7 @@ bool Player::CheckHuPai(const Asset::PaiElement& pai, bool check_zibo)
 			auto it = std::find(cards_inhand_check[_zhuapai.card_type()].begin(), cards_inhand_check[_zhuapai.card_type()].end(), _zhuapai.card_value());
 			if (it == cards_inhand_check[_zhuapai.card_type()].end())
 			{
-				DEBUG_ASSERT(false && "未能找到牌");
+				LOG(ERROR, "玩家:{}未能找到牌数据牌类型:{} 牌值:{}", _player_id, _zhuapai.card_type(), _zhuapai.card_value());
 				return false;
 			}
 
@@ -3956,6 +3956,8 @@ int32_t Player::OnFaPai(const Asset::PaiElement& pai)
 	{
 		std::sort(cards.second.begin(), cards.second.end(), [](int x, int y){ return x < y; }); //由小到大
 	}
+
+	_zhuapai = pai;
 
 	return 0;
 }
