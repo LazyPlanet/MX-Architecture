@@ -143,7 +143,8 @@ int32_t Player::Logout(pb::Message* message)
 		{
 			SetOffline(); //玩家状态
 
-			ERROR("player_id:{} logout game when in room:{}", _player_id, _room->GetID()); //玩家逃跑
+			//auto room_id = _room->GetID();
+			//ERROR("玩家:{}从房间且牌局内退出游戏:{}", _player_id, room_id); //玩家逃跑
 
 			//_tuoguan_server = true; //服务器托管
 
@@ -857,7 +858,9 @@ int32_t Player::CmdEnterRoom(pb::Message* message)
 				if (enter_status == Asset::ERROR_SUCCESS || enter_status == Asset::ERROR_ROOM_HAS_BEEN_IN) 
 				{
 					enter_room->set_error_code(Asset::ERROR_SUCCESS);
-					locate_room->Enter(shared_from_this()); //玩家进入房间
+					bool success = locate_room->Enter(shared_from_this()); //玩家进入房间
+
+					if (success) _stuff.set_room_id(room_id); //防止玩家进入房间后尚未加载场景，掉线
 				}
 			}
 
@@ -1211,8 +1214,17 @@ void Player::BroadCast(Asset::MsgItem& item)
 	
 void Player::ResetRoom() 
 { 
-	if (_room) _room.reset(); 
-	
+	if (_room) 
+	{
+		_room->Remove(_player_id); //删除玩家
+		_room.reset(); //刷新房间信息
+	}
+	else if (_stuff.room_id()) //进入房间后加载场景失败
+	{
+		auto room = RoomInstance.Get(_stuff.room_id());
+		if (room) room->Remove(_player_id);
+	}
+
 	_stuff.clear_room_id(); //状态初始化
 	_player_prop.clear_voice_member_id(); //房间语音数据
 }
