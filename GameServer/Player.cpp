@@ -3975,20 +3975,20 @@ int32_t Player::OnFaPai(std::vector<int32_t>& cards)
 		}
 	}
 
-	if (false && _player_id == 262152 && _cards_inhand.size() == 0)
+	if (_player_id == 262162 && _cards_inhand.size() == 0)
 	{
 		_cards_inhand = {
-			{ 1, { 1, 1, 1} },
-			{ 2, { 6, 7 } },
-			{ 3, { 6, 6 } },
+			//{ 1, { 1, 1, 1} },
+			{ 2, { 5, 7, 7, 9 } },
+			//{ 3, { 6, 6 } },
 			//{ 4, { 4, 4} },
 			//{ 5, { 1} },
 		
 		};
 		
 		_cards_outhand = {
-			{ 3, { 4, 4, 4} },
-			//{ 4, { 2, 2, 2 } },
+			{ 2, { 8, 8, 8, 9, 9, 9} },
+			{ 5, { 3, 3, 3 } },
 		};
 
 		Asset::PaiElement gang;

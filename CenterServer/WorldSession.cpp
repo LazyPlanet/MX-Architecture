@@ -760,11 +760,11 @@ bool WorldSession::Update()
 { 
 	if (!Socket::Update()) return false;
 
-	if (!_player) return true; //长时间未能上线
+	//if (!_player) return true; //长时间未能上线
 
-	if (!_online) return false;
+	//if (!_online) return false;
 
-	_player->Update(); 
+	//_player->Update(); 
 
 	return true;
 }

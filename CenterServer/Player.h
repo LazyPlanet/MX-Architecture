@@ -201,12 +201,15 @@ class PlayerManager : public std::enable_shared_from_this<PlayerManager>
 private:
 	std::mutex _mutex;
 	std::unordered_map<int64_t, std::shared_ptr<Player>> _players; //实体为智能指针，不要传入引用
+	int64_t _heart_count = 0;
 public:
 	static PlayerManager& Instance()
 	{
 		static PlayerManager _instance;
 		return _instance;
 	}
+
+	void Update(int32_t diff);
 
 	void Remove(int64_t player_id);
 	void Remove(std::shared_ptr<Player> player);
