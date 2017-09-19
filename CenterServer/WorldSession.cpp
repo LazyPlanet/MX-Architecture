@@ -128,11 +128,11 @@ void WorldSession::OnProcessMessage(const Asset::Meta& meta)
 		//
 		OnInnerProcess(meta); //内部处理
 
-		DEBUG("1.中心服务器接收游戏服务器内部协议:{}", meta_string);
+		DEBUG("1.中心服务器接收游戏服务器内部协议:{}", meta.type_t());
 	}
 	else if (meta.player_id() > 0)
 	{
-		DEBUG("2.中心服务器接收游戏服务器数据, 玩家:{} 协议:{}", meta.player_id(), meta_string);
+		DEBUG("2.中心服务器接收游戏服务器数据, 玩家:{} 协议:{}", meta.player_id(), meta.type_t());
 
 		auto player = PlayerInstance.Get(meta.player_id());
 		if (!player) 
@@ -152,7 +152,7 @@ void WorldSession::OnProcessMessage(const Asset::Meta& meta)
 		//来自Client协议均在此处理，逻辑程序员请勿在此后添加代码
 		//
 		
-		DEBUG("3.中心服务器接收来自Client的协议:{}", meta_string);
+		DEBUG("3.中心服务器接收来自Client的协议:{}", meta.type_t());
 		
 		if (Asset::META_TYPE_C2S_LOGIN == meta.type_t()) //账号登陆
 		{

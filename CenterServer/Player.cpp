@@ -1056,6 +1056,8 @@ void PlayerManager::Update(int32_t diff)
 
 	if (_heart_count % 20 != 0) return;
 
+	std::lock_guard<std::mutex> lock(_mutex);
+
 	for (auto it = _players.begin(); it != _players.end();)
 	{
 		if (!it->second)
