@@ -2934,7 +2934,7 @@ void Player::OnChiPai(const Asset::PaiElement& pai, pb::Message* message)
 {
 	if (!CheckChiPai(pai) || !message) 
 	{
-		DEBUG_ASSERT(false);
+		LOG(ERROR, "玩家:{}不能吃牌，原因:没有牌能满足吃牌，类型:{} 牌值:{}", _player_id, pai.card_type(), pai.card_value());
 		return;
 	}
 
@@ -2943,10 +2943,12 @@ void Player::OnChiPai(const Asset::PaiElement& pai, pb::Message* message)
 	
 	std::vector<Asset::PaiElement> cards;
 	cards.push_back(pai);
+		
+	auto pais = *pai_operate;
 
 	if (pai_operate->pais().size() != 2) 
 	{
-		DEBUG_ASSERT(false);
+		LOG(ERROR, "玩家:{}不能吃牌，原因:吃牌需要2张，类型:{} 牌值:{}, 数据:{}", _player_id, pai.card_type(), pai.card_value(), pais.ShortDebugString());
 		return; 
 	}
 	
@@ -2966,7 +2968,7 @@ void Player::OnChiPai(const Asset::PaiElement& pai, pb::Message* message)
 
 	if (cards[1].card_value() - cards[0].card_value() != 1 || cards[2].card_value() - cards[1].card_value() != 1) 
 	{
-		DEBUG_ASSERT(false);
+		LOG(ERROR, "玩家:{}不能吃牌，原因:不是顺子，类型:{} 牌值:{}, 数据:{}", _player_id, pai.card_type(), pai.card_value(), pais.ShortDebugString());
 		return; //不是顺子
 	}
 
@@ -2982,7 +2984,6 @@ void Player::OnChiPai(const Asset::PaiElement& pai, pb::Message* message)
 				return; //理论上不会出现
 			}
 			
-			TRACE("delete pai from player_id:{}, card_type:{}, card_value:{}", _player_id, pai_operate->pais(0).card_type(), pai_operate->pais(0).card_value());
 			it->second.erase(first); //删除
 
 			auto second = std::find(it->second.begin(), it->second.end(), pai_operate->pais(1).card_value());
@@ -2992,7 +2993,6 @@ void Player::OnChiPai(const Asset::PaiElement& pai, pb::Message* message)
 				return; //理论上不会出现
 			}
 
-			TRACE("delete pai from player_id:{}, card_type:{}, card_value:{}", _player_id, pai_operate->pais(1).card_type(), pai_operate->pais(1).card_value());
 			it->second.erase(second); //删除
 
 			for (const auto& card : cards)
@@ -3997,11 +3997,11 @@ int32_t Player::OnFaPai(std::vector<int32_t>& cards)
 		}
 	}
 
-	if (_player_id == 262162 && _cards_inhand.size() == 0)
+	if (false && _player_id == 262162 && _cards_inhand.size() == 0)
 	{
 		_cards_inhand = {
-			//{ 1, { 1, 1, 1} },
-			{ 2, { 5, 7, 7, 9 } },
+			{ 1, { 1, 2, 3, 4, 5} },
+			{ 2, { 2, 7, 7, 8, 8 } },
 			//{ 3, { 6, 6 } },
 			//{ 4, { 4, 4} },
 			//{ 5, { 1} },
@@ -4009,8 +4009,8 @@ int32_t Player::OnFaPai(std::vector<int32_t>& cards)
 		};
 		
 		_cards_outhand = {
-			{ 2, { 8, 8, 8, 9, 9, 9} },
-			{ 5, { 3, 3, 3 } },
+			//{ 2, { 8, 8, 8, 9, 9, 9} },
+			{ 3, { 7, 8, 9 } },
 		};
 
 		Asset::PaiElement gang;
