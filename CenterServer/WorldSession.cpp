@@ -33,11 +33,13 @@ void WorldSession::InitializeHandler(const boost::system::error_code error, cons
 		{
 			ERROR("地址:{} 端口:{} 玩家:{}断开连接，错误码:{} 错误描述:{}", _ip_address, _remote_endpoint.port(), _player ? _player->GetID() : 0, error.value(), error.message());
 			
-			if (104 != error.value()) //Connection reset by peer
+			if (boost::asio::error::connection_reset != error.value()) //Connection reset by peer
 			{
 				KickOutPlayer(Asset::KICK_OUT_REASON_DISCONNECT);
 				return;
 			}
+
+			Close();
 		}
 		else
 		{
@@ -153,6 +155,9 @@ void WorldSession::OnProcessMessage(const Asset::Meta& meta)
 		//
 		
 		DEBUG("3.中心服务器接收来自Client的协议:{}", meta.type_t());
+
+		_pings_count = 0;
+		_hi_time = CommonTimerInstance.GetTime(); 
 		
 		if (Asset::META_TYPE_C2S_LOGIN == meta.type_t()) //账号登陆
 		{
@@ -756,15 +761,33 @@ void WorldSession::Start()
 	AsyncReceiveWithCallback(&WorldSession::InitializeHandler);
 }
 	
+//
+//周期10MS
+//
 bool WorldSession::Update() 
 { 
+	++_heart_count;
+
 	if (!Socket::Update()) return false;
 
-	//if (!_player) return true; //长时间未能上线
+	if (!_online) return false;
+	
+	if (_heart_count % 6000 != 0) return true;
 
-	//if (!_online) return false;
+	auto curr_time = CommonTimerInstance.GetTime();
+	auto duration_pass = curr_time - _hi_time;
 
-	//_player->Update(); 
+	if (duration_pass > 60)
+	{
+		++_pings_count;
+		
+		static int32_t max_allowed = 3;
+
+		if (max_allowed && _pings_count > max_allowed) 
+		{
+			Close();
+		}
+	}
 
 	return true;
 }
@@ -772,9 +795,12 @@ bool WorldSession::Update()
 void WorldSession::OnClose()
 {
 	Socket::OnClose();
+
+	if (_player) _player.reset();
+
+	_online = false;
 	
 	DEBUG("角色类型:{} 全局ID:{} 关闭网络连接", _role_type, _global_id);
-	
 }
 
 void WorldSession::SendProtocol(const pb::Message* message)
@@ -800,8 +826,7 @@ void WorldSession::SendProtocol(const pb::Message& message)
 
 	if (content.empty()) return;
 
-	//EnterQueue(std::move(content));
-	EnterQueue(content);
+	EnterQueue(std::move(content));
 }
 
 void WorldSession::SendMeta(const Asset::Meta& meta)
@@ -810,8 +835,7 @@ void WorldSession::SendMeta(const Asset::Meta& meta)
 
 	if (content.empty()) return;
 
-	//EnterQueue(std::move(content));
-	EnterQueue(content);
+	EnterQueue(std::move(content));
 }
 
 void WorldSessionManager::BroadCast2GameServer(const pb::Message* message)

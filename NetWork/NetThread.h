@@ -32,8 +32,6 @@ public:
 			Wait();            
 			_thread.reset();        
 		}
-
-		spdlog::get("console")->warn("{0} Line:{1} thread has stopped.", __func__, __LINE__);
 	}
 
 	virtual void Stop() { 
@@ -93,8 +91,6 @@ public:
 
 	virtual void Run()
 	{
-		spdlog::get("console")->debug("{0} Line:{1} Starting network thread.", __func__, __LINE__);
-
 		_update_timer.expires_from_now(boost::posix_time::milliseconds(10));
 		_update_timer.async_wait(std::bind(&NetworkThread<SOCKET_TYPE>::Update, this));        
 		
@@ -128,7 +124,6 @@ public:
 		}
 		catch (const boost::system::system_error& error)
 		{
-			spdlog::get("console")->error("{} Line:{} error:{}", __func__, __LINE__, error.what());
 		}
 	}
 protected:

@@ -29,11 +29,7 @@ public:
 	
 	virtual bool Update() 
 	{
-		if (_closed) 
-		{
-			//ERROR("远程地址{}网络连接已经关闭", _socket.remote_endpoint().address().to_string().c_str());
-			return false;
-		}
+		if (_closed) return false;
 		
 		std::lock_guard<std::mutex> lock(_send_lock);
 
@@ -109,13 +105,11 @@ public:
 		HandleQueue();
 	}
 
-	//void EnterQueue(std::string&& meta)    
-	void EnterQueue(std::string meta)    
+	void EnterQueue(std::string&& meta)    
 	{        
 		std::lock_guard<std::mutex> lock(_send_lock);
 
-		//auto content = std::move(meta);
-		auto content = meta;
+		auto content = std::move(meta);
 		//
 		//数据包头
 		//
@@ -150,7 +144,7 @@ public:
 		if (!_socket.is_open()) return false;
 
 		if (_write_queue.empty()) return false;
-		std::string meta = _write_queue.front();  //其实是META数据
+		const std::string& meta = _write_queue.front();  //其实是META数据
 
 		std::size_t bytes_to_send = meta.size();
 		if (bytes_to_send <= 0 || bytes_to_send >= MAX_DATA_SIZE) return false;
@@ -237,7 +231,7 @@ public:
 		}
 		catch (const boost::system::system_error& error)
 		{
-			//ERROR("服务器启动失败，地址:{} 端口:{} 错误码:{}", bind_ip, port, error.what());
+			ERROR("服务器启动失败，地址:{} 端口:{} 错误码:{}", bind_ip, port, error.what());
 			return false;
 		}
 
@@ -285,7 +279,7 @@ public:
 		}        
 		catch (const boost::system::system_error& error)        
 		{            
-			//ERROR("开启网络失败，系统错误:{}", error.what());
+			ERROR("开启网络失败，系统错误:{}", error.what());
 		}
 	}
 	

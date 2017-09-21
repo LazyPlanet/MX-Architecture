@@ -78,8 +78,10 @@ private:
 	Asset::ROLE_TYPE _role_type = Asset::ROLE_TYPE_NULL; //会话类型
 	std::shared_ptr<Player> _player = nullptr; //全局玩家定义，唯一的一个Player对象
 	bool _online = true;
-
-	std::chrono::steady_clock::time_point _LastPingTime;
+	
+	std::time_t _hi_time = 0;
+	int32_t _pings_count = 0;
+	int64_t _heart_count = 0; //心跳次数
 };
 
 class WorldSessionManager : public SocketManager<WorldSession> 
