@@ -90,7 +90,6 @@ int32_t Player::Load()
 
 			const pb::EnumValueDescriptor *enum_value = enum_desc->value(inventory_index);
 			if (!enum_value) break;
-			TRACE("player_id:{} add inventory:{}", _player_id, enum_value->name());
 		}
 	} while(false);
 	
@@ -110,6 +109,8 @@ int32_t Player::Save(bool force)
 		DEBUG_ASSERT(false);
 		return 2;
 	}
+	
+	DEBUG("玩家:{}数据:{}", _player_id, _stuff.ShortDebugString())
 
 	_dirty = false;
 
@@ -120,7 +121,7 @@ int32_t Player::OnLogin()
 {
 	if (Load()) return 1;
 
-	//ClearCards();
+	DEBUG("玩家:{}数据:{}", _player_id, _stuff.ShortDebugString())
 	
 	PlayerInstance.Emplace(_player_id, shared_from_this()); //玩家管理
 	SetLocalServer(ConfigInstance.GetInt("ServerID", 1));
@@ -1372,6 +1373,8 @@ int32_t Player::CmdGetRoomData(pb::Message* message)
 {
 	auto get_data = dynamic_cast<Asset::GetRoomData*>(message);
 	if (!get_data) return 1;
+
+	DEBUG("玩家:{}数据:{}", _player_id, _stuff.ShortDebugString())
 
 	if (!_room || _room->GetID() != get_data->room_id() || _stuff.room_id() == 0)
 	{
