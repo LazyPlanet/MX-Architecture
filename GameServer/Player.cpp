@@ -177,15 +177,20 @@ int32_t Player::Logout(pb::Message* message)
 		}
 		else
 		{
-			if (_room->IsHoster(_player_id))
+			//
+			//房主在尚未开局状态，不能因为离线而解散或者退出房间
+			//
+			if (_room->IsHoster(_player_id) && _room->GetRemainCount() > 0 && !_room->HasDisMiss())
 			{
 				SetOffline(); //玩家状态
 
-				//_room->KickOutPlayer();
+				//_room->KickOutPlayer(); //不做踢人处理
+
+				return 3;
 			}
 			else
 			{
-				_room->Remove(_player_id); //退出房间
+				_room->Remove(_player_id); //退出房间，回调会调用OnLogout接口，从而退出整个游戏逻辑服务器
 
 				return 2;
 			}
@@ -220,7 +225,7 @@ int32_t Player::OnLogout()
 	kickout_player.set_reason(Asset::KICK_OUT_REASON_LOGOUT);
 	SendProtocol(kickout_player);
 	
-	DEBUG("玩家:{}退出游戏成功", _player_id);
+	DEBUG("玩家:{} 数据:{} 退出游戏成功", _player_id, _stuff.ShortDebugString());
 
 	return 0;
 }
@@ -869,7 +874,12 @@ int32_t Player::CmdEnterRoom(pb::Message* message)
 					enter_room->set_error_code(Asset::ERROR_SUCCESS);
 					bool success = locate_room->Enter(shared_from_this()); //玩家进入房间
 
-					if (success) _stuff.set_room_id(room_id); //防止玩家进入房间后尚未加载场景，掉线
+					if (success) 
+					{
+						_stuff.set_room_id(room_id); //防止玩家进入房间后尚未加载场景，掉线
+
+						SetDirty();
+					}
 				}
 			}
 
@@ -1223,16 +1233,9 @@ void Player::BroadCast(Asset::MsgItem& item)
 	
 void Player::ResetRoom() 
 { 
-	if (_room) 
-	{
-		//_room->Remove(_player_id); //删除玩家
-		_room.reset(); //刷新房间信息
-	}
-	else if (_stuff.room_id()) //进入房间后加载场景失败
-	{
-		//auto room = RoomInstance.Get(_stuff.room_id());
-		//if (room) room->Remove(_player_id);
-	}
+	DEBUG("玩家:{}数据:{}", _player_id, _stuff.ShortDebugString())
+
+	if (_room) _room.reset(); //刷新房间信息
 
 	_stuff.clear_room_id(); //状态初始化
 	_player_prop.clear_voice_member_id(); //房间语音数据
@@ -1430,43 +1433,27 @@ int32_t Player::CmdLoadScene(pb::Message* message)
 			auto room_id = _player_prop.room_id();
 			
 			auto locate_room = RoomInstance.Get(room_id);
-			if (!locate_room) 
-			{
-				DEBUG_ASSERT(false);
-				return 3; //非法的房间 
-			}
+			if (!locate_room) return 3; //非法的房间 
 
 			bool is_reenter = (_room == nullptr ? false : room_id == _room->GetID());
 			
-			/*
-			auto enter_status = locate_room->TryEnter(shared_from_this()); //玩家进入房间
-
-			if (enter_status != Asset::ERROR_SUCCESS && enter_status != Asset::ERROR_ROOM_HAS_BEEN_IN) 
-			{
-				ERROR("player_id:{} enter room:{} failed, reason:{}.", _player_id, room_id, enter_status);
-				return 4;
-			}
-
-			auto is_entered = locate_room->Enter(shared_from_this()); //玩家进入房间
-			if (!is_entered)
-			{
-				DEBUG_ASSERT(false);
-				return 5;
-			}
-			*/
-
 			SetRoom(locate_room);
 				
-			DEBUG("player_id:{} enter room:{} success.", _player_id, room_id);
-			
 			_player_prop.clear_load_type(); 
 			_player_prop.clear_room_id(); 
 	
-			_stuff.set_room_id(room_id);
+			if (_stuff.room_id() != room_id)
+			{
+				_stuff.set_room_id(room_id); 
 
-			SetDirty();
+				SetDirty();
+				
+				LOG(ERROR, "玩家:{}加载房间:{}和保存的房间:{}不一致", _player_id, room_id, _stuff.room_id());
+			}
 			
 			OnEnterScene(is_reenter); //进入房间//场景回调
+			
+			DEBUG("玩家:{} 加入房间:{}成功.", _player_id, room_id);
 		}
 		break;
 		
