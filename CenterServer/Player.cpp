@@ -494,7 +494,7 @@ void Player::SendGmtProtocol(const pb::Message& message)
 }
 
 //
-//玩家心跳周期为1000MS=1S
+//玩家心跳周期为50ms
 //
 //如果该函数返回FALSE则表示掉线
 //
@@ -502,17 +502,17 @@ bool Player::Update()
 {
 	++_heart_count; //心跳
 	
-	if (_heart_count % 2 == 0) //s
+	if (_heart_count % 20 == 0) //1s
 	{
 		CommonLimitUpdate(); //通用限制,定时更新
 	}
 	
-	if (_heart_count % 3 == 0) //3s
+	if (_heart_count % 60 == 0) //3s
 	{
 		if (_dirty) Save(); //触发存盘
 	}
 	
-	if (_heart_count % 5 == 0) //5s
+	if (_heart_count % 80 == 0) //4s
 	{
 		SayHi();
 	}
@@ -1050,11 +1050,14 @@ void PlayerManager::BroadCast(const pb::Message& message)
 	}
 }
 	
+//
+//玩家心跳周期为50ms
+//
 void PlayerManager::Update(int32_t diff)
 {
 	++_heart_count;
 
-	if (_heart_count % 20 != 0) return;
+	//if (_heart_count % 20 != 0) return;
 
 	std::lock_guard<std::mutex> lock(_mutex);
 
