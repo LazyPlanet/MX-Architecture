@@ -80,7 +80,7 @@ void ServerSession::InitializeHandler(const boost::system::error_code error, con
 //
 bool ServerSession::OnInnerProcess(const Asset::InnerMeta& meta)
 {
-	DEBUG("Receive message:{} from server:{}", meta.ShortDebugString(), _ip_address);
+	DEBUG("接收协议数据:{} 来自地址:{}", meta.ShortDebugString(), _ip_address);
 
 	switch (meta.type_t())
 	{
@@ -538,13 +538,9 @@ void ServerSession::SendProtocol(const pb::Message& message)
 
 	std::string content = meta.SerializeAsString();
 
-	if (content.empty()) 
-	{
-		ERROR("server:{} send nothing, message:{}", _ip_address, meta.ShortDebugString());
-		return;
-	}
+	if (content.empty()) return;
 
-	TRACE("send message to server:{} message:{}", _ip_address, meta.ShortDebugString());
+	DEBUG("GMT服务器向服务器:{}发送协议数据:{}", _ip_address, meta.ShortDebugString());
 	AsyncSend(content);
 }
 	
