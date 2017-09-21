@@ -61,7 +61,7 @@ bool GmtManager::OnInnerProcess(const Asset::InnerMeta& meta)
 			//房间属性
 			Asset::Room room;
 			room.set_room_type(Asset::ROOM_TYPE_FRIEND);
-			room.mutable_options()->CopyFrom(message.options());
+			room.mutable_options()->ParseFromString(message.options());
 
 			auto room_ptr = RoomInstance.CreateRoom(room);
 			if (!room_ptr) return false; //未能创建成功房间，理论不会出现
