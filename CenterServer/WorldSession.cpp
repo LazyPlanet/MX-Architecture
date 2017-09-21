@@ -112,7 +112,7 @@ void WorldSession::OnProcessMessage(const Asset::Meta& meta)
 	auto message_string = message->ShortDebugString();
 	auto meta_string = meta.ShortDebugString();
 
-	//WARN("中心服务器接收数据, 玩家:{} 协议:{} {} 内容:{}", meta.player_id(), meta.type_t(), enum_value->name(), message_string);
+	WARN("中心服务器接收数据, 玩家:{} 协议:{} {} 内容:{}", meta.player_id(), meta.type_t(), enum_value->name(), message_string);
 
 	//
 	// C2S协议可能存在两种情况：
@@ -130,11 +130,11 @@ void WorldSession::OnProcessMessage(const Asset::Meta& meta)
 		//
 		OnInnerProcess(meta); //内部处理
 
-		DEBUG("1.中心服务器接收游戏服务器内部协议:{}", meta.type_t());
+		//DEBUG("1.中心服务器接收游戏服务器内部协议:{}", meta.type_t());
 	}
 	else if (meta.player_id() > 0)
 	{
-		DEBUG("2.中心服务器接收游戏服务器数据, 玩家:{} 协议:{}", meta.player_id(), meta.type_t());
+		//DEBUG("2.中心服务器接收游戏服务器数据, 玩家:{} 协议:{}", meta.player_id(), meta.type_t());
 
 		auto player = PlayerInstance.Get(meta.player_id());
 		if (!player) 
@@ -154,7 +154,7 @@ void WorldSession::OnProcessMessage(const Asset::Meta& meta)
 		//来自Client协议均在此处理，逻辑程序员请勿在此后添加代码
 		//
 		
-		DEBUG("3.中心服务器接收来自Client的协议:{}", meta.type_t());
+		//DEBUG("3.中心服务器接收来自Client的协议:{}", meta.type_t());
 
 		_pings_count = 0;
 		_hi_time = CommonTimerInstance.GetTime(); 
