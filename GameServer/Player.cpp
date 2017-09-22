@@ -3990,24 +3990,28 @@ int32_t Player::OnFaPai(std::vector<int32_t>& cards)
 	if (false && _player_id == 262162 && _cards_inhand.size() == 0)
 	{
 		_cards_inhand = {
-			{ 1, { 1, 2, 3, 4, 5} },
-			{ 2, { 2, 7, 7, 8, 8 } },
-			//{ 3, { 6, 6 } },
+			//{ 1, { 9, 9} },
+			//{ 2, { 2, 7, 7, 8, 8 } },
+			{ 3, { 7 } },
 			//{ 4, { 4, 4} },
-			//{ 5, { 1} },
+			{ 5, { 1} },
 		
 		};
 		
 		_cards_outhand = {
-			//{ 2, { 8, 8, 8, 9, 9, 9} },
-			{ 3, { 7, 8, 9 } },
+			{ 1, { 9, 9, 9} },
+			{ 3, { 7, 7, 7 } },
+			{ 4, { 3, 3, 3 } },
+			{ 5, { 1, 1, 1 } },
 		};
 
+		/*
 		Asset::PaiElement gang;
 		gang.set_card_type((Asset::CARD_TYPE)1);
 		gang.set_card_value(3);
 
 		_minggang.push_back(gang);
+		*/
 	}
 	else
 	{
