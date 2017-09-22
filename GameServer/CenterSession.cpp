@@ -265,7 +265,7 @@ bool CenterSession::Update()
 		}
 	}
 
-	if (_heart_count % 100 == 0) //5s
+	if (_heart_count % 1200 == 0) //60s
 	{
 		SayHi(); //心跳
 	}

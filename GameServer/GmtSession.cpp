@@ -64,7 +64,13 @@ bool GmtManager::OnInnerProcess(const Asset::InnerMeta& meta)
 			room.mutable_options()->ParseFromString(message.options());
 
 			auto room_ptr = RoomInstance.CreateRoom(room);
-			if (!room_ptr) return false; //未能创建成功房间，理论不会出现
+			if (!room_ptr) 
+			{
+				LOG(ERROR, "GMT开房失败，开房信息:{}", room.ShortDebugString());
+				return false; //未能创建成功房间，理论不会出现
+			}
+
+			room_ptr->SetGmtOpened(); //设置GMT开房
 
 			message.set_room_id(room_ptr->GetID());
 			message.set_error_code(Asset::COMMAND_ERROR_CODE_SUCCESS); //成功创建

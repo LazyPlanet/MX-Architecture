@@ -50,6 +50,8 @@ public:
 	void SayHi();
 
 	void Remove(int64_t player_id) { _players.erase(player_id); }
+
+	int32_t ServerID() { return _server_id; }
 private:
 	std::deque<std::string> _send_list;
 	std::deque<Asset::Meta> _receive_list;
@@ -59,6 +61,7 @@ private:
 	std::mutex _mutex;
 	
 	int64_t _heart_count = 0; //心跳次数
+	int32_t _server_id = 0;
 };
 
 }

@@ -725,7 +725,7 @@ void Room::OnCreated(std::shared_ptr<Player> hoster)
 	
 bool Room::CanStarGame()
 {
-	if (!_hoster) return false;
+	if (!_hoster && !_gmt_opened) return false;
 
 	if (_players.size() != MAX_PLAYER_COUNT) return false;
 
@@ -751,6 +751,16 @@ bool Room::CanStarGame()
 
 		auto activity_id = g_const->room_card_limit_free_activity_id();
 		if (ActivityInstance.IsOpen(activity_id)) return true;
+
+		if (IsGmtOpened()) 
+		{
+			LOG(INFO, "GMT开房，不消耗房卡数据:{}", _stuff.ShortDebugString());
+			return true;
+		}
+		else if (!_hoster)
+		{
+			return false; //没有房主
+		}
 
 		if (_hoster && _games.size() == 0) //开局消耗
 		{
@@ -868,6 +878,11 @@ void Room::Update()
 /////////////////////////////////////////////////////
 //房间通用管理类
 /////////////////////////////////////////////////////
+RoomManager::RoomManager()
+{
+	_server_id = ConfigInstance.GetInt("ServerID", 1); 
+}
+
 std::shared_ptr<Room> RoomManager::Get(int64_t room_id)
 {
 	auto it = _rooms.find(room_id);
@@ -945,7 +960,7 @@ void RoomManager::Update(int32_t diff)
 	
 	if (_heart_count % 1200 == 0) //1分钟
 	{
-		DEBUG("当前进行房间数量:{}", _rooms.size());
+		DEBUG("服务器:{} 进行房间数量:{}", _server_id, _rooms.size());
 	}
 
 	if (_heart_count % 100 == 0) //5秒
