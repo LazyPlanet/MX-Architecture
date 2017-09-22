@@ -28,11 +28,9 @@ public:
 	
 	virtual bool Update() 
 	{
-		if (_closed) 
-		{
-			ERROR("{} has closed", _socket.remote_endpoint().address().to_string().c_str());
-			return false;
-		}
+		if (_closed) return false;
+		
+		std::lock_guard<std::mutex> lock(_send_lock);
 
 		//发送可以放到消息队列里面处理
 		if (_is_writing_async || (_write_queue.empty() && !_closing)) 
@@ -82,6 +80,8 @@ public:
 
 	void EnterQueue(std::string&& meta)
 	{
+		std::lock_guard<std::mutex> lock(_send_lock);
+
 		auto content = std::move(meta);
 		//
 		//数据包头
@@ -256,7 +256,7 @@ private:
 	std::atomic<bool> _closing;
 	bool _is_writing_async = false;
 	std::queue<std::string> _write_queue;
-	std::mutex _mutex;
+	std::mutex _send_lock;
 };	
 
 }

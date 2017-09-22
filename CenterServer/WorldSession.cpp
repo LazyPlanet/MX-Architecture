@@ -846,6 +846,8 @@ void WorldSessionManager::BroadCast2GameServer(const pb::Message* message)
 
 void WorldSessionManager::BroadCast2GameServer(const pb::Message& message)
 {
+	std::lock_guard<std::mutex> lock(_server_mutex);
+
 	for (auto session : _server_list)
 	{
 		if (!session.second) continue;
@@ -870,6 +872,8 @@ void WorldSessionManager::BroadCast(const pb::Message* message)
 
 int64_t WorldSessionManager::RandomServer()
 {
+	std::lock_guard<std::mutex> lock(_server_mutex);
+
 	if (_server_list.size() == 0) return 0;
 
 	std::vector<int32_t> server_list;
@@ -915,6 +919,8 @@ bool WorldSessionManager::StartNetwork(boost::asio::io_service& io_service, cons
 	
 void WorldSessionManager::AddPlayer(int64_t player_id, std::shared_ptr<WorldSession> session) 
 { 
+	if (player_id <= 0 || !session) return;
+
 	std::lock_guard<std::mutex> lock(_client_mutex);
 
 	auto it = _client_list.find(player_id);
@@ -943,6 +949,38 @@ std::shared_ptr<WorldSession> WorldSessionManager::GetPlayerSession(int64_t play
 	if (it == _client_list.end()) return nullptr;
 
 	return it->second;
+}
+
+void WorldSessionManager::AddServer(int64_t server_id, std::shared_ptr<WorldSession> session) 
+{	
+	if (server_id <= 0 || !session) return;
+
+	std::lock_guard<std::mutex> lock(_server_mutex);
+
+	auto it = _server_list.find(server_id);
+	if (it != _server_list.end() && it->second) it->second.reset();
+
+	_server_list[server_id] = session;
+}	
+
+void WorldSessionManager::RemoveServer(int64_t server_id) 
+{ 
+	std::lock_guard<std::mutex> lock(_server_mutex);
+ 
+	auto it = _server_list.find(server_id);
+	if (it == _server_list.end()) return;
+ 
+	_server_list.erase(it); 
+}
+
+std::shared_ptr<WorldSession> WorldSessionManager::GetServerSession(int64_t server_id) 
+{ 
+	std::lock_guard<std::mutex> lock(_server_mutex);
+	
+	auto it = _server_list.find(server_id);
+	if (it == _server_list.end()) return nullptr;
+
+	return it->second; 
 }
 
 }
