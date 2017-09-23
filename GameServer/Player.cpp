@@ -3986,22 +3986,22 @@ int32_t Player::OnFaPai(std::vector<int32_t>& cards)
 		}
 	}
 
-	if (false && _player_id == 262162 && _cards_inhand.size() == 0)
+	if (true && _player_id == 262162 && _cards_inhand.size() == 0)
 	{
 		_cards_inhand = {
-			//{ 1, { 9, 9} },
-			//{ 2, { 2, 7, 7, 8, 8 } },
+			{ 1, { 9, 9} },
+			{ 2, { 2, 7, 7, 8, 8 } },
 			{ 3, { 7 } },
-			//{ 4, { 4, 4} },
-			{ 5, { 1} },
+			{ 4, { 4, 4} },
+			{ 5, { 1, 2, 3} },
 		
 		};
 		
 		_cards_outhand = {
-			{ 1, { 9, 9, 9} },
-			{ 3, { 7, 7, 7 } },
-			{ 4, { 3, 3, 3 } },
-			{ 5, { 1, 1, 1 } },
+			//{ 1, { 9, 9, 9} },
+			//{ 3, { 7, 7, 7 } },
+			//{ 4, { 3, 3, 3 } },
+			//{ 5, { 1, 1, 1 } },
 		};
 
 		/*
@@ -4324,9 +4324,9 @@ void Player::SetOffline(bool offline)
 	//if ((offline && _player_prop.game_oper_state() == Asset::GAME_OPER_TYPE_OFFLINE) || //已经是离线状态
 	//		(!offline && _player_prop.game_oper_state() == Asset::GAME_OPER_TYPE_ONLINE)) return; //已经是在线状态
 
-	DEBUG("玩家:{}状态变化:{} 是否离线:{}", _player_id, _player_prop.game_oper_state(), offline);
-
 	if (offline == _player_prop.offline()) return; //状态尚未发生变化
+	
+	DEBUG("玩家:{}状态变化:{} 是否离线:{}", _player_id, _player_prop.game_oper_state(), offline);
 
 	_player_prop.set_offline(offline); 
 
@@ -4683,7 +4683,7 @@ void PlayerManager::Remove(int64_t player_id)
 	
 	_players.erase(player_id);
 
-	if (g_center_session) g_center_session->Remove(player_id);
+	if (g_center_session) g_center_session->RemovePlayer(player_id);
 }
 
 void PlayerManager::Remove(std::shared_ptr<Player> player)
