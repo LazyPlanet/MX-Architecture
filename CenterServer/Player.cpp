@@ -502,20 +502,17 @@ bool Player::Update()
 {
 	++_heart_count; //心跳
 	
-	if (_heart_count % 20 == 0) //1s
-	{
-		CommonLimitUpdate(); //通用限制,定时更新
-	}
-	
 	if (_heart_count % 60 == 0) //3s
 	{
 		if (_dirty) Save(); //触发存盘
+
+		CommonLimitUpdate(); //通用限制,定时更新
 	}
 	
-	if (_heart_count % 80 == 0) //4s
-	{
-		SayHi();
-	}
+	//
+	//大厅玩家(中心服务器上玩家)心跳时间10s，游戏逻辑服务器上玩家心跳3s
+	//
+	if ((_heart_count % 200 == 0 && IsCenterServer()) || (_heart_count % 60 == 0 && !IsCenterServer())) SayHi();
 
 	return true;
 }
