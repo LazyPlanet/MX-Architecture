@@ -4589,8 +4589,18 @@ void Player::SendRoomState()
 	Asset::RoomState proto;
 	proto.set_room_id(0);
 
-	if (_room) proto.set_room_id(_room->GetID());
-	else proto.set_oper_type(Asset::GAME_OPER_TYPE_LEAVE);
+	if (_room) 
+	{
+		proto.set_room_id(_room->GetID());
+	}
+	else if (_stuff.room_id())
+	{
+		proto.set_room_id(_stuff.room_id());
+	}
+	else 
+	{
+		proto.set_oper_type(Asset::GAME_OPER_TYPE_LEAVE);
+	}
 
 	SendProtocol(proto);
 }
