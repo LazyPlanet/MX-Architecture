@@ -408,7 +408,7 @@ void WorldSession::OnProcessMessage(const Asset::Meta& meta)
 				//session->KickOutPlayer(Asset::KICK_OUT_REASON_OTHER_LOGIN);
 				//_player->SetSession(shared_from_this()); //重新设置网路连接会话，防止之前会话失效
 				WorldSessionInstance.AddPlayer(_player->GetID(), shared_from_this()); //在线玩家
-				LOG(ERROR, "玩家{}目前在线，被踢掉", _player->GetID());
+				//LOG(ERROR, "玩家{}目前在线，被踢掉", _player->GetID());
 			}
 			//WorldSessionInstance.AddPlayer(_player->GetID(), shared_from_this()); //在线玩家
 			
@@ -576,7 +576,6 @@ void WorldSession::OnLogout()
 	if (!_player) return;
 	
 	_player->Logout(nullptr);
-
 	_online = false;
 }
 	
@@ -796,9 +795,7 @@ void WorldSession::OnClose()
 {
 	Socket::OnClose();
 
-	if (_player) _player.reset();
-
-	_online = false;
+	OnLogout();
 	
 	DEBUG("角色类型:{} 全局ID:{} 关闭网络连接", _role_type, _global_id);
 }
