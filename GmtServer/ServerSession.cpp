@@ -277,7 +277,7 @@ Asset::COMMAND_ERROR_CODE ServerSession::OnCommandProcess(const Asset::Command& 
 	auto success = redis->GetPlayer(player_id, player);
 	if (!success)
 	{
-		RETURN(Asset::COMMAND_ERROR_CODE_PARA); //数据错误
+		RETURN(Asset::COMMAND_ERROR_CODE_NO_PLAYER); //没有角色数据
 	}
 
 	//
@@ -292,7 +292,7 @@ Asset::COMMAND_ERROR_CODE ServerSession::OnCommandProcess(const Asset::Command& 
 		
 	if (command.count() <= 0) //不可能是负数
 	{
-		RETURN(Asset::COMMAND_ERROR_CODE_NO_PLAYER); //数据错误
+		RETURN(Asset::COMMAND_ERROR_CODE_PARA); //数据错误
 	}
 
 	switch(command.command_type())
@@ -437,7 +437,7 @@ Asset::COMMAND_ERROR_CODE ServerSession::OnSendMail(const Asset::SendMail& comma
 		auto success = redis->GetPlayer(player_id, player);
 		if (!success)
 		{
-			RETURN(Asset::COMMAND_ERROR_CODE_PARA); //数据错误
+			RETURN(Asset::COMMAND_ERROR_CODE_NO_PLAYER); //数据错误
 		}
 
 		if (player.logout_time() == 0 && player.login_time() != 0) //玩家目前在线
