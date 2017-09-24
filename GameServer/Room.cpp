@@ -426,7 +426,7 @@ bool Room::Remove(int64_t player_id, Asset::GAME_OPER_TYPE reason)
 
 		OnPlayerLeave(player_id); //玩家离开房间
 		
-		DEBUG("player:{} leave room.", player_id);
+		DEBUG("玩家:{}离开房间:{}", player_id, _stuff.room_id());
 
 		return true;
 	}
