@@ -99,7 +99,7 @@ bool Room::Enter(std::shared_ptr<Player> player)
 				player->SetPosition((Asset::POSITION_TYPE)(i + 1)); //设置位置
 				break;
 			}
-			else if (player_in->GetID() == player->GetID()) //当前还在房间内
+			else if (player_in && player_in->GetID() == player->GetID()) //当前还在房间内
 			{
 				OnReEnter(player);
 

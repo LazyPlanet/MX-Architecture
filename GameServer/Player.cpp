@@ -225,7 +225,7 @@ int32_t Player::OnLogout()
 	kickout_player.set_reason(Asset::KICK_OUT_REASON_LOGOUT);
 	SendProtocol(kickout_player);
 	
-	DEBUG("玩家:{} 数据:{} 退出游戏成功", _player_id, _stuff.ShortDebugString());
+	DEBUG("玩家:{} 数据:{} 退出游戏逻辑服务器成功", _player_id, _stuff.ShortDebugString());
 
 	return 0;
 }
@@ -779,8 +779,14 @@ int32_t Player::CmdEnterRoom(pb::Message* message)
 			auto room_id = _room->GetID();
 
 			DEBUG("玩家:{}重入房间:{} 数据:{}", _player_id, room_id, enter_room_string);
+
+			if (room_id != enter_room->room().room_id())
+			{
+				auto client_room_id = enter_room->room().room_id();
+				LOG(ERROR, "玩家:{}重入房间错误，客户端记录和服务器记录不是一个，以当前服务器记录为主", _player_id, client_room_id, room_id);
+			}
 				
-			auto locate_room = RoomInstance.Get(enter_room->room().room_id());
+			auto locate_room = RoomInstance.Get(room_id);
 			if (!locate_room)
 			{
 				enter_room->set_error_code(Asset::ERROR_ROOM_NOT_FOUNT); //是否可以进入场景//房间
@@ -1239,6 +1245,7 @@ void Player::ResetRoom()
 
 	_stuff.clear_room_id(); //状态初始化
 	_player_prop.clear_voice_member_id(); //房间语音数据
+	_dirty = true;
 }
 
 void Player::AlertMessage(Asset::ERROR_CODE error_code, Asset::ERROR_TYPE error_type/*= Asset::ERROR_TYPE_NORMAL*/, 

@@ -178,7 +178,7 @@ int32_t Player::OnEnterCenter()
 	//Save(true); //存盘
 	
 	auto debug_string = _stuff.ShortDebugString();
-	DEBUG("玩家:{}重新进入大厅，数据内容:{}", _player_id, debug_string);
+	DEBUG("玩家:{}退出游戏逻辑服务器进入游戏大厅，数据内容:{}", _player_id, debug_string);
 
 	return 0;
 }

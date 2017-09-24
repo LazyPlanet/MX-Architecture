@@ -22,6 +22,7 @@ WorldSession::WorldSession(boost::asio::ip::tcp::socket&& socket) : Socket(std::
 	_remote_endpoint = _socket.remote_endpoint();
 	_ip_address = _remote_endpoint.address().to_string();
 			
+	_hi_time = CommonTimerInstance.GetTime(); 
 	DEBUG("地址:{} 端口:{} 连接成功", _ip_address, _remote_endpoint.port());
 }
 
@@ -775,15 +776,15 @@ bool WorldSession::Update()
 	auto curr_time = CommonTimerInstance.GetTime();
 	auto duration_pass = curr_time - _hi_time;
 
-	if (duration_pass > 60) //1分钟
+	if (duration_pass > 1800) //30分钟
 	{
 		++_pings_count;
 		
-		static int32_t max_allowed = 3;
+		static int32_t max_allowed = 6;
 
 		if (max_allowed && _pings_count > max_allowed) 
 		{
-			DEBUG("玩家:{}长时间没有操作，关闭网络连接，PING数量，过期时间:{}", _player ? _player->GetID() : 0, _pings_count, duration_pass);
+			DEBUG("玩家:{}长时间没有操作，关闭网络连接，服务器主动断线，PING数量:{}，过期时间:{}", _player ? _player->GetID() : 0, _pings_count, duration_pass);
 
 			Close();
 		}
