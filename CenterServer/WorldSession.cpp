@@ -88,7 +88,7 @@ void WorldSession::OnProcessMessage(const Asset::Meta& meta)
 	pb::Message* msg = ProtocolInstance.GetMessage(meta.type_t());	
 	if (!msg) 
 	{
-		ERROR("会话类型:{} 会话全局ID:{} 尚未找到协议处理回调:{}", _role_type, _global_id, meta.type_t());
+		ERROR("会话类型:{} 会话全局ID:{} 尚未找到协议处理回调，协议类型:{} 对方IP地址:{}", _role_type, _global_id, meta.type_t(), _ip_address);
 		return;		//非法协议
 	}
 

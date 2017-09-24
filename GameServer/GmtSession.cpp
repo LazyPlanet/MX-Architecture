@@ -70,6 +70,8 @@ bool GmtManager::OnInnerProcess(const Asset::InnerMeta& meta)
 				return false; //未能创建成功房间，理论不会出现
 			}
 
+			DEBUG("GMT开房成功，数据:{}", room.ShortDebugString());
+
 			room_ptr->SetGmtOpened(); //设置GMT开房
 
 			message.set_room_id(room_ptr->GetID());
