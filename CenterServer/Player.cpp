@@ -510,9 +510,9 @@ bool Player::Update()
 	}
 	
 	//
-	//大厅玩家(中心服务器上玩家)心跳时间10s，游戏逻辑服务器上玩家心跳3s
+	//大厅玩家(中心服务器上玩家)心跳时间5s，游戏逻辑服务器上玩家心跳3s
 	//
-	if ((_heart_count % 200 == 0 && IsCenterServer()) || (_heart_count % 60 == 0 && !IsCenterServer())) SayHi();
+	if ((_heart_count % 100 == 0 && IsCenterServer()) || (_heart_count % 60 == 0 && !IsCenterServer())) SayHi();
 
 	return true;
 }

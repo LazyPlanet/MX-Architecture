@@ -207,19 +207,20 @@ void Game::OnPlayerReEnter(std::shared_ptr<Player> player)
 	//如果轮到玩家的是胡//杠//碰则直接放弃
 	//
 	if (_curr_player_index != player_index && _oper_limit.player_id() == player->GetID() && (_oper_limit.oper_type() == Asset::PAI_OPER_TYPE_HUPAI || 
-				_oper_limit.oper_type() == Asset::PAI_OPER_TYPE_GANGPAI || _oper_limit.oper_type() == Asset::PAI_OPER_TYPE_PENGPAI))
+				_oper_limit.oper_type() == Asset::PAI_OPER_TYPE_GANGPAI || _oper_limit.oper_type() == Asset::PAI_OPER_TYPE_PENGPAI ||
+			_oper_limit.oper_type() == Asset::PAI_OPER_TYPE_CHIPAI))
 	{
 		Asset::PaiOperation pai_operation; 
 		pai_operation.set_oper_type(Asset::PAI_OPER_TYPE_GIVEUP);
 		pai_operation.set_position(player->GetPosition());
 		pai_operation.mutable_pai()->CopyFrom(_oper_limit.pai());
 
-		player->CmdPaiOperate(&pai_operation);
-
 		auto oper_string = _oper_limit.ShortDebugString();
 		auto player_id = player->GetID();
 
-		DEBUG("玩家:{}重入房间，操作放弃:{} 当前玩家索引:{} 操作玩家索引:{}", player_id, oper_string, _curr_player_index, player_index);
+		DEBUG("玩家:{}由于房间内断线重入房间，操作放弃:{} 当前玩家索引:{} 操作玩家索引:{}", player_id, oper_string, _curr_player_index, player_index);
+		
+		player->CmdPaiOperate(&pai_operation); //会清理缓存操作
 
 		return;
 	}
@@ -244,7 +245,7 @@ void Game::OnPlayerReEnter(std::shared_ptr<Player> player)
 	auto card_string = card.ShortDebugString();
 	auto oper_string = _oper_limit.ShortDebugString();
 
-	DEBUG("玩家:{}重入房间，进行发牌:{} 缓存操作:{} 当前索引:{} 玩家索引:{}", player->GetID(), card_string, oper_string, _curr_player_index, player_index);
+	DEBUG("玩家:{}由于断线重入房间，进行发牌:{} 缓存操作:{} 当前索引:{} 玩家索引:{}", player->GetID(), card_string, oper_string, _curr_player_index, player_index);
 
 	Asset::PaiOperationAlert alert;
 

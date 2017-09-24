@@ -1029,9 +1029,9 @@ bool Player::Update()
 		if (_dirty) Save(); //触发存盘
 	}
 	
-	if (_heart_count % 5 == 0) //5s
+	if (_heart_count % 3 == 0) //3
 	{
-		SayHi(); //逻辑服务器不进行心跳检查
+		SayHi(); //逻辑服务器不进行心跳检查，只进行断线逻辑检查
 	}
 
 	if (_heart_count % 60 == 0) //1min
@@ -1377,7 +1377,7 @@ int32_t Player::CmdGetRoomData(pb::Message* message)
 	auto get_data = dynamic_cast<Asset::GetRoomData*>(message);
 	if (!get_data) return 1;
 
-	DEBUG("玩家:{}数据:{}", _player_id, _stuff.ShortDebugString())
+	DEBUG("玩家:{}由于房间内断线，重新获取数据数据:{}", _player_id, _stuff.ShortDebugString())
 
 	if (!_room || _room->GetID() != get_data->room_id() || _stuff.room_id() == 0)
 	{
@@ -4409,7 +4409,7 @@ void Player::SayHi()
 
 	if (duration_pass <= 0) return;
 
-	if (duration_pass > 5)
+	if (duration_pass > 3)
 	{
 		++_pings_count;
 		

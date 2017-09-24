@@ -770,12 +770,12 @@ bool WorldSession::Update()
 
 	if (!_online) return false;
 	
-	if (_heart_count % 6000 != 0) return true;
+	if (_heart_count % 6000 != 0) return true; //10分钟
 
 	auto curr_time = CommonTimerInstance.GetTime();
 	auto duration_pass = curr_time - _hi_time;
 
-	if (duration_pass > 60)
+	if (duration_pass > 60) //1分钟
 	{
 		++_pings_count;
 		
@@ -783,6 +783,8 @@ bool WorldSession::Update()
 
 		if (max_allowed && _pings_count > max_allowed) 
 		{
+			DEBUG("玩家:{}长时间没有操作，关闭网络连接，PING数量，过期时间:{}", _player ? _player->GetID() : 0, _pings_count, duration_pass);
+
 			Close();
 		}
 	}
