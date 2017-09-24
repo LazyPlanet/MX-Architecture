@@ -305,7 +305,8 @@ void Game::OnPlayerReEnter(std::shared_ptr<Player> player)
 			auto pai_perator = alert.mutable_pais()->Add();
 			pai_perator->CopyFrom(gang);
 		
-			_oper_cache.mutable_oper_list()->Add(Asset::PAI_OPER_TYPE_GANGPAI);
+			_oper_cache.mutable_pai()->CopyFrom(gang.pai());
+			for (auto oper_type : gang.oper_list()) _oper_cache.mutable_oper_list()->Add(Asset::PAI_OPER_TYPE(oper_type));
 		}
 	}
 	
@@ -318,7 +319,7 @@ void Game::OnPlayerReEnter(std::shared_ptr<Player> player)
 		auto pai_perator = alert.mutable_pais()->Add();
 		pai_perator->mutable_oper_list()->Add((Asset::PAI_OPER_TYPE)xf_gang);
 			
-		_oper_cache.mutable_oper_list()->Add(Asset::PAI_OPER_TYPE_GANGPAI);
+		_oper_cache.mutable_oper_list()->Add((Asset::PAI_OPER_TYPE)xf_gang);
 	}
 
 	if (alert.pais().size()) 
@@ -468,7 +469,8 @@ void Game::OnPaiOperate(std::shared_ptr<Player> player, pb::Message* message)
 						auto pai_perator = alert.mutable_pais()->Add();
 						pai_perator->CopyFrom(gang);
 		
-						_oper_cache.mutable_oper_list()->Add(Asset::PAI_OPER_TYPE_GANGPAI);
+						_oper_cache.mutable_pai()->CopyFrom(gang.pai());
+						for (auto oper_type : gang.oper_list()) _oper_cache.mutable_oper_list()->Add(Asset::PAI_OPER_TYPE(oper_type));
 					}
 				}
 				
@@ -481,7 +483,7 @@ void Game::OnPaiOperate(std::shared_ptr<Player> player, pb::Message* message)
 					auto pai_perator = alert.mutable_pais()->Add();
 					pai_perator->mutable_oper_list()->Add((Asset::PAI_OPER_TYPE)xf_gang);
 						
-					_oper_cache.mutable_oper_list()->Add(Asset::PAI_OPER_TYPE_GANGPAI);
+					_oper_cache.mutable_oper_list()->Add((Asset::PAI_OPER_TYPE)xf_gang);
 				}
 
 				if (alert.pais().size()) 
@@ -742,9 +744,10 @@ void Game::OnPaiOperate(std::shared_ptr<Player> player, pb::Message* message)
 				{
 					auto pai_perator = alert.mutable_pais()->Add();
 					pai_perator->CopyFrom(gang);
+						
+					_oper_cache.mutable_pai()->CopyFrom(gang.pai());
+					for (auto oper_type : gang.oper_list()) _oper_cache.mutable_oper_list()->Add(Asset::PAI_OPER_TYPE(oper_type));
 				}
-				
-				_oper_cache.mutable_oper_list()->Add(Asset::PAI_OPER_TYPE_GANGPAI);
 			}
 
 			//
