@@ -1398,10 +1398,10 @@ bool Game::SendCheckRtn()
 	pai_perator->mutable_pai()->CopyFrom(operation.pai());
 
 	for (auto rtn : operation.oper_list()) 
+	{
 		pai_perator->mutable_oper_list()->Add(rtn); //可操作牌类型
-
-	auto youxian = std::min(operation.oper_list().begin(), operation.oper_list().end());
-	_oper_cache.mutable_oper_list()->Add((Asset::PAI_OPER_TYPE)(*youxian)); //缓存操作
+		_oper_cache.mutable_oper_list()->Add(rtn); //缓存操作
+	}
 
 	if (auto player_to = GetPlayer(player_id)) 
 		player_to->SendProtocol(alert); //发给目标玩家
