@@ -150,7 +150,7 @@ void Room::OnReEnter(std::shared_ptr<Player> op_player)
 
 		for (int32_t i = 0; i < hist_record->list().size(); ++i)
 		{
-			if (message.player_list().size() < MAX_PLAYER_COUNT)
+			if (message.player_brief_list().size() < MAX_PLAYER_COUNT)
 			{
 				auto player_brief = message.mutable_player_brief_list()->Add();
 				player_brief->set_player_id(hist_record->list(i).player_id());

@@ -776,7 +776,7 @@ bool WorldSession::Update()
 	auto curr_time = CommonTimerInstance.GetTime();
 	auto duration_pass = curr_time - _hi_time;
 
-	if (duration_pass > 1800) //30分钟
+	if (duration_pass > 1800 && _role_type != Asset::ROLE_TYPE_GAME_SERVER) //30分钟
 	{
 		++_pings_count;
 		
