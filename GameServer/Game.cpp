@@ -208,25 +208,31 @@ void Game::OnPlayerReEnter(std::shared_ptr<Player> player)
 	//
 	if (_curr_player_index != player_index && _oper_cache.player_id() == player->GetID() && (_oper_cache.oper_list().size() > 0))
 	{
-		/*
-		Asset::PaiOperation pai_operation; 
-		pai_operation.set_oper_type(Asset::PAI_OPER_TYPE_GIVEUP);
-		pai_operation.set_position(player->GetPosition());
-		pai_operation.mutable_pai()->CopyFrom(_oper_cache.pai());
-		*/
 		auto oper_string = _oper_cache.ShortDebugString();
 		auto player_id = player->GetID();
 
 		DEBUG("玩家:{}由于房间内断线重入房间，操作重新推送:{} 当前玩家索引:{} 操作玩家索引:{}", player_id, oper_string, _curr_player_index, player_index);
 		
-		//player->CmdPaiOperate(&pai_operation); //会清理缓存操作
 		Asset::PaiOperationAlert alert;
 		auto pai_perator = alert.mutable_pais()->Add();
-		pai_perator->mutable_pai()->CopyFrom(_oper_cache.pai());
 
 		for (int32_t i = 0; i < _oper_cache.oper_list().size(); ++i)
-			pai_perator->mutable_oper_list()->Add(_oper_cache.oper_list(i)); //可操作牌类型
-
+		{
+			if (_oper_cache.oper_list(i) == Asset::PAI_OPER_TYPE_TINGPAI)
+			{
+				for (const auto& pai : _oper_cache.ting_pais())
+				{
+					pai_perator->mutable_oper_list()->Add(Asset::PAI_OPER_TYPE_TINGPAI); //可操作牌类型
+					pai_perator->mutable_pai()->CopyFrom(pai);
+				}
+			}
+			else
+			{
+				pai_perator->mutable_oper_list()->Add(_oper_cache.oper_list(i)); //可操作牌类型
+				pai_perator->mutable_pai()->CopyFrom(_oper_cache.pai());
+			}
+		}
+						
 		player->SendProtocol(alert);
 
 		return;
@@ -286,11 +292,15 @@ void Game::OnPlayerReEnter(std::shared_ptr<Player> player)
 	std::vector<Asset::PaiElement> ting_list;
 	if (player->CheckTingPai(ting_list))
 	{
+		_oper_cache.mutable_oper_list()->Add(Asset::PAI_OPER_TYPE_TINGPAI);
+
 		for (auto pai : ting_list) 
 		{
 			auto pai_perator = alert.mutable_pais()->Add();
 			pai_perator->mutable_pai()->CopyFrom(pai);
 			pai_perator->mutable_oper_list()->Add(Asset::PAI_OPER_TYPE_TINGPAI);
+
+			_oper_cache.mutable_ting_pais()->Add()->CopyFrom(pai);
 		}
 	}
 	
@@ -450,11 +460,15 @@ void Game::OnPaiOperate(std::shared_ptr<Player> player, pb::Message* message)
 				std::vector<Asset::PaiElement> ting_list;
 				if (player_next->CheckTingPai(ting_list))
 				{
+					_oper_cache.mutable_oper_list()->Add(Asset::PAI_OPER_TYPE_TINGPAI);
+
 					for (auto pai : ting_list) 
 					{
 						auto pai_perator = alert.mutable_pais()->Add();
 						pai_perator->mutable_pai()->CopyFrom(pai);
 						pai_perator->mutable_oper_list()->Add(Asset::PAI_OPER_TYPE_TINGPAI);
+					
+						_oper_cache.mutable_ting_pais()->Add()->CopyFrom(pai);
 					}
 				}
 				
@@ -603,6 +617,8 @@ void Game::OnPaiOperate(std::shared_ptr<Player> player, pb::Message* message)
 				std::vector<Asset::PaiElement> pais;
 				if (player->CheckTingPai(pais)) //听牌检查
 				{
+					_oper_cache.mutable_oper_list()->Add(Asset::PAI_OPER_TYPE_TINGPAI);
+
 					Asset::PaiOperationAlert alert;
 
 					for (auto pai : pais) 
@@ -610,6 +626,8 @@ void Game::OnPaiOperate(std::shared_ptr<Player> player, pb::Message* message)
 						auto pai_perator = alert.mutable_pais()->Add();
 						pai_perator->mutable_pai()->CopyFrom(pai);
 						pai_perator->mutable_oper_list()->Add(Asset::PAI_OPER_TYPE_TINGPAI);
+
+						_oper_cache.mutable_ting_pais()->Add()->CopyFrom(pai);
 					}
 
 					if (alert.pais().size()) player->SendProtocol(alert); //提示Client
@@ -638,6 +656,8 @@ void Game::OnPaiOperate(std::shared_ptr<Player> player, pb::Message* message)
 				std::vector<Asset::PaiElement> pais;
 				if (player->CheckTingPai(pais)) //听牌检查
 				{
+					_oper_cache.mutable_oper_list()->Add(Asset::PAI_OPER_TYPE_TINGPAI);
+
 					Asset::PaiOperationAlert alert;
 
 					for (auto pai : pais) 
@@ -645,6 +665,8 @@ void Game::OnPaiOperate(std::shared_ptr<Player> player, pb::Message* message)
 						auto pai_perator = alert.mutable_pais()->Add();
 						pai_perator->mutable_pai()->CopyFrom(pai);
 						pai_perator->mutable_oper_list()->Add(Asset::PAI_OPER_TYPE_TINGPAI);
+
+						_oper_cache.mutable_ting_pais()->Add()->CopyFrom(pai);
 					}
 
 					if (alert.pais().size()) player->SendProtocol(alert); //提示Client
@@ -729,11 +751,15 @@ void Game::OnPaiOperate(std::shared_ptr<Player> player, pb::Message* message)
 			std::vector<Asset::PaiElement> ting_list;
 			if (player_next->CheckTingPai(ting_list)) //听牌检查
 			{
+				_oper_cache.mutable_oper_list()->Add(Asset::PAI_OPER_TYPE_TINGPAI);
+
 				for (auto pai : ting_list) 
 				{
 					auto pai_perator = alert.mutable_pais()->Add();
 					pai_perator->mutable_pai()->CopyFrom(pai);
 					pai_perator->mutable_oper_list()->Add(Asset::PAI_OPER_TYPE_TINGPAI);
+
+					_oper_cache.mutable_ting_pais()->Add()->CopyFrom(pai);
 				}
 			}
 			

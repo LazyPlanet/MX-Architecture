@@ -883,13 +883,11 @@ void Player::BattleHistory(int32_t start_index, int32_t end_index)
 			}
 		}
 
-		/*
-		for (int m = 0; m < 2; ++m)
+		for (int m = 0; m < 10; ++m)
 		{
 			auto record = message.mutable_history_list()->Add();
 			record->CopyFrom(history);
 		}
-		*/
 	}
 
 	//if (message.history_list().size() == 0) return;

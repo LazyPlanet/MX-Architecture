@@ -134,7 +134,7 @@ void Room::OnReEnter(std::shared_ptr<Player> op_player)
 	//
 	SyncRoom();
 
-	if (!HasStarted() || (!_game && GetRemainCount()/*单纯记录局数不能判定对局已经结束*/) <= 0) return; //尚未开局或者已经对局结束
+	if (!HasStarted() || (!_game && GetRemainCount() <= 0 /*单纯记录局数不能判定对局已经结束*/)) return; //尚未开局或者已经对局结束
 
 	//
 	//房间内玩家数据推送
