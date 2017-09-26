@@ -769,7 +769,7 @@ bool WorldSession::Update()
 
 	if (!Socket::Update()) return false;
 
-	if (!_online) return false;
+	//if (!_online) return false;
 	
 	if (_heart_count % 6000 != 0) return true; //10分钟
 

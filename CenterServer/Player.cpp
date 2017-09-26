@@ -877,14 +877,14 @@ void Player::BattleHistory(int32_t start_index, int32_t end_index)
 		//
 		for (int32_t k = 0; k < history.list().size(); ++k)
 		{
-			for (int32_t j = 0; j < history.list(i).list().size(); ++j)
+			for (int32_t j = 0; j < history.list(k).list().size(); ++j)
 			{
 				history.mutable_list(k)->mutable_list(j)->mutable_details()->Clear();
 			}
 		}
 
 		/*
-		for (int m = 0; m < 10; ++m)
+		for (int m = 0; m < 2; ++m)
 		{
 			auto record = message.mutable_history_list()->Add();
 			record->CopyFrom(history);
