@@ -701,7 +701,7 @@ void Room::SyncRoom()
 			auto distance = redis->GetDistance(dis_player->GetID(), player->GetID());
 			dis_element->set_distance(distance);
 
-			DEBUG("获取玩家{}和玩家{}之间的距离:{}", dis_player->GetID(), player->GetID(), distance);
+			//DEBUG("获取玩家{}和玩家{}之间的距离:{}", dis_player->GetID(), player->GetID(), distance);
 		}
 	}
 

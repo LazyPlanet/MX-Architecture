@@ -784,9 +784,9 @@ bool WorldSession::Update()
 
 		if (max_allowed && _pings_count > max_allowed) 
 		{
-			DEBUG("玩家:{}长时间没有操作，关闭网络连接，服务器主动断线，PING数量:{}，过期时间:{}", _player ? _player->GetID() : 0, _pings_count, duration_pass);
+			LOG(ERROR, "玩家:{}长时间没有操作，关闭网络连接，服务器主动断线，PING数量:{}，过期时间:{}", _player ? _player->GetID() : 0, _pings_count, duration_pass);
 
-			Close();
+			//Close();
 		}
 	}
 
