@@ -155,7 +155,7 @@ void WorldSession::OnProcessMessage(const Asset::Meta& meta)
 		//来自Client协议均在此处理，逻辑程序员请勿在此后添加代码
 		//
 		
-		//DEBUG("3.中心服务器接收来自Client的协议:{}", meta.type_t());
+		DEBUG("3.中心服务器接收来自Client的协议:{}", meta.type_t());
 
 		_pings_count = 0;
 		_hi_time = CommonTimerInstance.GetTime(); 

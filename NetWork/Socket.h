@@ -144,7 +144,7 @@ public:
 		if (!_socket.is_open()) return false;
 
 		if (_write_queue.empty()) return false;
-		const std::string& meta = _write_queue.front();  //其实是META数据
+		std::string& meta = _write_queue.front();  //其实是META数据
 
 		std::size_t bytes_to_send = meta.size();
 		if (bytes_to_send <= 0 || bytes_to_send >= MAX_DATA_SIZE) return false;
@@ -174,7 +174,7 @@ public:
 		*/
 		else if (bytes_sent == 0)
 		{
-			ERROR("待发送数据长度:{} 实际发送数据长度:{} 错误码:{} 错误信息:{}", bytes_to_send, bytes_sent, error.value(), error.message());
+			ERROR("待发送数据长度:{}实际发送数据长度:{}为0，错误码:{} 错误信息:{}", bytes_to_send, bytes_sent, error.value(), error.message());
 
 			_write_queue.pop();
 			if (_closing && _write_queue.empty()) Close();
@@ -183,9 +183,13 @@ public:
 		}
 		else if (bytes_sent < bytes_to_send) //一般不会出现这个情况，重新发送，记个ERROR
 		{
-			ERROR("待发送数据长度:{} 实际发送数据长度:{} 错误码:{} 错误信息:{}", bytes_to_send, bytes_sent, error.value(), error.message());
+			LOG(ERROR, "待发送数据长度:{}少于实际发送数据长度:{} 错误码:{} 错误信息:{}", bytes_to_send, bytes_sent, error.value(), error.message());
+
+			meta = meta.substr(bytes_sent);
 			return AsyncProcessQueue();
 		}
+			
+		//DEBUG("待发送数据长度:{}实际发送数据长度:{}，错误码:{} 错误信息:{}", bytes_to_send, bytes_sent, error.value(), error.message());
 
 		_write_queue.pop();
 

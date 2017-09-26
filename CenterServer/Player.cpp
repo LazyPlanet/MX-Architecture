@@ -830,13 +830,15 @@ int32_t Player::CmdRecharge(pb::Message* message)
 
 void Player::BattleHistory(int32_t start_index, int32_t end_index)
 {
+	int32_t const_length = 5;
+
 	Asset::BattleHistory message;
 	message.set_start_index(start_index);
 	message.set_end_index(end_index);
 
 	if (start_index > end_index || start_index < 0 || end_index < 0) return;
 
-	int32_t historty_count = std::min(_stuff.room_history().size(), 5); //最多显示5条记录
+	int32_t historty_count = std::min(_stuff.room_history().size(), const_length); //最多显示2条记录
 	if (historty_count <= 0) return;
 	
 	if (end_index - start_index > historty_count) return;
@@ -849,19 +851,11 @@ void Player::BattleHistory(int32_t start_index, int32_t end_index)
 	if (!client.is_connected()) return;
 	
 	auto has_auth = client.auth(ConfigInstance.GetString("Redis_Password", "!QAZ%TGB&UJM9ol."));
-	if (has_auth.get().ko()) 
-	{
-		DEBUG_ASSERT(false);
-		return;
-	}
+	if (has_auth.get().ko()) return;
 
 	for (int32_t i = end_index - 1; i >= start_index; --i)
 	{
-		if (i < 0 || i >= _stuff.room_history().size()) 
-		{
-			DEBUG_ASSERT(false);
-			continue; //安全检查
-		}
+		if (i < 0 || i >= _stuff.room_history().size()) continue; //安全检查
 
 		Asset::RoomHistory history;
 
@@ -873,33 +867,32 @@ void Player::BattleHistory(int32_t start_index, int32_t end_index)
 		cpp_redis::reply reply = get.get();
 		client.commit();
 
-		if (!reply.is_string()) 
-		{
-			WARN("房间:{}没有数据", room_id);
-			continue;
-		}
+		if (!reply.is_string()) continue;
 
 		auto success = history.ParseFromString(reply.as_string());
-		if (!success)
-		{
-			WARN("房间:{}没有数据", room_id);
-			continue;
-		}
+		if (!success) continue;
 
 		//
 		//删除Client不用的数据
 		//
-		for (int32_t i = 0; i < history.list().size(); ++i)
+		for (int32_t k = 0; k < history.list().size(); ++k)
 		{
 			for (int32_t j = 0; j < history.list(i).list().size(); ++j)
 			{
-				history.mutable_list(i)->mutable_list(j)->mutable_details()->Clear();
+				history.mutable_list(k)->mutable_list(j)->mutable_details()->Clear();
 			}
 		}
 
-		auto record = message.mutable_history_list()->Add();
-		record->CopyFrom(history);
+		/*
+		for (int m = 0; m < 10; ++m)
+		{
+			auto record = message.mutable_history_list()->Add();
+			record->CopyFrom(history);
+		}
+		*/
 	}
+
+	//if (message.history_list().size() == 0) return;
 
 	if (message.history_list().size()) SendProtocol(message);
 }

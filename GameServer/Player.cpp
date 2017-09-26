@@ -106,7 +106,7 @@ int32_t Player::Save(bool force)
 	auto success = redis->SavePlayer(_player_id, _stuff);
 	if (!success) 
 	{
-		DEBUG_ASSERT(false);
+		LOG(ERROR, "保存玩家:{}数据:{}失败", _player_id, _stuff.ShortDebugString());
 		return 2;
 	}
 	
@@ -547,7 +547,8 @@ int32_t Player::CmdGameOperate(pb::Message* message)
 
 	if (!_room) 
 	{
-		DEBUG_ASSERT(false && "玩家尚未在房间当中");
+		auto debug_string = game_operate->ShortDebugString();
+		LOG(ERROR, "玩家:{}尚未在房间当中，无法进行操作:{}", _player_id, debug_string);
 		return 4;
 	}
 
@@ -580,13 +581,15 @@ int32_t Player::CmdPaiOperate(pb::Message* message)
 
 	if (!_room || !_game) 
 	{
-		DEBUG_ASSERT(false);
+		auto debug_string = pai_operate->ShortDebugString();
+		LOG(ERROR, "玩家:{}尚未在房间或者牌局当中，无法进行操作:{}", _player_id, debug_string);
 		return 2; //还没加入房间或者还没开始游戏
 	}
 
 	if (!pai_operate->position()) pai_operate->set_position(GetPosition()); //设置玩家座位
 	
-	DEBUG("Receive from player_id:{} operation: {}.", _player_id, pai_operate->DebugString());
+	auto debug_string = pai_operate->DebugString();
+	DEBUG("接收玩家:{}的牌局操作:{}.", _player_id, debug_string);
 
 	PrintPai(); //打印玩家当前手里的牌数据
 
@@ -602,7 +605,7 @@ int32_t Player::CmdPaiOperate(pb::Message* message)
 			auto it = std::find(pais.begin(), pais.end(), pai.card_value()); //查找第一个满足条件的牌即可
 			if (it == pais.end()) 
 			{
-				DEBUG_ASSERT(false);
+				LOG(ERROR, "玩家:{}不能打牌，无法找到牌:{}", _player_id, debug_string);
 				return 3; //没有这张牌
 			}
 
@@ -666,13 +669,13 @@ int32_t Player::CmdPaiOperate(pb::Message* message)
 			auto it = std::find(pais.begin(), pais.end(), pai.card_value()); //查找第一个满足条件的牌即可
 			if (it == pais.end()) 
 			{
-				DEBUG_ASSERT(false);
+				LOG(ERROR, "玩家:{}不能听牌, 原因:没找到牌", _player_id);
 				return 7; //没有这张牌
 			}
 
 			if (!CanTingPai(pai)) 
 			{
-				DEBUG_ASSERT(false);
+				LOG(ERROR, "玩家:{}不能听牌, 原因:不满足牌型", _player_id);
 				return 8; //不能听牌
 			}
 
@@ -1001,21 +1004,13 @@ void Player::SendProtocol(const pb::Message& message)
 
 void Player::Send2Roomers(pb::Message& message, int64_t exclude_player_id) 
 {
-	if (!_room) 
-	{
-		DEBUG_ASSERT(false);
-		return;
-	}
+	if (!_room) return;
 	_room->BroadCast(message, exclude_player_id);
 }
 
 void Player::Send2Roomers(pb::Message* message, int64_t exclude_player_id)
 {
-	if (!_room) 
-	{
-		DEBUG_ASSERT(false);
-		return;
-	}
+	if (!_room) return;
 	_room->BroadCast(message, exclude_player_id);
 }
 
@@ -1035,7 +1030,7 @@ bool Player::Update()
 		if (_dirty) Save(); //触发存盘
 	}
 	
-	if (_heart_count % 3 == 0) //3
+	if (_heart_count % 2 == 0) //2s
 	{
 		SayHi(); //逻辑服务器不进行心跳检查，只进行断线逻辑检查
 	}
@@ -3046,7 +3041,7 @@ void Player::OnPengPai(const Asset::PaiElement& pai)
 
 	if (!CheckPengPai(pai)) 
 	{
-		DEBUG_ASSERT(false);
+		LOG(ERROR, "玩家:{}无法碰牌:{}", _player_id, pai.ShortDebugString());
 		return;
 	}
 	
@@ -3334,7 +3329,7 @@ void Player::OnGangPai(const Asset::PaiElement& pai, int64_t from_player_id)
 {
 	if (!CheckGangPai(pai, from_player_id)) 
 	{
-		DEBUG_ASSERT(false);
+		LOG(ERROR, "玩家:{}无法杠牌:{}, 牌来自:{}", _player_id, pai.ShortDebugString(), from_player_id);
 		return;
 	}
 	
@@ -3347,7 +3342,7 @@ void Player::OnGangPai(const Asset::PaiElement& pai, int64_t from_player_id)
 	auto it = _cards_inhand.find(card_type);
 	if (it == _cards_inhand.end()) 
 	{
-		DEBUG_ASSERT(false);
+		LOG(ERROR, "玩家:{}无法杠牌:{}, 牌来自:{}", _player_id, pai.ShortDebugString(), from_player_id);
 		return; //理论上不会如此
 	}
 	
@@ -4416,7 +4411,7 @@ void Player::SayHi()
 
 	if (duration_pass <= 0) return;
 
-	if (duration_pass > 3)
+	if (duration_pass > 2)
 	{
 		++_pings_count;
 		
