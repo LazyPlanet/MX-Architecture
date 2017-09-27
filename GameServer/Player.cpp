@@ -4428,10 +4428,6 @@ void Player::SayHi()
 		
 		_pings_count = 0;
 	}
-	
-	
-	DEBUG("玩家:{} 发送心跳:{}", _player_id, _hi_time);
-
 	/*
 	Asset::SayHi message;
 	message.set_heart_count(_heart_count);

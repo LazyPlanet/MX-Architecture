@@ -40,7 +40,7 @@ void WorldSession::InitializeHandler(const boost::system::error_code error, cons
 				return;
 			}
 
-			Close();
+			//Close();
 		}
 		else
 		{
@@ -771,6 +771,7 @@ bool WorldSession::Update()
 
 	//if (!_online) return false;
 	
+	/*
 	if (_heart_count % 6000 != 0) return true; //10分钟
 
 	auto curr_time = CommonTimerInstance.GetTime();
@@ -789,6 +790,7 @@ bool WorldSession::Update()
 			//Close();
 		}
 	}
+	*/
 
 	return true;
 }

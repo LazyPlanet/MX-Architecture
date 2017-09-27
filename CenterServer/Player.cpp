@@ -777,6 +777,8 @@ void Player::SayHi()
 	Asset::SayHi message;
 	message.set_heart_count(_heart_count);
 	SendProtocol(message);
+
+	DEBUG("玩家:{} 发送心跳:{}", _player_id, _hi_time);
 }
 	
 int32_t Player::CmdGameSetting(pb::Message* message)
