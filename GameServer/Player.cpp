@@ -3006,6 +3006,7 @@ void Player::OnChiPai(const Asset::PaiElement& pai, pb::Message* message)
 	}
 	
 	///////////////////////旋风杠检查///////////////////////
+	/*
 	auto xuanfeng_gang = CheckXuanFeng();
 	if (xuanfeng_gang)
 	{
@@ -3014,6 +3015,7 @@ void Player::OnChiPai(const Asset::PaiElement& pai, pb::Message* message)
 		pai_perator->mutable_oper_list()->Add((Asset::PAI_OPER_TYPE)xuanfeng_gang);
 		SendProtocol(alert); //提示Client
 	}
+	*/
 
 	SynchronizePai();
 }
@@ -3096,22 +3098,25 @@ void Player::OnPengPai(const Asset::PaiElement& pai)
 	for (int i = 0; i < 3; ++i) _cards_outhand[pai.card_type()].push_back(pai.card_value());
 	for (int i = 0; i < 2; ++i) _game->Add2CardsPool(pai);
 		
-	Asset::PaiOperationAlert alert;
+	//Asset::PaiOperationAlert alert;
 	
 	//
 	//旋风杠检查
 	//
+	/*
 	auto xuanfeng_gang = CheckXuanFeng();
 	if (xuanfeng_gang)
 	{
 		auto pai_perator = alert.mutable_pais()->Add();
 		pai_perator->mutable_oper_list()->Add((Asset::PAI_OPER_TYPE)xuanfeng_gang);
 	}
+	*/
 	//
 	//玩家杠牌检查
 	//
 	//杠检查(明杠和暗杠)
 	//
+	/*
 	RepeatedField<Asset::PaiOperationAlert_AlertElement> gang_list;
 	if (CheckAllGangPai(gang_list)) 
 	{
@@ -3123,8 +3128,9 @@ void Player::OnPengPai(const Asset::PaiElement& pai)
 			pai_perator->CopyFrom(gang);
 		}
 	}
+	*/
 		
-	if (alert.pais().size()) SendProtocol(alert); //提示Client
+	//if (alert.pais().size()) SendProtocol(alert); //提示Client
 	
 	SynchronizePai();
 }
@@ -3988,14 +3994,13 @@ int32_t Player::OnFaPai(std::vector<int32_t>& cards)
 		}
 	}
 
-	if (false && _player_id == 262162 && _cards_inhand.size() == 0)
+	if (true && _player_id == 262146 && _cards_inhand.size() == 0)
 	{
 		_cards_inhand = {
 			{ 1, { 9, 9} },
-			{ 2, { 2, 7, 7, 8, 8 } },
-			{ 3, { 7 } },
-			{ 4, { 4, 4} },
-			{ 5, { 1, 2, 3} },
+			{ 2, { 7, 7, 7, 8, 8 } },
+			{ 4, { 4, 4, 4} },
+			{ 5, { 2, 2, 2 } },
 		
 		};
 		

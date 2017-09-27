@@ -40,7 +40,7 @@ void WorldSession::InitializeHandler(const boost::system::error_code error, cons
 				return;
 			}
 
-			//Close();
+			Close();
 		}
 		else
 		{
@@ -545,7 +545,7 @@ void WorldSession::KickOutPlayer(Asset::KICK_OUT_REASON reason)
 {
 	DEBUG("_role_type:{} _global_id:{} reason:{}", _role_type, _global_id, reason);
 
-	if (_global_id == 0 || _role_type == Asset::ROLE_TYPE_NULL) return;
+	//if (_global_id == 0 || _role_type == Asset::ROLE_TYPE_NULL) return;
 	
 	if (_role_type == Asset::ROLE_TYPE_GAME_SERVER) //逻辑服务器
 	{
@@ -568,7 +568,7 @@ void WorldSession::KickOutPlayer(Asset::KICK_OUT_REASON reason)
 		_player->OnKickOut(reason); //玩家退出登陆
 	}
 		
-	_online = false;
+	//_online = false;
 }
 	
 void WorldSession::OnLogout()
@@ -576,7 +576,7 @@ void WorldSession::OnLogout()
 	if (!_player) return;
 	
 	_player->Logout(nullptr);
-	_online = false;
+	//_online = false;
 }
 	
 int32_t WorldSession::OnWechatLogin(const pb::Message* message)
@@ -924,8 +924,8 @@ void WorldSessionManager::AddPlayer(int64_t player_id, std::shared_ptr<WorldSess
 
 	std::lock_guard<std::mutex> lock(_client_mutex);
 
-	auto it = _client_list.find(player_id);
-	if (it != _client_list.end() && it->second) it->second.reset();
+	//auto it = _client_list.find(player_id);
+	//if (it != _client_list.end() && it->second) it->second.reset();
 
 	_client_list[player_id] = session; 
 }
@@ -937,7 +937,7 @@ void WorldSessionManager::RemovePlayer(int64_t player_id)
 	auto it = _client_list.find(player_id);
 	if (it == _client_list.end()) return;
 	
-	if (it->second) it->second.reset();
+	//if (it->second) it->second.reset();
 
 	_client_list.erase(it); 
 }
