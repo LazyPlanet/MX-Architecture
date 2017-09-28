@@ -877,6 +877,8 @@ void Player::BattleHistory(int32_t start_index, int32_t end_index)
 		_stuff.mutable_room_history()->Clear();
 
 		for (int i = 0; i < 10; ++i) _stuff.mutable_room_history()->Add(room_history[i]);
+
+		SetDirty();
 	}
 
 	std::set<int64_t> room_list; //历史记录
