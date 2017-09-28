@@ -4025,7 +4025,7 @@ int32_t Player::OnFaPai(std::vector<int32_t>& cards)
 		}
 	}
 
-	if (false && _player_id == 262146 && _cards_inhand.size() == 0)
+	if (false && _player_id == 262620 && _cards_inhand.size() == 0)
 	{
 		_cards_inhand = {
 			{ 1, { 9, 9} },
@@ -4626,7 +4626,7 @@ void Player::SendRoomState()
 	{
 		proto.set_room_id(_room->GetID());
 	}
-	else if (_stuff.room_id() && !_room->HasDisMiss())
+	else if (_stuff.room_id() && (_room && !_room->HasDisMiss()))
 	{
 		auto room = RoomInstance.Get(_stuff.room_id());
 		if (room) proto.set_room_id(_stuff.room_id());
