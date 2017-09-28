@@ -116,6 +116,8 @@ int32_t Player::Save(bool force)
 
 bool Player::IsExpire()
 {
+	if (_expire_time == 0) return false;
+
 	return _expire_time > CommonTimerInstance.GetTime();
 }
 	
@@ -580,6 +582,8 @@ bool Player::HandleProtocol(int32_t type_t, pb::Message* message)
 		CallBack& callback = GetMethod(type_t); 
 		callback(std::forward<pb::Message*>(message));	
 	}
+
+	if (_expire_time > 0) _expire_time = 0;
 
 	return true;
 }
