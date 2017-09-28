@@ -1610,6 +1610,8 @@ std::vector<int32_t> Game::TailPai(size_t card_count)
 	{
 		if (_random_result_list.find(i + 1) == _random_result_list.end())  //不是宝牌缓存索引
 		{
+			_random_result_list.insert(i + 1);
+
 			tail_cards.push_back(cards[cards.size() - 1 - i]);
 			if (tail_cards.size() >= card_count) break;
 		}
@@ -1622,7 +1624,7 @@ bool Game::CheckLiuJu()
 {
 	if (!_room) return false;
 
-	if (_cards.size() > size_t(g_const->liuju_count() + 4)) return false;
+	if (GetRemainCount() > g_const->liuju_count() + 4) return false;
 				
 	_liuju = true;
 
