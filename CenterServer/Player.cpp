@@ -900,6 +900,9 @@ void Player::BattleHistory(int32_t start_index, int32_t end_index)
 				history.mutable_list(k)->mutable_list(j)->mutable_details()->Clear();
 			}
 		}
+
+		auto record = message.mutable_history_list()->Add();
+		record->CopyFrom(history);
 	}
 
 	if (message.history_list().size() == 0) return;
