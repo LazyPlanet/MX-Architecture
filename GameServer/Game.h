@@ -56,7 +56,7 @@ public:
 	void ClearState(); //清理状态
 
 	virtual std::vector<int32_t> FaPai(size_t card_count); //发牌
-	virtual std::vector<int32_t> TailPai(int32_t card_count); //后楼发牌
+	virtual std::vector<int32_t> TailPai(size_t card_count); //后楼发牌
 	void FaPaiAndCommonCheck();
 
 	virtual void Add2CardsPool(Asset::PaiElement pai);

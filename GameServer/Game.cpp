@@ -1601,37 +1601,21 @@ void Game::SetPaiOperation(int64_t player_id, int64_t from_player_id, Asset::Pai
 	_oper_cache.mutable_oper_list()->Add(oper_type);
 }
 
-std::vector<int32_t> Game::TailPai(int32_t card_count)
+std::vector<int32_t> Game::TailPai(size_t card_count)
 {
-	std::vector<int32_t> cards;
-	
-	if (_cards.size() < (size_t)card_count) return cards;
+	std::vector<int32_t> tail_cards;
+	std::vector<int32_t> cards(_cards.begin(), _cards.end());
 
-	int32_t tail_index = 0;
-
-	do {
-		++tail_index;
-
-		if (/*_random_result - 1 != tail_index || */_random_result_list.find(tail_index) == _random_result_list.end()) //随机的宝牌不再从后面抓
-		{
-			int32_t value = _cards.back();	
-			cards.push_back(value);
-		}
-
-		_cards.pop_back();
-
-	} while((int32_t)cards.size() != card_count);
-
-	/*
-	if (cards.size() == 0)
+	for (size_t i = 0; i < cards.size(); ++i)
 	{
-		int32_t value = _cards.back();	
-		cards.push_back(value);
-
-		_cards.pop_back();
+		if (_random_result_list.find(i + 1) == _random_result_list.end())  //不是宝牌缓存索引
+		{
+			tail_cards.push_back(cards[cards.size() - 1 - i]);
+			if (tail_cards.size() >= card_count) break;
+		}
 	}
-	*/
-	return cards;
+	
+	return tail_cards;
 }
 	
 bool Game::CheckLiuJu()
