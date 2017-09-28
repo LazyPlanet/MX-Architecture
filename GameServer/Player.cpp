@@ -4621,15 +4621,15 @@ bool Player::CheckHuCardsInhand()
 void Player::SendRoomState()
 {
 	Asset::RoomState proto;
-	proto.set_room_id(0);
 
 	if (_room && !_room->HasDisMiss()) 
 	{
 		proto.set_room_id(_room->GetID());
 	}
-	else if (_stuff.room_id())
+	else if (_stuff.room_id() && !_room->HasDisMiss())
 	{
-		proto.set_room_id(_stuff.room_id());
+		auto room = RoomInstance.Get(_stuff.room_id());
+		if (room) proto.set_room_id(_stuff.room_id());
 	}
 	else 
 	{
