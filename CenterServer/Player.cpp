@@ -898,9 +898,6 @@ void Player::BattleHistory(int32_t start_index, int32_t end_index)
 	
 void Player::OnKickOut(Asset::KICK_OUT_REASON reason)
 {
-
-	//DEBUG("玩家:{}被踢下线，当前网络IP:{} 端口:{}", _player_id, _session->GetRemoteAddress(), _session->GetRemotePort());
-
 	switch (reason)
 	{
 		case Asset::KICK_OUT_REASON_DISCONNECT: //玩家杀进程退出
