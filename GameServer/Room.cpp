@@ -325,8 +325,7 @@ void Room::OnPlayerOperate(std::shared_ptr<Player> player, pb::Message* message)
 
 			_game->Start(_players); //开始游戏
 
-			for (int i = 0; i < 8; ++i)
-				_games.push_back(_game); //游戏
+			_games.push_back(_game); //游戏
 
 			OnGameStart();
 		}
