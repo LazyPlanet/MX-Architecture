@@ -14,6 +14,8 @@
 #include "PlayerCommonReward.h"
 #include "PlayerCommonLimit.h"
 
+#define MAX_PLAYER_COUNT 4
+
 namespace Adoter
 {
 
@@ -869,6 +871,16 @@ void Player::BattleHistory(int32_t start_index, int32_t end_index)
 	auto has_auth = client.auth(ConfigInstance.GetString("Redis_Password", "!QAZ%TGB&UJM9ol."));
 	if (has_auth.get().ko()) return;
 
+	if (_stuff.room_history().size() > 10) //玩家历史战绩最多保留10条
+	{
+		std::vector<int32_t> room_history(_stuff.room_history().begin(), _stuff.room_history().end());
+		_stuff.mutable_room_history()->Clear();
+
+		for (int i = 0; i < 10; ++i) _stuff.mutable_room_history()->Add(room_history[i]);
+	}
+
+	std::set<int64_t> room_list; //历史记录
+
 	for (int32_t i = end_index - 1; i >= start_index; --i)
 	{
 		if (i < 0 || i >= _stuff.room_history().size()) continue; //安全检查
@@ -876,9 +888,6 @@ void Player::BattleHistory(int32_t start_index, int32_t end_index)
 		Asset::RoomHistory history;
 
 		auto room_id = _stuff.room_history(i);
-
-		DEBUG("玩家:{}获取房间:{}历史战绩", _player_id, room_id);
-
 		auto get = client.get("room_history:" + std::to_string(room_id));
 		cpp_redis::reply reply = get.get();
 		client.commit();
@@ -888,14 +897,24 @@ void Player::BattleHistory(int32_t start_index, int32_t end_index)
 		auto success = history.ParseFromString(reply.as_string());
 		if (!success) continue;
 
-		//
-		//删除Client不用的数据
-		//
-		for (int32_t k = 0; k < history.list().size(); ++k)
-		{
-			for (int32_t j = 0; j < history.list(k).list().size(); ++j)
+		if (room_list.find(room_id) != room_list.end()) continue; //防止玩家历史战绩重复
+		room_list.insert(room_id);
+
+		for (int32_t j = 0; j < history.list().size(); ++j)
+		{	
+			for (int32_t k = 0; k < history.list(j).list().size(); ++k)
 			{
-				history.mutable_list(k)->mutable_list(j)->mutable_details()->Clear();
+				if (history.player_brief_list().size() < MAX_PLAYER_COUNT)
+				{
+					auto player_brief = history.mutable_player_brief_list()->Add();
+					player_brief->set_player_id(history.list(j).list(k).player_id());
+					player_brief->set_nickname(history.list(j).list(k).nickname());
+					player_brief->set_headimgurl(history.list(j).list(k).headimgurl());
+				}
+
+				history.mutable_list(j)->mutable_list(k)->clear_nickname();
+				history.mutable_list(j)->mutable_list(k)->clear_headimgurl();
+				history.mutable_list(j)->mutable_list(k)->mutable_details()->Clear();
 			}
 		}
 

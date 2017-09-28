@@ -891,6 +891,8 @@ int32_t Player::CmdEnterRoom(pb::Message* message)
 					}
 				}
 			}
+			
+			if (enter_room->error_code() != Asset::ERROR_SUCCESS) AlertMessage(enter_room->error_code()); //不能加入，错误提示
 
 			SendProtocol(enter_room);
 		}
