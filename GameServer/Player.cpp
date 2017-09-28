@@ -1989,8 +1989,6 @@ bool Player::CheckHuPai(const Asset::PaiElement& pai, bool check_zibo)
 		return false;
 	}
 
-	PrintPai();
-
 	_fan_list.clear(); //番型清空
 
 	std::map<int32_t/*麻将牌类型*/, std::vector<int32_t>/*牌值*/> cards;
@@ -2926,6 +2924,8 @@ bool Player::CheckChiPai(const Asset::PaiElement& pai)
 void Player::OnChiPai(const Asset::PaiElement& pai, pb::Message* message)
 {
 	if (!_game || !_room) return;
+	
+	PrintPai(); //打印玩家当前手里的牌数据
 
 	if (!CheckChiPai(pai) || !message) 
 	{
@@ -3070,7 +3070,9 @@ bool Player::CheckPengPai(const Asset::PaiElement& pai)
 
 void Player::OnPengPai(const Asset::PaiElement& pai)
 {
-	if (!_game) return;
+	if (!_game || !_room) return;
+	
+	PrintPai(); //打印玩家当前手里的牌数据
 
 	if (!CheckPengPai(pai)) 
 	{
@@ -3364,6 +3366,8 @@ bool Player::CheckAllGangPai(::google::protobuf::RepeatedField<Asset::PaiOperati
 	
 void Player::OnGangPai(const Asset::PaiElement& pai, int64_t from_player_id)
 {
+	PrintPai(); //打印玩家当前手里的牌数据
+
 	if (!CheckGangPai(pai, from_player_id)) 
 	{
 		LOG(ERROR, "玩家:{}无法杠牌:{}, 牌来自:{}", _player_id, pai.ShortDebugString(), from_player_id);
