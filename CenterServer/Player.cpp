@@ -123,6 +123,12 @@ int32_t Player::Logout(pb::Message* message)
 	
 int32_t Player::OnLogout()
 {
+	if (!IsCenterServer()) 
+	{
+		ERROR("玩家:{}游戏进行中，不能从大厅退出", _player_id);
+		return 1; //玩家在游戏进行中，不能退出
+	}
+
 	_stuff.set_login_time(0);
 	_stuff.set_logout_time(CommonTimerInstance.GetTime());
 	
@@ -131,8 +137,7 @@ int32_t Player::OnLogout()
 	WorldSessionInstance.RemovePlayer(_player_id); //网络会话数据
 	PlayerInstance.Remove(_player_id); //玩家管理
 
-	auto debug_string = _stuff.ShortDebugString();
-	DEBUG("player_id:{} stuff:{} leave game and scene.", _player_id, debug_string);
+	DEBUG("玩家:{} 数据:{} 从大厅成功退出", _player_id, _stuff.ShortDebugString());
 
 	return 0;
 }
@@ -177,8 +182,7 @@ int32_t Player::OnEnterCenter()
 
 	//Save(true); //存盘
 	
-	auto debug_string = _stuff.ShortDebugString();
-	DEBUG("玩家:{}退出游戏逻辑服务器进入游戏大厅，数据内容:{}", _player_id, debug_string);
+	DEBUG("玩家:{}退出游戏逻辑服务器进入游戏大厅，数据内容:{}", _player_id, _stuff.ShortDebugString());
 
 	return 0;
 }
@@ -832,7 +836,7 @@ int32_t Player::CmdRecharge(pb::Message* message)
 
 void Player::BattleHistory(int32_t start_index, int32_t end_index)
 {
-	int32_t const_length = 5;
+	int32_t const_length = 2;
 
 	Asset::BattleHistory message;
 	message.set_start_index(start_index);
@@ -884,15 +888,9 @@ void Player::BattleHistory(int32_t start_index, int32_t end_index)
 				history.mutable_list(k)->mutable_list(j)->mutable_details()->Clear();
 			}
 		}
-
-		for (int m = 0; m < 10; ++m)
-		{
-			auto record = message.mutable_history_list()->Add();
-			record->CopyFrom(history);
-		}
 	}
 
-	//if (message.history_list().size() == 0) return;
+	if (message.history_list().size() == 0) return;
 
 	if (message.history_list().size()) SendProtocol(message);
 }

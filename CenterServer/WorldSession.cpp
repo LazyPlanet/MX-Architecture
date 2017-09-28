@@ -36,8 +36,8 @@ void WorldSession::InitializeHandler(const boost::system::error_code error, cons
 			
 			if (boost::asio::error::connection_reset != error.value()) //Connection reset by peer
 			{
-				KickOutPlayer(Asset::KICK_OUT_REASON_DISCONNECT);
-				return;
+				//KickOutPlayer(Asset::KICK_OUT_REASON_DISCONNECT);
+				//return;
 			}
 
 			Close();
@@ -324,7 +324,7 @@ void WorldSession::OnProcessMessage(const Asset::Meta& meta)
 			//else
 			{
 				//_player->SetSession(shared_from_this());	
-				WorldSessionInstance.AddPlayer(connect->player_id(), shared_from_this()); //在线玩家
+				WorldSessionInstance.AddPlayer(connect->player_id(), shared_from_this()); //在线玩家，获取网络会话
 			}
 
 			_player->SetLocalServer(ConfigInstance.GetInt("ServerID", 1));
@@ -543,9 +543,9 @@ void WorldSession::OnProcessMessage(const Asset::Meta& meta)
 
 void WorldSession::KickOutPlayer(Asset::KICK_OUT_REASON reason)
 {
-	DEBUG("_role_type:{} _global_id:{} reason:{}", _role_type, _global_id, reason);
+	DEBUG("角色类型:{} 全局ID:{} 被踢下线原因:{}", _role_type, _global_id, reason);
 
-	//if (_global_id == 0 || _role_type == Asset::ROLE_TYPE_NULL) return;
+	if (_global_id == 0 || _role_type == Asset::ROLE_TYPE_NULL) return;
 	
 	if (_role_type == Asset::ROLE_TYPE_GAME_SERVER) //逻辑服务器
 	{
@@ -555,20 +555,17 @@ void WorldSession::KickOutPlayer(Asset::KICK_OUT_REASON reason)
 	{
 		if (!_player) return;
 
-		//auto session = _player->GetSession();
-
 		auto session = WorldSessionInstance.GetPlayerSession(_player->GetID());
 
 		if (session && session->GetRemotePoint() != GetRemotePoint()) 
 		{
-			WorldSessionInstance.AddPlayer(_global_id, shared_from_this()); //在线玩家
-			return;
+			ERROR("全局ID:{}会话失效:", _global_id);
+			//WorldSessionInstance.AddPlayer(_global_id, shared_from_this()); //在线玩家//该会话已经失效，不应该重复赋值
+			//return;
 		}
 
 		_player->OnKickOut(reason); //玩家退出登陆
 	}
-		
-	//_online = false;
 }
 	
 void WorldSession::OnLogout()
@@ -798,8 +795,12 @@ bool WorldSession::Update()
 void WorldSession::OnClose()
 {
 	Socket::OnClose();
+				
+	KickOutPlayer(Asset::KICK_OUT_REASON_DISCONNECT);
+	
+	WorldSessionInstance.RemovePlayer(_global_id); //网络会话数据
 
-	OnLogout();
+	//OnLogout();
 	
 	DEBUG("角色类型:{} 全局ID:{} 关闭网络连接", _role_type, _global_id);
 }
