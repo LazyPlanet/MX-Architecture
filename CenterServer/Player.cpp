@@ -113,6 +113,11 @@ int32_t Player::Save(bool force)
 		
 	return 0;
 }
+
+bool Player::IsExpire()
+{
+	return _expire_time > CommonTimerInstance.GetTime();
+}
 	
 int32_t Player::Logout(pb::Message* message)
 {
@@ -123,6 +128,8 @@ int32_t Player::Logout(pb::Message* message)
 	
 int32_t Player::OnLogout()
 {
+	_expire_time = CommonTimerInstance.GetTime() + 3600; //1小时之内没有上线，则删除
+
 	if (!IsCenterServer()) 
 	{
 		ERROR("玩家:{}游戏进行中，不能从大厅退出", _player_id);
@@ -1049,7 +1056,7 @@ void PlayerManager::Update(int32_t diff)
 
 	for (auto it = _players.begin(); it != _players.end();)
 	{
-		if (!it->second)
+		if (!it->second || it->second->IsExpire()) //退出或者离线时间过长
 		{
 			it = _players.erase(it);
 			continue; 
