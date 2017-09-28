@@ -126,6 +126,7 @@ int32_t Player::OnLogout()
 	if (!IsCenterServer()) 
 	{
 		ERROR("玩家:{}游戏进行中，不能从大厅退出", _player_id);
+		WorldSessionInstance.RemovePlayer(_player_id); //网络会话数据
 		return 1; //玩家在游戏进行中，不能退出
 	}
 

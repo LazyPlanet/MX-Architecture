@@ -2923,6 +2923,8 @@ bool Player::CheckChiPai(const Asset::PaiElement& pai)
 
 void Player::OnChiPai(const Asset::PaiElement& pai, pb::Message* message)
 {
+	if (!_game || !_room) return;
+
 	if (!CheckChiPai(pai) || !message) 
 	{
 		LOG(ERROR, "玩家:{}不能吃牌，原因:没有牌能满足吃牌，类型:{} 牌值:{}", _player_id, pai.card_type(), pai.card_value());
@@ -2963,6 +2965,7 @@ void Player::OnChiPai(const Asset::PaiElement& pai, pb::Message* message)
 		return; //不是顺子
 	}
 
+	/*
 	try {
 		std::unique_lock<std::mutex> lock(_card_lock, std::defer_lock);
 
@@ -3004,6 +3007,7 @@ void Player::OnChiPai(const Asset::PaiElement& pai, pb::Message* message)
 		ERROR("Delete card from player_id:{} error:{}.", _player_id, error.what());
 		return;
 	}
+	*/
 	
 	///////////////////////旋风杠检查///////////////////////
 	/*
@@ -3016,6 +3020,31 @@ void Player::OnChiPai(const Asset::PaiElement& pai, pb::Message* message)
 		SendProtocol(alert); //提示Client
 	}
 	*/
+
+	auto first = std::find(it->second.begin(), it->second.end(), pai_operate->pais(0).card_value());
+	if (first == it->second.end()) 
+	{
+		DEBUG_ASSERT(false);
+		return; //理论上不会出现
+	}
+	
+	it->second.erase(first); //删除
+
+	auto second = std::find(it->second.begin(), it->second.end(), pai_operate->pais(1).card_value());
+	if (second == it->second.end()) 
+	{
+		DEBUG_ASSERT(false);
+		return; //理论上不会出现
+	}
+
+	it->second.erase(second); //删除
+
+	for (const auto& card : cards)
+	{
+		_cards_outhand[card.card_type()].push_back(card.card_value());
+
+		if (card.card_type() != pai.card_type() || card.card_value() != pai.card_value()) _game->Add2CardsPool(card.card_type(), card.card_value());
+	}
 
 	SynchronizePai();
 }

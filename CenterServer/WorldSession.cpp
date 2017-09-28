@@ -34,13 +34,8 @@ void WorldSession::InitializeHandler(const boost::system::error_code error, cons
 		{
 			ERROR("地址:{} 端口:{} 玩家:{}断开连接，错误码:{} 错误描述:{}", _ip_address, _remote_endpoint.port(), _player ? _player->GetID() : 0, error.value(), error.message());
 			
-			if (boost::asio::error::connection_reset != error.value()) //Connection reset by peer
-			{
-				//KickOutPlayer(Asset::KICK_OUT_REASON_DISCONNECT);
-				//return;
-			}
-
 			Close();
+			return;
 		}
 		else
 		{
@@ -238,17 +233,10 @@ void WorldSession::OnProcessMessage(const Asset::Meta& meta)
 			
 			auto user_string = _user.ShortDebugString();
 			auto account_string = _account.ShortDebugString();
-			//auto wechat_string = _wechat.ShortDebugString();
-			//auto access_token_string = _access_token.ShortDebugString();
-
-			//LOG(INFO, "角色:{} 账号:{} 微信:{} Token:{}", user_string, account_string, wechat_string, access_token_string);
 				
 			//
 			//账号数据存储
 			//
-			//if (!_user.has_wechat_token()) _user.mutable_wechat_token()->CopyFrom(_access_token);
-			//if (!_user.has_wechat()) _user.mutable_wechat()->CopyFrom(_wechat); //微信数据
-		
 			auto set = client.set("user:" + login->account().username(), _user.SerializeAsString());
 			client.sync_commit();
 
@@ -321,11 +309,8 @@ void WorldSession::OnProcessMessage(const Asset::Meta& meta)
 					return;
 				}
 			}
-			//else
-			{
-				//_player->SetSession(shared_from_this());	
-				WorldSessionInstance.AddPlayer(connect->player_id(), shared_from_this()); //在线玩家，获取网络会话
-			}
+
+			WorldSessionInstance.AddPlayer(connect->player_id(), shared_from_this()); //在线玩家，获取网络会话
 
 			_player->SetLocalServer(ConfigInstance.GetInt("ServerID", 1));
 			_player->OnEnterGame(false);
@@ -402,6 +387,7 @@ void WorldSession::OnProcessMessage(const Asset::Meta& meta)
 			//
 			//对于已经进入游戏内操作的玩家进行托管
 			//
+			/*
 			auto session = WorldSessionInstance.GetPlayerSession(_player->GetID());
 			if (session) //已经在线
 			{
@@ -410,7 +396,8 @@ void WorldSession::OnProcessMessage(const Asset::Meta& meta)
 				WorldSessionInstance.AddPlayer(_player->GetID(), shared_from_this()); //在线玩家
 				//LOG(ERROR, "玩家{}目前在线，被踢掉", _player->GetID());
 			}
-			//WorldSessionInstance.AddPlayer(_player->GetID(), shared_from_this()); //在线玩家
+			*/
+			WorldSessionInstance.AddPlayer(_player->GetID(), shared_from_this()); //在线玩家
 			
 			//
 			//此时才可以真正进入游戏大厅
@@ -444,8 +431,6 @@ void WorldSession::OnProcessMessage(const Asset::Meta& meta)
 			
 			_user.Clear();
 			_account.Clear();
-			//_wechat.Clear(); 
-			//_access_token.Clear();
 	
 			if (_player_list.size()) _player_list.clear(); 
 		}
@@ -502,8 +487,6 @@ void WorldSession::OnProcessMessage(const Asset::Meta& meta)
 
 			//_player->SetGameServer(game_server);
 			_player->SendProtocol2GameServer(enter_room); //转发
-
-			//WorldSessionInstance.SetGameServerSession(_player->GetID(), game_server);
 		}
 		else if (Asset::META_TYPE_SHARE_UPDATE_CLIENT_DATA == meta.type_t()) //Client参数数据
 		{
@@ -561,7 +544,7 @@ void WorldSession::KickOutPlayer(Asset::KICK_OUT_REASON reason)
 		{
 			ERROR("全局ID:{}会话失效:", _global_id);
 			//WorldSessionInstance.AddPlayer(_global_id, shared_from_this()); //在线玩家//该会话已经失效，不应该重复赋值
-			//return;
+			return;
 		}
 
 		_player->OnKickOut(reason); //玩家退出登陆
@@ -798,7 +781,7 @@ void WorldSession::OnClose()
 				
 	KickOutPlayer(Asset::KICK_OUT_REASON_DISCONNECT);
 	
-	WorldSessionInstance.RemovePlayer(_global_id); //网络会话数据
+	//WorldSessionInstance.RemovePlayer(_global_id); //网络会话数据
 
 	//OnLogout();
 	
@@ -925,8 +908,8 @@ void WorldSessionManager::AddPlayer(int64_t player_id, std::shared_ptr<WorldSess
 
 	std::lock_guard<std::mutex> lock(_client_mutex);
 
-	//auto it = _client_list.find(player_id);
-	//if (it != _client_list.end() && it->second) it->second.reset();
+	auto it = _client_list.find(player_id);
+	if (it != _client_list.end() && it->second) it->second.reset();
 
 	_client_list[player_id] = session; 
 }
@@ -938,7 +921,7 @@ void WorldSessionManager::RemovePlayer(int64_t player_id)
 	auto it = _client_list.find(player_id);
 	if (it == _client_list.end()) return;
 	
-	//if (it->second) it->second.reset();
+	if (it->second) it->second.reset();
 
 	_client_list.erase(it); 
 }
