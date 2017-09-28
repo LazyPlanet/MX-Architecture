@@ -1381,7 +1381,7 @@ int32_t Player::CmdGetRoomData(pb::Message* message)
 
 	DEBUG("玩家:{}由于房间内断线，重新获取数据数据:{}", _player_id, _stuff.ShortDebugString())
 
-	if (!_room || _room->GetID() != get_data->room_id() || _stuff.room_id() == 0)
+	if (!_room || _room->HasDisMiss() || _room->GetID() != get_data->room_id() || _stuff.room_id() == 0)
 	{
 		SendRoomState(); //估计房间已经解散
 	}
@@ -4023,7 +4023,7 @@ int32_t Player::OnFaPai(std::vector<int32_t>& cards)
 		}
 	}
 
-	if (true && _player_id == 262146 && _cards_inhand.size() == 0)
+	if (false && _player_id == 262146 && _cards_inhand.size() == 0)
 	{
 		_cards_inhand = {
 			{ 1, { 9, 9} },
@@ -4621,7 +4621,7 @@ void Player::SendRoomState()
 	Asset::RoomState proto;
 	proto.set_room_id(0);
 
-	if (_room) 
+	if (_room && !_room->HasDisMiss()) 
 	{
 		proto.set_room_id(_room->GetID());
 	}

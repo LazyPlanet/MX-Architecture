@@ -39,7 +39,18 @@ Asset::ERROR_CODE Room::TryEnter(std::shared_ptr<Player> player)
 		return Asset::ERROR_ROOM_HAS_BEEN_IN; //已经在房间
 	}
 	
-	if (IsFull()) return Asset::ERROR_ROOM_IS_FULL; //房间已满
+	if (IsFull()) 
+	{
+		return Asset::ERROR_ROOM_IS_FULL; //房间已满
+	}
+	else if (!_game && GetRemainCount() <= 0) 
+	{
+		return Asset::ERROR_ROOM_BEEN_OVER; //战局结束
+	}
+	else if (HasDisMiss()) 
+	{
+		return Asset::ERROR_ROOM_BEEN_DISMISS; //房间已经解散
+	}
 
 	DEBUG("玩家:{}进入房间:{}成功", player->GetID(), GetID());
 
@@ -115,9 +126,6 @@ bool Room::Enter(std::shared_ptr<Player> player)
 	
 	DEBUG("curr_count:{} curr_enter:{} position:{}", _players.size(), player->GetID(), player->GetPosition());
 
-	//player->ClearCards(); //每次进房初始化状态
-
-	//SyncRoom(); //同步当前房间内玩家数据
 	return true;
 }
 	
@@ -317,7 +325,8 @@ void Room::OnPlayerOperate(std::shared_ptr<Player> player, pb::Message* message)
 
 			_game->Start(_players); //开始游戏
 
-			_games.push_back(_game); //游戏
+			for (int i = 0; i < 8; ++i)
+				_games.push_back(_game); //游戏
 
 			OnGameStart();
 		}
@@ -545,8 +554,7 @@ void Room::OnGameOver(int64_t player_id)
 					record->set_score(record->score() + _history.list(i).list(j).score());
 	}
 
-	auto message_string = message.ShortDebugString();
-	LOG(INFO, "整局结算，胡牌玩家:{} 数据:{}", player_id, message_string);
+	LOG(INFO, "房间:{}整局结算，胡牌玩家:{} 数据:{}", _stuff.room_id(), player_id, message.ShortDebugString());
 
 	for (auto player : _players)
 	{
@@ -682,7 +690,6 @@ void Room::SyncRoom()
 	{
 		if (!player) continue;
 
-		DEBUG("sync room infomation, curr_player_size:{} player_id:{} position:{}", _players.size(), player->GetID(), player->GetPosition());
 		auto p = message.mutable_player_list()->Add();
 		p->set_position(player->GetPosition());
 		p->set_oper_type(player->GetOperState());
@@ -705,8 +712,7 @@ void Room::SyncRoom()
 		}
 	}
 
-	auto message_string = message.ShortDebugString();
-	DEBUG("同步房间数据:{}", message_string);
+	DEBUG("同步房间数据:{}", message.ShortDebugString());
 
 	BroadCast(message);
 }

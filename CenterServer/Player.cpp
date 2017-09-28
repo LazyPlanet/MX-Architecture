@@ -848,15 +848,13 @@ int32_t Player::CmdRecharge(pb::Message* message)
 
 void Player::BattleHistory(int32_t start_index, int32_t end_index)
 {
-	int32_t const_length = 2;
-
 	Asset::BattleHistory message;
 	message.set_start_index(start_index);
 	message.set_end_index(end_index);
 
 	if (start_index > end_index || start_index < 0 || end_index < 0) return;
 
-	int32_t historty_count = std::min(_stuff.room_history().size(), const_length); //最多显示2条记录
+	int32_t historty_count = std::min(_stuff.room_history().size(), 5); //最多显示5条记录
 	if (historty_count <= 0) return;
 	
 	if (end_index - start_index > historty_count) return;
