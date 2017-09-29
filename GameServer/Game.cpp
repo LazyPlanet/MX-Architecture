@@ -626,6 +626,7 @@ void Game::OnPaiOperate(std::shared_ptr<Player> player, pb::Message* message)
 				player->OnPengPai(pai);
 				_curr_player_index = GetPlayerOrder(player->GetID()); //重置当前玩家索引
 
+				auto from_player = GetPlayer(_oper_cache.from_player_id());
 				ClearOperation(); //清理缓存以及等待玩家操作的状态
 
 				Asset::PaiOperationAlert alert;
@@ -680,7 +681,6 @@ void Game::OnPaiOperate(std::shared_ptr<Player> player, pb::Message* message)
 
 				if (alert.pais().size()) player->SendProtocol(alert); //提示Client
 				
-				auto from_player = GetPlayer(_oper_cache.from_player_id());
 				if (from_player) from_player->CardsPoolPop();
 			}
 		}
@@ -698,6 +698,7 @@ void Game::OnPaiOperate(std::shared_ptr<Player> player, pb::Message* message)
 			{
 				player->OnChiPai(pai, message);
 
+				auto from_player = GetPlayer(_oper_cache.from_player_id());
 				ClearOperation(); //清理缓存以及等待玩家操作的状态
 
 				Asset::PaiOperationAlert alert;
@@ -753,7 +754,6 @@ void Game::OnPaiOperate(std::shared_ptr<Player> player, pb::Message* message)
 					
 				if (alert.pais().size()) player->SendProtocol(alert); //提示Client
 				
-				auto from_player = GetPlayer(_oper_cache.from_player_id());
 				if (from_player) from_player->CardsPoolPop();
 			}
 		}
