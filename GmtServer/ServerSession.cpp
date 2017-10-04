@@ -80,7 +80,7 @@ void ServerSession::InitializeHandler(const boost::system::error_code error, con
 //
 bool ServerSession::OnInnerProcess(const Asset::InnerMeta& meta)
 {
-	DEBUG("Receive message:{} from server:{}", meta.ShortDebugString(), _ip_address);
+	DEBUG("接收协议数据:{} 来自地址:{}", meta.ShortDebugString(), _ip_address);
 
 	switch (meta.type_t())
 	{
@@ -182,8 +182,6 @@ bool ServerSession::OnInnerProcess(const Asset::InnerMeta& meta)
 			auto result = message.ParseFromString(meta.stuff());
 			if (!result) return false;
 
-			LOG(TRACE, "Receive command:{} from server:{}", message.ShortDebugString(), _ip_address);
-
 			if (ServerSessionInstance.IsGmtServer(shared_from_this())) //处理GMT服务器发送的数据
 			{
 				OnSendMail(message);
@@ -277,7 +275,7 @@ Asset::COMMAND_ERROR_CODE ServerSession::OnCommandProcess(const Asset::Command& 
 	auto success = redis->GetPlayer(player_id, player);
 	if (!success)
 	{
-		RETURN(Asset::COMMAND_ERROR_CODE_PARA); //数据错误
+		RETURN(Asset::COMMAND_ERROR_CODE_NO_PLAYER); //没有角色数据
 	}
 
 	//
@@ -292,7 +290,7 @@ Asset::COMMAND_ERROR_CODE ServerSession::OnCommandProcess(const Asset::Command& 
 		
 	if (command.count() <= 0) //不可能是负数
 	{
-		RETURN(Asset::COMMAND_ERROR_CODE_NO_PLAYER); //数据错误
+		RETURN(Asset::COMMAND_ERROR_CODE_PARA); //数据错误
 	}
 
 	switch(command.command_type())
@@ -437,7 +435,7 @@ Asset::COMMAND_ERROR_CODE ServerSession::OnSendMail(const Asset::SendMail& comma
 		auto success = redis->GetPlayer(player_id, player);
 		if (!success)
 		{
-			RETURN(Asset::COMMAND_ERROR_CODE_PARA); //数据错误
+			RETURN(Asset::COMMAND_ERROR_CODE_NO_PLAYER); //数据错误
 		}
 
 		if (player.logout_time() == 0 && player.login_time() != 0) //玩家目前在线
@@ -538,13 +536,9 @@ void ServerSession::SendProtocol(const pb::Message& message)
 
 	std::string content = meta.SerializeAsString();
 
-	if (content.empty()) 
-	{
-		ERROR("server:{} send nothing, message:{}", _ip_address, meta.ShortDebugString());
-		return;
-	}
+	if (content.empty()) return;
 
-	TRACE("send message to server:{} message:{}", _ip_address, meta.ShortDebugString());
+	DEBUG("GMT服务器向服务器:{}发送协议数据:{}", _ip_address, meta.ShortDebugString());
 	AsyncSend(content);
 }
 	

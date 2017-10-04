@@ -46,6 +46,7 @@ public:
 
 	boost::asio::ip::tcp::endpoint GetRemotePoint() { return _remote_endpoint; }
 	std::string GetRemoteAddress() {return _remote_endpoint.address().to_string(); }
+	int32_t GetRemotePort() { return _remote_endpoint.port(); }
 
 	bool OnInnerProcess(const Asset::Meta& meta);
 	void OnProcessMessage(const Asset::Meta& meta);
@@ -62,8 +63,8 @@ public:
 	const Asset::WechatUnion& GetWechat() { return _user.wechat(); }
 	bool IsWechat() { return _account.account_type() == Asset::ACCOUNT_TYPE_WECHAT; }
 private:
-	Asset::WechatUnion _wechat; //微信数据
-	Asset::WechatAccessToken _access_token;
+	//Asset::WechatUnion _wechat; //微信数据
+	//Asset::WechatAccessToken _access_token;
 	
 	Asset::User _user; 
 	Asset::Account _account;
@@ -74,18 +75,21 @@ private:
 	boost::asio::ip::tcp::endpoint _remote_endpoint;
 
 	int64_t _global_id = 0; //逻辑服务器ID或者玩家ID
-	Asset::ROLE_TYPE _role_type; //会话类型
+	Asset::ROLE_TYPE _role_type = Asset::ROLE_TYPE_NULL; //会话类型
 	std::shared_ptr<Player> _player = nullptr; //全局玩家定义，唯一的一个Player对象
 	bool _online = true;
-
-	std::chrono::steady_clock::time_point _LastPingTime;
+	
+	std::time_t _hi_time = 0;
+	int32_t _pings_count = 0;
+	int64_t _heart_count = 0; //心跳次数
 };
 
 class WorldSessionManager : public SocketManager<WorldSession> 
 {
 	typedef SocketManager<WorldSession> SuperSocketManager;
 private:
-	std::mutex _mutex;
+	std::mutex _client_mutex;
+	std::mutex _server_mutex;
 	//
 	//理论上服务器ID和玩家ID不会重复
 	//
@@ -101,22 +105,17 @@ public:
 		return _instance;
 	}
 
+	//
 	//玩家大厅会话
-	void AddPlayer(int64_t player_id, std::shared_ptr<WorldSession> session) { _client_list[player_id] = session; }
-	void RemovePlayer(int64_t player_id) { _client_list.erase(player_id); }
-	std::shared_ptr<WorldSession> GetPlayerSession(int64_t player_id) { return _client_list[player_id]; }
+	//
+	void AddPlayer(int64_t player_id, std::shared_ptr<WorldSession> session);
+	void RemovePlayer(int64_t player_id);
+	std::shared_ptr<WorldSession> GetPlayerSession(int64_t player_id);
 
 	//逻辑服务器会话
-	void AddServer(int64_t server_id, std::shared_ptr<WorldSession> session) {	_server_list[server_id] = session;}	
-	void RemoveServer(int64_t server_id) { 
-	 
-		auto session = _server_list[server_id];
-	 
-	    if (session) session.reset();
-	 
-	    _server_list.erase(server_id); 
-	}
-	std::shared_ptr<WorldSession> GetServerSession(int64_t server_id) { return _server_list[server_id]; }
+	void AddServer(int64_t server_id, std::shared_ptr<WorldSession> session);
+	void RemoveServer(int64_t server_id);
+	std::shared_ptr<WorldSession> GetServerSession(int64_t server_id);
 
 	//玩家逻辑服务器会话
 	void SetGameServerSession(int64_t player_id, std::shared_ptr<WorldSession> session) { _player_gs[player_id] = session; }

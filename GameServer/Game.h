@@ -34,14 +34,14 @@ private:
 	int64_t _banker_player_id = 0; //庄家
 	std::vector<int64_t> _ting_players; //听牌玩家
 
-	Asset::PaiOperationLimit _oper_limit; //牌操作限制
 	Asset::PaiElement _baopai; //宝牌
 	int32_t _random_result = 0; //宝牌随机：1~6
 	std::unordered_set<int32_t> _random_result_list; //宝牌历史随机结果
 
 	std::vector<int32_t> _saizi_random_result; //开局股子缓存
 	
-	std::vector<Asset::PaiOperationList> _oper_list; //可操作列表
+	Asset::PaiOperationCache _oper_cache; //牌操作缓存
+	std::vector<Asset::PaiOperationCache> _oper_list; //可操作列表
 
 	std::shared_ptr<Player> _players[MAX_PLAYER_COUNT]; //玩家数据：按照进房间的顺序，0->1->2->3...主要用于控制发牌和出牌顺序
 
@@ -56,7 +56,7 @@ public:
 	void ClearState(); //清理状态
 
 	virtual std::vector<int32_t> FaPai(size_t card_count); //发牌
-	virtual std::vector<int32_t> TailPai(int32_t card_count); //后楼发牌
+	virtual std::vector<int32_t> TailPai(size_t card_count); //后楼发牌
 	void FaPaiAndCommonCheck();
 
 	virtual void Add2CardsPool(Asset::PaiElement pai);
@@ -68,6 +68,8 @@ public:
 
 	void OnOperateTimeOut();
 	void ClearOperation();
+	void SetPaiOperation(const Asset::PaiOperationCache& oper) { _oper_cache = oper; } //牌操作限制
+	void SetPaiOperation(int64_t player_id, int64_t from_player_id, Asset::PaiElement pai, Asset::PAI_OPER_TYPE oper_type);
 
 	bool SendCheckRtn(); //发送当前可以操作的牌数据
 	bool CheckPai(const Asset::PaiElement& pai, int64_t from_player_id); //检查牌形：返回待操作的玩家ID
@@ -108,7 +110,7 @@ public:
 	bool IsLiuJu() { return _liuju; } //是否流局
 	void OnLiuJu(); //流局 
 
-	int32_t GetRemainCount() { return _cards.size(); } //当前剩余牌数量
+	int32_t GetRemainCount() { return _cards.size() - _random_result_list.size(); } //当前剩余牌数量
 	bool SanJiaBi(int64_t hupai_player_id); //三家闭门
 
 	void SetCurrPlayerIndex(int64_t curr_player_index) { _curr_player_index = curr_player_index; } //设置当前可操作的玩家

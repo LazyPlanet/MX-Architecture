@@ -25,26 +25,27 @@ private:
 	Asset::GAME_OPER_TYPE _player_state; //玩家状态//在线//离线
 
 	int64_t _heart_count = 0; //心跳次数
-	//std::chrono::steady_clock::time_point _hi_time; //上次就接收Client心跳时间
 	std::time_t _hi_time = 0;
+	int32_t _expire_time = 0;
 	int32_t _pings_count = 0;
 	bool _dirty = false; //脏数据
 	bool _loaded = false; //数据是否加载
 
 	CallBack _method; //协议处理回调函数
-	std::shared_ptr<WorldSession> _session = nullptr; //Client网络连接
+	//std::shared_ptr<WorldSession> _session = nullptr; //Client网络连接//循环引用
 	//std::shared_ptr<WorldSession> _gs_session = nullptr; //游戏逻辑服务器网络连接
 
 public:
 	Player();
-	Player(int64_t player_id, std::shared_ptr<WorldSession> session);
+	Player(int64_t player_id/*, std::shared_ptr<WorldSession> session*/);
 	
 	//void SetGameServer(std::shared_ptr<WorldSession> gs_session) { _gs_session = gs_session; }
 	//std::shared_ptr<WorldSession> GetGameServer() { return _gs_session; }
 
-	const std::shared_ptr<WorldSession> GetSession() { return _session;	}
-	void SetSession(std::shared_ptr<WorldSession> session) { _session = session; }
+	//const std::shared_ptr<WorldSession> GetSession() { return _session;	}
+	//void SetSession(std::shared_ptr<WorldSession> session) { _session = session; }
 	bool Connected(); //网络是否连接
+	bool IsExpire();
 
 	int32_t DefaultMethod(pb::Message*); //协议处理默认调用函数
 	
@@ -103,13 +104,13 @@ public:
 	//玩家登出
 	virtual int32_t Logout(pb::Message* message);
 	virtual int32_t OnLogout();
-	virtual int32_t OnLogin();
+	virtual int32_t OnLogin(bool is_login = true);
 	//加载数据	
 	virtual int32_t Load();
 	//保存数据
 	virtual int32_t Save(bool force = false);
 	//进入游戏
-	virtual int32_t OnEnterGame();
+	virtual int32_t OnEnterGame(bool is_login = true);
 	virtual int32_t OnEnterCenter();
 	//是否脏数据
 	virtual bool IsDirty() { return _dirty; }
@@ -121,7 +122,7 @@ public:
 	//购买商品
 	virtual int32_t CmdBuySomething(pb::Message* message);
 	//是否在线
-	bool IsOnline() { return _stuff.login_time() != 0; }
+	bool IsOnline() { return _stuff.login_time() != 0 || _player_state == Asset::GAME_OPER_TYPE_ONLINE; }
 	//签到
 	virtual int32_t CmdSign(pb::Message* message);
 	//获取玩家基础属性
@@ -201,12 +202,15 @@ class PlayerManager : public std::enable_shared_from_this<PlayerManager>
 private:
 	std::mutex _mutex;
 	std::unordered_map<int64_t, std::shared_ptr<Player>> _players; //实体为智能指针，不要传入引用
+	int64_t _heart_count = 0;
 public:
 	static PlayerManager& Instance()
 	{
 		static PlayerManager _instance;
 		return _instance;
 	}
+
+	void Update(int32_t diff);
 
 	void Remove(int64_t player_id);
 	void Remove(std::shared_ptr<Player> player);

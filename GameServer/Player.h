@@ -180,6 +180,8 @@ public:
 	virtual int32_t OnKickOut(pb::Message* message);
 	//玩家状态变化
 	virtual int32_t OnPlayerStateChanged(pb::Message* message);
+	//获取房间语音成员ID
+	int64_t GetVoiceMemberID() { return _player_prop.voice_member_id(); }
 public:
 	//获取所有包裹
 	const Asset::Inventory& GetInventory() { return _stuff.inventory();	}
@@ -282,6 +284,7 @@ public:
 	virtual int32_t CmdLuckyPlate(pb::Message* message); //幸运转盘
 	virtual int32_t CmdSaizi(pb::Message* message); //打股子
 	virtual int32_t CmdGetRoomData(pb::Message* message); //获取房间数据
+	virtual int32_t CmdUpdateRoom(pb::Message* message); //更新房间数据
 
 	//进入房间回调
 	void OnEnterScene(bool is_reenter);
@@ -299,6 +302,7 @@ public:
 	bool IsInGame() { return _game != nullptr; }
 
 	virtual int32_t OnFaPai(std::vector<int32_t>& cards); //发牌
+	virtual int32_t OnFaPai(const Asset::PaiElement& pai); //纯粹发牌，没有逻辑
 
 	std::vector<Asset::PAI_OPER_TYPE> CheckPai(const Asset::PaiElement& pai, int64_t from_player_id);
 
@@ -311,6 +315,7 @@ public:
 	void Jinbao() { _jinbao = true; }
 	
 	const Asset::PaiElement& GetZhuaPai() { return _zhuapai; }
+	bool HasPai(const Asset::PaiElement& pai);
 
 	bool CanHuPai(std::vector<Card_t>& cards, bool use_pair = false);
 	bool CheckZiMo(); //胡牌检查-玩家手里现有牌检查
@@ -408,6 +413,7 @@ public:
 
 	int32_t GetCardCount();	//获取当前玩家手中牌数
 	bool CheckCardsInhand(); //手牌数量检查
+	bool CheckHuCardsInhand(); //手牌胡牌数量检查
 
 	const std::map<int32_t, std::vector<int32_t>>& GetCardsInhand() { return _cards_inhand; }
 	const std::map<int32_t, std::vector<int32_t>>& GetCardsOuthand() { return _cards_outhand; }

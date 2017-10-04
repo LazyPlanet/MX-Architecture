@@ -29,11 +29,9 @@ public:
 	
 	virtual bool Update() 
 	{
-		if (_closed) 
-		{
-			ERROR("{} has closed", _socket.remote_endpoint().address().to_string().c_str());
-			return false;
-		}
+		if (_closed) return false;
+		
+		std::lock_guard<std::mutex> lock(_send_lock);
 
 		//发送可以放到消息队列里面处理
 		if (_is_writing_async || (_write_queue.empty() && !_closing)) 
@@ -88,7 +86,7 @@ public:
 	}
 	virtual void OnSend(const boost::system::error_code& error, std::size_t bytes_transferred)
 	{
-		DEBUG("bytes_transferred:{} result:{}", bytes_transferred, error.message());
+		//DEBUG("发送字节数:{} 结果:{}", bytes_transferred, error.message());
 	}
 
 	bool AsyncProcessQueue()    
@@ -109,14 +107,16 @@ public:
 
 	void EnterQueue(std::string&& meta)    
 	{        
+		std::lock_guard<std::mutex> lock(_send_lock);
+
 		auto content = std::move(meta);
 		//
 		//数据包头
 		//
 		unsigned short body_size = content.size();
-		if (body_size >= MAX_DATA_SIZE) 
+		if (body_size == 0 || body_size >= MAX_DATA_SIZE) 
 		{
-			LOG(ERROR, "protocol has extend max size:{}", body_size);
+			LOG(ERROR, "协议超过最大限制或者为空，当前发送协议大小:{}", body_size);
 			return;
 		}
 
@@ -135,53 +135,61 @@ public:
 		for (int i = 0; i < 2; ++i) buffer[i] = header[i];
 		for (int i = 0; i < body_size; ++i) buffer[i + 2] = body[i];
 
-		_write_queue.push(std::string(buffer, body_size + 2));
+		auto string_send = std::string(buffer, body_size + 2);
+		_write_queue.push(string_send);
 	}
 
 	bool HandleQueue()
 	{
-		if (!_socket.is_open()) 
-		{
-			ERROR("Disconnected from server.");
-			return false;
-		}
+		if (!_socket.is_open()) return false;
 
 		if (_write_queue.empty()) return false;
 		std::string& meta = _write_queue.front();  //其实是META数据
 
 		std::size_t bytes_to_send = meta.size();
+		if (bytes_to_send <= 0 || bytes_to_send >= MAX_DATA_SIZE) return false;
 
 		boost::system::error_code error;
 		std::size_t bytes_sent = _socket.write_some(boost::asio::buffer(meta.c_str(), bytes_to_send), error);
 
 		if (error == boost::asio::error::would_block || error == boost::asio::error::try_again)
 		{
-			ERROR("bytes_to_send:{} bytes_sent:{}", bytes_to_send, bytes_sent);
+			ERROR("待发送数据长度:{} 实际发送数据长度:{} 错误码:{} 错误信息:{}", bytes_to_send, bytes_sent, error.value(), error.message());
 			return AsyncProcessQueue();
 
 			_write_queue.pop();
-
 			if (_closing && _write_queue.empty()) Close();
 
 			return false;
 		}
+		/*
+		else if (error == boost::asio::error::broken_pipe)
+		{
+			ERROR("网络连接已断开，待发送数据长度:{} 实际发送数据长度:{} 错误码:{} 错误信息:{}", bytes_to_send, bytes_sent, error.value(), error.message());
+
+			Close();
+
+			return false;
+		}
+		*/
 		else if (bytes_sent == 0)
 		{
-			ERROR("bytes_to_send:{} bytes_sent:{} error:{}", bytes_to_send, bytes_sent, error.message());
+			ERROR("待发送数据长度:{}实际发送数据长度:{}为0，错误码:{} 错误信息:{}", bytes_to_send, bytes_sent, error.value(), error.message());
 
 			_write_queue.pop();
-
 			if (_closing && _write_queue.empty()) Close();
 
 			return false;
 		}
 		else if (bytes_sent < bytes_to_send) //一般不会出现这个情况，重新发送，记个ERROR
 		{
-			ERROR("bytes_to_send:{} bytes_sent:{}", bytes_to_send, bytes_sent);
+			LOG(ERROR, "待发送数据长度:{}少于实际发送数据长度:{} 错误码:{} 错误信息:{}", bytes_to_send, bytes_sent, error.value(), error.message());
+
+			meta = meta.substr(bytes_sent);
 			return AsyncProcessQueue();
 		}
-
-		DEBUG("server bytes_to_send:{} bytes_sent:{}", bytes_to_send, bytes_sent);
+			
+		//DEBUG("待发送数据长度:{}实际发送数据长度:{}，错误码:{} 错误信息:{}", bytes_to_send, bytes_sent, error.value(), error.message());
 
 		_write_queue.pop();
 
@@ -191,12 +199,16 @@ public:
 	}
 
 protected:
-	virtual void OnClose() { }
+	virtual void OnClose() { 
+		_closed = true;
+		_write_queue = {};
+		_buffer = {};
+	}
 protected:
 	std::atomic<bool> _closed;    
 	std::atomic<bool> _closing;
+	std::mutex _send_lock;
 	bool _is_writing_async = false;
-	std::mutex _mutex;
 	//接收缓存
 	std::array<unsigned char, MAX_DATA_SIZE> _buffer;
 	//发送队列
@@ -223,7 +235,7 @@ public:
 		}
 		catch (const boost::system::system_error& error)
 		{
-			ERROR("Start Server IP:{}-{} bytes_sent:{}", bind_ip, port, error.what());
+			ERROR("服务器启动失败，地址:{} 端口:{} 错误码:{}", bind_ip, port, error.what());
 			return false;
 		}
 
@@ -271,7 +283,7 @@ public:
 		}        
 		catch (const boost::system::system_error& error)        
 		{            
-			ERROR("system error:{}", error.what());
+			ERROR("开启网络失败，系统错误:{}", error.what());
 		}
 	}
 	

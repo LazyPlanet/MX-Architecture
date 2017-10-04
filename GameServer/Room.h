@@ -22,6 +22,7 @@ private:
 	int32_t _banker_index = 0; //庄家索引
 	int64_t _banker = 0; //庄家//玩家ID
 	int32_t _expired_time = 0; //过期时间
+	bool _gmt_opened = false; //GMT开房
 private:
 	std::mutex _mutex;
 	Asset::Room _stuff; //数据
@@ -39,6 +40,8 @@ private:
 	int32_t _dismiss_cooldown = 0; //解散冷却时间
 public:
 	explicit Room(Asset::Room room) {  _stuff = room; }
+	void SetGmtOpened() { _gmt_opened = true; }
+	bool IsGmtOpened() { return _gmt_opened; }
 
 	virtual int64_t GetID() { return _stuff.room_id(); }
 	virtual void SetID(int64_t room_id) { return _stuff.set_room_id(room_id); }
@@ -49,6 +52,8 @@ public:
 	
 	const Asset::RoomOptions& GetOptions() { return _stuff.options(); } //额外番型
 	void SetOption(const Asset::RoomOptions& options) {	_stuff.mutable_options()->CopyFrom(options);}
+
+	bool IsVoiceOpen() { return _stuff.options().voice_open(); }
 
 	int32_t GetTime() { return _expired_time; } //获取过期时间
 	void SetTime(int32_t expired_time) { _expired_time = expired_time; }
@@ -75,6 +80,8 @@ public:
 	bool CanDisMiss(); //能否解散
 	int32_t GetRemainCount(); //剩余游戏次数
 	int32_t GetGamesCount() { return _games.size(); }
+	bool HasStarted() { return _games.size() > 0; }
+	std::shared_ptr<Game> GetGame() { return _game; }
 
 	void OnPlayerOperate(std::shared_ptr<Player> player, pb::Message* message);
 
@@ -131,7 +138,10 @@ private:
 	std::unordered_map<int64_t, std::shared_ptr<Room>> _room_pool;
 	
 	int32_t _heart_count = 0; //心跳
+	int32_t _server_id = 0; //服务器ID
 public:
+	RoomManager();
+
 	static RoomManager& Instance()
 	{
 		static RoomManager _instance;

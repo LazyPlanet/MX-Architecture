@@ -64,6 +64,7 @@ void World::Update(int32_t diff)
 	++_heart_count;
 
 	ActivityInstance.Update(diff);
+	PlayerInstance.Update(diff);
 
 	g_gmt_client->Update();
 }

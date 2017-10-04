@@ -39,7 +39,18 @@ Asset::ERROR_CODE Room::TryEnter(std::shared_ptr<Player> player)
 		return Asset::ERROR_ROOM_HAS_BEEN_IN; //已经在房间
 	}
 	
-	if (IsFull()) return Asset::ERROR_ROOM_IS_FULL; //房间已满
+	if (IsFull()) 
+	{
+		return Asset::ERROR_ROOM_IS_FULL; //房间已满
+	}
+	else if (!_game && GetRemainCount() <= 0) 
+	{
+		return Asset::ERROR_ROOM_BEEN_OVER; //战局结束
+	}
+	else if (HasDisMiss()) 
+	{
+		return Asset::ERROR_ROOM_BEEN_DISMISS; //房间已经解散
+	}
 
 	DEBUG("玩家:{}进入房间:{}成功", player->GetID(), GetID());
 
@@ -93,13 +104,13 @@ bool Room::Enter(std::shared_ptr<Player> player)
 		{
 			auto& player_in = _players[i];
 
-			if (!player_in)
+			if (!player_in && enter_status != Asset::ERROR_ROOM_HAS_BEEN_IN) //当前玩家尚未在房间内，则选择新位置
 			{
 				player_in = player;
-				player->SetPosition((Asset::POSITION_TYPE)(i+1)); //设置位置
+				player->SetPosition((Asset::POSITION_TYPE)(i + 1)); //设置位置
 				break;
 			}
-			else if (player_in->GetID() == player->GetID()) //当前还在房间内
+			else if (player_in && player_in->GetID() == player->GetID()) //当前还在房间内
 			{
 				OnReEnter(player);
 
@@ -107,7 +118,7 @@ bool Room::Enter(std::shared_ptr<Player> player)
 			}
 		}
 	}
-	else
+	else if (enter_status != Asset::ERROR_ROOM_HAS_BEEN_IN)
 	{
 		_players.push_back(player); //进入房间
 		player->SetPosition((Asset::POSITION_TYPE)_players.size()); //设置位置
@@ -115,9 +126,6 @@ bool Room::Enter(std::shared_ptr<Player> player)
 	
 	DEBUG("curr_count:{} curr_enter:{} position:{}", _players.size(), player->GetID(), player->GetPosition());
 
-	//player->ClearCards(); //每次进房初始化状态
-
-	//SyncRoom(); //同步当前房间内玩家数据
 	return true;
 }
 	
@@ -134,6 +142,8 @@ void Room::OnReEnter(std::shared_ptr<Player> op_player)
 	//
 	SyncRoom();
 
+	if (!HasStarted() || (!_game && GetRemainCount() <= 0 /*单纯记录局数不能判定对局已经结束*/)) return; //尚未开局或者已经对局结束
+
 	//
 	//房间内玩家数据推送
 	//
@@ -145,6 +155,21 @@ void Room::OnReEnter(std::shared_ptr<Player> op_player)
 	{	
 		auto hist_record = message.mutable_list()->Add();
 		hist_record->CopyFrom(record);
+
+		for (int32_t i = 0; i < hist_record->list().size(); ++i)
+		{
+			if (message.player_brief_list().size() < MAX_PLAYER_COUNT)
+			{
+				auto player_brief = message.mutable_player_brief_list()->Add();
+				player_brief->set_player_id(hist_record->list(i).player_id());
+				player_brief->set_nickname(hist_record->list(i).nickname());
+				player_brief->set_headimgurl(hist_record->list(i).headimgurl());
+			}
+
+			hist_record->mutable_list(i)->clear_nickname();
+			hist_record->mutable_list(i)->clear_headimgurl();
+			hist_record->mutable_list(i)->mutable_details()->Clear();
+		}
 	}
 
 	if (!_game)
@@ -164,11 +189,11 @@ void Room::OnReEnter(std::shared_ptr<Player> op_player)
 	if (op_player->HasTingPai()) 
 	{
 		message.mutable_baopai()->CopyFrom(_game->GetBaoPai()); //宝牌
+	}
 
-		if (!op_player->CheckCardsInhand())
-		{
-			message.mutable_zhuapai()->CopyFrom(op_player->GetZhuaPai()); //上次抓牌，提示Client显示
-		}
+	if (!op_player->CheckCardsInhand())
+	{
+		message.mutable_zhuapai()->CopyFrom(op_player->GetZhuaPai()); //上次抓牌，提示Client显示
 	}
 
 	for (auto saizi : _game->GetSaizi())
@@ -236,7 +261,8 @@ void Room::OnReEnter(std::shared_ptr<Player> op_player)
 		}
 	}
 
-	DEBUG("玩家:{}重入房间:{} 协议内容:{}", op_player->GetID(), GetID(), message.ShortDebugString());
+	auto message_string = message.ShortDebugString();
+	DEBUG("玩家:{}重入房间:{} 协议内容:{}", op_player->GetID(), GetID(), message_string);
 
 	op_player->SendProtocol(message);
 
@@ -282,7 +308,8 @@ void Room::OnPlayerOperate(std::shared_ptr<Player> player, pb::Message* message)
 	auto game_operate = dynamic_cast<Asset::GameOperation*>(message);
 	if (!game_operate) return;
 
-	DEBUG("玩家房间内操作，玩家:{} 操作类型:{} message:{}", player->GetID(), game_operate->oper_type(), message->ShortDebugString());
+	auto message_string = message->ShortDebugString();
+	DEBUG("玩家房间内操作，玩家:{} 操作类型:{} message:{}", player->GetID(), game_operate->oper_type(), message_string);
 			
 	BroadCast(game_operate); //广播玩家操作
 	
@@ -407,7 +434,7 @@ bool Room::Remove(int64_t player_id, Asset::GAME_OPER_TYPE reason)
 
 		OnPlayerLeave(player_id); //玩家离开房间
 		
-		DEBUG("player:{} leave room.", player_id);
+		DEBUG("玩家:{}离开房间:{}", player_id, _stuff.room_id());
 
 		return true;
 	}
@@ -465,6 +492,8 @@ void Room::AddHupai(int64_t player_id)
 
 void Room::OnGameOver(int64_t player_id)
 {
+	//std::lock_guard<std::mutex> lock(_mutex);
+
 	if (_game) _game.reset();
 	
 	AddHupai(player_id); //记录
@@ -524,7 +553,7 @@ void Room::OnGameOver(int64_t player_id)
 					record->set_score(record->score() + _history.list(i).list(j).score());
 	}
 
-	LOG(INFO, "整局结算，胡牌玩家:{} 数据:{}", player_id, message.ShortDebugString());
+	LOG(INFO, "房间:{}整局结算，胡牌玩家:{} 数据:{}", _stuff.room_id(), player_id, message.ShortDebugString());
 
 	for (auto player : _players)
 	{
@@ -545,33 +574,38 @@ void Room::AddGameRecord(const Asset::GameRecord& record)
 	_history.mutable_list()->Add()->CopyFrom(record);
 
 	int64_t room_id = GetID();
+	auto record_string = record.ShortDebugString();
+	auto history_string = _history.ShortDebugString();
 	
 	cpp_redis::future_client client;
 	client.connect(ConfigInstance.GetString("Redis_ServerIP", "127.0.0.1"), ConfigInstance.GetInt("Redis_ServerPort", 6379));
+
 	if (!client.is_connected()) 
 	{
-		LOG(ERROR, "房间:{} 存储战绩信息:{} 当前历史战绩信息:{} 错误:未能建立连接", room_id, record.ShortDebugString(), _history.ShortDebugString());
+		LOG(ERROR, "房间:{} 存储战绩信息:{} 当前历史战绩信息:{} 错误:未能建立连接", room_id, record_string, history_string);
 		return;
 	}
 	
 	auto has_auth = client.auth(ConfigInstance.GetString("Redis_Password", "!QAZ%TGB&UJM9ol."));
+
 	if (has_auth.get().ko()) 
 	{
-		LOG(ERROR, "房间:{} 存储战绩信息:{} 当前历史战绩信息:{} 错误:数据库密码错误", room_id, record.ShortDebugString(), _history.ShortDebugString());
+		LOG(ERROR, "房间:{} 存储战绩信息:{} 当前历史战绩信息:{} 错误:数据库密码错误", room_id, record_string, history_string);
 		return;
 	}
 
 	auto set = client.set("room_history:" + std::to_string(room_id), _history.SerializeAsString());
 	client.commit();
 
-	LOG(INFO, "房间:{} 结果:{} 存储战绩信息:{} 当前历史战绩信息:{}", room_id, set.get(), record.ShortDebugString(), _history.ShortDebugString());
+	LOG(INFO, "房间:{} 结果:{} 存储战绩信息:{} 当前历史战绩信息:{}", room_id, set.get(), record_string, history_string);
 }
 
 void Room::BroadCast(pb::Message* message, int64_t exclude_player_id)
 {
 	if (!message) return;
 			
-	DEBUG("房间内广播协议:{}", message->ShortDebugString());
+	auto debug_string = message->ShortDebugString();
+	DEBUG("房间内广播协议:{}", debug_string);
 
 	for (auto player : _players)
 	{
@@ -611,7 +645,10 @@ void Room::OnDisMiss()
 		list->set_oper_type(player->GetOperState());
 	}
 
-	DEBUG("解散房间:{} 协议:{}", GetID(), proto.ShortDebugString());
+	auto proto_string = proto.ShortDebugString();
+	auto room_id = GetID();
+
+	DEBUG("解散房间:{} 协议:{}", room_id, proto_string);
 
 	BroadCast(proto); //投票状态
 }
@@ -641,6 +678,8 @@ void Room::KickOutPlayer(int64_t player_id)
 	
 void Room::SyncRoom()
 {
+	//std::lock_guard<std::mutex> lock(_mutex);
+	
 	Asset::RoomInformation message;
 	message.set_sync_type(Asset::ROOM_SYNC_TYPE_NORMAL);
 			
@@ -650,13 +689,13 @@ void Room::SyncRoom()
 	{
 		if (!player) continue;
 
-		DEBUG("sync room infomation, curr_player_size:{} player_id:{} position:{}", _players.size(), player->GetID(), player->GetPosition());
 		auto p = message.mutable_player_list()->Add();
 		p->set_position(player->GetPosition());
 		p->set_oper_type(player->GetOperState());
 		p->mutable_common_prop()->CopyFrom(player->CommonProp());
 		p->mutable_wechat()->CopyFrom(player->GetWechat());
 		p->set_ip_address(player->GetIpAddress());
+		p->set_voice_member_id(player->GetVoiceMemberID());
 	
 		for (auto dis_player : _players)
 		{
@@ -668,7 +707,7 @@ void Room::SyncRoom()
 			auto distance = redis->GetDistance(dis_player->GetID(), player->GetID());
 			dis_element->set_distance(distance);
 
-			DEBUG("获取玩家{}和玩家{}之间的距离:{}", dis_player->GetID(), player->GetID(), distance);
+			//DEBUG("获取玩家{}和玩家{}之间的距离:{}", dis_player->GetID(), player->GetID(), distance);
 		}
 	}
 
@@ -691,7 +730,7 @@ void Room::OnCreated(std::shared_ptr<Player> hoster)
 	
 bool Room::CanStarGame()
 {
-	if (!_hoster) return false;
+	if (!_hoster && !_gmt_opened) return false;
 
 	if (_players.size() != MAX_PLAYER_COUNT) return false;
 
@@ -717,6 +756,16 @@ bool Room::CanStarGame()
 
 		auto activity_id = g_const->room_card_limit_free_activity_id();
 		if (ActivityInstance.IsOpen(activity_id)) return true;
+
+		if (IsGmtOpened()) 
+		{
+			LOG(INFO, "GMT开房，不消耗房卡数据:{}", _stuff.ShortDebugString());
+			return true;
+		}
+		else if (!_hoster)
+		{
+			return false; //没有房主
+		}
 
 		if (_hoster && _games.size() == 0) //开局消耗
 		{
@@ -834,6 +883,11 @@ void Room::Update()
 /////////////////////////////////////////////////////
 //房间通用管理类
 /////////////////////////////////////////////////////
+RoomManager::RoomManager()
+{
+	_server_id = ConfigInstance.GetInt("ServerID", 1); 
+}
+
 std::shared_ptr<Room> RoomManager::Get(int64_t room_id)
 {
 	auto it = _rooms.find(room_id);
@@ -904,21 +958,25 @@ void RoomManager::Update(int32_t diff)
 {
 	++_heart_count;
 	
-	if (_heart_count % 20 == 0) //1s
+	if (_heart_count % 20 == 0) //1秒
 	{
 	
 	}
+	
+	if (_heart_count % 1200 == 0) //1分钟
+	{
+		DEBUG("服务器:{} 进行房间数量:{}", _server_id, _rooms.size());
+	}
 
-	if (_heart_count % 100 == 0) //5s
+	if (_heart_count % 100 == 0) //5秒
 	{
 		for (auto it = _rooms.begin(); it != _rooms.end(); )
 		{
 			it->second->Update();
 
-			if ((it->second->IsExpired() && it->second->IsEmpty()) || it->second->HasDisMiss())
+			if ((it->second->IsExpired() && it->second->IsEmpty()) || it->second->HasDisMiss() || 
+					(it->second->IsEmpty() && it->second->GetRemainCount() <= 0 && !it->second->GetGame()))
 			{
-				LOG(INFO, "Remove room_id:{} for empty and expired.", it->second->GetID());
-
 				it = _rooms.erase(it);
 			}
 			else

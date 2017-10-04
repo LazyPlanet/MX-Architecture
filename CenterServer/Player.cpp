@@ -14,6 +14,8 @@
 #include "PlayerCommonReward.h"
 #include "PlayerCommonLimit.h"
 
+#define MAX_PLAYER_COUNT 4
+
 namespace Adoter
 {
 
@@ -43,16 +45,17 @@ Player::Player()
 	AddHandler(Asset::META_TYPE_C2S_GET_REWARD, std::bind(&Player::CmdGetReward, this, std::placeholders::_1));
 }
 
-Player::Player(int64_t player_id, std::shared_ptr<WorldSession> session) : Player()
+Player::Player(int64_t player_id/*, std::shared_ptr<WorldSession> session*/) : Player()
 {
 	SetID(player_id);	
-	_session = session; //地址拷贝
+	//_session = session; //地址拷贝
 }
 
 bool Player::Connected() 
 { 
-	if (!_session) return false; 
-	return _session->IsConnect(); 
+	//if (!_session) return false; 
+	//return _session->IsConnect(); 
+	return false;
 }
 
 int32_t Player::Load()
@@ -107,9 +110,17 @@ int32_t Player::Save(bool force)
 
 	_dirty = false;
 	
-	DEBUG("玩家:{}保存数据，数据内容:{}", _player_id, _stuff.ShortDebugString());
+	auto debug_string = _stuff.ShortDebugString();
+	DEBUG("玩家:{}保存数据，数据内容:{}", _player_id, debug_string);
 		
 	return 0;
+}
+
+bool Player::IsExpire()
+{
+	if (_expire_time == 0) return false;
+
+	return _expire_time > CommonTimerInstance.GetTime();
 }
 	
 int32_t Player::Logout(pb::Message* message)
@@ -121,6 +132,15 @@ int32_t Player::Logout(pb::Message* message)
 	
 int32_t Player::OnLogout()
 {
+	_expire_time = CommonTimerInstance.GetTime() + 3600; //1小时之内没有上线，则删除
+
+	if (!IsCenterServer()) 
+	{
+		ERROR("玩家:{}游戏进行中，不能从大厅退出", _player_id);
+		WorldSessionInstance.RemovePlayer(_player_id); //网络会话数据
+		return 1; //玩家在游戏进行中，不能退出
+	}
+
 	_stuff.set_login_time(0);
 	_stuff.set_logout_time(CommonTimerInstance.GetTime());
 	
@@ -129,12 +149,12 @@ int32_t Player::OnLogout()
 	WorldSessionInstance.RemovePlayer(_player_id); //网络会话数据
 	PlayerInstance.Remove(_player_id); //玩家管理
 
-	DEBUG("player_id:{} stuff:{} leave game and scene.", _player_id, _stuff.ShortDebugString());
+	DEBUG("玩家:{} 数据:{} 从大厅成功退出", _player_id, _stuff.ShortDebugString());
 
 	return 0;
 }
 
-int32_t Player::OnEnterGame() 
+int32_t Player::OnEnterGame(bool is_login) 
 {
 	DEBUG("玩家:{}进入游戏", _player_id);
 
@@ -147,7 +167,7 @@ int32_t Player::OnEnterGame()
 		}
 	}
 
-	SendPlayer(); //发送数据给玩家
+	if (is_login) SendPlayer(); //发送数据给玩家
 	
 	_stuff.set_login_time(CommonTimerInstance.GetTime());
 	_stuff.set_logout_time(0);
@@ -156,10 +176,9 @@ int32_t Player::OnEnterGame()
 
 	PLAYER(_stuff);	//BI日志
 
-	WorldSessionInstance.AddPlayer(_player_id, _session); //网络会话数据
 	PlayerInstance.Emplace(_player_id, shared_from_this()); //玩家管理
 
-	OnLogin();
+	OnLogin(is_login);
 
 	return 0;
 }
@@ -175,20 +194,17 @@ int32_t Player::OnEnterCenter()
 
 	//Save(true); //存盘
 	
-	DEBUG("玩家:{}重新进入大厅，数据内容:{}", _player_id, _stuff.ShortDebugString());
+	DEBUG("玩家:{}退出游戏逻辑服务器进入游戏大厅，数据内容:{}", _player_id, _stuff.ShortDebugString());
 
 	return 0;
 }
 	
-int32_t Player::OnLogin()
+int32_t Player::OnLogin(bool is_login)
 {
 	ActivityInstance.OnPlayerLogin(shared_from_this()); //活动数据
 
-	BattleHistory(); //历史对战表
+	if (is_login) BattleHistory(); //历史对战表
 
-	//SetOffline(false); //上线
-
-	DEBUG("玩家:{}登陆加载数据成功，数据内容:{}", _player_id, _stuff.ShortDebugString());
 	return 0;
 }
 
@@ -380,9 +396,12 @@ void Player::SendProtocol(const pb::Message* message)
 
 void Player::SendProtocol(const pb::Message& message)
 {
-	if (!Connected()) return;
+	//if (!Connected()) return;
 
-	GetSession()->SendProtocol(message);
+	auto session = WorldSessionInstance.GetPlayerSession(_player_id);
+	if (!session || !session->IsConnect()) return;
+
+	session->SendProtocol(message);
 
 	//调试
 	const pb::FieldDescriptor* field = message.GetDescriptor()->FindFieldByName("type_t");
@@ -391,20 +410,27 @@ void Player::SendProtocol(const pb::Message& message)
 	const pb::EnumValueDescriptor* enum_value = message.GetReflection()->GetEnum(message, field);
 	if (!enum_value) return;
 
-	DEBUG("send protocol to player_id:{} protocol_name:{} content:{}", _player_id, enum_value->name().c_str(), message.ShortDebugString());
+	auto debug_string = message.ShortDebugString();
+	DEBUG("send protocol to player_id:{} protocol_name:{} content:{}", _player_id, enum_value->name().c_str(), debug_string);
 }
 	
 void Player::SendMeta(const Asset::Meta& meta)
 {
+	/*
 	if (!Connected()) 
 	{
-		LOG(ERROR, "玩家:{}未能找到合适发逻辑服务器，当前服务器:{}", _player_id, _stuff.server_id());
+		LOG(ERROR, "玩家:{}未能找到合适逻辑服务器，当前服务器:{}", _player_id, _stuff.server_id());
 		return;
 	}
+	*/
 	
-	DEBUG("玩家:{}发送协议:{}到游戏逻辑服务器", _player_id, meta.ShortDebugString());
+	auto session = WorldSessionInstance.GetPlayerSession(_player_id);
+	if (!session || !session->IsConnect()) return;
+	
+	auto debug_string = _stuff.ShortDebugString();
+	DEBUG("玩家:{}发送协议:{}到游戏逻辑服务器", _player_id, debug_string);
 
-	GetSession()->SendMeta(meta);
+	session->SendMeta(meta);
 }
 	
 bool Player::SendProtocol2GameServer(const pb::Message& message)
@@ -418,10 +444,12 @@ bool Player::SendProtocol2GameServer(const pb::Message& message)
 		SetLocalServer(server_id);
 		_gs_session = WorldSessionInstance.GetServerSession(GetLocalServer());
 	}
+		
+	auto debug_string = message.ShortDebugString();
 	
 	if (!_gs_session) 
 	{
-		LOG(ERROR, "玩家:{}未能找到合适发逻辑服务器，当前服务器:{}，协议内容:{}", _player_id, _stuff.server_id(), message.ShortDebugString());
+		LOG(ERROR, "玩家:{}未能找到合适发逻辑服务器，当前服务器:{}，协议内容:{}", _player_id, _stuff.server_id(), debug_string);
 		return false;
 	}
 
@@ -430,13 +458,15 @@ bool Player::SendProtocol2GameServer(const pb::Message& message)
 	
 	int type_t = field->default_value_enum()->number();
 	if (!Asset::META_TYPE_IsValid(type_t)) return false;	//如果不合法，不检查会宕线
+
+	auto stuff = message.SerializeAsString(); //复制，防止析构
 	
 	Asset::Meta meta;
 	meta.set_type_t((Asset::META_TYPE)type_t);
-	meta.set_stuff(message.SerializeAsString());
+	meta.set_stuff(stuff);
 	meta.set_player_id(_player_id); 
 
-	DEBUG("玩家:{}发送协议:{}到游戏逻辑服务器", _player_id, message.ShortDebugString());
+	DEBUG("玩家:{}发送协议:{}到游戏逻辑服务器", _player_id, debug_string);
 
 	_gs_session->SendMeta(meta); 
 
@@ -466,18 +496,21 @@ void Player::SendGmtProtocol(const pb::Message& message)
 	int type_t = field->default_value_enum()->number();
 	if (!Asset::INNER_TYPE_IsValid(type_t)) return;	//如果不合法，不检查会宕线
 	
+	auto stuff = message.SerializeAsString(); //复制，防止析构
+	
 	Asset::InnerMeta meta;
 	meta.set_type_t((Asset::INNER_TYPE)type_t);
-	meta.set_stuff(message.SerializeAsString());
+	meta.set_stuff(stuff);
 
+	auto inner_meta = meta.SerializeAsString();
 	Asset::GmtInnerMeta gmt_meta;
-	gmt_meta.set_inner_meta(meta.SerializeAsString());
+	gmt_meta.set_inner_meta(inner_meta);
 
 	SendProtocol2GameServer(gmt_meta);
 }
 
 //
-//玩家心跳周期为10MS
+//玩家心跳周期为50ms
 //
 //如果该函数返回FALSE则表示掉线
 //
@@ -485,25 +518,17 @@ bool Player::Update()
 {
 	++_heart_count; //心跳
 	
-	if (_heart_count % 100 == 0) //1s
+	if (_heart_count % 60 == 0) //3s
 	{
+		if (_dirty) Save(); //触发存盘
+
 		CommonLimitUpdate(); //通用限制,定时更新
 	}
 	
-	if (_heart_count % 300 == 0) //3s
-	{
-		if (_dirty) Save(); //触发存盘
-	}
-	
-	if (_heart_count % 500 == 0) //5s
-	{
-		SayHi();
-	}
-
-	if (_heart_count % 6000 == 0) //1min
-	{
-		DEBUG("玩家:{}心跳:{}", _player_id, _heart_count);
-	}
+	//
+	//大厅玩家(中心服务器上玩家)心跳时间5s，游戏逻辑服务器上玩家心跳3s
+	//
+	if ((_heart_count % 100 == 0 && IsCenterServer()) || (_heart_count % 60 == 0 && !IsCenterServer())) SayHi();
 
 	return true;
 }
@@ -530,7 +555,8 @@ bool Player::HandleProtocol(int32_t type_t, pb::Message* message)
 {
 	if (!message) return false;
 
-	DEBUG("当前玩家{}所在服务器:{} 接收协议数据:{}", _player_id, _stuff.server_id(), message->ShortDebugString());
+	auto debug_string = message->ShortDebugString();
+	DEBUG("当前玩家{}所在服务器:{} 接收协议数据:{}", _player_id, _stuff.server_id(), debug_string);
 	//
 	//如果中心服务器没有协议处理回调，则发往游戏服务器进行处理
 	//
@@ -558,6 +584,8 @@ bool Player::HandleProtocol(int32_t type_t, pb::Message* message)
 		CallBack& callback = GetMethod(type_t); 
 		callback(std::forward<pb::Message*>(message));	
 	}
+
+	if (_expire_time > 0) _expire_time = 0;
 
 	return true;
 }
@@ -767,6 +795,8 @@ void Player::SayHi()
 	Asset::SayHi message;
 	message.set_heart_count(_heart_count);
 	SendProtocol(message);
+
+	DEBUG("玩家:{} 发送心跳:{}", _player_id, _hi_time);
 }
 	
 int32_t Player::CmdGameSetting(pb::Message* message)
@@ -839,53 +869,82 @@ void Player::BattleHistory(int32_t start_index, int32_t end_index)
 	if (!client.is_connected()) return;
 	
 	auto has_auth = client.auth(ConfigInstance.GetString("Redis_Password", "!QAZ%TGB&UJM9ol."));
-	if (has_auth.get().ko()) 
+	if (has_auth.get().ko()) return;
+
+	if (_stuff.room_history().size() > 10) //玩家历史战绩最多保留10条
 	{
-		DEBUG_ASSERT(false);
-		return;
+		std::vector<int32_t> room_history(_stuff.room_history().begin(), _stuff.room_history().end());
+		_stuff.mutable_room_history()->Clear();
+
+		for (int i = 0; i < 10; ++i) _stuff.mutable_room_history()->Add(room_history[i]);
+
+		SetDirty();
 	}
+
+	std::set<int64_t> room_list; //历史记录
 
 	for (int32_t i = end_index - 1; i >= start_index; --i)
 	{
-		if (i < 0 || i >= _stuff.room_history().size()) 
-		{
-			DEBUG_ASSERT(false);
-			continue; //安全检查
-		}
+		if (i < 0 || i >= _stuff.room_history().size()) continue; //安全检查
 
 		Asset::RoomHistory history;
 
 		auto room_id = _stuff.room_history(i);
-
-		DEBUG("玩家:{}获取房间:{}历史战绩", _player_id, room_id);
-
 		auto get = client.get("room_history:" + std::to_string(room_id));
 		cpp_redis::reply reply = get.get();
 		client.commit();
 
-		if (!reply.is_string()) 
-		{
-			WARN("房间:{}没有数据", room_id);
-			continue;
-		}
+		if (!reply.is_string()) continue;
 
 		auto success = history.ParseFromString(reply.as_string());
-		if (!success)
-		{
-			WARN("房间:{}没有数据", room_id);
-			continue;
+		if (!success) continue;
+
+		if (room_list.find(room_id) != room_list.end()) continue; //防止玩家历史战绩重复
+		room_list.insert(room_id);
+
+		for (int32_t j = 0; j < history.list().size(); ++j)
+		{	
+			for (int32_t k = 0; k < history.list(j).list().size(); ++k)
+			{
+				if (history.player_brief_list().size() < MAX_PLAYER_COUNT)
+				{
+					auto player_brief = history.mutable_player_brief_list()->Add();
+					player_brief->set_player_id(history.list(j).list(k).player_id());
+					player_brief->set_nickname(history.list(j).list(k).nickname());
+					player_brief->set_headimgurl(history.list(j).list(k).headimgurl());
+				}
+
+				history.mutable_list(j)->mutable_list(k)->clear_nickname();
+				history.mutable_list(j)->mutable_list(k)->clear_headimgurl();
+				history.mutable_list(j)->mutable_list(k)->mutable_details()->Clear();
+			}
 		}
 
 		auto record = message.mutable_history_list()->Add();
 		record->CopyFrom(history);
 	}
 
+	if (message.history_list().size() == 0) return;
+
 	if (message.history_list().size()) SendProtocol(message);
 }
 	
 void Player::OnKickOut(Asset::KICK_OUT_REASON reason)
 {
-	if (!IsCenterServer()) return; 
+	switch (reason)
+	{
+		case Asset::KICK_OUT_REASON_DISCONNECT: //玩家杀进程退出
+		{
+
+		}
+		break;
+
+		default:
+		{
+			if (!IsCenterServer()) return; 
+		}
+		break;
+	}
 
 	//
 	//如果玩家主动退出，数据发送失败
@@ -933,25 +992,23 @@ void Player::SetOffline(bool offline)
 	
 void PlayerManager::Emplace(int64_t player_id, std::shared_ptr<Player> player)
 {
-	if (!player) 
-	{
-		ERROR("插入玩家:{}失败", player_id);
-		return;
-	}
+	std::lock_guard<std::mutex> lock(_mutex);
 
-	WARN("插入玩家:{}成功", player_id);
+	if (!player) return;
 
 	_players[player_id] = player;
+	
+	DEBUG("插入玩家:{}成功，当前在线玩家数量:{}", player_id, _players.size());
 }
 
 std::shared_ptr<Player> PlayerManager::GetPlayer(int64_t player_id)
 {
+	std::lock_guard<std::mutex> lock(_mutex);
+
 	for (auto it = _players.begin(); it != _players.end(); )
 	{
 		if (!it->second)
 		{
-			DEBUG("玩家:{}已经退出", it->first);
-
 			it = _players.erase(it);
 		}
 		else
@@ -980,11 +1037,18 @@ bool PlayerManager::Has(int64_t player_id)
 
 void PlayerManager::Remove(int64_t player_id)
 {
+	std::lock_guard<std::mutex> lock(_mutex);
+
 	if (player_id <= 0) return;
 
-	ERROR("删除玩家:{}", player_id);
+	auto it = _players.find(player_id);
+	if (it == _players.end()) return;
+		
+	if (it->second) it->second.reset();
 
-	_players.erase(player_id);
+	_players.erase(it);
+	
+	DEBUG("删除玩家:{}成功，当前在线玩家数量:{}", player_id, _players.size());
 }
 
 void PlayerManager::Remove(std::shared_ptr<Player> player)
@@ -1002,6 +1066,32 @@ void PlayerManager::BroadCast(const pb::Message& message)
 		if (!player) continue;
 
 		player->SendProtocol(message); //发送给Client
+	}
+}
+	
+//
+//玩家心跳周期为50ms
+//
+void PlayerManager::Update(int32_t diff)
+{
+	++_heart_count;
+
+	//if (_heart_count % 20 != 0) return;
+
+	std::lock_guard<std::mutex> lock(_mutex);
+
+	for (auto it = _players.begin(); it != _players.end();)
+	{
+		if (!it->second || it->second->IsExpire()) //退出或者离线时间过长
+		{
+			it = _players.erase(it);
+			continue; 
+		}
+		else
+		{
+			it->second->Update();
+			++it;
+		}
 	}
 }
 

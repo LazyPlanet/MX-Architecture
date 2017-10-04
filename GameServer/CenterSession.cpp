@@ -29,8 +29,10 @@ void CenterSession::OnConnected()
 
 bool CenterSession::OnMessageProcess(const Asset::Meta& meta)
 {
-	DEBUG("接收来自中心服务器:{} {}的数据:{}", _ip_address, _remote_endpoint.port(), meta.ShortDebugString());
+	auto meta_string = meta.ShortDebugString();
 
+	DEBUG("接收来自中心服务器:{} {}的数据:{}", _ip_address, _remote_endpoint.port(), meta_string);
+		
 	if (meta.type_t() == Asset::META_TYPE_S2S_REGISTER) //注册服务器成功
 	{
 		DEBUG("游戏逻辑服务器注册到中心服成功.");
@@ -43,7 +45,7 @@ bool CenterSession::OnMessageProcess(const Asset::Meta& meta)
 
 		Asset::InnerMeta inner_meta;
 		inner_meta.ParseFromString(message.inner_meta());
-		GmtInstance.InnerProcess(inner_meta);
+		GmtInstance.OnInnerProcess(inner_meta);
 	}
 	else if (meta.type_t() == Asset::META_TYPE_SHARE_ENTER_ROOM) //进入游戏，从中心服务器首次进入逻辑服务器通过此处
 	{
@@ -51,9 +53,9 @@ bool CenterSession::OnMessageProcess(const Asset::Meta& meta)
 		auto result = message.ParseFromString(meta.stuff());
 		if (!result) return false;
 
-		auto player = _players[meta.player_id()];
+		auto player = GetPlayer(meta.player_id());
 		if (!player) player = std::make_shared<Player>(meta.player_id());
-		_players[meta.player_id()] = player;
+		AddPlayer(meta.player_id(), player);
 
 		if (player->OnLogin()) 
 		{
@@ -64,8 +66,8 @@ bool CenterSession::OnMessageProcess(const Asset::Meta& meta)
 	else
 	{
 		if (meta.player_id() == 0) return false;
-
-		auto player = _players[meta.player_id()];
+		
+		auto player = GetPlayer(meta.player_id());
 		if (!player) 
 		{
 			player = std::make_shared<Player>(meta.player_id());
@@ -73,7 +75,7 @@ bool CenterSession::OnMessageProcess(const Asset::Meta& meta)
 			{
 				ERROR("玩家{}进入游戏失败", meta.player_id());
 			}
-			_players[meta.player_id()] = player;
+			AddPlayer(meta.player_id(), player);
 		}
 
 		pb::Message* msg = ProtocolInstance.GetMessage(meta.type_t());	
@@ -113,19 +115,23 @@ void CenterSession::SendProtocol(pb::Message& message)
 		return;	//如果不合法，不检查会宕线
 	}
 	
+	auto message_string = message.SerializeAsString();
+
 	Asset::Meta meta;
 	meta.set_type_t((Asset::META_TYPE)type_t);
-	meta.set_stuff(message.SerializeAsString());
+	meta.set_stuff(message_string);
+
+	auto meta_string = meta.ShortDebugString();
 
 	std::string content = meta.SerializeAsString();
 
 	if (content.empty()) 
 	{
-		ERROR("server:{} send nothing, message:{}", _ip_address, meta.ShortDebugString());
+		ERROR("server:{} send nothing, message:{}", _ip_address, meta_string);
 		return;
 	}
 
-	DEBUG("游戏逻辑服务器发送协议到中心服务器[{} {}], 协议数据:{}", _ip_address, _remote_endpoint.port(), meta.ShortDebugString());
+	DEBUG("游戏逻辑服务器发送协议到中心服务器[{} {}], 协议数据:{}", _ip_address, _remote_endpoint.port(), meta_string);
 	AsyncSendMessage(content);
 }
 
@@ -242,6 +248,8 @@ bool CenterSession::Update()
 	
 	++_heart_count;
 	
+	std::lock_guard<std::mutex> lock(_player_lock);
+	
 	if (_heart_count % 60 == 0) //3s
 	{
 		for (auto it = _players.begin(); it != _players.end();)
@@ -259,12 +267,50 @@ bool CenterSession::Update()
 		}
 	}
 
-	if (_heart_count % 100 == 0) //5s
+	if (_heart_count % 1200 == 0) //60s
 	{
 		SayHi(); //心跳
 	}
 
 	return true;
+}
+	
+void CenterSession::RemovePlayer(int64_t player_id) 
+{ 
+	if (player_id <= 0) return;
+
+	std::lock_guard<std::mutex> lock(_player_lock);
+
+	auto it = _players.find(player_id);
+	if (it == _players.end()) return;
+
+	if (it->second) it->second.reset();
+	
+	_players.erase(it); 
+}
+	
+void CenterSession::AddPlayer(int64_t player_id, std::shared_ptr<Player> player)
+{
+	if (player_id <= 0 || !player) return;
+	
+	std::lock_guard<std::mutex> lock(_player_lock);
+
+	auto it = _players.find(player_id);
+	if (it != _players.end() && it->second) it->second.reset();
+
+	_players[player_id] = player;
+}
+	
+std::shared_ptr<Player> CenterSession::GetPlayer(int64_t player_id)
+{
+	if (player_id <= 0) return nullptr;
+
+	std::lock_guard<std::mutex> lock(_player_lock);
+
+	auto it = _players.find(player_id);
+	if (it == _players.end()) return nullptr;
+
+	return it->second;
 }
 
 #undef RETURN

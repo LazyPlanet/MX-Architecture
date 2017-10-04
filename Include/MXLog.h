@@ -16,7 +16,7 @@
 namespace Adoter
 {
 
-#define MAX_DATA_SIZE 81920  
+#define MAX_DATA_SIZE 65536  
 
 //////////////////////////////////////////////////////////////////////////
 /////各种日志的宏定义/////
@@ -28,6 +28,7 @@ namespace Adoter
 	if (debug) { \
 		spdlog::get("console")->debug("[file:#{} func:#{} line:#{}] " fmt, __FILE__, __func__, __LINE__, ##__VA_ARGS__); \
 	}\
+	spdlog::get("console_history")->info("[file:#{} func:#{} line:#{}] " fmt, __FILE__, __func__, __LINE__, ##__VA_ARGS__); \
 }\
 
 #define TRACE(fmt, ...) { \
@@ -112,6 +113,9 @@ public:
 		//控制台日志
 		auto console = spdlog::stdout_color_mt("console");
 		console->set_level(spdlog::level::trace);
+		//控制台日志历史记录
+		auto rotating_logger = spdlog::rotating_logger_mt("console_history", "logs/history", 1048576 * 300, 14); //300MB 14天
+		rotating_logger->flush_on(spdlog::level::trace);
 		//玩家日志
 		auto player_info = spdlog::daily_logger_st("player_info", "logs/player");
 		player_info->flush_on(spdlog::level::trace);

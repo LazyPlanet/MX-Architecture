@@ -1,0 +1,298 @@
+#include "GmtSession.h"
+#include "RedisManager.h"
+#include "MXLog.h"
+#include "Player.h"
+#include "Activity.h"
+#include "Room.h"
+
+namespace Adoter
+{
+#define RETURN(x) \
+	auto response = command; \
+	response.set_error_code(x); \
+	auto debug_string = command.ShortDebugString(); \
+	if (x) { \
+		LOG(ERR, "command excute failed for:{} command:{}", x, debug_string); \
+	} else { \
+		LOG(TRACE, "command excute success for:{} command:{}", x, debug_string); \
+	} \
+	SendProtocol(response); \
+	return x; \
+
+
+bool GmtManager::OnInnerProcess(const Asset::InnerMeta& meta)
+{
+	auto debug_string = meta.ShortDebugString(); 
+
+	switch (meta.type_t())
+	{
+		case Asset::INNER_TYPE_COMMAND: //发放钻石//房卡//欢乐豆
+		{
+			Asset::Command message;
+			auto result = message.ParseFromString(meta.stuff());
+			if (!result) return false;
+			
+			OnCommandProcess(message);
+		}
+		break;
+
+		case Asset::INNER_TYPE_OPEN_ROOM: //代开房
+		{
+			Asset::OpenRoom message;
+			auto result = message.ParseFromString(meta.stuff());
+			if (!result) return false;
+
+			//
+			//获取策划好友房数据
+			//
+			/*
+			const auto& messages = AssetInstance.GetMessagesByType(Asset::ASSET_TYPE_ROOM);
+			auto it = std::find_if(messages.begin(), messages.end(), [](pb::Message* message){
+				 auto room_limit = dynamic_cast<Asset::RoomLimit*>(message);
+				 if (!room_limit) return false;
+				 return Asset::ROOM_TYPE_FRIEND == room_limit->room_type();
+			 });
+			if (it == messages.end()) return false;
+
+			auto room_limit = dynamic_cast<Asset::RoomLimit*>(*it);
+			if (!room_limit) return Asset::ERROR_ROOM_TYPE_NOT_FOUND;
+			*/
+
+			//房间属性
+			Asset::Room room;
+			room.set_room_type(Asset::ROOM_TYPE_FRIEND);
+			room.mutable_options()->ParseFromString(message.options());
+
+			auto room_ptr = RoomInstance.CreateRoom(room);
+			if (!room_ptr) 
+			{
+				LOG(ERROR, "GMT开房失败，开房信息:{}", room.ShortDebugString());
+				return false; //未能创建成功房间，理论不会出现
+			}
+
+			DEBUG("GMT开房成功，数据:{}", room.ShortDebugString());
+
+			room_ptr->SetGmtOpened(); //设置GMT开房
+
+			message.set_room_id(room_ptr->GetID());
+			message.set_error_code(Asset::COMMAND_ERROR_CODE_SUCCESS); //成功创建
+			message.set_server_id(ConfigInstance.GetInt("ServerID", 1));
+ 			SendProtocol(message); //发送给GTM服务器
+		}	   
+		break;
+
+		case Asset::INNER_TYPE_SEND_MAIL: //发送邮件
+		{
+			Asset::SendMail message;
+			auto result = message.ParseFromString(meta.stuff());
+			if (!result) return false;
+
+			OnSendMail(message);
+		}
+		break;
+		
+		case Asset::INNER_TYPE_SYSTEM_BROADCAST: //系统广播
+		{
+			Asset::SystemBroadcast message;
+			auto result = message.ParseFromString(meta.stuff());
+			if (!result) return false;
+
+			OnSystemBroadcast(message);
+		}
+
+		case Asset::INNER_TYPE_ACTIVITY_CONTROL: //活动控制
+		{
+			Asset::ActivityControl message;
+			auto result = message.ParseFromString(meta.stuff());
+			if (!result) return false;
+
+			OnActivityControl(message);
+		}
+
+		default:
+		{
+			WARN("Receive message:{} from server has no process type:{}", debug_string, meta.type_t());
+		}
+		break;
+	}
+	return true;
+}
+	
+Asset::COMMAND_ERROR_CODE GmtManager::OnActivityControl(const Asset::ActivityControl& command)
+{
+	auto ret = ActivityInstance.OnActivityControl(command);
+	RETURN(ret)
+}
+
+Asset::COMMAND_ERROR_CODE GmtManager::OnSendMail(const Asset::SendMail& command)
+{
+	const auto player_id = command.player_id(); 
+
+	if (player_id != 0) //玩家定向邮件
+	{
+		auto player_ptr = PlayerInstance.Get(player_id);
+		//
+		//理论上玩家应该在线，但是没有查到该玩家，原因
+		//
+		//1.玩家已经下线; 2.玩家在其他服务器上;
+		//
+		if (!player_ptr) 
+		{
+			RETURN(Asset::COMMAND_ERROR_CODE_PLAYER_OFFLINE); //玩家目前不在线
+		}
+
+		auto& player = player_ptr->Get();
+
+		auto mail_id = command.mail_id();
+
+		if (mail_id > 0)
+		{
+			player.mutable_mail_list_system()->Add(mail_id);
+		}
+		else
+		{
+			auto mail = player.mutable_mail_list_customized()->Add();
+			mail->set_title(command.title());
+			mail->set_content(command.content());
+			mail->set_send_time(CommonTimerInstance.GetTime());
+
+			//钻石
+			auto attachment = mail->mutable_attachments()->Add();
+			attachment->set_attachment_type(Asset::ATTACHMENT_TYPE_DIAMOND);
+			attachment->set_count(command.diamond_count());
+			
+			//欢乐豆
+			attachment = mail->mutable_attachments()->Add();
+			attachment->set_attachment_type(Asset::ATTACHMENT_TYPE_HUANLEDOU);
+			attachment->set_count(command.huanledou_count());
+			
+			//房卡
+			attachment = mail->mutable_attachments()->Add();
+			attachment->set_attachment_type(Asset::ATTACHMENT_TYPE_ROOM_CARD);
+			attachment->set_count(command.room_card_count());
+		}
+
+		//存盘
+		player_ptr->SetDirty();
+	}
+	else //全服邮件
+	{
+		WARN("收到了全服邮件数据，目前不支持.");
+	}
+	
+	RETURN(Asset::COMMAND_ERROR_CODE_SUCCESS); //成功执行
+}
+			
+Asset::COMMAND_ERROR_CODE GmtManager::OnCommandProcess(const Asset::Command& command)
+{
+	auto player_id = command.player_id();
+	if (player_id <= 0) //玩家角色校验
+	{
+		RETURN(Asset::COMMAND_ERROR_CODE_PARA); //数据错误
+	}
+	
+	if (command.count() <= 0) //不应该是负数
+	{
+		RETURN(Asset::COMMAND_ERROR_CODE_PARA); //数据错误
+	}
+	
+	auto player_ptr = PlayerInstance.Get(player_id);
+	//
+	//理论上玩家应该在线，但是没有查到该玩家，原因
+	//
+	//1.玩家已经下线; 2.玩家在其他服务器上;
+	//
+	if (!player_ptr) 
+	{
+		RETURN(Asset::COMMAND_ERROR_CODE_PLAYER_OFFLINE); //玩家目前不在线
+	}
+			
+	/*
+	if (!player_ptr->IsCenterServer()) //当前不在中心服务器，则到逻辑服务器进行处理
+	{
+		player_ptr->SendGmtProtocol(command); //转发
+		//RETURN(Asset::COMMAND_ERROR_CODE_SUCCESS); //成功执行
+		return Asset::COMMAND_ERROR_CODE_SUCCESS; //不返回协议
+	}
+	*/
+
+	switch(command.command_type())
+	{
+		case Asset::COMMAND_TYPE_RECHARGE:
+		{
+			player_ptr->GainDiamond(Asset::DIAMOND_CHANGED_TYPE_GMT, command.count());
+		}
+		break;
+		
+		case Asset::COMMAND_TYPE_ROOM_CARD:
+		{
+			player_ptr->GainRoomCard(Asset::ROOM_CARD_CHANGED_TYPE_GMT, command.count());   
+		}
+		break;
+		
+		case Asset::COMMAND_TYPE_HUANLEDOU:
+		{
+			player_ptr->GainHuanledou(Asset::HUANLEDOU_CHANGED_TYPE_GMT, command.count());
+		}
+		break;
+		
+		default:
+		{
+		}
+		break;
+	}
+
+	//存盘
+	player_ptr->SetDirty();
+
+	RETURN(Asset::COMMAND_ERROR_CODE_SUCCESS); //执行成功
+}
+
+Asset::COMMAND_ERROR_CODE GmtManager::OnSystemBroadcast(const Asset::SystemBroadcast& command)
+{
+	Asset::SystemBroadcasting message;
+	message.set_content(command.content());
+
+	//WorldSessionInstance.BroadCast(message);
+
+	return Asset::COMMAND_ERROR_CODE_SUCCESS; //直接返回，不用回复给GMT服务器
+}
+	
+void GmtManager::SendProtocol(pb::Message* message)
+{
+	SendProtocol(*message);
+}
+
+void GmtManager::SendProtocol(pb::Message& message)
+{
+    if (!g_center_session)
+    {
+        ERROR("尚未连接中心服服务器");
+        return;
+    }
+
+    const pb::FieldDescriptor* field = message.GetDescriptor()->FindFieldByName("type_t");
+    if (!field) return;
+
+    int type_t = field->default_value_enum()->number();
+    if (!Asset::INNER_TYPE_IsValid(type_t)) return; //如果不合法，不检查会宕线
+
+    auto message_string = message.SerializeAsString();
+
+    Asset::InnerMeta meta;
+    meta.set_type_t((Asset::INNER_TYPE)type_t);
+    meta.set_stuff(message_string);
+
+    auto meta_string = meta.SerializeAsString();
+
+    Asset::GmtInnerMeta gmt_meta;
+    gmt_meta.set_inner_meta(meta_string);
+
+    auto gmt_meta_string = gmt_meta.ShortDebugString();
+    DEBUG("逻辑服务器处理GMT指令后发送数据到中心服务器:{}", gmt_meta_string);
+    
+    g_center_session->SendProtocol(gmt_meta);
+}
+
+#undef RETURN
+}

@@ -22,6 +22,7 @@ WorldSession::WorldSession(boost::asio::ip::tcp::socket&& socket) : Socket(std::
 	_remote_endpoint = _socket.remote_endpoint();
 	_ip_address = _remote_endpoint.address().to_string();
 			
+	_hi_time = CommonTimerInstance.GetTime(); 
 	DEBUG("地址:{} 端口:{} 连接成功", _ip_address, _remote_endpoint.port());
 }
 
@@ -33,11 +34,8 @@ void WorldSession::InitializeHandler(const boost::system::error_code error, cons
 		{
 			ERROR("地址:{} 端口:{} 玩家:{}断开连接，错误码:{} 错误描述:{}", _ip_address, _remote_endpoint.port(), _player ? _player->GetID() : 0, error.value(), error.message());
 			
-			//if (error != boost::asio::error::connection_reset)
-			{
-				KickOutPlayer(Asset::KICK_OUT_REASON_DISCONNECT);
-				return;
-			}
+			Close();
+			return;
 		}
 		else
 		{
@@ -47,7 +45,7 @@ void WorldSession::InitializeHandler(const boost::system::error_code error, cons
 					
 				if (body_size > MAX_DATA_SIZE)
 				{
-					LOG(ERROR, "接收来自地址:{} 端口:{} 太大的包长:{} 丢弃.", _ip_address, _remote_endpoint.port(), body_size)
+					LOG(ERROR, "接收来自地址:{} 端口:{} 玩家:{} 太大的包长:{} 丢弃.", _ip_address, _remote_endpoint.port(), _player ? _player->GetID() : 0, body_size)
 					AsyncReceiveWithCallback(&WorldSession::InitializeHandler); //递归持续接收	
 					return;
 				}
@@ -60,7 +58,7 @@ void WorldSession::InitializeHandler(const boost::system::error_code error, cons
 
 				if (!result) 
 				{
-					LOG(ERROR, "接收来自地址:{} 端口:{} 转换Protobuff数据失败.", _ip_address, _remote_endpoint.port())
+					LOG(ERROR, "接收来自地址:{} 端口:{} 玩家:{} 转换Protobuff数据失败.", _ip_address, _remote_endpoint.port(), _player ? _player->GetID() : 0);
 					AsyncReceiveWithCallback(&WorldSession::InitializeHandler); //递归持续接收	
 					return; //非法协议
 				}
@@ -86,7 +84,7 @@ void WorldSession::OnProcessMessage(const Asset::Meta& meta)
 	pb::Message* msg = ProtocolInstance.GetMessage(meta.type_t());	
 	if (!msg) 
 	{
-		ERROR("Could not found message of type:{}", meta.type_t());
+		ERROR("会话类型:{} 会话全局ID:{} 尚未找到协议处理回调，协议类型:{} 对方IP地址:{}", _role_type, _global_id, meta.type_t(), _ip_address);
 		return;		//非法协议
 	}
 
@@ -107,7 +105,10 @@ void WorldSession::OnProcessMessage(const Asset::Meta& meta)
 	if (!enum_value) return;
 
 
-	WARN("中心服务器接收数据, 玩家:{} 协议:{} {} 内容:{}", meta.player_id(), meta.type_t(), enum_value->name(), message->ShortDebugString());
+	auto message_string = message->ShortDebugString();
+	auto meta_string = meta.ShortDebugString();
+
+	WARN("中心服务器接收数据, 玩家:{} 协议:{} {} 内容:{}", meta.player_id(), meta.type_t(), enum_value->name(), message_string);
 
 	//
 	// C2S协议可能存在两种情况：
@@ -125,11 +126,11 @@ void WorldSession::OnProcessMessage(const Asset::Meta& meta)
 		//
 		OnInnerProcess(meta); //内部处理
 
-		DEBUG("1.中心服务器接收游戏服务器内部协议:{}", meta.ShortDebugString());
+		//DEBUG("1.中心服务器接收游戏服务器内部协议:{}", meta.type_t());
 	}
 	else if (meta.player_id() > 0)
 	{
-		DEBUG("2.中心服务器接收游戏服务器数据, 玩家:{} 协议:{}", meta.player_id(), meta.ShortDebugString());
+		//DEBUG("2.中心服务器接收游戏服务器数据, 玩家:{} 协议:{}", meta.player_id(), meta.type_t());
 
 		auto player = PlayerInstance.Get(meta.player_id());
 		if (!player) 
@@ -149,7 +150,10 @@ void WorldSession::OnProcessMessage(const Asset::Meta& meta)
 		//来自Client协议均在此处理，逻辑程序员请勿在此后添加代码
 		//
 		
-		DEBUG("3.中心服务器接收来自Client的协议:{}", meta.ShortDebugString());
+		DEBUG("3.中心服务器接收来自Client的协议:{}", meta.type_t());
+
+		_pings_count = 0;
+		_hi_time = CommonTimerInstance.GetTime(); 
 		
 		if (Asset::META_TYPE_C2S_LOGIN == meta.type_t()) //账号登陆
 		{
@@ -176,7 +180,6 @@ void WorldSession::OnProcessMessage(const Asset::Meta& meta)
 			if (!reply.is_string()) 
 			{
 				LOG(ERROR, "未能找到玩家账号数据:{}", login->account().username());
-				DEBUG_ASSERT(false);
 				return;
 			}
 	
@@ -207,8 +210,10 @@ void WorldSession::OnProcessMessage(const Asset::Meta& meta)
 				int64_t player_id = redis->CreatePlayer(); //如果账号下没有角色，创建一个给Client
 				if (player_id == 0) return;
 				
-				_player = std::make_shared<Player>(player_id, shared_from_this());
+				_player = std::make_shared<Player>(player_id);
 				_player->SetLocalServer(ConfigInstance.GetInt("ServerID", 1));
+				
+				WorldSessionInstance.AddPlayer(player_id, shared_from_this()); //在线玩家
 				
 				SetRoleType(Asset::ROLE_TYPE_PLAYER, _player->GetID());
 
@@ -219,21 +224,19 @@ void WorldSession::OnProcessMessage(const Asset::Meta& meta)
 				_player->Save(true); //存盘，防止数据库无数据
 				_user.mutable_player_list()->Add(player_id);
 				
-				LOG(INFO, "账号:{}下尚未创建角色，创建角色:{} 账号数据:{}", login->account().username(), player_id, _user.ShortDebugString());
+				auto user_string = _user.ShortDebugString();
+				LOG(INFO, "账号:{}下尚未创建角色，创建角色:{} 账号数据:{}", login->account().username(), player_id, user_string);
 			}
 
 			if (_player_list.size()) _player_list.clear(); 
 			for (auto player_id : _user.player_list()) _player_list.emplace(player_id); //玩家数据
 			
-			LOG(INFO, "user:{} account:{} wechat:{} token:{}", _user.ShortDebugString(), _account.ShortDebugString(), 
-					_wechat.ShortDebugString(), _access_token.ShortDebugString());
+			auto user_string = _user.ShortDebugString();
+			auto account_string = _account.ShortDebugString();
 				
 			//
 			//账号数据存储
 			//
-			if (!_user.has_wechat_token()) _user.mutable_wechat_token()->CopyFrom(_access_token);
-			if (!_user.has_wechat()) _user.mutable_wechat()->CopyFrom(_wechat); //微信数据
-		
 			auto set = client.set("user:" + login->account().username(), _user.SerializeAsString());
 			client.sync_commit();
 
@@ -295,7 +298,7 @@ void WorldSession::OnProcessMessage(const Asset::Meta& meta)
 				//
 				//新增用户，必须首先进行数据加载
 				//
-				_player = std::make_shared<Player>(connect->player_id(), shared_from_this()); //服务器已经没有缓存
+				_player = std::make_shared<Player>(connect->player_id()); //服务器已经没有缓存
 
 				SetRoleType(Asset::ROLE_TYPE_PLAYER, _player->GetID());
 
@@ -306,13 +309,11 @@ void WorldSession::OnProcessMessage(const Asset::Meta& meta)
 					return;
 				}
 			}
-			//else
-			{
-				_player->SetSession(shared_from_this());	
-			}
+
+			WorldSessionInstance.AddPlayer(connect->player_id(), shared_from_this()); //在线玩家，获取网络会话
 
 			_player->SetLocalServer(ConfigInstance.GetInt("ServerID", 1));
-			_player->OnEnterGame();
+			_player->OnEnterGame(false);
 		}
 		else if (Asset::META_TYPE_C2S_GET_ROOM_DATA == meta.type_t()) //获取房间数据
 		{
@@ -349,7 +350,8 @@ void WorldSession::OnProcessMessage(const Asset::Meta& meta)
 
 			if (!_player) 
 			{
-				_player = std::make_shared<Player>(enter_game->player_id(), shared_from_this());
+				_player = std::make_shared<Player>(enter_game->player_id());
+				WorldSessionInstance.AddPlayer(enter_game->player_id(), shared_from_this()); //在线玩家
 					
 				SetRoleType(Asset::ROLE_TYPE_PLAYER, _player->GetID());
 			}
@@ -385,14 +387,17 @@ void WorldSession::OnProcessMessage(const Asset::Meta& meta)
 			//
 			//对于已经进入游戏内操作的玩家进行托管
 			//
+			/*
 			auto session = WorldSessionInstance.GetPlayerSession(_player->GetID());
 			if (session) //已经在线
 			{
 				//session->KickOutPlayer(Asset::KICK_OUT_REASON_OTHER_LOGIN);
-				_player->SetSession(shared_from_this()); //重新设置网路连接会话，防止之前会话失效
-				LOG(ERROR, "玩家{}目前在线，被踢掉", _player->GetID());
+				//_player->SetSession(shared_from_this()); //重新设置网路连接会话，防止之前会话失效
+				WorldSessionInstance.AddPlayer(_player->GetID(), shared_from_this()); //在线玩家
+				//LOG(ERROR, "玩家{}目前在线，被踢掉", _player->GetID());
 			}
-			//WorldSessionInstance.AddPlayer(_player->GetID(), shared_from_this()); //在线玩家
+			*/
+			WorldSessionInstance.AddPlayer(_player->GetID(), shared_from_this()); //在线玩家
 			
 			//
 			//此时才可以真正进入游戏大厅
@@ -426,8 +431,6 @@ void WorldSession::OnProcessMessage(const Asset::Meta& meta)
 			
 			_user.Clear();
 			_account.Clear();
-			_wechat.Clear(); 
-			_access_token.Clear();
 	
 			if (_player_list.size()) _player_list.clear(); 
 		}
@@ -484,8 +487,6 @@ void WorldSession::OnProcessMessage(const Asset::Meta& meta)
 
 			//_player->SetGameServer(game_server);
 			_player->SendProtocol2GameServer(enter_room); //转发
-
-			//WorldSessionInstance.SetGameServerSession(_player->GetID(), game_server);
 		}
 		else if (Asset::META_TYPE_SHARE_UPDATE_CLIENT_DATA == meta.type_t()) //Client参数数据
 		{
@@ -494,7 +495,8 @@ void WorldSession::OnProcessMessage(const Asset::Meta& meta)
 
 			if (!_player) return;
 
-			DEBUG("设置位置信息:player_id:{} message:{}", _player->GetID(), message->ShortDebugString());
+			auto player_id = _player->GetID();
+			DEBUG("设置位置信息，玩家:{} 数据:{}", player_id, message_string);
 
 			_user.mutable_client_info()->set_client_ip(_ip_address);
 			_user.mutable_client_info()->mutable_location()->CopyFrom(client_data->client_info().location());
@@ -524,7 +526,9 @@ void WorldSession::OnProcessMessage(const Asset::Meta& meta)
 
 void WorldSession::KickOutPlayer(Asset::KICK_OUT_REASON reason)
 {
-	DEBUG("_role_type:{} _global_id:{} reason:{}", _role_type, _global_id, reason);
+	DEBUG("角色类型:{} 全局ID:{} 被踢下线原因:{}", _role_type, _global_id, reason);
+
+	if (_global_id == 0 || _role_type == Asset::ROLE_TYPE_NULL) return;
 	
 	if (_role_type == Asset::ROLE_TYPE_GAME_SERVER) //逻辑服务器
 	{
@@ -533,10 +537,18 @@ void WorldSession::KickOutPlayer(Asset::KICK_OUT_REASON reason)
 	else if (_role_type == Asset::ROLE_TYPE_PLAYER) //玩家
 	{
 		if (!_player) return;
+
+		auto session = WorldSessionInstance.GetPlayerSession(_player->GetID());
+
+		if (session && session->GetRemotePoint() != GetRemotePoint()) 
+		{
+			ERROR("全局ID:{}会话失效:", _global_id);
+			//WorldSessionInstance.AddPlayer(_global_id, shared_from_this()); //在线玩家//该会话已经失效，不应该重复赋值
+			return;
+		}
+
 		_player->OnKickOut(reason); //玩家退出登陆
 	}
-		
-	_online = false;
 }
 	
 void WorldSession::OnLogout()
@@ -544,8 +556,7 @@ void WorldSession::OnLogout()
 	if (!_player) return;
 	
 	_player->Logout(nullptr);
-
-	_online = false;
+	//_online = false;
 }
 	
 int32_t WorldSession::OnWechatLogin(const pb::Message* message)
@@ -553,7 +564,9 @@ int32_t WorldSession::OnWechatLogin(const pb::Message* message)
 	const Asset::WechatLogin* login = dynamic_cast<const Asset::WechatLogin*>(message);
 	if (!login) return 1; 
 
-	const auto& access_code = login->access_code();
+	_user.mutable_wechat()->CopyFrom(login->wechat()); //微信数据
+
+	/*const auto& access_code = login->access_code();
 
 	CkHttp http;
 	std::string err;
@@ -581,7 +594,8 @@ int32_t WorldSession::OnWechatLogin(const pb::Message* message)
 			return ret;
 		}
 
-		LOG(INFO, "微信: html:{} access_token:{}", html, _access_token.ShortDebugString());
+		auto access_token_string = _access_token.ShortDebugString();
+		LOG(INFO, "微信: html:{} access_token:{}", html, access_token_string);
 
 		auto expires_in = _access_token.expires_in();
 
@@ -600,7 +614,8 @@ int32_t WorldSession::OnWechatLogin(const pb::Message* message)
 				return ret;
 			}
 
-			LOG(INFO, "微信: html:{} union_info:{} response:{}", html, _wechat.ShortDebugString(), response);
+			auto wechat_string = _wechat.ShortDebugString();
+			LOG(INFO, "微信: html:{} union_info:{} response:{}", html, wechat_string, response);
 
 			Asset::WeChatInfo proto;
 			proto.mutable_wechat()->CopyFrom(_wechat);
@@ -654,14 +669,16 @@ int32_t WorldSession::OnWechatLogin(const pb::Message* message)
 					return ret;
 				}
 
-				LOG(INFO, "微信: html:{} _wechat:{} response:{}", html, _wechat.ShortDebugString(), response);
+				auto wechat_string = _wechat.ShortDebugString();
+				LOG(INFO, "微信: html:{} _wechat:{} response:{}", html, wechat_string, response);
 
 				Asset::WeChatInfo proto;
 				proto.mutable_wechat()->CopyFrom(_wechat);
 				SendProtocol(proto); //同步Client
 			}
-			
-			LOG(INFO, "微信: html:{} refresh:{}", html, _access_token.ShortDebugString());
+				
+			auto access_token_string = _access_token.ShortDebugString();
+			LOG(INFO, "微信: html:{} refresh:{}", html, access_token_string);
 		}
 	}
 	else if (response.find("errcode") != std::string::npos)
@@ -677,6 +694,7 @@ int32_t WorldSession::OnWechatLogin(const pb::Message* message)
 		proto.mutable_wechat_error()->CopyFrom(wechat_error);
 		SendProtocol(proto); //同步Client
 	}
+	*/
 			
 	//
 	//1.必须先进行数据加载，初始化_user数据，防止已经存在玩家数据覆盖
@@ -692,11 +710,11 @@ int32_t WorldSession::OnWechatLogin(const pb::Message* message)
 
 	if (has_auth.get().ko()) 
 	{
-		DEBUG_ASSERT(false);
+		LOG(ERROR, "Redis数据库密码错误");
 		return 2;
 	}
 
-	auto get = client.get("user:" + _access_token.openid());
+	auto get = client.get("user:" + _user.wechat().openid());
 	cpp_redis::reply reply = get.get();
 	client.commit();
 
@@ -705,16 +723,14 @@ int32_t WorldSession::OnWechatLogin(const pb::Message* message)
 		auto success = _user.ParseFromString(reply.as_string()); //现有账号的数据加载
 		if (!success) return 3;
 	}
-	
-	DEBUG("当前账号数据:{}", _user.ShortDebugString());
+	else
+	{
+		//if (!_user.has_wechat_token()) _user.mutable_wechat_token()->CopyFrom(_access_token);
+		//if (!_user.has_wechat()) _user.mutable_wechat()->CopyFrom(_wechat); //微信数据
 
-	if (!_user.has_wechat_token()) _user.mutable_wechat_token()->CopyFrom(_access_token);
-	if (!_user.has_wechat()) _user.mutable_wechat()->CopyFrom(_wechat); //微信数据
-
-	auto redis = make_unique<Redis>();
-	if (_access_token.has_openid())	redis->SaveUser(_access_token.openid(), _user); //账号数据存盘
-
-	DEBUG("当前账号数据:{}", _user.ShortDebugString());
+		auto redis = make_unique<Redis>();
+		if (_user.wechat().has_openid()) redis->SaveUser(_user.wechat().openid(), _user); //账号数据存盘
+	}
 
 	return 0;
 }
@@ -724,22 +740,52 @@ void WorldSession::Start()
 	AsyncReceiveWithCallback(&WorldSession::InitializeHandler);
 }
 	
+//
+//周期10MS
+//
 bool WorldSession::Update() 
 { 
+	++_heart_count;
+
 	if (!Socket::Update()) return false;
 
-	if (!_player) return true; //长时间未能上线
+	//if (!_online) return false;
+	
+	/*
+	if (_heart_count % 6000 != 0) return true; //10分钟
 
-	if (!_online) return false;
+	auto curr_time = CommonTimerInstance.GetTime();
+	auto duration_pass = curr_time - _hi_time;
 
-	_player->Update(); 
+	if (duration_pass > 1800 && _role_type != Asset::ROLE_TYPE_GAME_SERVER) //30分钟
+	{
+		++_pings_count;
+		
+		static int32_t max_allowed = 6;
+
+		if (max_allowed && _pings_count > max_allowed) 
+		{
+			LOG(ERROR, "玩家:{}长时间没有操作，关闭网络连接，服务器主动断线，PING数量:{}，过期时间:{}", _player ? _player->GetID() : 0, _pings_count, duration_pass);
+
+			//Close();
+		}
+	}
+	*/
 
 	return true;
 }
 
 void WorldSession::OnClose()
 {
+	Socket::OnClose();
+				
 	KickOutPlayer(Asset::KICK_OUT_REASON_DISCONNECT);
+	
+	//WorldSessionInstance.RemovePlayer(_global_id); //网络会话数据
+
+	//OnLogout();
+	
+	DEBUG("角色类型:{} 全局ID:{} 关闭网络连接", _role_type, _global_id);
 }
 
 void WorldSession::SendProtocol(const pb::Message* message)
@@ -754,11 +800,13 @@ void WorldSession::SendProtocol(const pb::Message& message)
 	
 	int type_t = field->default_value_enum()->number();
 	if (!Asset::META_TYPE_IsValid(type_t)) return;	//如果不合法，不检查会宕线
+
+	auto message_string = message.SerializeAsString();
 	
 	Asset::Meta meta;
 	meta.set_type_t((Asset::META_TYPE)type_t);
-	meta.set_stuff(message.SerializeAsString());
-
+	meta.set_stuff(message_string);
+	
 	std::string content = meta.SerializeAsString();
 
 	if (content.empty()) return;
@@ -783,6 +831,8 @@ void WorldSessionManager::BroadCast2GameServer(const pb::Message* message)
 
 void WorldSessionManager::BroadCast2GameServer(const pb::Message& message)
 {
+	std::lock_guard<std::mutex> lock(_server_mutex);
+
 	for (auto session : _server_list)
 	{
 		if (!session.second) continue;
@@ -807,6 +857,8 @@ void WorldSessionManager::BroadCast(const pb::Message* message)
 
 int64_t WorldSessionManager::RandomServer()
 {
+	std::lock_guard<std::mutex> lock(_server_mutex);
+
 	if (_server_list.size() == 0) return 0;
 
 	std::vector<int32_t> server_list;
@@ -848,6 +900,72 @@ bool WorldSessionManager::StartNetwork(boost::asio::io_service& io_service, cons
 	_acceptor->SetSocketFactory(std::bind(&SuperSocketManager::GetSocketForAccept, this));    
 	_acceptor->AsyncAcceptWithCallback<&OnSocketAccept>();    
 	return true;
+}
+	
+void WorldSessionManager::AddPlayer(int64_t player_id, std::shared_ptr<WorldSession> session) 
+{ 
+	if (player_id <= 0 || !session) return;
+
+	std::lock_guard<std::mutex> lock(_client_mutex);
+
+	auto it = _client_list.find(player_id);
+	if (it != _client_list.end() && it->second) it->second.reset();
+
+	_client_list[player_id] = session; 
+}
+
+void WorldSessionManager::RemovePlayer(int64_t player_id) 
+{ 
+	std::lock_guard<std::mutex> lock(_client_mutex);
+
+	auto it = _client_list.find(player_id);
+	if (it == _client_list.end()) return;
+	
+	if (it->second) it->second.reset();
+
+	_client_list.erase(it); 
+}
+	
+std::shared_ptr<WorldSession> WorldSessionManager::GetPlayerSession(int64_t player_id) 
+{ 
+	std::lock_guard<std::mutex> lock(_client_mutex);
+
+	auto it = _client_list.find(player_id);
+	if (it == _client_list.end()) return nullptr;
+
+	return it->second;
+}
+
+void WorldSessionManager::AddServer(int64_t server_id, std::shared_ptr<WorldSession> session) 
+{	
+	if (server_id <= 0 || !session) return;
+
+	std::lock_guard<std::mutex> lock(_server_mutex);
+
+	auto it = _server_list.find(server_id);
+	if (it != _server_list.end() && it->second) it->second.reset();
+
+	_server_list[server_id] = session;
+}	
+
+void WorldSessionManager::RemoveServer(int64_t server_id) 
+{ 
+	std::lock_guard<std::mutex> lock(_server_mutex);
+ 
+	auto it = _server_list.find(server_id);
+	if (it == _server_list.end()) return;
+ 
+	_server_list.erase(it); 
+}
+
+std::shared_ptr<WorldSession> WorldSessionManager::GetServerSession(int64_t server_id) 
+{ 
+	std::lock_guard<std::mutex> lock(_server_mutex);
+	
+	auto it = _server_list.find(server_id);
+	if (it == _server_list.end()) return nullptr;
+
+	return it->second; 
 }
 
 }

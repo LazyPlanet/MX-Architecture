@@ -1,3 +1,5 @@
+import "P_Asset.proto";
+
 package Adoter.Asset;
 
 message InnerMeta {
@@ -84,6 +86,7 @@ message OpenRoom {
 	optional COMMAND_ERROR_CODE error_code = 2; //返回码
 	optional int64 server_id = 3 [default = 1]; //游戏服务器ID
 	optional int64 room_id = 4; //房间ID，如果非0则证明开放成功
+	optional bytes options = 5; //房间设置
 }
 
 //发送邮件

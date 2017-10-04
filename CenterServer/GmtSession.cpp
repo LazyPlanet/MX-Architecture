@@ -11,10 +11,11 @@ namespace Adoter
 #define RETURN(x) \
 	auto response = command; \
 	response.set_error_code(x); \
+	auto debug_string = command.ShortDebugString(); \
 	if (x) { \
-		LOG(ERR, "command excute failed for:{} command:{}", x, command.ShortDebugString()); \
+		LOG(ERR, "command excute failed for:{} command:{}", x, debug_string); \
 	} else { \
-		LOG(TRACE, "command excute success for:{} command:{}", x, command.ShortDebugString()); \
+		LOG(TRACE, "command excute success for:{} command:{}", x, debug_string); \
 	} \
 	SendProtocol(response); \
 	return x; \
@@ -39,7 +40,9 @@ void GmtSession::OnConnected()
 
 bool GmtSession::OnInnerProcess(const Asset::InnerMeta& meta)
 {
-	DEBUG("接收GMT服务器:{}协议:{}", _ip_address, meta.ShortDebugString());
+	auto debug_string = meta.ShortDebugString(); 
+
+	DEBUG("接收GMT服务器:{}协议:{}", _ip_address, debug_string);
 
 	switch (meta.type_t())
 	{
@@ -70,8 +73,10 @@ bool GmtSession::OnInnerProcess(const Asset::InnerMeta& meta)
 			auto session = WorldSessionInstance.GetServerSession(server_id);
 			if (!session) return false;
 
+			auto inner_meta_string = meta.SerializeAsString();
+
 			Asset::GmtInnerMeta inner_meta;
-			inner_meta.set_inner_meta(meta.SerializeAsString());
+			inner_meta.set_inner_meta(inner_meta_string);
 			session->SendProtocol(inner_meta); //游戏逻辑均在逻辑服务器上进行
 		}
 		break;
@@ -106,7 +111,7 @@ bool GmtSession::OnInnerProcess(const Asset::InnerMeta& meta)
 
 		default:
 		{
-			WARN("Receive message:{} from server has no process type:{}", meta.ShortDebugString(), meta.type_t());
+			WARN("Receive message:{} from server has no process type:{}", debug_string, meta.type_t());
 		}
 		break;
 	}
@@ -186,8 +191,6 @@ Asset::COMMAND_ERROR_CODE GmtSession::OnSendMail(const Asset::SendMail& command)
 			
 Asset::COMMAND_ERROR_CODE GmtSession::OnCommandProcess(const Asset::Command& command)
 {
-	LOG(INFO, "接收GMT指令:{}", command.ShortDebugString());
-
 	auto player_id = command.player_id();
 	if (player_id <= 0) //玩家角色校验
 	{
@@ -264,7 +267,8 @@ void GmtSession::SendInnerMeta(const Asset::InnerMeta& meta)
 	std::string content = meta.SerializeAsString();
 	if (content.empty()) return;
 
-	DEBUG("send message to gmt server:{} {}, message:{}", _ip_address, _remote_endpoint.port(), meta.ShortDebugString());
+	auto debug_string = meta.ShortDebugString(); 
+	DEBUG("send message to gmt server:{} {}, message:{}", _ip_address, _remote_endpoint.port(), debug_string);
 	AsyncSendMessage(content);
 }
 
@@ -281,19 +285,23 @@ void GmtSession::SendProtocol(pb::Message& message)
 	int type_t = field->default_value_enum()->number();
 	if (!Asset::INNER_TYPE_IsValid(type_t)) return;	//如果不合法，不检查会宕线
 	
+	auto inner_meta_string = message.SerializeAsString();
+
 	Asset::InnerMeta meta;
 	meta.set_type_t((Asset::INNER_TYPE)type_t);
-	meta.set_stuff(message.SerializeAsString());
+	meta.set_stuff(inner_meta_string);
+	
+	auto debug_string = meta.ShortDebugString(); 
 
 	std::string content = meta.SerializeAsString();
 
 	if (content.empty()) 
 	{
-		ERROR("server:{} send nothing, message:{}", _ip_address, meta.ShortDebugString());
+		ERROR("server:{} send nothing, message:{}", _ip_address, debug_string);
 		return;
 	}
 
-	TRACE("send message to gmt server:{} {}, message:{}", _ip_address, _remote_endpoint.port(), meta.ShortDebugString());
+	TRACE("send message to gmt server:{} {}, message:{}", _ip_address, _remote_endpoint.port(), debug_string);
 	AsyncSendMessage(content);
 }
 

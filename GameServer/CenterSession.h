@@ -49,16 +49,21 @@ public:
 	virtual bool Update() override;
 	void SayHi();
 
-	void Remove(int64_t player_id) { _players.erase(player_id); }
+	void RemovePlayer(int64_t player_id);
+	void AddPlayer(int64_t player_id, std::shared_ptr<Player>);
+	std::shared_ptr<Player> GetPlayer(int64_t player_id);
+
+	int32_t ServerID() { return _server_id; }
 private:
 	std::deque<std::string> _send_list;
 	std::deque<Asset::Meta> _receive_list;
 	boost::asio::ip::tcp::endpoint _remote_endpoint;
 	std::string _ip_address;
 	std::unordered_map<int64_t, std::shared_ptr<Player>> _players; //实体为智能指针，不要传入引用
-	std::mutex _mutex;
+	std::mutex _player_lock;
 	
 	int64_t _heart_count = 0; //心跳次数
+	int32_t _server_id = 0;
 };
 
 }
