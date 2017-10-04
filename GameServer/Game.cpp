@@ -630,7 +630,6 @@ void Game::OnPaiOperate(std::shared_ptr<Player> player, pb::Message* message)
 				ClearOperation(); //清理缓存以及等待玩家操作的状态
 
 				Asset::PaiOperationAlert alert;
-
 				//
 				//听牌检查
 				//
@@ -702,7 +701,6 @@ void Game::OnPaiOperate(std::shared_ptr<Player> player, pb::Message* message)
 				ClearOperation(); //清理缓存以及等待玩家操作的状态
 
 				Asset::PaiOperationAlert alert;
-
 				//
 				//听牌检查
 				//
@@ -726,7 +724,6 @@ void Game::OnPaiOperate(std::shared_ptr<Player> player, pb::Message* message)
 				auto xuanfeng_gang = player->CheckXuanFeng();
 				if (xuanfeng_gang)
 				{
-					Asset::PaiOperationAlert alert;
 					auto pai_perator = alert.mutable_pais()->Add();
 					pai_perator->mutable_oper_list()->Add((Asset::PAI_OPER_TYPE)xuanfeng_gang);
 					
