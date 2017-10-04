@@ -597,10 +597,56 @@ void Game::OnPaiOperate(std::shared_ptr<Player> player, pb::Message* message)
 				player->AlertMessage(Asset::ERROR_GAME_PAI_UNSATISFIED); //没有牌满足条件
 				return; 
 			}
+			else if (CheckQiangGang(pai, player->GetID()))
+			{
+				SendCheckRtn();
+			}
 			else
 			{
+
 				player->OnGangPai(pai, _oper_cache.from_player_id());
-				_curr_player_index = GetPlayerOrder(player->GetID()); //重置当前玩家索引
+
+				auto cards = TailPai(1); //从后楼给玩家取一张牌
+				if (cards.size() == 0) return;
+
+				player->OnFaPai(cards); //发牌
+
+				Asset::PaiOperationAlert alert;
+				//
+				//旋风杠检查
+				//
+				auto gang = player->CheckXuanFeng();
+				if (gang)
+				{
+					auto pai_perator = alert.mutable_pais()->Add();
+					pai_perator->mutable_oper_list()->Add((Asset::PAI_OPER_TYPE)gang);
+				}
+				//
+				//自摸检查
+				//
+				auto zhuapai = GameInstance.GetCard(cards[0]);
+				if (player->CheckZiMo() || player->CheckBaoHu(zhuapai))
+				{
+					auto pai_perator = alert.mutable_pais()->Add();
+					pai_perator->mutable_pai()->CopyFrom(zhuapai);
+					pai_perator->mutable_oper_list()->Add(Asset::PAI_OPER_TYPE_HUPAI);
+				}
+				//
+				//听牌检查
+				//
+				std::vector<Asset::PaiElement> pais;
+				if (player->CheckTingPai(pais))
+				{
+					for (auto pai : pais) 
+					{
+						auto pai_perator = alert.mutable_pais()->Add();
+						pai_perator->mutable_pai()->CopyFrom(pai);
+						pai_perator->mutable_oper_list()->Add(Asset::PAI_OPER_TYPE_TINGPAI);
+					}
+				}
+				
+				if (alert.pais().size()) player->SendProtocol(alert); //提示Client
+				_curr_player_index = GetPlayerOrder(player->GetID()); //设置当前玩家索引
 				
 				if (Asset::PAI_OPER_TYPE_GANGPAI == pai_operate->oper_type()) //明杠删除牌池
 				{
@@ -1537,7 +1583,7 @@ bool Game::CheckPai(const Asset::PaiElement& pai, int64_t from_player_id)
 	int32_t player_index = GetPlayerOrder(from_player_id); //当前玩家索引
 	if (player_index == -1) 
 	{
-		DEBUG_ASSERT(false);
+		//DEBUG_ASSERT(false);
 		return false; //理论上不会出现
 	}
 
@@ -1552,7 +1598,7 @@ bool Game::CheckPai(const Asset::PaiElement& pai, int64_t from_player_id)
 		auto player = GetPlayerByOrder(cur_index);
 		if (!player) 
 		{
-			DEBUG_ASSERT(false);
+			//DEBUG_ASSERT(false);
 			return false; //理论上不会出现
 		}
 
@@ -1561,8 +1607,8 @@ bool Game::CheckPai(const Asset::PaiElement& pai, int64_t from_player_id)
 		auto rtn_check = player->CheckPai(pai, from_player_id); //不能包括宝胡
 		if (rtn_check.size() == 0) continue; //不能吃、碰、杠和胡牌
 
-		for (auto value : rtn_check)
-			DEBUG("operation player can do: cur_player_index:{} next_player_index:{} player_id:{} value:{}", cur_index, next_player_index, player->GetID(), value);
+		//for (auto value : rtn_check)
+		//	DEBUG("operation player can do: cur_player_index:{} next_player_index:{} player_id:{} value:{}", cur_index, next_player_index, player->GetID(), value);
 		
 		auto it_chi = std::find(rtn_check.begin(), rtn_check.end(), Asset::PAI_OPER_TYPE_CHIPAI);
 		if (it_chi != rtn_check.end() && cur_index != next_player_index) rtn_check.erase(it_chi); //只有下家能吃牌
@@ -1577,11 +1623,33 @@ bool Game::CheckPai(const Asset::PaiElement& pai, int64_t from_player_id)
 		pai_operation.set_from_player_id(from_player_id);
 		pai_operation.mutable_pai()->CopyFrom(pai);
 
-		for (auto result : rtn_check) 
-			pai_operation.mutable_oper_list()->Add(result);
+		for (auto result : rtn_check) pai_operation.mutable_oper_list()->Add(result);
 		_oper_list.push_back(pai_operation);
 	}
 
+	return _oper_list.size() > 0;
+}
+
+bool Game::CheckQiangGang(const Asset::PaiElement& pai, int64_t from_player_id)
+{
+	int32_t next_player_index = (_curr_player_index + 1) % MAX_PLAYER_COUNT;
+
+	for (int32_t i = next_player_index; i < MAX_PLAYER_COUNT - 1 + next_player_index; ++i)
+	{
+		auto cur_index = i % MAX_PLAYER_COUNT;
+
+		auto player = GetPlayerByOrder(cur_index);
+		if (!player || !player->CheckHuPai(pai)) continue;
+
+		Asset::PaiOperationCache pai_operation;
+		pai_operation.set_player_id(player->GetID());
+		pai_operation.set_from_player_id(from_player_id);
+		pai_operation.mutable_pai()->CopyFrom(pai);
+		pai_operation.mutable_oper_list()->Add(Asset::PAI_OPER_TYPE_QIANGGANG);
+
+		_oper_list.push_back(pai_operation);
+	}
+	
 	return _oper_list.size() > 0;
 }
 

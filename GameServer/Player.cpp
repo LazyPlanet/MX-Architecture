@@ -3857,6 +3857,7 @@ void Player::OnGangFengPai()
 
 	++_fenggang;
 	
+	/*
 	auto cards = _game->TailPai(1); //从后楼给玩家取一张牌
 	if (cards.size() == 0) return;
 
@@ -3900,6 +3901,7 @@ void Player::OnGangFengPai()
 	}
 	
 	if (alert.pais().size()) SendProtocol(alert); //提示Client
+	*/
 }
 
 bool Player::CheckJianGangPai(std::map<int32_t/*麻将牌类型*/, std::vector<int32_t>/*牌值*/>& cards)

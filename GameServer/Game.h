@@ -72,7 +72,8 @@ public:
 	void SetPaiOperation(int64_t player_id, int64_t from_player_id, Asset::PaiElement pai, Asset::PAI_OPER_TYPE oper_type);
 
 	bool SendCheckRtn(); //发送当前可以操作的牌数据
-	bool CheckPai(const Asset::PaiElement& pai, int64_t from_player_id); //检查牌形：返回待操作的玩家ID
+	bool CheckPai(const Asset::PaiElement& pai, int64_t from_player_id); //检查玩家可以进行的牌操作,包括胡//杠//碰//吃
+	bool CheckQiangGang(const Asset::PaiElement& pai, int64_t from_player_id); //抢杠胡
 	
 	std::shared_ptr<Player> GetNextPlayer(int64_t player_id); //获取下家
 	std::shared_ptr<Player> GetPlayer(int64_t player_id); //获取玩家
