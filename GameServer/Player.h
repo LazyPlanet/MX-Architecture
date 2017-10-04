@@ -330,6 +330,8 @@ public:
 			const Asset::PaiElement& pai); //胡牌
 	bool DebugCheckHuPai(const Asset::PaiElement& pai, bool check_zibo = false); //调试胡牌检查
 
+	bool HasYaoJiu();
+
 	std::unordered_set<int32_t> GetFanList() { return _fan_list; }
 
 	void DebugCommand();
