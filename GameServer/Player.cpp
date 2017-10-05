@@ -785,10 +785,10 @@ int32_t Player::CmdEnterRoom(pb::Message* message)
 
 			DEBUG("玩家:{}重入房间:{} 数据:{}", _player_id, room_id, enter_room_string);
 
-			if (room_id != enter_room->room().room_id())
+			auto client_room_id = enter_room->room().room_id();
+			if (room_id != client_room_id)
 			{
-				auto client_room_id = enter_room->room().room_id();
-				LOG(ERROR, "玩家:{}重入房间错误，客户端记录和服务器记录不是一个，以当前服务器记录为主", _player_id, client_room_id, room_id);
+				LOG(ERROR, "玩家:{}重入房间错误，客户端记录:{}和服务器记录:{}不是一个，以当前服务器记录为主", _player_id, client_room_id, room_id);
 			}
 				
 			auto locate_room = RoomInstance.Get(room_id);
@@ -1448,7 +1448,7 @@ int32_t Player::CmdLoadScene(pb::Message* message)
 			_player_prop.clear_load_type(); 
 			_player_prop.clear_room_id(); 
 	
-			if (_stuff.room_id() != room_id)
+			if (_stuff.room_id() > 0 && _stuff.room_id() != room_id)
 			{
 				LOG(ERROR, "玩家:{}加载房间:{}和保存的房间:{}不一致", _player_id, room_id, _stuff.room_id());
 
