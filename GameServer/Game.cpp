@@ -593,17 +593,15 @@ void Game::OnPaiOperate(std::shared_ptr<Player> player, pb::Message* message)
 			bool ret = player->CheckGangPai(pai, _oper_cache.from_player_id());
 			if (!ret) 
 			{
-				DEBUG_ASSERT(false);
 				player->AlertMessage(Asset::ERROR_GAME_PAI_UNSATISFIED); //没有牌满足条件
 				return; 
 			}
-			else if (CheckQiangGang(pai, player->GetID()))
+			else if (Asset::PAI_OPER_TYPE_GANGPAI == pai_operate->oper_type() && CheckQiangGang(pai, player->GetID()))
 			{
 				SendCheckRtn();
 			}
 			else
 			{
-
 				player->OnGangPai(pai, _oper_cache.from_player_id());
 
 				auto cards = TailPai(1); //从后楼给玩家取一张牌
@@ -1640,6 +1638,8 @@ bool Game::CheckQiangGang(const Asset::PaiElement& pai, int64_t from_player_id)
 
 		auto player = GetPlayerByOrder(cur_index);
 		if (!player || !player->CheckHuPai(pai)) continue;
+
+		if (player->GetID() == from_player_id) continue;
 
 		Asset::PaiOperationCache pai_operation;
 		pai_operation.set_player_id(player->GetID());

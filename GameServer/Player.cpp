@@ -1773,11 +1773,16 @@ bool Player::CheckBaoHu(const Asset::PaiElement& pai, bool has_fapai)
 	return hupai;
 }
 
-bool Player::HasYaoJiu()
+bool Player::HasYaoJiu(const std::map<int32_t, std::vector<int32_t>>& cards_inhand, //玩家手里的牌
+		const std::map<int32_t, std::vector<int32_t>>& cards_outhand, //玩家墙外牌
+		const std::vector<Asset::PaiElement>& minggang, //明杠
+		const std::vector<Asset::PaiElement>& angang, //暗杠
+		int32_t jiangang, //旋风杠，本质是明杠
+		int32_t fenggang) //旋风杠，本质是暗杠
 {
-	auto cards = _cards_inhand;
+	auto cards = cards_inhand;
 	
-	for (auto crds : _cards_outhand) 
+	for (auto crds : cards_outhand) 
 		cards[crds.first].insert(cards[crds.first].end(), crds.second.begin(), crds.second.end());
 
 	for (auto crds : cards)
@@ -1793,19 +1798,19 @@ bool Player::HasYaoJiu()
 		if (crds.first == Asset::CARD_TYPE_FENG || crds.first == Asset::CARD_TYPE_JIAN) return true;
 	}
 	
-	for (auto gang : _minggang)
+	for (auto gang : minggang)
 	{
 		if (gang.card_value() == 1 || gang.card_value() == 9 || 
 				gang.card_type() == Asset::CARD_TYPE_FENG || gang.card_type() == Asset::CARD_TYPE_JIAN) return true;
 	}
 	
-	for (auto gang : _angang)
+	for (auto gang : angang)
 	{
 		if (gang.card_value() == 1 || gang.card_value() == 9 ||
 				gang.card_type() == Asset::CARD_TYPE_FENG || gang.card_type() == Asset::CARD_TYPE_JIAN) return true;
 	}
 
-	if (_jiangang > 0 || _fenggang > 0) return true;
+	if (jiangang > 0 || fenggang > 0) return true;
 
 	return false;
 }
@@ -3476,6 +3481,7 @@ void Player::OnGangPai(const Asset::PaiElement& pai, int64_t from_player_id)
 		}
 	}
 	
+	/*
 	auto cards = _game->TailPai(1); //从后楼给玩家取一张牌
 	if (cards.size() == 0) return;
 
@@ -3529,6 +3535,7 @@ void Player::OnGangPai(const Asset::PaiElement& pai, int64_t from_player_id)
 	if (alert.pais().size()) SendProtocol(alert); //提示Client
 	
 	SynchronizePai();
+	*/
 }
 
 bool Player::CheckFengGangPai() 
@@ -3753,7 +3760,7 @@ bool Player::CheckTingPai(std::vector<Asset::PaiElement>& pais)
 	auto it_baohu = std::find(options.extend_type().begin(), options.extend_type().end(), Asset::ROOM_EXTEND_TYPE_BAOPAI);
 	if (it_baohu == options.extend_type().end()) return false; //不带宝胡，绝对不可能听牌
 
-	if (!HasYaoJiu()) return false; //朝阳特殊玩法,缺幺九可以胡牌不可以听牌
+	//if (!HasYaoJiu()) return false; //朝阳特殊玩法,缺幺九可以胡牌不可以听牌
 	
 	auto cards_inhand = _cards_inhand; //玩家手里牌
 	auto cards_outhand = _cards_outhand; //玩家墙外牌
@@ -3773,6 +3780,8 @@ bool Player::CheckTingPai(std::vector<Asset::PaiElement>& pais)
 						
 			cards_inhand[it->first].erase(find_it); //删除这张牌
 
+			if (!HasYaoJiu(cards_inhand, cards_outhand, minggang, angang, jiangang, fenggang)) continue; //朝阳特殊玩法,缺幺九可以胡牌不可以听牌
+
 			//
 			//玩家能否胡牌
 			//
@@ -3791,6 +3800,7 @@ bool Player::CheckTingPai(std::vector<Asset::PaiElement>& pais)
 						Asset::PaiElement pai; //即打出这张后，听牌
 						pai.set_card_type((Asset::CARD_TYPE)it->first);
 						pai.set_card_value(value);
+
 						pais.push_back(pai); //缓存
 					}
 				}
@@ -3808,6 +3818,7 @@ bool Player::CheckTingPai(std::vector<Asset::PaiElement>& pais)
 					Asset::PaiElement pai; //即打出这张后，听牌
 					pai.set_card_type((Asset::CARD_TYPE)it->first);
 					pai.set_card_value(value);
+
 					pais.push_back(pai); //缓存
 				}
 			}
@@ -3824,6 +3835,7 @@ bool Player::CheckTingPai(std::vector<Asset::PaiElement>& pais)
 					Asset::PaiElement pai; //即打出这张后，听牌
 					pai.set_card_type((Asset::CARD_TYPE)it->first);
 					pai.set_card_value(value);
+
 					pais.push_back(pai); //缓存
 				}
 			}

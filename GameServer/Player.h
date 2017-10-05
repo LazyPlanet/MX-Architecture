@@ -330,7 +330,12 @@ public:
 			const Asset::PaiElement& pai); //胡牌
 	bool DebugCheckHuPai(const Asset::PaiElement& pai, bool check_zibo = false); //调试胡牌检查
 
-	bool HasYaoJiu();
+	bool HasYaoJiu(const std::map<int32_t, std::vector<int32_t>>& cards_inhand, //玩家手里的牌
+			const std::map<int32_t, std::vector<int32_t>>& cards_outhand, //玩家墙外牌
+			const std::vector<Asset::PaiElement>& minggang, //明杠
+			const std::vector<Asset::PaiElement>& angang, //暗杠
+			int32_t jiangang, //旋风杠，本质是明杠
+			int32_t fenggang); //旋风杠，本质是暗杠
 
 	std::unordered_set<int32_t> GetFanList() { return _fan_list; }
 
