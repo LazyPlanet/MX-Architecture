@@ -1630,6 +1630,8 @@ bool Game::CheckPai(const Asset::PaiElement& pai, int64_t from_player_id)
 
 bool Game::CheckQiangGang(const Asset::PaiElement& pai, int64_t from_player_id)
 {
+	bool has_hu = false;
+
 	int32_t next_player_index = (_curr_player_index + 1) % MAX_PLAYER_COUNT;
 
 	for (int32_t i = next_player_index; i < MAX_PLAYER_COUNT - 1 + next_player_index; ++i)
@@ -1648,9 +1650,11 @@ bool Game::CheckQiangGang(const Asset::PaiElement& pai, int64_t from_player_id)
 		pai_operation.mutable_oper_list()->Add(Asset::PAI_OPER_TYPE_HUPAI);
 
 		_oper_list.push_back(pai_operation);
+
+		has_hu = true;
 	}
 	
-	return _oper_list.size() > 0;
+	return has_hu;
 }
 
 void Game::OnOperateTimeOut()
