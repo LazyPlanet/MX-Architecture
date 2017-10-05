@@ -1645,7 +1645,7 @@ bool Game::CheckQiangGang(const Asset::PaiElement& pai, int64_t from_player_id)
 		pai_operation.set_player_id(player->GetID());
 		pai_operation.set_from_player_id(from_player_id);
 		pai_operation.mutable_pai()->CopyFrom(pai);
-		pai_operation.mutable_oper_list()->Add(Asset::PAI_OPER_TYPE_QIANGGANG);
+		pai_operation.mutable_oper_list()->Add(Asset::PAI_OPER_TYPE_HUPAI);
 
 		_oper_list.push_back(pai_operation);
 	}

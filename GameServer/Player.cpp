@@ -525,6 +525,8 @@ int32_t Player::CmdGameOperate(pb::Message* message)
 		case Asset::GAME_OPER_TYPE_DISMISS_DISAGREE: //不解散
 		{
 			_player_prop.set_game_oper_state(game_operate->oper_type());
+
+			if (!_room) SendRoomState(); //防止玩家不在房间内进行解散操作,出现这种情况原因是C<->S状态不一致
 		}
 		break;
 
