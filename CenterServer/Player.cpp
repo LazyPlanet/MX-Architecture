@@ -876,7 +876,7 @@ void Player::BattleHistory(int32_t start_index, int32_t end_index)
 		std::vector<int32_t> room_history(_stuff.room_history().begin(), _stuff.room_history().end());
 		_stuff.mutable_room_history()->Clear();
 
-		for (int i = 0; i < 10; ++i) _stuff.mutable_room_history()->Add(room_history[i]);
+		for (size_t i = room_history.size() - 10; i < room_history.size(); ++i) _stuff.mutable_room_history()->Add(room_history[i]); //保留最新10条数据
 
 		SetDirty();
 	}
