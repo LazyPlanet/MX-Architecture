@@ -58,7 +58,7 @@ void WorldSession::InitializeHandler(const boost::system::error_code error, cons
 
 				if (!result) 
 				{
-					LOG(ERROR, "接收来自地址:{} 端口:{} 玩家:{} 转换Protobuff数据失败.", _ip_address, _remote_endpoint.port(), _player ? _player->GetID() : 0);
+					if (_player && _player->GetID()) LOG(ERROR, "接收来自地址:{} 端口:{} 玩家:{} 转换Protobuff数据失败.", _ip_address, _remote_endpoint.port(), _player ? _player->GetID() : 0);
 					AsyncReceiveWithCallback(&WorldSession::InitializeHandler); //递归持续接收	
 					return; //非法协议
 				}
@@ -93,7 +93,7 @@ void WorldSession::OnProcessMessage(const Asset::Meta& meta)
 	auto result = message->ParseFromArray(meta.stuff().c_str(), meta.stuff().size());
 	if (!result) 
 	{
-		DEBUG_ASSERT(false);
+		LOG(ERROR, "会话类型:{} 会话全局ID:{} 转换协议失败，协议类型:{} 对方IP地址:{}", _role_type, _global_id, meta.type_t(), _ip_address);
 		return;		//非法协议
 	}
 

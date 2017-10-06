@@ -3852,7 +3852,7 @@ bool Player::CheckTingPai(std::vector<Asset::PaiElement>& pais)
 
 bool Player::CheckFengGangPai(std::map<int32_t/*麻将牌类型*/, std::vector<int32_t>/*牌值*/>& cards)
 {
-	if (!_room) return false;
+	if (!_room || !_game) return false;
 
 	auto options = _room->GetOptions();
 
@@ -3872,9 +3872,11 @@ bool Player::CheckFengGangPai(std::map<int32_t/*麻将牌类型*/, std::vector<i
 
 void Player::OnGangFengPai()
 {
+	PrintPai();
+
 	if (!CheckFengGangPai(_cards_inhand)) 
 	{
-		DEBUG_ASSERT(false);
+		LOG(ERROR, "玩家:{}不满足风杠条件", _player_id);
 		return;
 	}
 	
