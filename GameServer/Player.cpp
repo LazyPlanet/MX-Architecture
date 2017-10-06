@@ -2293,7 +2293,9 @@ bool Player::CheckHuPai(const Asset::PaiElement& pai, bool check_zibo)
 		if (!can_hu) return false;
 	}
 	
+	//
 	//是否是夹胡
+	//
 	{
 		auto cards_inhand_check = _cards_inhand;
 			
@@ -2321,41 +2323,47 @@ bool Player::CheckHuPai(const Asset::PaiElement& pai, bool check_zibo)
 
 		if (pai.card_value() == 3)
 		{
+			auto card_list3 = card_list;
+
 			Card_t card_t2(pai.card_type(), pai.card_value() - 1);
-			auto it2 = std::find(card_list.begin(), card_list.end(), card_t2);
+			auto it2 = std::find(card_list3.begin(), card_list3.end(), card_t2);
 
 			Card_t card_t1(pai.card_type(), pai.card_value() - 2);
-			auto it1 = std::find(card_list.begin(), card_list.end(), card_t1);
+			auto it1 = std::find(card_list3.begin(), card_list3.end(), card_t1);
 
-			if (it1 != card_list.end() && it2 != card_list.end())
+			if (it1 != card_list3.end() && it2 != card_list3.end())
 			{
-				it2 = std::find(card_list.begin(), card_list.end(), card_t2);
-				card_list.erase(it2);
-				it1 = std::find(card_list.begin(), card_list.end(), card_t1);
-				card_list.erase(it1);
+				it2 = std::find(card_list3.begin(), card_list3.end(), card_t2);
+				card_list3.erase(it2);
+				it1 = std::find(card_list3.begin(), card_list3.end(), card_t1);
+				card_list3.erase(it1);
 				
-				bianhu = CanHuPai(card_list);	
+				bianhu = CanHuPai(card_list3);	
 			}
 		}
 		else if (pai.card_value() == 7)
 		{
+			auto card_list7 = card_list;
+
 			Card_t card_t8(pai.card_type(), pai.card_value() + 1);
-			auto it8 = std::find(card_list.begin(), card_list.end(), card_t8);
+			auto it8 = std::find(card_list7.begin(), card_list7.end(), card_t8);
 
 			Card_t card_t9(pai.card_type(), pai.card_value() + 2);
-			auto it9 = std::find(card_list.begin(), card_list.end(), card_t9);
+			auto it9 = std::find(card_list7.begin(), card_list7.end(), card_t9);
 			
-			if (it8 != card_list.end() && it9 != card_list.end())
+			if (it8 != card_list7.end() && it9 != card_list7.end())
 			{
-				it8 = std::find(card_list.begin(), card_list.end(), card_t8);
-				card_list.erase(it8);
-				it9 = std::find(card_list.begin(), card_list.end(), card_t9);
-				card_list.erase(it9);
+				it8 = std::find(card_list7.begin(), card_list7.end(), card_t8);
+				card_list7.erase(it8);
+				it9 = std::find(card_list7.begin(), card_list7.end(), card_t9);
+				card_list7.erase(it9);
 				
-				bianhu = CanHuPai(card_list);	
+				bianhu = CanHuPai(card_list7);	
 			}
 		}
-
+		//
+		//防止牌型6 7 8 9 9情况,边胡和夹胡判断后,删除了8 9牌值,后面夹胡不成立情况
+		//
 		if (!bianhu)
 		{
 			Card_t card_t_small(pai.card_type(), pai.card_value() - 1);
