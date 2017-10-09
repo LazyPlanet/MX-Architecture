@@ -869,9 +869,11 @@ void Game::OnPaiOperate(std::shared_ptr<Player> player, pb::Message* message)
 				_oper_cache.mutable_oper_list()->Add(Asset::PAI_OPER_TYPE_HUPAI);
 				_oper_cache.mutable_pai()->CopyFrom(card);
 			}
-			
+			//	
+			//听牌检查
+			//
 			std::vector<Asset::PaiElement> ting_list;
-			if (player_next->CheckTingPai(ting_list)) //听牌检查
+			if (player_next->CheckTingPai(ting_list)) 
 			{
 				_oper_cache.mutable_oper_list()->Add(Asset::PAI_OPER_TYPE_TINGPAI);
 
@@ -884,9 +886,11 @@ void Game::OnPaiOperate(std::shared_ptr<Player> player, pb::Message* message)
 					_oper_cache.mutable_ting_pais()->Add()->CopyFrom(pai);
 				}
 			}
-			
+			//	
+			//杠检查(明杠和暗杠)
+			//
 			::google::protobuf::RepeatedField<Asset::PaiOperationAlert_AlertElement> gang_list;
-			if (player_next->CheckAllGangPai(gang_list)) //杠检查(明杠和暗杠)
+			if (player_next->CheckAllGangPai(gang_list)) 
 			{
 				for (auto gang : gang_list) 
 				{
@@ -897,7 +901,19 @@ void Game::OnPaiOperate(std::shared_ptr<Player> player, pb::Message* message)
 					for (auto oper_type : gang.oper_list()) _oper_cache.mutable_oper_list()->Add(Asset::PAI_OPER_TYPE(oper_type));
 				}
 			}
-
+			//
+			//旋风杠检查
+			//
+			//开局状态，上家打牌，其他玩家可碰，但放弃，此时需要检查当前玩家是否可以旋风杠
+			//
+			auto xf_gang = player_next->CheckXuanFeng();
+			if (xf_gang)
+			{
+				auto pai_perator = alert.mutable_pais()->Add();
+				pai_perator->mutable_oper_list()->Add((Asset::PAI_OPER_TYPE)xf_gang);
+					
+				_oper_cache.mutable_oper_list()->Add((Asset::PAI_OPER_TYPE)xf_gang);
+			}
 			//
 			//开局状态，当前玩家拥有中发白白，上家打了白板
 			//
@@ -911,6 +927,7 @@ void Game::OnPaiOperate(std::shared_ptr<Player> player, pb::Message* message)
 					auto pai_perator = alert.mutable_pais()->Add();
 					pai_perator->mutable_oper_list()->Add((Asset::PAI_OPER_TYPE)xf_gang);
 				}
+
 				if (alert.pais().size()) 
 				{
 					player_next->SendProtocol(alert); //提示Client
