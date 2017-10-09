@@ -4020,6 +4020,8 @@ void Player::SynchronizePai()
 
 void Player::PrintPai()
 {
+	if (!_room || !_game) return;
+
 	std::stringstream card_value_list;
 
 	for (const auto& pai : _minggang)
@@ -4038,7 +4040,7 @@ void Player::PrintPai()
 		for (auto card_value : pai.second) 
 			outhand_list << card_value << " ";
 
-		card_value_list << "[牌外]" << " card_type:" << pai.first << " card_value:" << outhand_list.str();
+		if (outhand_list.str().size()) card_value_list << "[牌外]" << " card_type:" << pai.first << " card_value:" << outhand_list.str();
 	}
 
 	for (const auto& pai : _cards_inhand)
@@ -4047,10 +4049,13 @@ void Player::PrintPai()
 		for (auto card_value : pai.second) 
 			inhand_list << card_value << " ";
 
-		card_value_list << "[牌内]"	<< " card_type:" << pai.first << " card_value:" << inhand_list.str();
+		if (inhand_list.str().size()) card_value_list << "[牌内]"	<< " card_type:" << pai.first << " card_value:" << inhand_list.str();
 	}
 		
-	LOG(INFO, "player_id:{} has cards:{}", _player_id, card_value_list.str());
+	int64_t room_id = _room->GetID();
+	int32_t curr_count = _room->GetGamesCount();
+
+	LOG(INFO, "玩家:{}在房间{}第{}局牌数据:{}", _player_id, room_id, curr_count, card_value_list.str());
 }
 	
 Asset::GAME_OPER_TYPE Player::GetOperState() 
