@@ -399,7 +399,6 @@ public:
 	int32_t GetJianGang() { return _jiangang; } //旋风杠，本质是明杠
 	int32_t GetFengGang() { return _fenggang; } //旋风杠，本质是暗杠
 
-	void PreCheckOnFaPai(); //发牌前置检查
 	void NormalCheckAfterFaPai(const Asset::PaiElement& pai); //发牌后，玩家手里牌通用检查
 
 	bool IsReady() { return _player_prop.game_oper_state() == Asset::GAME_OPER_TYPE_START; } //是否已经在准备状态 

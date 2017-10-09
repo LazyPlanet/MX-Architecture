@@ -1631,22 +1631,22 @@ std::vector<Asset::PAI_OPER_TYPE> Player::CheckPai(const Asset::PaiElement& pai,
 
 	if (CheckHuPai(pai)) 
 	{
-		DEBUG("玩家{}可以胡牌.", _player_id);
+		DEBUG("玩家{}可以胡来自玩家:{}牌:{}", _player_id, from_player_id, pai.ShortDebugString());
 		rtn_check.push_back(Asset::PAI_OPER_TYPE_HUPAI);
 	}
 	if (CheckGangPai(pai, from_player_id)) 
 	{
-		DEBUG("玩家{}可以杠牌.", _player_id);
+		DEBUG("玩家{}可以杠来自玩家:{}牌:{}", _player_id, from_player_id, pai.ShortDebugString());
 		rtn_check.push_back(Asset::PAI_OPER_TYPE_GANGPAI);
 	}
 	if (CheckPengPai(pai)) 
 	{
-		DEBUG("玩家{}可以碰牌.", _player_id);
+		DEBUG("玩家{}可以碰来自玩家:{}牌:{}", _player_id, from_player_id, pai.ShortDebugString());
 		rtn_check.push_back(Asset::PAI_OPER_TYPE_PENGPAI);
 	}
 	if (CheckChiPai(pai)) 
 	{
-		DEBUG("玩家{}可以吃.", _player_id);
+		DEBUG("玩家{}可以吃来自玩家:{}牌:{}", _player_id, from_player_id, pai.ShortDebugString());
 		rtn_check.push_back(Asset::PAI_OPER_TYPE_CHIPAI);
 	}
 		
@@ -2900,7 +2900,7 @@ bool Player::CheckGangPai(const Asset::PaiElement& pai, int64_t from_player_id)
 		auto third_it = ++second_it;
 		if (third_it == it->second.end()) return false;
 		
-		if ((*first_it == *second_it) && (*second_it == *third_it)) 
+		if ((card_value == *first_it) && (*first_it == *second_it) && (*second_it == *third_it)) 
 		{
 			has_gang = true;  //玩家牌面有3张牌
 			minggang.push_back(pai);
@@ -3659,11 +3659,6 @@ void Player::OnGangJianPai()
 	}
 }
 	
-void Player::PreCheckOnFaPai()
-{
-
-}
-
 void Player::NormalCheckAfterFaPai(const Asset::PaiElement& pai)
 {
 }
@@ -3728,19 +3723,18 @@ int32_t Player::OnFaPai(std::vector<int32_t>& cards)
 	if (true && _player_id == 262153 && _cards_inhand.size() == 0)
 	{
 		_cards_inhand = {
-			{ 1, { 9, 9} },
-			{ 2, { 1, 2, 2, 6, 6, 7 } },
+			//{ 1, { 9, 9} },
+			{ 2, { 1, 2, 2, 6, 7 } },
 			//{ 4, { 4, 4, 4} },
-			{ 5, { 2, 2, } },
-		
+			//{ 5, { 2, 2, } },
+			{ 5, { 3, 3 } },
 		};
 		
 		_cards_outhand = {
 			//{ 1, { 9, 9, 9} },
-			{ 2, { 4, 4, 4 } },
+			{ 2, { 5, 6, 7, 4, 4, 4} },
 			//{ 3, { 7, 7, 7 } },
 			//{ 4, { 3, 3, 3 } },
-			//{ 5, { 3, 3, 3 } },
 		};
 
 		/*
