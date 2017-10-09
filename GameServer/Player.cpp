@@ -3692,6 +3692,12 @@ int32_t Player::OnFaPai(std::vector<int32_t>& cards)
 		return 1;
 	}
 
+	if (!ShouldZhuaPai()) 
+	{
+		LOG(ERROR, "玩家:{}不能抓牌，当前手中牌数量:{}", _player_id, GetCardCount());
+		return 12;
+	}
+
 	//
 	//听牌后第一次抓牌，产生宝牌或查看宝牌
 	//
@@ -3719,21 +3725,22 @@ int32_t Player::OnFaPai(std::vector<int32_t>& cards)
 		}
 	}
 
-	if (false && _player_id == 262620 && _cards_inhand.size() == 0)
+	if (true && _player_id == 262153 && _cards_inhand.size() == 0)
 	{
 		_cards_inhand = {
 			{ 1, { 9, 9} },
-			{ 2, { 7, 7, 7, 8, 8 } },
-			{ 4, { 4, 4, 4} },
-			{ 5, { 2, 2, 2 } },
+			{ 2, { 1, 2, 2, 6, 6, 7 } },
+			//{ 4, { 4, 4, 4} },
+			{ 5, { 2, 2, } },
 		
 		};
 		
 		_cards_outhand = {
 			//{ 1, { 9, 9, 9} },
+			{ 2, { 4, 4, 4 } },
 			//{ 3, { 7, 7, 7 } },
 			//{ 4, { 3, 3, 3 } },
-			//{ 5, { 1, 1, 1 } },
+			//{ 5, { 3, 3, 3 } },
 		};
 
 		/*
@@ -3841,12 +3848,6 @@ int32_t Player::OnFaPai(std::vector<int32_t>& cards)
 	}
 	else if (cards.size() == 1)
 	{
-		if (!ShouldZhuaPai()) 
-		{
-			LOG(ERROR, "玩家:{}不能抓牌，当前手中牌数量:{}", _player_id, GetCardCount());
-			return 12;
-		}
-
 		auto card = GameInstance.GetCard(cards[0]);
 		_zhuapai = card;
 
@@ -4267,7 +4268,7 @@ bool Player::CheckCardsInhand()
 
 bool Player::ShouldZhuaPai()
 {
-	return CheckCardsInhand();
+	return _cards_inhand.size() == 0 || CheckCardsInhand();
 }
 
 bool Player::CheckHuCardsInhand()
