@@ -580,26 +580,32 @@ int32_t Player::CmdPaiOperate(pb::Message* message)
 {
 	Asset::PaiOperation* pai_operate = dynamic_cast<Asset::PaiOperation*>(message);
 	if (!pai_operate) return 1; 
+	
+	auto debug_string = pai_operate->DebugString();
 
 	if (!_room || !_game) 
 	{
-		auto debug_string = pai_operate->ShortDebugString();
 		LOG(ERROR, "玩家:{}尚未在房间或者牌局当中，无法进行操作:{}", _player_id, debug_string);
 		return 2; //还没加入房间或者还没开始游戏
 	}
 
 	if (!pai_operate->position()) pai_operate->set_position(GetPosition()); //设置玩家座位
 	
-	auto debug_string = pai_operate->DebugString();
-	DEBUG("接收玩家:{}的牌局操作:{}.", _player_id, debug_string);
+	//DEBUG("接收玩家:{}的牌局操作:{}.", _player_id, debug_string);
 
-	PrintPai(); //打印玩家当前手里的牌数据
+	//PrintPai(); //打印玩家当前手里的牌数据
 
 	//进行操作
 	switch (pai_operate->oper_type())
 	{
 		case Asset::PAI_OPER_TYPE_DAPAI: //打牌
 		{
+			if (!ShouldDaPai()) 
+			{
+				LOG(ERROR, "玩家:{}不能打牌，当前牌数量:{} 无法进行操作:{}", _player_id, GetCardCount(), debug_string);
+				return 9;
+			}
+
 			const auto& pai = pai_operate->pai(); 
 
 			auto& pais = _cards_inhand[pai.card_type()]; //获取该类型的牌
@@ -708,7 +714,7 @@ int32_t Player::CmdPaiOperate(pb::Message* message)
 		_last_oper_type = _oper_type;
 		_oper_type = pai_operate->oper_type(); //记录上次牌操作
 
-		DEBUG("玩家:{}上次牌操作:{}, 此次牌操作:{}", _player_id, _last_oper_type, _oper_type);
+		//DEBUG("玩家:{}上次牌操作:{}, 此次牌操作:{}", _player_id, _last_oper_type, _oper_type);
 	}
 	
 	_game->OnPaiOperate(shared_from_this(), message);
@@ -3835,6 +3841,12 @@ int32_t Player::OnFaPai(std::vector<int32_t>& cards)
 	}
 	else if (cards.size() == 1)
 	{
+		if (!ShouldZhuaPai()) 
+		{
+			LOG(ERROR, "玩家:{}不能抓牌，当前手中牌数量:{}", _player_id, GetCardCount());
+			return 12;
+		}
+
 		auto card = GameInstance.GetCard(cards[0]);
 		_zhuapai = card;
 
@@ -4253,6 +4265,11 @@ bool Player::CheckCardsInhand()
 	return false;
 }
 
+bool Player::ShouldZhuaPai()
+{
+	return CheckCardsInhand();
+}
+
 bool Player::CheckHuCardsInhand()
 {
 	auto count = GetCardCount(); //牌数量
@@ -4260,6 +4277,11 @@ bool Player::CheckHuCardsInhand()
 	if (count == 14 || count == 11 || count == 8 || count == 5 || count == 2) return true;
 
 	return false;
+}
+
+bool Player::ShouldDaPai()
+{
+	return CheckHuCardsInhand();
 }
 	
 void Player::SendRoomState()

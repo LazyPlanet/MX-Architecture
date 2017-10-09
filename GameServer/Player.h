@@ -419,6 +419,8 @@ public:
 	int32_t GetCardCount();	//获取当前玩家手中牌数
 	bool CheckCardsInhand(); //手牌数量检查
 	bool CheckHuCardsInhand(); //手牌胡牌数量检查
+	bool ShouldDaPai(); //是否可以打牌
+	bool ShouldZhuaPai(); //是否可以抓牌
 
 	const std::map<int32_t, std::vector<int32_t>>& GetCardsInhand() { return _cards_inhand; }
 	const std::map<int32_t, std::vector<int32_t>>& GetCardsOuthand() { return _cards_outhand; }
