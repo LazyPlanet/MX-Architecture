@@ -1025,7 +1025,7 @@ void Game::Calculate(int64_t hupai_player_id/*胡牌玩家*/, int64_t dianpao_pl
 {
 	if (!_room) return;
 
-	DEBUG("玩家胡牌, 胡牌玩家:{} 点炮玩家:{}", hupai_player_id, dianpao_player_id);
+	//DEBUG("玩家胡牌, 胡牌玩家:{} 点炮玩家:{}", hupai_player_id, dianpao_player_id);
 
 	//
 	//1.推到牌
@@ -1485,7 +1485,7 @@ void Game::Calculate(int64_t hupai_player_id/*胡牌玩家*/, int64_t dianpao_pl
 	auto room_id = _room->GetID();
 	auto message_string = message.ShortDebugString();
 
-	LOG(INFO, "房间:{} 胡牌结算:{}", room_id, message_string);
+	LOG(INFO, "房间:{} 胡牌玩家:{} 点炮玩家:{}, 胡牌结算:{}", room_id, hupai_player_id, dianpao_player_id, message_string);
 }
 	
 void Game::BroadCast(pb::Message* message, int64_t exclude_player_id)
