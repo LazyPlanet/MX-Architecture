@@ -3545,7 +3545,6 @@ void Player::OnGangFengPai()
 
 	++_fenggang;
 	
-	/*
 	auto cards = _game->TailPai(1); //从后楼给玩家取一张牌
 	if (cards.size() == 0) return;
 
@@ -3589,7 +3588,6 @@ void Player::OnGangFengPai()
 	}
 	
 	if (alert.pais().size()) SendProtocol(alert); //提示Client
-	*/
 }
 
 bool Player::CheckJianGangPai(std::map<int32_t/*麻将牌类型*/, std::vector<int32_t>/*牌值*/>& cards)
@@ -3646,17 +3644,32 @@ void Player::OnGangJianPai()
 
 	++_jiangang;
 	
+	Asset::PaiOperationAlert alert;
+
 	//
 	//旋风杠检查
 	//
-	auto xuanfeng_gang = CheckXuanFeng();
-	if (xuanfeng_gang)
+	auto gang = CheckXuanFeng();
+	if (gang)
 	{
-		Asset::PaiOperationAlert alert;
 		auto pai_perator = alert.mutable_pais()->Add();
-		pai_perator->mutable_oper_list()->Add((Asset::PAI_OPER_TYPE)xuanfeng_gang);
-		if (alert.pais().size()) SendProtocol(alert); //提示Client
+		pai_perator->mutable_oper_list()->Add((Asset::PAI_OPER_TYPE)gang);
 	}
+	//
+	//听牌检查
+	//
+	std::vector<Asset::PaiElement> pais;
+	if (CheckTingPai(pais))
+	{
+		for (auto pai : pais) 
+		{
+			auto pai_perator = alert.mutable_pais()->Add();
+			pai_perator->mutable_pai()->CopyFrom(pai);
+			pai_perator->mutable_oper_list()->Add(Asset::PAI_OPER_TYPE_TINGPAI);
+		}
+	}
+	
+	if (alert.pais().size()) SendProtocol(alert); //提示Client
 }
 	
 void Player::NormalCheckAfterFaPai(const Asset::PaiElement& pai)
