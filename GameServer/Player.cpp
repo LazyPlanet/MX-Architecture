@@ -520,7 +520,7 @@ int32_t Player::CmdGameOperate(pb::Message* message)
 		{
 			_player_prop.set_game_oper_state(game_operate->oper_type());
 
-			if (!_room) SendRoomState(); //防止玩家不在房间内进行解散操作,出现这种情况原因是C<->S状态不一致
+			if (!_room || _room->GetRemainCount() <= 0) SendRoomState(); //防止玩家不在房间内进行解散操作,出现这种情况原因是C<->S状态不一致
 		}
 		break;
 
@@ -2957,10 +2957,7 @@ void Player::OnGangPai(const Asset::PaiElement& pai, int64_t from_player_id)
 		}
 	}
 					
-	if (count == 3) //明杠
-	{
-		for (int32_t i = 0; i < 3; ++i) _game->Add2CardsPool(pai); //加入牌池
-	}
+	for (int32_t i = 0; i < count; ++i) _game->Add2CardsPool(pai); //加入牌池
 }
 
 bool Player::CheckFengGangPai() 
@@ -3540,7 +3537,7 @@ int32_t Player::OnFaPai(std::vector<int32_t>& cards)
 		}
 	}
 
-	if (true && _player_id == 262153 && _cards_inhand.size() == 0)
+	if (false && _player_id == 262153 && _cards_inhand.size() == 0)
 	{
 		_cards_inhand = {
 			{ 1, { 2, 3, 4, 6, 7} },
