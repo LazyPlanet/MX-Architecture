@@ -941,12 +941,14 @@ void Game::OnPaiOperate(std::shared_ptr<Player> player, pb::Message* message)
 			//
 			if (_oper_cache.player_id() == player_next->GetID() || player->GetID() == player_next->GetID()/*当前操作玩家还是自己*/) //旋风杠检查
 			{
+				/*
 				auto xf_gang = player->CheckXuanFeng();
 				if (xf_gang)
 				{
 					auto pai_perator = alert.mutable_pais()->Add();
 					pai_perator->mutable_oper_list()->Add((Asset::PAI_OPER_TYPE)xf_gang);
 				}
+				*/
 
 				if (alert.pais().size()) 
 				{
