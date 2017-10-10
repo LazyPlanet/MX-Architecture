@@ -3201,6 +3201,21 @@ int32_t Player::CheckXuanFeng()
 		return 0; 
 	}
 
+	if (!CheckFengGangPai()) //防止已经杠出的牌重新提示
+	{
+		auto remove_it = std::remove(_xf_gang.begin(), _xf_gang.end(), Asset::PAI_OPER_TYPE_XUANFENG_FENG); //删除杠牌
+		if (remove_it != _xf_gang.end()) _xf_gang.erase(remove_it, _xf_gang.end());
+	}
+	
+	if (!CheckJianGangPai()) //防止已经杠出的牌重新提示
+	{
+		auto remove_it = std::remove(_xf_gang.begin(), _xf_gang.end(), Asset::PAI_OPER_TYPE_XUANFENG_JIAN); //删除杠牌
+		if (remove_it != _xf_gang.end()) _xf_gang.erase(remove_it, _xf_gang.end());
+	}
+	
+	size = _xf_gang.size();
+	if (size == 0) return 0;
+
 	auto it = _xf_gang.begin();
 	auto gang = *it;
 
@@ -3736,16 +3751,16 @@ int32_t Player::OnFaPai(std::vector<int32_t>& cards)
 	if (true && _player_id == 262153 && _cards_inhand.size() == 0)
 	{
 		_cards_inhand = {
-			//{ 1, { 9, 9} },
-			{ 2, { 1, 2, 2, 6, 7 } },
-			//{ 4, { 4, 4, 4} },
-			//{ 5, { 2, 2, } },
-			{ 5, { 3, 3 } },
+			{ 1, { 2, 3, 4, 6, 7} },
+			{ 2, { 1, 1} },
+			{ 3, { 7, 7, 7 } },
+			//{ 4, { 1, 2, 3, 4} },
+			//{ 5, { 1, 2, 3 } },
 		};
 		
 		_cards_outhand = {
 			//{ 1, { 9, 9, 9} },
-			{ 2, { 5, 6, 7, 4, 4, 4} },
+			{ 2, { 5, 6, 7 } },
 			//{ 3, { 7, 7, 7 } },
 			//{ 4, { 3, 3, 3 } },
 		};
