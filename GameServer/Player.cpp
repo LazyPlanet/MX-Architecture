@@ -3860,10 +3860,11 @@ void Player::PrintPai()
 		if (inhand_list.str().size()) card_value_list << "[牌内]"	<< " card_type:" << pai.first << " card_value:" << inhand_list.str();
 	}
 		
-	int64_t room_id = _room->GetID();
-	int32_t curr_count = _room->GetGamesCount();
+	auto room_id = _room->GetID();
+	auto curr_count = _room->GetGamesCount();
+	auto open_rands = _room->GetOpenRands();
 
-	LOG(INFO, "玩家:{}在房间{}第{}局牌数据:{}", _player_id, room_id, curr_count, card_value_list.str());
+	LOG(INFO, "玩家:{}在房间{}第{}/{}局牌数据:{}", _player_id, room_id, curr_count, open_rands, card_value_list.str());
 }
 	
 Asset::GAME_OPER_TYPE Player::GetOperState() 

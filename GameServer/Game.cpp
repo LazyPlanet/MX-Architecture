@@ -1503,9 +1503,11 @@ void Game::Calculate(int64_t hupai_player_id/*胡牌玩家*/, int64_t dianpao_pl
 	OnGameOver(hupai_player_id); //结算之后才是真正结束
 	
 	auto room_id = _room->GetID();
+	auto curr_count = _room->GetGamesCount();
+	auto open_rands = _room->GetOpenRands();
 	auto message_string = message.ShortDebugString();
 
-	LOG(INFO, "房间:{} 胡牌玩家:{} 点炮玩家:{}, 胡牌结算:{}", room_id, hupai_player_id, dianpao_player_id, message_string);
+	LOG(INFO, "房间:{}第:{}/{}局结束，胡牌玩家:{} 点炮玩家:{}, 胡牌结算:{}", room_id, curr_count, open_rands, hupai_player_id, dianpao_player_id, message_string);
 }
 	
 void Game::BroadCast(pb::Message* message, int64_t exclude_player_id)
@@ -1828,8 +1830,12 @@ void Game::OnLiuJu()
 	
 	OnGameOver(0); 
 
+	auto room_id = _room->GetID();
+	auto curr_count = _room->GetGamesCount();
+	auto open_rands = _room->GetOpenRands();
+
 	auto game_calculate_string = game_calculate.ShortDebugString();
-	LOG(INFO, "流局结算:{}", game_calculate_string);
+	LOG(INFO, "房间:{}第:{}/{}局结束，胡牌玩家:{} 点炮玩家:{}, 流局结算:{}", room_id, curr_count, open_rands, 0, 0, game_calculate_string);
 }
 
 std::vector<int32_t> Game::FaPai(size_t card_count)
