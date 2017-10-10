@@ -620,6 +620,25 @@ void Game::OnPaiOperate(std::shared_ptr<Player> player, pb::Message* message)
 					pai_perator->mutable_oper_list()->Add((Asset::PAI_OPER_TYPE)gang);
 				}
 				//
+				//玩家杠牌检查
+				//
+				//杠检查(明杠和暗杠)
+				//
+				RepeatedField<Asset::PaiOperationAlert_AlertElement> gang_list;
+				if (player->CheckAllGangPai(gang_list)) 
+				{
+					for (auto gang : gang_list) 
+					{
+						if (gang.pai().card_type() == pai.card_type() && gang.pai().card_value() == pai.card_value()) continue;
+
+						auto pai_perator = alert.mutable_pais()->Add();
+						pai_perator->CopyFrom(gang);
+					
+						_oper_cache.mutable_pai()->CopyFrom(gang.pai());
+						for (auto oper_type : gang.oper_list()) _oper_cache.mutable_oper_list()->Add(Asset::PAI_OPER_TYPE(oper_type));
+					}
+				}
+				//
 				//自摸检查
 				//
 				auto zhuapai = GameInstance.GetCard(cards[0]);
@@ -644,6 +663,7 @@ void Game::OnPaiOperate(std::shared_ptr<Player> player, pb::Message* message)
 				}
 				
 				if (alert.pais().size()) player->SendProtocol(alert); //提示Client
+
 				_curr_player_index = GetPlayerOrder(player->GetID()); //设置当前玩家索引
 				
 				if (Asset::PAI_OPER_TYPE_GANGPAI == pai_operate->oper_type()) //明杠删除牌池
