@@ -1887,7 +1887,13 @@ bool Game::IsBanker(int64_t player_id)
 
 Asset::PaiElement Game::GetBaoPai(int32_t tail_index)
 {
-	_random_result_list.emplace(tail_index); //范围:1~6
+	if (_random_result_list.find(tail_index) != _random_result_list.end()) //修正宝牌索引
+	{
+		if (tail_index % 2 == 0) tail_index /= 2; //偶数就取下面的牌
+		else tail_index *= 2; //奇数就取上面的牌
+	}
+		
+	_random_result_list.insert(tail_index); //范围:1~6
 
 	std::vector<int32_t> list(_cards.begin(), _cards.end());
 
