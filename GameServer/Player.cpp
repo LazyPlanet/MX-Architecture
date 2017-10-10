@@ -467,7 +467,7 @@ int32_t Player::CmdCreateRoom(pb::Message* message)
 	
 	SendProtocol(create_room); 
 	
-	OnCreateRoom(create_room); //创建房间成功，直接将玩家设置到该房间，TODO:感觉设计有问题，客户端应该走通用进入房间逻辑
+	OnCreateRoom(create_room); //创建房间成功
 
 	LOG(ACTION, "player_id:{} create room_id:{}", _player_id, room_id);
 
