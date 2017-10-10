@@ -251,7 +251,7 @@ int64_t Player::ConsumeRoomCard(Asset::ROOM_CARD_CHANGED_TYPE changed_type, int6
 
 	if (!CheckRoomCard(count)) 
 	{
-		LOG(INFO, "消耗玩家:{}房卡，消耗类型:{} 数量:{}失败", _player_id, changed_type, count);
+		LOG(ERROR, "消耗玩家:{}房卡，消耗类型:{} 数量:{}失败", _player_id, changed_type, count);
 		return 0;
 	}
 
@@ -451,18 +451,12 @@ int32_t Player::CmdCreateRoom(pb::Message* message)
 
 		if (!CheckRoomCard(consume_count)) 
 		{
+			LOG(ERROR, "玩家:{}开房房卡不足，当前房卡数量:{}需要消耗房卡数量:{}，开局数量:{}，单个房卡可以开房数量:{}", 
+					_player_id, _stuff.common_prop().room_card_count(), consume_count, open_rands, rounds);
+
 			AlertMessage(Asset::ERROR_ROOM_CARD_NOT_ENOUGH); //房卡不足
 			return 5;
 		}
-
-		/*
-		auto consume_real = ConsumeRoomCard(Asset::ROOM_CARD_CHANGED_TYPE_OPEN_ROOM, consume_count); //消耗
-		if (consume_count != consume_real)
-		{
-			LOG(ERROR, "Consume room card error, consume_count:{} consume_real:{}", consume_count, consume_real);
-			return 6;
-		}
-		*/
 	}
 
 	int64_t room_id = RoomInstance.CreateRoom();
