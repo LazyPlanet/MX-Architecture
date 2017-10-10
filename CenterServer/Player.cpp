@@ -120,7 +120,7 @@ bool Player::IsExpire()
 {
 	if (_expire_time == 0) return false;
 
-	return _expire_time > CommonTimerInstance.GetTime();
+	return _expire_time < CommonTimerInstance.GetTime();
 }
 	
 int32_t Player::Logout(pb::Message* message)
@@ -132,11 +132,11 @@ int32_t Player::Logout(pb::Message* message)
 	
 int32_t Player::OnLogout()
 {
-	_expire_time = CommonTimerInstance.GetTime() + 3600; //1小时之内没有上线，则删除
+	_expire_time = CommonTimerInstance.GetTime() + 1800; //30分钟之内没有上线，则删除
 
 	if (!IsCenterServer()) 
 	{
-		ERROR("玩家:{}游戏进行中，不能从大厅退出", _player_id);
+		ERROR("玩家:{}游戏进行中，服务器:{}，不能从大厅退出", _player_id, _stuff.server_id());
 		WorldSessionInstance.RemovePlayer(_player_id); //网络会话数据
 		return 1; //玩家在游戏进行中，不能退出
 	}
@@ -556,6 +556,7 @@ bool Player::HandleProtocol(int32_t type_t, pb::Message* message)
 	if (!message) return false;
 
 	auto debug_string = message->ShortDebugString();
+
 	DEBUG("当前玩家{}所在服务器:{} 接收协议数据:{}", _player_id, _stuff.server_id(), debug_string);
 	//
 	//如果中心服务器没有协议处理回调，则发往游戏服务器进行处理
