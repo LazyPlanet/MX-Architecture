@@ -3217,7 +3217,11 @@ bool Player::CheckTingPai(std::vector<Asset::PaiElement>& pais)
 						
 			cards_inhand[it->first].erase(find_it); //删除这张牌
 
-			if (!HasYaoJiu(cards_inhand, cards_outhand, minggang, angang, jiangang, fenggang)) continue; //朝阳特殊玩法,缺幺九可以胡牌不可以听牌
+			if (!HasYaoJiu(cards_inhand, cards_outhand, minggang, angang, jiangang, fenggang)) 
+			{
+				cards_inhand = card_list; //恢复牌，尝试删除下一张牌
+				continue; //朝阳特殊玩法,缺幺九可以胡牌不可以听牌
+			}
 
 			//
 			//玩家能否胡牌
@@ -3540,15 +3544,15 @@ int32_t Player::OnFaPai(std::vector<int32_t>& cards)
 	if (false && _player_id == 262153 && _cards_inhand.size() == 0)
 	{
 		_cards_inhand = {
-			{ 1, { 2, 3, 4, 6, 7} },
-			{ 2, { 1, 1} },
-			{ 3, { 7, 7, 7 } },
-			{ 4, { 1, 1, 1 } },
+			{ 1, { 9} },
+			//{ 2, { 1, 1} },
+			{ 3, { 4, 5, 6, 7, 8, 8, 8 } },
+			//{ 4, { 1, 1, 1 } },
 			//{ 5, { 1, 2, 3 } },
 		};
 		
 		_cards_outhand = {
-			//{ 1, { 9, 9, 9} },
+			{ 1, { 7, 7, 7, 6, 7, 8} },
 			//{ 2, { 5, 6, 7 } },
 			//{ 3, { 7, 7, 7 } },
 			//{ 4, { 3, 3, 3 } },
