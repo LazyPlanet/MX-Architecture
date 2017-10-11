@@ -204,8 +204,8 @@ int32_t Player::Logout(pb::Message* message)
 	
 int32_t Player::OnLogout()
 {
-	_stuff.set_login_time(0);
-	_stuff.set_logout_time(CommonTimerInstance.GetTime());
+	//_stuff.set_login_time(0);
+	//_stuff.set_logout_time(CommonTimerInstance.GetTime());
 	
 	if (!_game && _room && (!_room->HasStarted() || _room->GetRemainCount() <= 0 || _room->HasDisMiss())) 
 	{
