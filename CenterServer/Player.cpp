@@ -41,6 +41,7 @@ Player::Player()
 	AddHandler(Asset::META_TYPE_SHARE_GAME_SETTING, std::bind(&Player::CmdGameSetting, this, std::placeholders::_1));
 	AddHandler(Asset::META_TYPE_SHARE_ROOM_HISTORY, std::bind(&Player::CmdGetBattleHistory, this, std::placeholders::_1));
 	AddHandler(Asset::META_TYPE_SHARE_RECHARGE, std::bind(&Player::CmdRecharge, this, std::placeholders::_1));
+	AddHandler(Asset::META_TYPE_SHARE_PLAY_BACK, std::bind(&Player::CmdPlayBack, this, std::placeholders::_1));
 
 	AddHandler(Asset::META_TYPE_C2S_GET_REWARD, std::bind(&Player::CmdGetReward, this, std::placeholders::_1));
 }
@@ -850,6 +851,53 @@ int32_t Player::CmdRecharge(pb::Message* message)
 		break;
 	}
 
+	return 0;
+}
+
+int32_t Player::CmdPlayBack(pb::Message* message)
+{
+	auto play_back = dynamic_cast<const Asset::PlayBack*>(message);
+	if (!play_back) return 1;
+	
+	cpp_redis::future_client client;
+	client.connect(ConfigInstance.GetString("Redis_ServerIP", "127.0.0.1"), ConfigInstance.GetInt("Redis_ServerPort", 6379));
+	if (!client.is_connected()) 
+	{
+		SendProtocol(play_back);
+		return 5;
+	}
+	
+	auto has_auth = client.auth(ConfigInstance.GetString("Redis_Password", "!QAZ%TGB&UJM9ol."));
+	if (has_auth.get().ko()) 
+	{
+		SendProtocol(play_back);
+		return 2;
+	}
+
+	auto room_id = play_back->room_id();
+	auto game_index = play_back->game_index();
+
+	std::string key = "playback:" + std::to_string(room_id) + "_" + std::to_string(game_index);
+	auto get = client.get(key);
+	cpp_redis::reply reply = get.get();
+	client.commit();
+
+	if (!reply.is_string()) 
+	{
+		SendProtocol(play_back);
+		return 3;
+	}
+		
+	Asset::PlayBack playback;
+	auto success = playback.ParseFromString(reply.as_string());
+	if (!success) 
+	{
+		SendProtocol(play_back);
+		return 4;
+	}
+
+	SendProtocol(playback);
+	
 	return 0;
 }
 

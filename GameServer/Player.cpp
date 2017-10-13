@@ -3672,6 +3672,12 @@ int32_t Player::OnFaPai(std::vector<int32_t>& cards)
 		notify.mutable_pai()->set_card_type(card.card_type());
 		notify.mutable_pai()->set_card_value(card.card_value());
 
+		Asset::PaiOperation pai_operate;
+		pai_operate.set_oper_type(Asset::PAI_OPER_TYPE_FAPAI);
+		pai_operate.set_position(GetPosition());
+		pai_operate.mutable_pai()->CopyFrom(card);
+		_game->AddPlayerOperation(pai_operate); //牌局回放
+
 		if (IsTingPai()) ++_oper_count_tingpai; //听牌后发了//抓了多少张牌
 			
 		//

@@ -47,6 +47,8 @@ private:
 
 	bool _liuju = false; //是否流局
 	std::vector<Asset::PaiElement> _cards_pool; //牌池，玩家已经打的牌缓存
+
+	Asset::PlayBack _playback; //回放数据
 public:
 	virtual void Init(std::shared_ptr<Room> room); //初始化
 	virtual bool Start(std::vector<std::shared_ptr<Player>> players); //开始游戏
@@ -116,6 +118,9 @@ public:
 
 	void SetCurrPlayerIndex(int64_t curr_player_index) { _curr_player_index = curr_player_index; } //设置当前可操作的玩家
 	int32_t GetCurrPlayerIndex() { return _curr_player_index; }
+
+	void SavePlayBack(); //回放存储
+	void AddPlayerOperation(const Asset::PaiOperation& pai_operate) { _playback.mutable_oper_list()->Add()->CopyFrom(pai_operate); } //回放记录
 };
 
 /////////////////////////////////////////////////////

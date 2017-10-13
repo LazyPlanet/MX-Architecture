@@ -1,11 +1,14 @@
 #include <vector>
 #include <algorithm>
 
+#include <cpp_redis/cpp_redis>
+
 #include "Game.h"
 #include "Timer.h"
 #include "Asset.h"
 #include "MXLog.h"
 #include "CommonUtil.h"
+#include "RedisManager.h"
 
 namespace Adoter
 {
@@ -34,11 +37,7 @@ bool Game::Start(std::vector<std::shared_ptr<Player>> players)
 {
 	if (MAX_PLAYER_COUNT != players.size()) return false; //做下检查，是否满足开局条件
 
-	if (!_room)
-	{
-		DEBUG_ASSERT(false);
-		return false;
-	}
+	if (!_room) return false;
 
 	//
 	//房间(Room)其实是游戏(Game)的管理类
@@ -75,14 +74,9 @@ bool Game::Start(std::vector<std::shared_ptr<Player>> players)
 	for (int i = 0; i < MAX_PLAYER_COUNT; ++i)
 	{
 		auto player = _players[i];
-		if (!player) 
-		{
-			DEBUG_ASSERT(false);
-			return false;
-		}
-		player->SetGame(shared_from_this());
+		if (!player) return false;
 
-		DEBUG("player_id:{} player_index:{} start game.", player->GetID(), i);
+		player->SetGame(shared_from_this());
 
 		int32_t card_count = 13; //正常开启，普通玩家牌数量
 
@@ -92,9 +86,21 @@ bool Game::Start(std::vector<std::shared_ptr<Player>> players)
 			_curr_player_index = i; //当前操作玩家
 		}
 
+		//玩家发牌
 		auto cards = FaPai(card_count);
+		player->OnFaPai(cards);  
 
-		player->OnFaPai(cards);  //各个玩家发牌
+		//回放缓存：初始牌数据
+		auto player_element = _playback.mutable_player_list()->Add();
+		player_element->set_player_id(player->GetID());
+		player_element->set_position(player->GetPosition());
+		const auto& cards_inhand = player->GetCardsInhand();
+		for (const auto& crds : cards_inhand)
+		{
+			auto pai_list = player_element->mutable_pai_list()->Add();
+			pai_list->set_card_type((Asset::CARD_TYPE)crds.first); //牌类型
+			for (auto card_value : crds.second) pai_list->mutable_cards()->Add(card_value); //牌值
+		}
 	}
 
 	return true;
@@ -129,6 +135,8 @@ bool Game::OnGameOver(int64_t player_id)
 {
 	if (!_room) return false;
 
+	SavePlayBack(); //回放
+
 	for (auto player : _players)
 	{
 		if (!player) continue;
@@ -141,6 +149,24 @@ bool Game::OnGameOver(int64_t player_id)
 	_room->OnGameOver(player_id); //胡牌
 
 	return true;
+}
+
+void Game::SavePlayBack()
+{
+	if (!_room) return;
+
+	auto room_id = _room->GetID();
+	auto game_index = _room->GetGamesCount();
+	
+	cpp_redis::future_client client;
+	client.connect(ConfigInstance.GetString("Redis_ServerIP", "127.0.0.1"), ConfigInstance.GetInt("Redis_ServerPort", 6379));
+	if (!client.is_connected()) return;
+	
+	auto has_auth = client.auth(ConfigInstance.GetString("Redis_Password", "!QAZ%TGB&UJM9ol."));
+	if (has_auth.get().ko()) return;
+
+	auto set = client.set("playback:" + std::to_string(room_id) + "_" + std::to_string(game_index), _playback.SerializeAsString());
+	client.commit();
 }
 	
 void Game::ClearState()
@@ -355,6 +381,8 @@ void Game::OnPaiOperate(std::shared_ptr<Player> player, pb::Message* message)
 	
 	Asset::PaiOperation* pai_operate = dynamic_cast<Asset::PaiOperation*>(message);
 	if (!pai_operate) return; 
+
+	AddPlayerOperation(*pai_operate);  //回放记录
 	
 	auto player_index = GetPlayerOrder(player->GetID());
 
@@ -367,7 +395,7 @@ void Game::OnPaiOperate(std::shared_ptr<Player> player, pb::Message* message)
 	if (!CanPaiOperate(player)) 
 	{
 		player->AlertMessage(Asset::ERROR_GAME_NO_PERMISSION); //没有权限，没到玩家操作，防止外挂
-		DEBUG_ASSERT(false); 
+		DEBUG_ASSERT(false);
 	}
 
 	//if (CommonTimerInstance.GetTime() < _oper_cache.time_out()) ClearOperation(); //已经超时，清理缓存以及等待玩家操作的状态
