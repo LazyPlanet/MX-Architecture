@@ -135,7 +135,7 @@ int32_t Player::OnLogout()
 {
 	_expire_time = CommonTimerInstance.GetTime() + 1800; //30分钟之内没有上线，则删除
 
-	if (!IsCenterServer() && _stuff.room_id() == 0) 
+	if (!IsCenterServer() && _stuff.room_id() > 0) 
 	{
 		ERROR("玩家:{}游戏进行中，服务器:{}，房间:{} 不能从大厅退出", _player_id, _stuff.server_id(), _stuff.room_id());
 		WorldSessionInstance.RemovePlayer(_player_id); //网络会话数据
@@ -224,7 +224,7 @@ bool Player::IsCenterServer()
 { 
 	int32_t curr_server_id = ConfigInstance.GetInt("ServerID", 1);
 
-	return _stuff.server_id() == curr_server_id;
+	return _stuff.server_id() == 0 || _stuff.server_id() == curr_server_id;
 }
 	
 int64_t Player::ConsumeRoomCard(Asset::ROOM_CARD_CHANGED_TYPE changed_type, int64_t count)

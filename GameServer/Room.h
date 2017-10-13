@@ -82,6 +82,7 @@ public:
 	int32_t GetGamesCount() { return _games.size(); }
 	int32_t GetOpenRands() { return _stuff.options().open_rands(); }
 	bool HasStarted() { return _games.size() > 0; }
+	bool HasBeenOver() { return !_game && GetRemainCount() <= 0; }
 	std::shared_ptr<Game> GetGame() { return _game; }
 
 	void OnPlayerOperate(std::shared_ptr<Player> player, pb::Message* message);
@@ -126,6 +127,7 @@ class RoomManager
 {
 private:
 	std::mutex _no_password_mutex;
+	std::mutex _room_lock;
 	//所有房间(包括已满、未满、要密码、不要密码)
 	std::unordered_map<int64_t, std::shared_ptr<Room>> _rooms;
 	//要输入密码，可入的房间
@@ -149,7 +151,7 @@ public:
 		return _instance;
 	}
 	
-	int64_t CreateRoom(); //创建房间：获取房间全局ID
+	int64_t AllocRoom(); //创建房间：获取房间全局ID
 	std::shared_ptr<Room> CreateRoom(const Asset::Room& room); //通过配置创建房间
 	bool OnCreateRoom(std::shared_ptr<Room> room); //进入房间回调
 	std::shared_ptr<Room> Get(int64_t room_id); //获取房间

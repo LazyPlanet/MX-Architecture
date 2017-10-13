@@ -452,7 +452,7 @@ public:
 class PlayerManager : public std::enable_shared_from_this<PlayerManager>
 {
 private:
-	std::mutex _mutex;
+	std::mutex _player_lock;
 	std::unordered_map<int64_t, std::shared_ptr<Player>> _players; //实体为智能指针，不要传入引用
 	int32_t _heart_count = 0;
 public:

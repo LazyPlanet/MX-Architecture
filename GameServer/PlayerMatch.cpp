@@ -52,7 +52,7 @@ void PlayerMatch::DoMatch()
 		
 			if (player_list.size() < 4) continue;
 				
-			auto room_id = RoomInstance.CreateRoom();
+			auto room_id = RoomInstance.AllocRoom();
 			if (room_id <= 0) continue;
 
 			Asset::Room room;

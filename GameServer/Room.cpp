@@ -890,8 +890,11 @@ RoomManager::RoomManager()
 
 std::shared_ptr<Room> RoomManager::Get(int64_t room_id)
 {
+	std::lock_guard<std::mutex> lock(_room_lock);
+
 	auto it = _rooms.find(room_id);
 	if (it == _rooms.end()) return nullptr;
+
 	return it->second;
 }
 	
@@ -903,19 +906,17 @@ bool RoomManager::CheckPassword(int64_t room_id, std::string password)
 	return true;
 }
 
-int64_t RoomManager::CreateRoom()
+int64_t RoomManager::AllocRoom()
 {
 	auto redis = make_unique<Redis>();
-	int64_t room_id = redis->CreateRoom();
-	return room_id;
+	return redis->CreateRoom();
 }
 	
 std::shared_ptr<Room> RoomManager::CreateRoom(const Asset::Room& room)
 {
 	auto room_id = room.room_id();
 
-	if (room_id <= 0) room_id = CreateRoom(); //如果没有房间号，则创建
-
+	if (room_id <= 0) room_id = AllocRoom(); //如果没有房间号，则创建
 	if (room_id <= 0) return nullptr;
 
 	auto locate_room = std::make_shared<Room>(room);
@@ -923,10 +924,8 @@ std::shared_ptr<Room> RoomManager::CreateRoom(const Asset::Room& room)
 	locate_room->OnCreated();
 
 	auto success = OnCreateRoom(locate_room); //成功创建房间
-	if (!success)
-	{
-		LOG(ERROR, "Enter room_id:{} callback failed.", room_id);
-	}
+	if (!success) return nullptr; 
+
 	return locate_room;
 }
 
@@ -935,6 +934,8 @@ bool RoomManager::OnCreateRoom(std::shared_ptr<Room> room)
 	if (!room) return false;
 
 	auto room_id = room->GetID();
+
+	std::lock_guard<std::mutex> lock(_room_lock);
 
 	if (_rooms.find(room_id) != _rooms.end()) return false;
 	_rooms.emplace(room_id, room);
@@ -958,11 +959,8 @@ void RoomManager::Update(int32_t diff)
 {
 	++_heart_count;
 	
-	if (_heart_count % 20 == 0) //1秒
-	{
-	
-	}
-	
+	std::lock_guard<std::mutex> lock(_room_lock);
+
 	if (_heart_count % 1200 == 0) //1分钟
 	{
 		DEBUG("服务器:{} 进行房间数量:{}", _server_id, _rooms.size());
@@ -974,10 +972,10 @@ void RoomManager::Update(int32_t diff)
 		{
 			it->second->Update();
 
-			if ((it->second->IsExpired() && it->second->IsEmpty()) || it->second->HasDisMiss() || 
-					(it->second->IsEmpty() && it->second->GetRemainCount() <= 0 && !it->second->GetGame()))
+			if ((it->second->IsExpired() && it->second->IsEmpty()) || it->second->HasDisMiss() || it->second->HasBeenOver())
 			{
-				it = _rooms.erase(it);
+				//it->second->KickOutPlayer(); //删除玩家//不能在此处删除，必须玩家主动退出
+				it = _rooms.erase(it); //删除房间
 			}
 			else
 			{
@@ -989,6 +987,8 @@ void RoomManager::Update(int32_t diff)
 	
 void RoomManager::OnDisMiss(int64_t room_id)
 {
+	std::lock_guard<std::mutex> lock(_room_lock);
+
 	auto it = _rooms.find(room_id);
 	if (it == _rooms.end()) return;
 

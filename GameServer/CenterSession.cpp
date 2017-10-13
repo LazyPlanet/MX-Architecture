@@ -68,13 +68,13 @@ bool CenterSession::OnMessageProcess(const Asset::Meta& meta)
 		if (meta.player_id() == 0) return false;
 		
 		auto player = GetPlayer(meta.player_id());
+		if (!player && meta.type_t() == Asset::META_TYPE_SHARE_SAY_HI) return true; //防止玩家退出后收到心跳而进入游戏服务器
+
 		if (!player) 
 		{
 			player = std::make_shared<Player>(meta.player_id());
-			if (player->OnLogin()) 
-			{
-				ERROR("玩家{}进入游戏失败", meta.player_id());
-			}
+			if (player->OnLogin()) return false;
+
 			AddPlayer(meta.player_id(), player);
 		}
 

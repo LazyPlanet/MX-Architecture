@@ -119,7 +119,11 @@ int32_t Player::Save(bool force)
 	
 int32_t Player::OnLogin()
 {
-	if (Load()) return 1;
+	if (Load()) 
+	{
+		LOG(ERROR, "玩家:{}加载数据失败", _player_id);
+		return 1;
+	}
 
 	DEBUG("玩家:{}数据:{}", _player_id, _stuff.ShortDebugString())
 	
@@ -140,7 +144,7 @@ int32_t Player::Logout(pb::Message* message)
 	//
 	if (_room) 
 	{
-		if (_game || (_room->HasStarted() && _room->GetRemainCount() > 0)) //游戏中，或已经开局且尚未对局完成，则不让退出房间
+		if (_game || (_room->HasStarted() && _room->GetRemainCount() > 0 && !_room->HasDisMiss())) //游戏中，或已经开局且尚未对局完成且不是解散，则不让退出房间
 		{
 			SetOffline(); //玩家状态
 
@@ -216,9 +220,11 @@ int32_t Player::OnLogout()
 		auto room = RoomInstance.Get(_stuff.room_id());
 		if (room) room->Remove(_player_id);
 	}
-	PlayerInstance.Remove(_player_id); //玩家管理
-	
+
+	_stuff.clear_server_id();
+
 	Save(true);	//存档数据库
+	PlayerInstance.Remove(_player_id); //删除玩家
 
 	Asset::KickOutPlayer kickout_player; //通知中心服务器退出
 	kickout_player.set_player_id(_player_id);
@@ -362,7 +368,11 @@ bool Player::CheckDiamond(int64_t count)
 
 int32_t Player::OnEnterGame() 
 {
-	if (Load()) return 1;
+	if (Load()) 
+	{
+		LOG(ERROR, "玩家:{}加载数据失败", _player_id);
+		return 1;
+	}
 	
 	//
 	//设置玩家所在服务器，每次进入场景均调用此
@@ -459,7 +469,7 @@ int32_t Player::CmdCreateRoom(pb::Message* message)
 		}
 	}
 
-	int64_t room_id = RoomInstance.CreateRoom();
+	int64_t room_id = RoomInstance.AllocRoom();
 	if (!room_id) return 2;
 
 	create_room->mutable_room()->set_room_id(room_id);
@@ -780,10 +790,10 @@ int32_t Player::CmdEnterRoom(pb::Message* message)
 	{
 		if (_room) 
 		{
-			auto enter_room_string = enter_room->ShortDebugString();
+			//auto enter_room_string = enter_room->ShortDebugString();
 			auto room_id = _room->GetID();
 
-			DEBUG("玩家:{}重入房间:{} 数据:{}", _player_id, room_id, enter_room_string);
+			//DEBUG("玩家:{}重入房间:{} 数据:{}", _player_id, room_id, enter_room_string);
 
 			auto client_room_id = enter_room->room().room_id();
 			if (room_id != client_room_id)
@@ -797,7 +807,7 @@ int32_t Player::CmdEnterRoom(pb::Message* message)
 				enter_room->set_error_code(Asset::ERROR_ROOM_NOT_FOUNT); //是否可以进入场景//房间
 				SendProtocol(message);
 
-				ResetRoom(); //房间已经解散
+				ResetRoom(); //房间非法
 				SetOffline(false); //恢复在线状态
 
 				return Asset::ERROR_ROOM_NOT_FOUNT;
@@ -814,9 +824,9 @@ int32_t Player::CmdEnterRoom(pb::Message* message)
 			else
 			{
 				locate_room = RoomInstance.Get(_room->GetID());
-				if (!locate_room) 
+				if (!locate_room || locate_room->HasDisMiss() || locate_room->HasBeenOver()) //已经结束或者解散
 				{
-					_room.reset();
+					ResetRoom(); //房间非法
 					break; //房间已经不存在
 				}
 
@@ -4183,12 +4193,15 @@ void PlayerManager::Emplace(int64_t player_id, std::shared_ptr<Player> player)
 {
 	if (!player) return;
 
-	//if (_players.find(player_id) == _players.end()) _players.emplace(player_id, player);
+	std::lock_guard<std::mutex> lock(_player_lock);
+
 	_players[player_id] = player;
 }
 
 std::shared_ptr<Player> PlayerManager::GetPlayer(int64_t player_id)
 {
+	std::lock_guard<std::mutex> lock(_player_lock);
+
 	return _players[player_id];
 }
 
@@ -4206,6 +4219,8 @@ bool PlayerManager::Has(int64_t player_id)
 
 void PlayerManager::Remove(int64_t player_id)
 {
+	std::lock_guard<std::mutex> lock(_player_lock);
+
 	auto player = _players[player_id];
 	if (player) player.reset();
 	
