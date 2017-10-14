@@ -856,12 +856,7 @@ void Room::ClearDisMiss()
 	_dismiss_time = 0;
 	_dismiss_cooldown = 0;
 
-	for (auto player : _players)
-	{
-		if (!player) continue;
-
-		player->ClearDisMiss();
-	}
+	if (!_game) SyncRoom();
 }
 	
 bool Room::IsExpired()

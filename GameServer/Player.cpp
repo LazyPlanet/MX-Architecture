@@ -4029,11 +4029,11 @@ int32_t Player::OnFaPai(std::vector<int32_t>& cards)
 		}
 	}
 
-	if (false && _player_id == 262620 && _cards_inhand.size() == 0)
+	if (false && _player_id == 262146 && _cards_inhand.size() == 0)
 	{
 		_cards_inhand = {
-			{ 1, { 9, 9} },
-			{ 2, { 7, 7, 7, 8, 8 } },
+			{ 1, { 9, 9, 9} },
+			{ 2, { 7, 7, 7, 8} },
 			{ 4, { 4, 4, 4} },
 			{ 5, { 2, 2, 2 } },
 		
