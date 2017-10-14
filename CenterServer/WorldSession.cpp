@@ -454,6 +454,8 @@ void WorldSession::OnProcessMessage(const Asset::Meta& meta)
 				{
 					enter_room->set_error_code(Asset::ERROR_ROOM_NOT_FOUNT);
 					SendProtocol(message);
+
+					_player->AlertMessage(Asset::ERROR_ROOM_NOT_FOUNT); //通用错误码
 					return;
 				}
 			}

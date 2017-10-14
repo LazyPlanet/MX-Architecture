@@ -798,7 +798,8 @@ int32_t Player::CmdEnterRoom(pb::Message* message)
 			auto client_room_id = enter_room->room().room_id();
 			if (room_id != client_room_id)
 			{
-				LOG(ERROR, "玩家:{}重入房间错误，客户端记录:{}和服务器记录:{}不是一个，以当前服务器记录为主", _player_id, client_room_id, room_id);
+				LOG(ERROR, "玩家:{}重入房间错误，客户端记录:{}和服务器记录:{}不是一个，以当前客户端为准", _player_id, client_room_id, room_id);
+				room_id = client_room_id;
 			}
 				
 			auto locate_room = RoomInstance.Get(room_id);
