@@ -36,7 +36,9 @@ private:
 	std::unordered_map<int64_t, int32_t> _bankers;
 	std::unordered_map<int64_t, int32_t> _streak_wins;
 	bool _is_dismiss = false;
-	int32_t _dismiss_time = 0; //解散房间时间
+	int32_t _dismiss_time = 0; //解散时间
+	int32_t _created_time = 0; //创建时间
+	int32_t _created_timeout = 0; //超时时间
 	int32_t _dismiss_cooldown = 0; //解散冷却时间
 public:
 	explicit Room(Asset::Room room) {  _stuff = room; }
@@ -55,8 +57,8 @@ public:
 
 	bool IsVoiceOpen() { return _stuff.options().voice_open(); }
 
-	int32_t GetTime() { return _expired_time; } //获取过期时间
-	void SetTime(int32_t expired_time) { _expired_time = expired_time; }
+	int32_t GetExpiredTime() { return _expired_time; } //获取过期时间
+	void SetExpiredTime(int32_t expired_time) { _expired_time = expired_time; }
 
 	void AddGameRecord(const Asset::GameRecord& record); //记录
 	void AddHupai(int64_t player_id);
@@ -116,6 +118,7 @@ public:
 	bool IsBanker(int64_t player_id){ return _banker == player_id; } //是否是庄家
 
 	bool IsExpired(); //是否过期
+	bool IsTimeOut(); //是否超时
 	bool HasDisMiss() { return _is_dismiss; } //是否解散状态
 	void ClearDisMiss(); //清除解散状态
 };

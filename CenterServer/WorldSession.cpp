@@ -289,8 +289,6 @@ void WorldSession::OnProcessMessage(const Asset::Meta& meta)
 			Asset::ReConnect* connect = dynamic_cast<Asset::ReConnect*>(message);
 			if (!connect) return; 
 
-			WARN("玩家:{}断线重连", connect->player_id());
-
 			_player = PlayerInstance.Get(connect->player_id());
 
 			if (!_player) 
@@ -300,8 +298,6 @@ void WorldSession::OnProcessMessage(const Asset::Meta& meta)
 				//
 				_player = std::make_shared<Player>(connect->player_id()); //服务器已经没有缓存
 
-				SetRoleType(Asset::ROLE_TYPE_PLAYER, _player->GetID());
-
 				auto load_success = _player->Load();
 				if (load_success)
 				{
@@ -309,7 +305,8 @@ void WorldSession::OnProcessMessage(const Asset::Meta& meta)
 					return;
 				}
 			}
-
+				
+			SetRoleType(Asset::ROLE_TYPE_PLAYER, _player->GetID());
 			WorldSessionInstance.AddPlayer(connect->player_id(), shared_from_this()); //在线玩家，获取网络会话
 
 			_player->SetLocalServer(ConfigInstance.GetInt("ServerID", 1));

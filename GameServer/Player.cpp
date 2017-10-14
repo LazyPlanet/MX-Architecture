@@ -221,7 +221,7 @@ int32_t Player::OnLogout()
 		if (room) room->Remove(_player_id);
 	}
 
-	_stuff.clear_server_id();
+	_stuff.clear_server_id(); //退出游戏逻辑服务器
 
 	Save(true);	//存档数据库
 	PlayerInstance.Remove(_player_id); //删除玩家

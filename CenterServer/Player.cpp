@@ -135,7 +135,7 @@ int32_t Player::OnLogout()
 {
 	_expire_time = CommonTimerInstance.GetTime() + 1800; //30分钟之内没有上线，则删除
 
-	if (!IsCenterServer() && _stuff.room_id() > 0) 
+	if (!IsCenterServer()) 
 	{
 		ERROR("玩家:{}游戏进行中，服务器:{}，房间:{} 不能从大厅退出", _player_id, _stuff.server_id(), _stuff.room_id());
 		WorldSessionInstance.RemovePlayer(_player_id); //网络会话数据
@@ -471,7 +471,7 @@ bool Player::SendProtocol2GameServer(const pb::Message& message)
 	meta.set_stuff(stuff);
 	meta.set_player_id(_player_id); 
 
-	DEBUG("玩家:{}发送协议:{}到游戏逻辑服务器", _player_id, debug_string);
+	DEBUG("玩家:{}发送到游戏逻辑服务器:{}内容:{}", _player_id, _stuff.server_id(), debug_string);
 
 	_gs_session->SendMeta(meta); 
 
@@ -988,7 +988,12 @@ void Player::OnKickOut(Asset::KICK_OUT_REASON reason)
 	{
 		case Asset::KICK_OUT_REASON_DISCONNECT: //玩家杀进程退出
 		{
+			if (IsCenterServer()) break; //中心服没必要发往逻辑服务器//绝对不能
 
+			Asset::KickOutPlayer kickout_player; //通知游戏逻辑服务器退出
+			kickout_player.set_player_id(_player_id);
+			kickout_player.set_reason(reason);
+			SendProtocol2GameServer(kickout_player); 
 		}
 		break;
 
@@ -1008,11 +1013,6 @@ void Player::OnKickOut(Asset::KICK_OUT_REASON reason)
 	kickout.set_player_id(_player_id);
 	kickout.set_reason(reason);
 	SendProtocol(kickout); 
-
-	Asset::KickOutPlayer kickout_player; //通知游戏逻辑服务器退出
-	kickout_player.set_player_id(_player_id);
-	kickout_player.set_reason(reason);
-	SendProtocol2GameServer(kickout_player); 
 
 	Logout(nullptr);
 }

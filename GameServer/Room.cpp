@@ -720,8 +720,9 @@ void Room::OnCreated(std::shared_ptr<Player> hoster)
 { 
 	_hoster = hoster;
 
-	auto curr_time = CommonTimerInstance.GetTime();
-	SetTime(curr_time + g_const->room_last_time());
+	_created_time = CommonTimerInstance.GetTime(); //创建时间
+	_created_timeout = _created_time + _stuff.options().open_rands() / 8 * 3600; //每8局1小时超时
+	SetExpiredTime(_created_time + g_const->room_last_time());
 	
 	_history.set_room_id(GetID());
 	_history.set_create_time(CommonTimerInstance.GetTime()); //创建时间
@@ -864,6 +865,12 @@ bool Room::IsExpired()
 	auto curr_time = CommonTimerInstance.GetTime();
 	return _expired_time < curr_time;
 }
+
+bool Room::IsTimeOut()
+{
+	auto curr_time = CommonTimerInstance.GetTime();
+	return _created_timeout < curr_time;
+}
 	
 void Room::Update()
 {
@@ -967,7 +974,7 @@ void RoomManager::Update(int32_t diff)
 		{
 			it->second->Update();
 
-			if ((it->second->IsExpired() && it->second->IsEmpty()) || it->second->HasDisMiss() || it->second->HasBeenOver())
+			if ((it->second->IsExpired() && it->second->IsEmpty()) || it->second->HasDisMiss() || it->second->HasBeenOver() || it->second->IsTimeOut())
 			{
 				//it->second->KickOutPlayer(); //删除玩家//不能在此处删除，必须玩家主动退出
 				it = _rooms.erase(it); //删除房间
