@@ -81,7 +81,7 @@ int32_t Player::Load()
 
 	_loaded = true;
 
-	DEBUG("玩家:{}加载数据成功", _player_id);
+	DEBUG("玩家:{}加载数据成功，内容:", _player_id, _stuff.ShortDebugString());
 
 	return 0;
 }
@@ -111,8 +111,7 @@ int32_t Player::Save(bool force)
 
 	_dirty = false;
 	
-	auto debug_string = _stuff.ShortDebugString();
-	DEBUG("玩家:{}保存数据，数据内容:{}", _player_id, debug_string);
+	DEBUG("玩家:{}保存数据成功，内容:{}", _player_id, _stuff.ShortDebugString());
 		
 	return 0;
 }
@@ -157,7 +156,7 @@ int32_t Player::OnLogout()
 
 int32_t Player::OnEnterGame(bool is_login) 
 {
-	DEBUG("玩家:{}进入游戏", _player_id);
+	DEBUG("玩家:{}进入游戏，是否已经加载数据:{}", _player_id, _loaded);
 
 	if (!_loaded)
 	{
@@ -432,8 +431,7 @@ void Player::SendMeta(const Asset::Meta& meta)
 	auto session = WorldSessionInstance.GetPlayerSession(_player_id);
 	if (!session || !session->IsConnect()) return;
 	
-	auto debug_string = _stuff.ShortDebugString();
-	DEBUG("玩家:{}发送协议:{}到游戏逻辑服务器", _player_id, debug_string);
+	DEBUG("玩家:{}发送协议:{}到游戏逻辑服务器", _player_id, meta.ShortDebugString());
 
 	session->SendMeta(meta);
 }
