@@ -230,7 +230,7 @@ int64_t Player::ConsumeRoomCard(Asset::ROOM_CARD_CHANGED_TYPE changed_type, int6
 {
 	if (count <= 0) return 0;
 
-	if (!CheckRoomCard(count)) return 0;
+	//if (!CheckRoomCard(count)) return 0;
 
 	_stuff.mutable_common_prop()->set_room_card_count(_stuff.common_prop().room_card_count() - count);
 	_dirty = true;
@@ -242,7 +242,7 @@ int64_t Player::ConsumeRoomCard(Asset::ROOM_CARD_CHANGED_TYPE changed_type, int6
 
 int64_t Player::GainRoomCard(Asset::ROOM_CARD_CHANGED_TYPE changed_type, int64_t count) 
 {
-	if (count <= 0) return 0;
+	//if (count <= 0) return 0;
 
 	_stuff.mutable_common_prop()->set_room_card_count(_stuff.common_prop().room_card_count() + count);
 	_dirty = true;
