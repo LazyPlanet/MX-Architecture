@@ -276,9 +276,10 @@ void Room::OnPlayerLeave(int64_t player_id)
 
 std::shared_ptr<Player> Room::GetHoster()
 {
-	if (_players.size() <= 0) return nullptr;
+	//if (_players.size() <= 0) return nullptr;
 
-	return *_players.begin(); //房间里面的一个人就是房主
+	//return *_players.begin(); //房间里面的一个人就是房主
+	return _hoster;
 }
 
 bool Room::IsHoster(int64_t player_id)
