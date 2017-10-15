@@ -81,7 +81,7 @@ int32_t Player::Load()
 
 	_loaded = true;
 
-	DEBUG("玩家:{}加载数据成功，内容:", _player_id, _stuff.ShortDebugString());
+	DEBUG("玩家:{}加载数据成功，内容:{}", _player_id, _stuff.ShortDebugString());
 
 	return 0;
 }
@@ -986,7 +986,11 @@ void Player::OnKickOut(Asset::KICK_OUT_REASON reason)
 	{
 		case Asset::KICK_OUT_REASON_DISCONNECT: //玩家杀进程退出
 		{
-			if (IsCenterServer()) break; //中心服没必要发往逻辑服务器//绝对不能
+			if (IsCenterServer()) 
+			{
+				DEBUG("玩家:{}在中心服务器，尚不能发往游戏逻辑服:{}", _player_id, _stuff.server_id());
+				break; //中心服没必要发往逻辑服务器//绝对不能
+			}
 
 			Asset::KickOutPlayer kickout_player; //通知游戏逻辑服务器退出
 			kickout_player.set_player_id(_player_id);
