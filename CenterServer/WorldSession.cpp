@@ -58,7 +58,7 @@ void WorldSession::InitializeHandler(const boost::system::error_code error, cons
 
 				if (!result) 
 				{
-					LOG(ERROR, "接收来自地址:{} 端口:{} 玩家:{} 转换Protobuff数据失败.", _ip_address, _remote_endpoint.port(), _player ? _player->GetID() : 0);
+					if (_player && _player->GetID()) LOG(ERROR, "接收来自地址:{} 端口:{} 玩家:{} 转换Protobuff数据失败.", _ip_address, _remote_endpoint.port(), _player ? _player->GetID() : 0);
 					AsyncReceiveWithCallback(&WorldSession::InitializeHandler); //递归持续接收	
 					return; //非法协议
 				}
@@ -81,8 +81,10 @@ void WorldSession::InitializeHandler(const boost::system::error_code error, cons
 			
 void WorldSession::OnProcessMessage(const Asset::Meta& meta)
 {
+	if (meta.type_t() == Asset::META_TYPE_SHARE_BEGIN) return;
+
 	pb::Message* msg = ProtocolInstance.GetMessage(meta.type_t());	
-	if (!msg) 
+	if (!msg)
 	{
 		ERROR("会话类型:{} 会话全局ID:{} 尚未找到协议处理回调，协议类型:{} 对方IP地址:{}", _role_type, _global_id, meta.type_t(), _ip_address);
 		return;		//非法协议
@@ -93,7 +95,7 @@ void WorldSession::OnProcessMessage(const Asset::Meta& meta)
 	auto result = message->ParseFromArray(meta.stuff().c_str(), meta.stuff().size());
 	if (!result) 
 	{
-		DEBUG_ASSERT(false);
+		LOG(ERROR, "会话类型:{} 会话全局ID:{} 转换协议失败，协议类型:{} 对方IP地址:{}", _role_type, _global_id, meta.type_t(), _ip_address);
 		return;		//非法协议
 	}
 
@@ -289,8 +291,6 @@ void WorldSession::OnProcessMessage(const Asset::Meta& meta)
 			Asset::ReConnect* connect = dynamic_cast<Asset::ReConnect*>(message);
 			if (!connect) return; 
 
-			WARN("玩家:{}断线重连", connect->player_id());
-
 			_player = PlayerInstance.Get(connect->player_id());
 
 			if (!_player) 
@@ -300,8 +300,6 @@ void WorldSession::OnProcessMessage(const Asset::Meta& meta)
 				//
 				_player = std::make_shared<Player>(connect->player_id()); //服务器已经没有缓存
 
-				SetRoleType(Asset::ROLE_TYPE_PLAYER, _player->GetID());
-
 				auto load_success = _player->Load();
 				if (load_success)
 				{
@@ -309,7 +307,8 @@ void WorldSession::OnProcessMessage(const Asset::Meta& meta)
 					return;
 				}
 			}
-
+				
+			SetRoleType(Asset::ROLE_TYPE_PLAYER, _player->GetID());
 			WorldSessionInstance.AddPlayer(connect->player_id(), shared_from_this()); //在线玩家，获取网络会话
 
 			_player->SetLocalServer(ConfigInstance.GetInt("ServerID", 1));
@@ -352,17 +351,15 @@ void WorldSession::OnProcessMessage(const Asset::Meta& meta)
 			{
 				_player = std::make_shared<Player>(enter_game->player_id());
 				WorldSessionInstance.AddPlayer(enter_game->player_id(), shared_from_this()); //在线玩家
-					
-				SetRoleType(Asset::ROLE_TYPE_PLAYER, _player->GetID());
 			}
 
 			if (_player->Load())
 			{
-				DEBUG_ASSERT(false);
-				
 				LOG(ERROR, "玩家进入游戏，角色ID:{} 加载数据失败", enter_game->player_id());
 				return; //数据加载失败必须终止
 			}
+			
+			SetRoleType(Asset::ROLE_TYPE_PLAYER, _player->GetID());
 			
 			//
 			//必须放在角色初始化之后，后面很多操作都依赖此处，比如存盘
@@ -406,12 +403,7 @@ void WorldSession::OnProcessMessage(const Asset::Meta& meta)
 			//
 			if (_player->OnEnterGame()) //理论上不会出现
 			{
-				Asset::AlertMessage alert;
-				alert.set_error_type(Asset::ERROR_TYPE_NORMAL);
-				alert.set_error_show_type(Asset::ERROR_SHOW_TYPE_CHAT);
-				alert.set_error_code(Asset::ERROR_DATABASE); //数据库错误
-
-				SendProtocol(alert);
+				_player->AlertMessage(Asset::ERROR_DATABASE);
 			}
 		}
 		else if (Asset::META_TYPE_C2S_SWITCH_ACCOUNT == meta.type_t()) //切换账号
@@ -457,6 +449,8 @@ void WorldSession::OnProcessMessage(const Asset::Meta& meta)
 				{
 					enter_room->set_error_code(Asset::ERROR_ROOM_NOT_FOUNT);
 					SendProtocol(message);
+
+					_player->AlertMessage(Asset::ERROR_ROOM_NOT_FOUNT, Asset::ERROR_TYPE_NORMAL, Asset::ERROR_SHOW_TYPE_MESSAGE_BOX); //通用错误码
 					return;
 				}
 			}

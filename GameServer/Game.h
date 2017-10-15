@@ -47,6 +47,8 @@ private:
 
 	bool _liuju = false; //是否流局
 	std::vector<Asset::PaiElement> _cards_pool; //牌池，玩家已经打的牌缓存
+
+	Asset::PlayBack _playback; //回放数据
 public:
 	virtual void Init(std::shared_ptr<Room> room); //初始化
 	virtual bool Start(std::vector<std::shared_ptr<Player>> players); //开始游戏
@@ -72,7 +74,8 @@ public:
 	void SetPaiOperation(int64_t player_id, int64_t from_player_id, Asset::PaiElement pai, Asset::PAI_OPER_TYPE oper_type);
 
 	bool SendCheckRtn(); //发送当前可以操作的牌数据
-	bool CheckPai(const Asset::PaiElement& pai, int64_t from_player_id); //检查牌形：返回待操作的玩家ID
+	bool CheckPai(const Asset::PaiElement& pai, int64_t from_player_id); //检查玩家可以进行的牌操作,包括胡//杠//碰//吃
+	bool CheckQiangGang(const Asset::PaiElement& pai, int64_t from_player_id); //抢杠胡
 	
 	std::shared_ptr<Player> GetNextPlayer(int64_t player_id); //获取下家
 	std::shared_ptr<Player> GetPlayer(int64_t player_id); //获取玩家
@@ -115,6 +118,9 @@ public:
 
 	void SetCurrPlayerIndex(int64_t curr_player_index) { _curr_player_index = curr_player_index; } //设置当前可操作的玩家
 	int32_t GetCurrPlayerIndex() { return _curr_player_index; }
+
+	void SavePlayBack(); //回放存储
+	void AddPlayerOperation(const Asset::PaiOperation& pai_operate) { _playback.mutable_oper_list()->Add()->CopyFrom(pai_operate); } //回放记录
 };
 
 /////////////////////////////////////////////////////

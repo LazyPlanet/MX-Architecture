@@ -196,7 +196,7 @@ public:
 	bool PushBackItem(Asset::INVENTORY_TYPE inventory_type, Item* item); //存放物品
 
 	//通用错误码提示
-	void AlertMessage(Asset::ERROR_CODE error_code, Asset::ERROR_TYPE error_type = Asset::ERROR_TYPE_NORMAL, Asset::ERROR_SHOW_TYPE error_show_type = Asset::ERROR_SHOW_TYPE_CHAT);
+	void AlertMessage(Asset::ERROR_CODE error_code, Asset::ERROR_TYPE error_type = Asset::ERROR_TYPE_NORMAL, Asset::ERROR_SHOW_TYPE error_show_type = Asset::ERROR_SHOW_TYPE_NORMAL);
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	//
@@ -328,11 +328,16 @@ public:
 			int32_t jiangang, //旋风杠，本质是明杠
 			int32_t fenggang, //旋风杠，本质是暗杠
 			const Asset::PaiElement& pai); //胡牌
-	bool DebugCheckHuPai(const Asset::PaiElement& pai, bool check_zibo = false); //调试胡牌检查
+
+	bool HasYaoJiu(const std::map<int32_t, std::vector<int32_t>>& cards_inhand, //玩家手里的牌
+			const std::map<int32_t, std::vector<int32_t>>& cards_outhand, //玩家墙外牌
+			const std::vector<Asset::PaiElement>& minggang, //明杠
+			const std::vector<Asset::PaiElement>& angang, //暗杠
+			int32_t jiangang, //旋风杠，本质是明杠
+			int32_t fenggang); //旋风杠，本质是暗杠
 
 	std::unordered_set<int32_t> GetFanList() { return _fan_list; }
 
-	void DebugCommand();
 	bool CheckGangPai(const Asset::PaiElement& pai, int64_t from_player_id); //是否可以杠牌
 
 	//有玩家一直不杠牌，每次都要提示
@@ -341,6 +346,7 @@ public:
 	bool CheckAllGangPai(::google::protobuf::RepeatedField<Asset::PaiOperationAlert_AlertElement>& gang_list); 
 
 	void OnGangPai(const Asset::PaiElement& pai, int64_t from_player_id); //杠牌
+	void OnBeenQiangGang(const Asset::PaiElement& pai, int64_t from_player_id); //杠牌
 	
 	bool CheckFengGangPai(std::map<int32_t/*麻将牌类型*/, std::vector<int32_t>/*牌值*/>& cards); //是否有旋风杠
 	bool CheckJianGangPai(std::map<int32_t/*麻将牌类型*/, std::vector<int32_t>/*牌值*/>& cards); //是否有箭杠
@@ -394,11 +400,11 @@ public:
 	int32_t GetJianGang() { return _jiangang; } //旋风杠，本质是明杠
 	int32_t GetFengGang() { return _fenggang; } //旋风杠，本质是暗杠
 
-	void PreCheckOnFaPai(); //发牌前置检查
 	void NormalCheckAfterFaPai(const Asset::PaiElement& pai); //发牌后，玩家手里牌通用检查
 
 	bool IsReady() { return _player_prop.game_oper_state() == Asset::GAME_OPER_TYPE_START; } //是否已经在准备状态 
 	bool AgreeDisMiss() { return _player_prop.game_oper_state() == Asset::GAME_OPER_TYPE_DISMISS_AGREE; } //是否同意解散 
+	bool DisAgreeDisMiss() { return _player_prop.game_oper_state() == Asset::GAME_OPER_TYPE_DISMISS_DISAGREE; } //是否拒绝解散 
 	void ClearDisMiss() { _player_prop.clear_game_oper_state(); }
 
 	Asset::GAME_OPER_TYPE GetOperState();
@@ -414,6 +420,8 @@ public:
 	int32_t GetCardCount();	//获取当前玩家手中牌数
 	bool CheckCardsInhand(); //手牌数量检查
 	bool CheckHuCardsInhand(); //手牌胡牌数量检查
+	bool ShouldDaPai(); //是否可以打牌
+	bool ShouldZhuaPai(); //是否可以抓牌
 
 	const std::map<int32_t, std::vector<int32_t>>& GetCardsInhand() { return _cards_inhand; }
 	const std::map<int32_t, std::vector<int32_t>>& GetCardsOuthand() { return _cards_outhand; }
@@ -446,7 +454,7 @@ public:
 class PlayerManager : public std::enable_shared_from_this<PlayerManager>
 {
 private:
-	std::mutex _mutex;
+	std::mutex _player_lock;
 	std::unordered_map<int64_t, std::shared_ptr<Player>> _players; //实体为智能指针，不要传入引用
 	int32_t _heart_count = 0;
 public:

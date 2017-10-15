@@ -36,7 +36,9 @@ private:
 	std::unordered_map<int64_t, int32_t> _bankers;
 	std::unordered_map<int64_t, int32_t> _streak_wins;
 	bool _is_dismiss = false;
-	int32_t _dismiss_time = 0; //解散房间时间
+	int32_t _dismiss_time = 0; //解散时间
+	int32_t _created_time = 0; //创建时间
+	int32_t _created_timeout = 0; //超时时间
 	int32_t _dismiss_cooldown = 0; //解散冷却时间
 public:
 	explicit Room(Asset::Room room) {  _stuff = room; }
@@ -55,8 +57,8 @@ public:
 
 	bool IsVoiceOpen() { return _stuff.options().voice_open(); }
 
-	int32_t GetTime() { return _expired_time; } //获取过期时间
-	void SetTime(int32_t expired_time) { _expired_time = expired_time; }
+	int32_t GetExpiredTime() { return _expired_time; } //获取过期时间
+	void SetExpiredTime(int32_t expired_time) { _expired_time = expired_time; }
 
 	void AddGameRecord(const Asset::GameRecord& record); //记录
 	void AddHupai(int64_t player_id);
@@ -80,7 +82,9 @@ public:
 	bool CanDisMiss(); //能否解散
 	int32_t GetRemainCount(); //剩余游戏次数
 	int32_t GetGamesCount() { return _games.size(); }
+	int32_t GetOpenRands() { return _stuff.options().open_rands(); }
 	bool HasStarted() { return _games.size() > 0; }
+	bool HasBeenOver() { return !_game && GetRemainCount() <= 0; }
 	std::shared_ptr<Game> GetGame() { return _game; }
 
 	void OnPlayerOperate(std::shared_ptr<Player> player, pb::Message* message);
@@ -114,6 +118,7 @@ public:
 	bool IsBanker(int64_t player_id){ return _banker == player_id; } //是否是庄家
 
 	bool IsExpired(); //是否过期
+	bool IsTimeOut(); //是否超时
 	bool HasDisMiss() { return _is_dismiss; } //是否解散状态
 	void ClearDisMiss(); //清除解散状态
 };
@@ -125,6 +130,7 @@ class RoomManager
 {
 private:
 	std::mutex _no_password_mutex;
+	std::mutex _room_lock;
 	//所有房间(包括已满、未满、要密码、不要密码)
 	std::unordered_map<int64_t, std::shared_ptr<Room>> _rooms;
 	//要输入密码，可入的房间
@@ -148,7 +154,7 @@ public:
 		return _instance;
 	}
 	
-	int64_t CreateRoom(); //创建房间：获取房间全局ID
+	int64_t AllocRoom(); //创建房间：获取房间全局ID
 	std::shared_ptr<Room> CreateRoom(const Asset::Room& room); //通过配置创建房间
 	bool OnCreateRoom(std::shared_ptr<Room> room); //进入房间回调
 	std::shared_ptr<Room> Get(int64_t room_id); //获取房间

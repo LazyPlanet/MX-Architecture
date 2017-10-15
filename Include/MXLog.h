@@ -114,7 +114,7 @@ public:
 		auto console = spdlog::stdout_color_mt("console");
 		console->set_level(spdlog::level::trace);
 		//控制台日志历史记录
-		auto rotating_logger = spdlog::rotating_logger_mt("console_history", "logs/history", 1048576 * 300, 14); //300MB 14天
+		auto rotating_logger = spdlog::rotating_logger_mt("console_history", "logs/history", 1048576 * 500, 20); //500MB 20个文件
 		rotating_logger->flush_on(spdlog::level::trace);
 		//玩家日志
 		auto player_info = spdlog::daily_logger_st("player_info", "logs/player");

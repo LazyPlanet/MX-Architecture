@@ -141,6 +141,8 @@ public:
 	virtual int32_t CmdGetBattleHistory(pb::Message* message);
 	//充值
 	virtual int32_t CmdRecharge(pb::Message* message);
+	//回放
+	virtual int32_t CmdPlayBack(pb::Message* message);
 public:
 	//获取所有包裹
 	const Asset::Inventory& GetInventory() { return _stuff.inventory();	}
@@ -149,7 +151,7 @@ public:
 	Asset::Inventory_Element* GetMutableInventory(Asset::INVENTORY_TYPE type) { return _stuff.mutable_inventory()->mutable_inventory(type);	}	
 	//通用错误码提示
 	void AlertMessage(Asset::ERROR_CODE error_code, Asset::ERROR_TYPE error_type = Asset::ERROR_TYPE_NORMAL, 
-			Asset::ERROR_SHOW_TYPE error_show_type = Asset::ERROR_SHOW_TYPE_CHAT);
+			Asset::ERROR_SHOW_TYPE error_show_type = Asset::ERROR_SHOW_TYPE_NORMAL);
 
 	//
 	// 欢乐豆相关

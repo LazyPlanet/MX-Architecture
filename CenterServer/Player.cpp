@@ -41,6 +41,7 @@ Player::Player()
 	AddHandler(Asset::META_TYPE_SHARE_GAME_SETTING, std::bind(&Player::CmdGameSetting, this, std::placeholders::_1));
 	AddHandler(Asset::META_TYPE_SHARE_ROOM_HISTORY, std::bind(&Player::CmdGetBattleHistory, this, std::placeholders::_1));
 	AddHandler(Asset::META_TYPE_SHARE_RECHARGE, std::bind(&Player::CmdRecharge, this, std::placeholders::_1));
+	AddHandler(Asset::META_TYPE_SHARE_PLAY_BACK, std::bind(&Player::CmdPlayBack, this, std::placeholders::_1));
 
 	AddHandler(Asset::META_TYPE_C2S_GET_REWARD, std::bind(&Player::CmdGetReward, this, std::placeholders::_1));
 }
@@ -80,7 +81,7 @@ int32_t Player::Load()
 
 	_loaded = true;
 
-	DEBUG("玩家:{}加载数据成功", _player_id);
+	DEBUG("玩家:{}加载数据成功，内容:{}", _player_id, _stuff.ShortDebugString());
 
 	return 0;
 }
@@ -110,8 +111,7 @@ int32_t Player::Save(bool force)
 
 	_dirty = false;
 	
-	auto debug_string = _stuff.ShortDebugString();
-	DEBUG("玩家:{}保存数据，数据内容:{}", _player_id, debug_string);
+	DEBUG("玩家:{}保存数据成功，内容:{}", _player_id, _stuff.ShortDebugString());
 		
 	return 0;
 }
@@ -120,7 +120,7 @@ bool Player::IsExpire()
 {
 	if (_expire_time == 0) return false;
 
-	return _expire_time > CommonTimerInstance.GetTime();
+	return _expire_time < CommonTimerInstance.GetTime();
 }
 	
 int32_t Player::Logout(pb::Message* message)
@@ -132,11 +132,11 @@ int32_t Player::Logout(pb::Message* message)
 	
 int32_t Player::OnLogout()
 {
-	_expire_time = CommonTimerInstance.GetTime() + 3600; //1小时之内没有上线，则删除
+	_expire_time = CommonTimerInstance.GetTime() + 1800; //30分钟之内没有上线，则删除
 
 	if (!IsCenterServer()) 
 	{
-		ERROR("玩家:{}游戏进行中，不能从大厅退出", _player_id);
+		ERROR("玩家:{}游戏进行中，服务器:{}，房间:{} 不能从大厅退出", _player_id, _stuff.server_id(), _stuff.room_id());
 		WorldSessionInstance.RemovePlayer(_player_id); //网络会话数据
 		return 1; //玩家在游戏进行中，不能退出
 	}
@@ -156,7 +156,7 @@ int32_t Player::OnLogout()
 
 int32_t Player::OnEnterGame(bool is_login) 
 {
-	DEBUG("玩家:{}进入游戏", _player_id);
+	DEBUG("玩家:{}进入游戏，是否已经加载数据:{}", _player_id, _loaded);
 
 	if (!_loaded)
 	{
@@ -185,7 +185,11 @@ int32_t Player::OnEnterGame(bool is_login)
 
 int32_t Player::OnEnterCenter() 
 {
-	if (Load()) return 1;
+	if (Load()) 
+	{
+		ERROR("玩家:{}加载数据失败", _player_id);
+		return 1;
+	}
 	
 	_stuff.set_login_time(CommonTimerInstance.GetTime());
 	_stuff.set_logout_time(0);
@@ -219,7 +223,7 @@ bool Player::IsCenterServer()
 { 
 	int32_t curr_server_id = ConfigInstance.GetInt("ServerID", 1);
 
-	return _stuff.server_id() == curr_server_id;
+	return _stuff.server_id() == 0 || _stuff.server_id() == curr_server_id;
 }
 	
 int64_t Player::ConsumeRoomCard(Asset::ROOM_CARD_CHANGED_TYPE changed_type, int64_t count)
@@ -427,8 +431,7 @@ void Player::SendMeta(const Asset::Meta& meta)
 	auto session = WorldSessionInstance.GetPlayerSession(_player_id);
 	if (!session || !session->IsConnect()) return;
 	
-	auto debug_string = _stuff.ShortDebugString();
-	DEBUG("玩家:{}发送协议:{}到游戏逻辑服务器", _player_id, debug_string);
+	DEBUG("玩家:{}发送协议:{}到游戏逻辑服务器", _player_id, meta.ShortDebugString());
 
 	session->SendMeta(meta);
 }
@@ -466,7 +469,7 @@ bool Player::SendProtocol2GameServer(const pb::Message& message)
 	meta.set_stuff(stuff);
 	meta.set_player_id(_player_id); 
 
-	DEBUG("玩家:{}发送协议:{}到游戏逻辑服务器", _player_id, debug_string);
+	DEBUG("玩家:{}发送到游戏逻辑服务器:{}内容:{}", _player_id, _stuff.server_id(), debug_string);
 
 	_gs_session->SendMeta(meta); 
 
@@ -556,6 +559,7 @@ bool Player::HandleProtocol(int32_t type_t, pb::Message* message)
 	if (!message) return false;
 
 	auto debug_string = message->ShortDebugString();
+
 	DEBUG("当前玩家{}所在服务器:{} 接收协议数据:{}", _player_id, _stuff.server_id(), debug_string);
 	//
 	//如果中心服务器没有协议处理回调，则发往游戏服务器进行处理
@@ -591,7 +595,7 @@ bool Player::HandleProtocol(int32_t type_t, pb::Message* message)
 }
 
 void Player::AlertMessage(Asset::ERROR_CODE error_code, Asset::ERROR_TYPE error_type/*= Asset::ERROR_TYPE_NORMAL*/, 
-		Asset::ERROR_SHOW_TYPE error_show_type/* = Asset::ERROR_SHOW_TYPE_CHAT*/)
+		Asset::ERROR_SHOW_TYPE error_show_type/* = Asset::ERROR_SHOW_TYPE_NORMAL*/)
 {
 	Asset::AlertMessage message;
 	message.set_error_type(error_type);
@@ -848,6 +852,53 @@ int32_t Player::CmdRecharge(pb::Message* message)
 	return 0;
 }
 
+int32_t Player::CmdPlayBack(pb::Message* message)
+{
+	auto play_back = dynamic_cast<const Asset::PlayBack*>(message);
+	if (!play_back) return 1;
+	
+	cpp_redis::future_client client;
+	client.connect(ConfigInstance.GetString("Redis_ServerIP", "127.0.0.1"), ConfigInstance.GetInt("Redis_ServerPort", 6379));
+	if (!client.is_connected()) 
+	{
+		SendProtocol(play_back);
+		return 5;
+	}
+	
+	auto has_auth = client.auth(ConfigInstance.GetString("Redis_Password", "!QAZ%TGB&UJM9ol."));
+	if (has_auth.get().ko()) 
+	{
+		SendProtocol(play_back);
+		return 2;
+	}
+
+	auto room_id = play_back->room_id();
+	auto game_index = play_back->game_index();
+
+	std::string key = "playback:" + std::to_string(room_id) + "_" + std::to_string(game_index);
+	auto get = client.get(key);
+	cpp_redis::reply reply = get.get();
+	client.commit();
+
+	if (!reply.is_string()) 
+	{
+		SendProtocol(play_back);
+		return 3;
+	}
+		
+	Asset::PlayBack playback;
+	auto success = playback.ParseFromString(reply.as_string());
+	if (!success) 
+	{
+		SendProtocol(play_back);
+		return 4;
+	}
+
+	SendProtocol(playback);
+	
+	return 0;
+}
+
 void Player::BattleHistory(int32_t start_index, int32_t end_index)
 {
 	Asset::BattleHistory message;
@@ -876,7 +927,7 @@ void Player::BattleHistory(int32_t start_index, int32_t end_index)
 		std::vector<int32_t> room_history(_stuff.room_history().begin(), _stuff.room_history().end());
 		_stuff.mutable_room_history()->Clear();
 
-		for (int i = 0; i < 10; ++i) _stuff.mutable_room_history()->Add(room_history[i]);
+		for (size_t i = room_history.size() - 10; i < room_history.size(); ++i) _stuff.mutable_room_history()->Add(room_history[i]); //保留最新10条数据
 
 		SetDirty();
 	}
@@ -935,7 +986,16 @@ void Player::OnKickOut(Asset::KICK_OUT_REASON reason)
 	{
 		case Asset::KICK_OUT_REASON_DISCONNECT: //玩家杀进程退出
 		{
+			if (IsCenterServer()) 
+			{
+				DEBUG("玩家:{}在中心服务器，尚不能发往游戏逻辑服:{}", _player_id, _stuff.server_id());
+				break; //中心服没必要发往逻辑服务器//绝对不能
+			}
 
+			Asset::KickOutPlayer kickout_player; //通知游戏逻辑服务器退出
+			kickout_player.set_player_id(_player_id);
+			kickout_player.set_reason(reason);
+			SendProtocol2GameServer(kickout_player); 
 		}
 		break;
 
@@ -955,11 +1015,6 @@ void Player::OnKickOut(Asset::KICK_OUT_REASON reason)
 	kickout.set_player_id(_player_id);
 	kickout.set_reason(reason);
 	SendProtocol(kickout); 
-
-	Asset::KickOutPlayer kickout_player; //通知游戏逻辑服务器退出
-	kickout_player.set_player_id(_player_id);
-	kickout_player.set_reason(reason);
-	SendProtocol2GameServer(kickout_player); 
 
 	Logout(nullptr);
 }
