@@ -1464,14 +1464,14 @@ int32_t Player::CmdLoadScene(pb::Message* message)
 			_player_prop.clear_load_type(); 
 			_player_prop.clear_room_id(); 
 	
-			if (/*_stuff.room_id() > 0 && */_stuff.room_id() != room_id)
+			if (_stuff.room_id() > 0 && _stuff.room_id() != room_id)
 			{
 				LOG(ERROR, "玩家:{}加载房间:{}和保存的房间:{}不一致", _player_id, room_id, _stuff.room_id());
-
+			
 				_stuff.set_room_id(room_id); 
 				_dirty = true;
 			}
-			
+				
 			OnEnterScene(is_reenter); //进入房间//场景回调
 			
 			DEBUG("玩家:{} 加入房间:{}成功.", _player_id, room_id);
