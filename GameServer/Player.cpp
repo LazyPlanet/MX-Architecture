@@ -110,7 +110,7 @@ int32_t Player::Save(bool force)
 		return 2;
 	}
 	
-	DEBUG("玩家:{}数据:{}", _player_id, _stuff.ShortDebugString())
+	DEBUG("玩家:{}保存数据:{}", _player_id, _stuff.ShortDebugString())
 
 	_dirty = false;
 

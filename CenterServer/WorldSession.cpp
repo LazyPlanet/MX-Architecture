@@ -351,17 +351,15 @@ void WorldSession::OnProcessMessage(const Asset::Meta& meta)
 			{
 				_player = std::make_shared<Player>(enter_game->player_id());
 				WorldSessionInstance.AddPlayer(enter_game->player_id(), shared_from_this()); //在线玩家
-					
-				SetRoleType(Asset::ROLE_TYPE_PLAYER, _player->GetID());
 			}
 
 			if (_player->Load())
 			{
-				DEBUG_ASSERT(false);
-				
 				LOG(ERROR, "玩家进入游戏，角色ID:{} 加载数据失败", enter_game->player_id());
 				return; //数据加载失败必须终止
 			}
+			
+			SetRoleType(Asset::ROLE_TYPE_PLAYER, _player->GetID());
 			
 			//
 			//必须放在角色初始化之后，后面很多操作都依赖此处，比如存盘
