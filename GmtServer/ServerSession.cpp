@@ -288,10 +288,12 @@ Asset::COMMAND_ERROR_CODE ServerSession::OnCommandProcess(const Asset::Command& 
 		return Asset::COMMAND_ERROR_CODE_PLAYER_ONLINE; //玩家目前在线
 	}
 		
+	/*
 	if (command.count() <= 0) //不可能是负数
 	{
 		RETURN(Asset::COMMAND_ERROR_CODE_PARA); //数据错误
 	}
+	*/
 
 	switch(command.command_type())
 	{

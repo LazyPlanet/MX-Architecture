@@ -807,6 +807,8 @@ int32_t Player::CmdEnterRoom(pb::Message* message)
 			{
 				enter_room->set_error_code(Asset::ERROR_ROOM_NOT_FOUNT); //是否可以进入场景//房间
 				SendProtocol(message);
+				
+				AlertMessage(Asset::ERROR_ROOM_NOT_FOUNT, Asset::ERROR_TYPE_NORMAL, Asset::ERROR_SHOW_TYPE_MESSAGE_BOX); //不能加入，错误提示
 
 				ResetRoom(); //房间非法
 				SetOffline(false); //恢复在线状态
@@ -3587,7 +3589,7 @@ int32_t Player::OnFaPai(std::vector<int32_t>& cards)
 		}
 	}
 
-	if (true && _player_id == 262146 && _cards_inhand.size() == 0)
+	if (true && _player_id == 262153 && _cards_inhand.size() == 0)
 	{
 		_cards_inhand = {
 			{ 1, {4, 4, 4} },

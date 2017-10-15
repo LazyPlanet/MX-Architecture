@@ -191,10 +191,12 @@ Asset::COMMAND_ERROR_CODE GmtManager::OnCommandProcess(const Asset::Command& com
 		RETURN(Asset::COMMAND_ERROR_CODE_PARA); //数据错误
 	}
 	
+	/*
 	if (command.count() <= 0) //不应该是负数
 	{
 		RETURN(Asset::COMMAND_ERROR_CODE_PARA); //数据错误
 	}
+	*/
 	
 	auto player_ptr = PlayerInstance.Get(player_id);
 	//
