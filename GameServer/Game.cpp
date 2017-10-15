@@ -628,6 +628,9 @@ void Game::OnPaiOperate(std::shared_ptr<Player> player, pb::Message* message)
 			else if (Asset::PAI_OPER_TYPE_GANGPAI == pai_operate->oper_type() && CheckQiangGang(pai, player->GetID()))
 			{
 				player->OnBeenQiangGang(pai, _oper_cache.from_player_id()); //删除牌和牌池处理
+					
+				auto from_player = GetPlayer(_oper_cache.from_player_id());
+				if (from_player) from_player->CardsPoolPop(); //删除牌池
 
 				SendCheckRtn();
 			}
