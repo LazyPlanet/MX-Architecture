@@ -325,7 +325,8 @@ void Room::OnPlayerOperate(std::shared_ptr<Player> player, pb::Message* message)
 
 			_game->Start(_players); //开始游戏
 
-			_games.push_back(_game); //游戏
+			for (int32_t i = 0; i < 8; ++i) //直接第8局
+				_games.push_back(_game); //游戏
 
 			OnGameStart();
 		}
@@ -856,6 +857,13 @@ void Room::ClearDisMiss()
 {
 	_dismiss_time = 0;
 	_dismiss_cooldown = 0;
+	
+	for (auto player : _players)
+	{
+		if (!player) continue;
+
+		if (player->AgreeDisMiss() || player->DisAgreeDisMiss()) player->ClearDisMiss(); //必须重新投票
+	}
 
 	if (!_game) SyncRoom();
 }

@@ -403,12 +403,7 @@ void WorldSession::OnProcessMessage(const Asset::Meta& meta)
 			//
 			if (_player->OnEnterGame()) //理论上不会出现
 			{
-				Asset::AlertMessage alert;
-				alert.set_error_type(Asset::ERROR_TYPE_NORMAL);
-				alert.set_error_show_type(Asset::ERROR_SHOW_TYPE_CHAT);
-				alert.set_error_code(Asset::ERROR_DATABASE); //数据库错误
-
-				SendProtocol(alert);
+				_player->AlertMessage(Asset::ERROR_DATABASE);
 			}
 		}
 		else if (Asset::META_TYPE_C2S_SWITCH_ACCOUNT == meta.type_t()) //切换账号
@@ -455,7 +450,7 @@ void WorldSession::OnProcessMessage(const Asset::Meta& meta)
 					enter_room->set_error_code(Asset::ERROR_ROOM_NOT_FOUNT);
 					SendProtocol(message);
 
-					_player->AlertMessage(Asset::ERROR_ROOM_NOT_FOUNT); //通用错误码
+					_player->AlertMessage(Asset::ERROR_ROOM_NOT_FOUNT, Asset::ERROR_TYPE_NORMAL, Asset::ERROR_SHOW_TYPE_MESSAGE_BOX); //通用错误码
 					return;
 				}
 			}

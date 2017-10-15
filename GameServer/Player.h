@@ -196,7 +196,7 @@ public:
 	bool PushBackItem(Asset::INVENTORY_TYPE inventory_type, Item* item); //存放物品
 
 	//通用错误码提示
-	void AlertMessage(Asset::ERROR_CODE error_code, Asset::ERROR_TYPE error_type = Asset::ERROR_TYPE_NORMAL, Asset::ERROR_SHOW_TYPE error_show_type = Asset::ERROR_SHOW_TYPE_CHAT);
+	void AlertMessage(Asset::ERROR_CODE error_code, Asset::ERROR_TYPE error_type = Asset::ERROR_TYPE_NORMAL, Asset::ERROR_SHOW_TYPE error_show_type = Asset::ERROR_SHOW_TYPE_NORMAL);
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	//
@@ -346,6 +346,7 @@ public:
 	bool CheckAllGangPai(::google::protobuf::RepeatedField<Asset::PaiOperationAlert_AlertElement>& gang_list); 
 
 	void OnGangPai(const Asset::PaiElement& pai, int64_t from_player_id); //杠牌
+	void OnBeenQiangGang(const Asset::PaiElement& pai, int64_t from_player_id); //杠牌
 	
 	bool CheckFengGangPai(std::map<int32_t/*麻将牌类型*/, std::vector<int32_t>/*牌值*/>& cards); //是否有旋风杠
 	bool CheckJianGangPai(std::map<int32_t/*麻将牌类型*/, std::vector<int32_t>/*牌值*/>& cards); //是否有箭杠
@@ -403,6 +404,7 @@ public:
 
 	bool IsReady() { return _player_prop.game_oper_state() == Asset::GAME_OPER_TYPE_START; } //是否已经在准备状态 
 	bool AgreeDisMiss() { return _player_prop.game_oper_state() == Asset::GAME_OPER_TYPE_DISMISS_AGREE; } //是否同意解散 
+	bool DisAgreeDisMiss() { return _player_prop.game_oper_state() == Asset::GAME_OPER_TYPE_DISMISS_DISAGREE; } //是否拒绝解散 
 	void ClearDisMiss() { _player_prop.clear_game_oper_state(); }
 
 	Asset::GAME_OPER_TYPE GetOperState();

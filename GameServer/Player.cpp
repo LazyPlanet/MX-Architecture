@@ -905,7 +905,8 @@ int32_t Player::CmdEnterRoom(pb::Message* message)
 				}
 			}
 			
-			if (enter_room->error_code() != Asset::ERROR_SUCCESS) AlertMessage(enter_room->error_code()); //不能加入，错误提示
+			if (enter_room->error_code() != Asset::ERROR_SUCCESS) 
+				AlertMessage(enter_room->error_code(), Asset::ERROR_TYPE_NORMAL, Asset::ERROR_SHOW_TYPE_MESSAGE_BOX); //不能加入，错误提示
 
 			SendProtocol(enter_room);
 		}
@@ -1259,7 +1260,7 @@ void Player::ResetRoom()
 }
 
 void Player::AlertMessage(Asset::ERROR_CODE error_code, Asset::ERROR_TYPE error_type/*= Asset::ERROR_TYPE_NORMAL*/, 
-		Asset::ERROR_SHOW_TYPE error_show_type/* = Asset::ERROR_SHOW_TYPE_CHAT*/)
+		Asset::ERROR_SHOW_TYPE error_show_type/* = Asset::ERROR_SHOW_TYPE_NORMAL*/)
 {
 	Asset::AlertMessage message;
 	message.set_error_type(error_type);
@@ -1459,7 +1460,7 @@ int32_t Player::CmdLoadScene(pb::Message* message)
 			_player_prop.clear_load_type(); 
 			_player_prop.clear_room_id(); 
 	
-			if (_stuff.room_id() > 0 && _stuff.room_id() != room_id)
+			if (/*_stuff.room_id() > 0 && */_stuff.room_id() != room_id)
 			{
 				LOG(ERROR, "玩家:{}加载房间:{}和保存的房间:{}不一致", _player_id, room_id, _stuff.room_id());
 
@@ -2971,6 +2972,40 @@ void Player::OnGangPai(const Asset::PaiElement& pai, int64_t from_player_id)
 	for (int32_t i = 0; i < count; ++i) _game->Add2CardsPool(pai); //加入牌池
 }
 
+void Player::OnBeenQiangGang(const Asset::PaiElement& pai, int64_t from_player_id)
+{
+	PrintPai(); 
+
+	if (!CheckGangPai(pai, from_player_id)) return; //理论上不会如此
+	
+	int32_t card_type = pai.card_type();
+	int32_t card_value = pai.card_value();
+
+	//手里满足杠牌
+	auto it = _cards_inhand.find(card_type);
+	if (it == _cards_inhand.end()) return; //理论上不会如此
+	
+	auto count = std::count(it->second.begin(), it->second.end(), card_value); //玩家手里多少张牌
+	
+	auto remove_it = std::remove(it->second.begin(), it->second.end(), card_value); //从玩家手里删除
+	it->second.erase(remove_it, it->second.end());
+	
+	//墙外满足杠牌
+	auto iit = _cards_outhand.find(card_type);
+	if (iit != _cards_outhand.end()) 
+	{
+		auto count = std::count(iit->second.begin(), iit->second.end(), card_value); //玩家手里多少张牌
+
+		if (count == 3)
+		{
+			auto remove_it = std::remove(iit->second.begin(), iit->second.end(), card_value); //从墙外删除
+			iit->second.erase(remove_it, iit->second.end());
+		}
+	}
+					
+	for (int32_t i = 0; i < count; ++i) _game->Add2CardsPool(pai); //加入牌池
+}
+
 bool Player::CheckFengGangPai() 
 { 
 	//if (_oper_count >= 1) return false;
@@ -3555,11 +3590,11 @@ int32_t Player::OnFaPai(std::vector<int32_t>& cards)
 	if (false && _player_id == 262146 && _cards_inhand.size() == 0)
 	{
 		_cards_inhand = {
-			{ 1, {4, 7, 9} },
-			{ 2, {8, 9} },
-			{ 3, {2} },
+			{ 1, {4, 4, 4} },
+			{ 2, {8, 8, 8} },
+			{ 3, {2, 2, 2} },
 			{ 4, {1} },
-			{ 5, { 1, 2, 3, 1, 2, 3} },
+			{ 5, { 1, 1, 1} },
 		};
 		
 		_cards_outhand = {
@@ -3576,6 +3611,16 @@ int32_t Player::OnFaPai(std::vector<int32_t>& cards)
 
 		_minggang.push_back(gang);
 		*/
+	}
+	else if (false && _player_id == 262153 && _cards_inhand.size() == 0)
+	{
+		_cards_inhand = {
+			{ 1, {5, 6} },
+			{ 2, {8, 8, 8} },
+			{ 3, {2, 2, 2} },
+			{ 4, {1, 1} },
+			{ 5, { 1, 1, 1} },
+		};
 	}
 	else
 	{

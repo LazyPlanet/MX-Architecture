@@ -597,7 +597,7 @@ bool Player::HandleProtocol(int32_t type_t, pb::Message* message)
 }
 
 void Player::AlertMessage(Asset::ERROR_CODE error_code, Asset::ERROR_TYPE error_type/*= Asset::ERROR_TYPE_NORMAL*/, 
-		Asset::ERROR_SHOW_TYPE error_show_type/* = Asset::ERROR_SHOW_TYPE_CHAT*/)
+		Asset::ERROR_SHOW_TYPE error_show_type/* = Asset::ERROR_SHOW_TYPE_NORMAL*/)
 {
 	Asset::AlertMessage message;
 	message.set_error_type(error_type);
