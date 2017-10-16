@@ -110,7 +110,8 @@ void WorldSession::OnProcessMessage(const Asset::Meta& meta)
 	auto message_string = message->ShortDebugString();
 	auto meta_string = meta.ShortDebugString();
 
-	WARN("中心服务器接收数据, 玩家:{} 协议:{} {} 内容:{}", meta.player_id(), meta.type_t(), enum_value->name(), message_string);
+	if (Asset::META_TYPE_SHARE_SAY_HI != meta.type_t())
+		WARN("中心服务器接收数据, 玩家:{} 协议:{} {} 内容:{}", meta.player_id(), meta.type_t(), enum_value->name(), message_string);
 
 	//
 	// C2S协议可能存在两种情况：
@@ -152,7 +153,7 @@ void WorldSession::OnProcessMessage(const Asset::Meta& meta)
 		//来自Client协议均在此处理，逻辑程序员请勿在此后添加代码
 		//
 		
-		DEBUG("3.中心服务器接收来自Client的协议:{}", meta.type_t());
+		//DEBUG("3.中心服务器接收来自Client的协议:{}", meta.type_t());
 
 		_pings_count = 0;
 		_hi_time = CommonTimerInstance.GetTime(); 
@@ -489,8 +490,8 @@ void WorldSession::OnProcessMessage(const Asset::Meta& meta)
 
 			if (!_player) return;
 
-			auto player_id = _player->GetID();
-			DEBUG("设置位置信息，玩家:{} 数据:{}", player_id, message_string);
+			//auto player_id = _player->GetID();
+			//DEBUG("设置位置信息，玩家:{} 数据:{}", player_id, message_string);
 
 			_user.mutable_client_info()->set_client_ip(_ip_address);
 			_user.mutable_client_info()->mutable_location()->CopyFrom(client_data->client_info().location());

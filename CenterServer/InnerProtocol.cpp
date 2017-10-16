@@ -16,7 +16,7 @@ bool WorldSession::OnInnerProcess(const Asset::Meta& meta)
 {
 	//auto debug_string = meta.ShortDebugString();
 
-	DEBUG("接收逻辑服务器数据类型:{}", meta.type_t());
+	//DEBUG("接收逻辑服务器数据类型:{}", meta.type_t());
 
 	switch (meta.type_t())
 	{

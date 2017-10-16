@@ -110,7 +110,7 @@ int32_t Player::Save(bool force)
 		return 2;
 	}
 	
-	DEBUG("玩家:{}保存数据:{}", _player_id, _stuff.ShortDebugString())
+	//DEBUG("玩家:{}保存数据:{}", _player_id, _stuff.ShortDebugString())
 
 	_dirty = false;
 
@@ -125,7 +125,7 @@ int32_t Player::OnLogin()
 		return 1;
 	}
 
-	DEBUG("玩家:{}数据:{}", _player_id, _stuff.ShortDebugString())
+	//DEBUG("玩家:{}数据:{}", _player_id, _stuff.ShortDebugString())
 	
 	PlayerInstance.Emplace(_player_id, shared_from_this()); //玩家管理
 	SetLocalServer(ConfigInstance.GetInt("ServerID", 1));
@@ -253,13 +253,15 @@ int32_t Player::CmdEnterGame(pb::Message* message)
 	
 int64_t Player::ConsumeRoomCard(Asset::ROOM_CARD_CHANGED_TYPE changed_type, int64_t count)
 {
-	if (count <= 0) return 0;
+	//if (count <= 0) return 0;
 
+	/*
 	if (!CheckRoomCard(count)) 
 	{
 		LOG(ERROR, "消耗玩家:{}房卡，消耗类型:{} 数量:{}失败", _player_id, changed_type, count);
 		return 0;
 	}
+	*/
 
 	_stuff.mutable_common_prop()->set_room_card_count(_stuff.common_prop().room_card_count() - count);
 	_dirty = true;
@@ -271,7 +273,7 @@ int64_t Player::ConsumeRoomCard(Asset::ROOM_CARD_CHANGED_TYPE changed_type, int6
 
 int64_t Player::GainRoomCard(Asset::ROOM_CARD_CHANGED_TYPE changed_type, int64_t count) 
 {
-	if (count <= 0) return 0;
+	//if (count <= 0) return 0;
 
 	_stuff.mutable_common_prop()->set_room_card_count(_stuff.common_prop().room_card_count() + count);
 	_dirty = true;
@@ -595,7 +597,7 @@ int32_t Player::CmdPaiOperate(pb::Message* message)
 
 	if (!pai_operate->position()) pai_operate->set_position(GetPosition()); //设置玩家座位
 	
-	DEBUG("接收玩家:{}的牌局操作:{}.", _player_id, debug_string);
+	//DEBUG("接收玩家:{}的牌局操作:{}.", _player_id, debug_string);
 
 	//PrintPai(); //打印玩家当前手里的牌数据
 
@@ -1055,7 +1057,7 @@ bool Player::Update()
 
 	if (_heart_count % 60 == 0) //1min
 	{
-		DEBUG("heart_count:{} player_id:{}", _heart_count, _player_id);
+		//DEBUG("heart_count:{} player_id:{}", _heart_count, _player_id);
 	}
 	return true;
 }
@@ -1252,7 +1254,7 @@ void Player::BroadCast(Asset::MsgItem& item)
 	
 void Player::ResetRoom() 
 { 
-	DEBUG("玩家:{}数据:{}", _player_id, _stuff.ShortDebugString())
+	//DEBUG("玩家:{}数据:{}", _player_id, _stuff.ShortDebugString())
 
 	if (_room) _room.reset(); //刷新房间信息
 
@@ -1444,11 +1446,7 @@ int32_t Player::CmdLoadScene(pb::Message* message)
 		
 		case Asset::LOAD_SCENE_TYPE_SUCCESS: //加载成功
 		{
-			if (_player_prop.load_type() != Asset::LOAD_SCENE_TYPE_START) 
-			{
-				DEBUG_ASSERT(false && "player is not loaded.");
-				return 2;
-			}
+			if (_player_prop.load_type() != Asset::LOAD_SCENE_TYPE_START) return 2;
 
 			auto room_id = _player_prop.room_id();
 			
@@ -1462,14 +1460,14 @@ int32_t Player::CmdLoadScene(pb::Message* message)
 			_player_prop.clear_load_type(); 
 			_player_prop.clear_room_id(); 
 	
-			if (/*_stuff.room_id() > 0 && */_stuff.room_id() != room_id)
+			if (_stuff.room_id() > 0 && _stuff.room_id() != room_id)
 			{
 				LOG(ERROR, "玩家:{}加载房间:{}和保存的房间:{}不一致", _player_id, room_id, _stuff.room_id());
-
+			
 				_stuff.set_room_id(room_id); 
 				_dirty = true;
 			}
-			
+				
 			OnEnterScene(is_reenter); //进入房间//场景回调
 			
 			DEBUG("玩家:{} 加入房间:{}成功.", _player_id, room_id);
@@ -1586,7 +1584,7 @@ bool Player::AddRoomRecord(int64_t room_id)
 	SendProtocol(message);
 
 	auto message_string = message.ShortDebugString();
-	DEBUG("当前玩家:{}历史战绩:{}", _player_id, message_string);
+	//DEBUG("当前玩家:{}历史战绩:{}", _player_id, message_string);
 	
 	_stuff.mutable_room_history()->Add(room_id); 
 	_dirty = true; 
@@ -2448,7 +2446,7 @@ bool Player::IsMingPiao()
 {
 	auto curr_count = GetCardCount();
 
-	DEBUG("当前玩家:{}手里的牌数量:{}", _player_id, curr_count);
+	//DEBUG("当前玩家:{}手里的牌数量:{}", _player_id, curr_count);
 
 	return curr_count == 1 || curr_count == 2;
 }
@@ -2508,7 +2506,7 @@ bool Player::IsDanDiao()
 //
 bool Player::IsGangOperation()
 {
-	DEBUG("玩家:{} 当前操作类型:{} 上一次操作类型:{}", _player_id, _oper_type, _last_oper_type);
+	//DEBUG("玩家:{} 当前操作类型:{} 上一次操作类型:{}", _player_id, _oper_type, _last_oper_type);
 
 	if (_last_oper_type == Asset::PAI_OPER_TYPE_GANGPAI || _last_oper_type == Asset::PAI_OPER_TYPE_ANGANGPAI 
 			|| _last_oper_type == Asset::PAI_OPER_TYPE_XUANFENG_FENG) 
@@ -2716,7 +2714,7 @@ void Player::OnPengPai(const Asset::PaiElement& pai)
 		if (iit == it->second.end()) return;
 
 		it->second.erase(iit);
-		DEBUG("删除玩家:{}手中牌，card_type:{} card_vale:{}", _player_id, pai.card_type(), pai.card_value());
+		//DEBUG("删除玩家:{}手中牌，card_type:{} card_vale:{}", _player_id, pai.card_type(), pai.card_value());
 	}
 
 	for (int i = 0; i < 3; ++i) _cards_outhand[pai.card_type()].push_back(pai.card_value());
@@ -3567,7 +3565,7 @@ int32_t Player::OnFaPai(std::vector<int32_t>& cards)
 	//
 	if (IsTingPai())
 	{
-		DEBUG("玩家:{}听牌之后，检查宝牌，当前次数:{}", _player_id, _oper_count_tingpai);
+		//DEBUG("玩家:{}听牌之后，检查宝牌，当前次数:{}", _player_id, _oper_count_tingpai);
 			
 		if (_game->HasBaopai() && _game->GetRemainBaopai() <= 0) 
 		{
@@ -3832,7 +3830,7 @@ void Player::ResetBaopai()
 {
 	if (!_game || !_has_ting) return;
 		
-	DEBUG("玩家:{}重置宝牌", _player_id);
+	//DEBUG("玩家:{}重置宝牌", _player_id);
 
 	while(_game->HasBaopai())
 	{

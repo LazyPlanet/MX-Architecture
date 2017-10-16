@@ -454,8 +454,8 @@ void Game::OnPaiOperate(std::shared_ptr<Player> player, pb::Message* message)
 					return; 
 				}
 				
-				DEBUG("player_id:{} next_player_id:{} _curr_player_index:{} next_player_index:{}", 
-						player->GetID(), player_next->GetID(), _curr_player_index, next_player_index);
+				//DEBUG("player_id:{} next_player_id:{} _curr_player_index:{} next_player_index:{}", 
+				//		player->GetID(), player_next->GetID(), _curr_player_index, next_player_index);
 
 				auto cards = FaPai(1); 
 				auto card = GameInstance.GetCard(cards[0]); //玩家待抓的牌
@@ -1025,7 +1025,7 @@ void Game::OnPaiOperate(std::shared_ptr<Player> player, pb::Message* message)
 
 void Game::ClearOperation()
 {
-	DEBUG("清理缓存状态，_oper_cache:{}", _oper_cache.DebugString());
+	//DEBUG("清理缓存状态，_oper_cache:{}", _oper_cache.DebugString());
 
 	_oper_cache.Clear(); //清理状态
 }
@@ -1164,7 +1164,7 @@ void Game::Calculate(int64_t hupai_player_id/*胡牌玩家*/, int64_t dianpao_pl
 			detail->set_fan_type((Asset::FAN_TYPE)fan);
 			detail->set_score(-score);
 
-			DEBUG("player_id:{} fan:{} score:{}", player_id, fan, -score);
+			//DEBUG("player_id:{} fan:{} score:{}", player_id, fan, -score);
 		}
 		
 		//
@@ -1181,7 +1181,7 @@ void Game::Calculate(int64_t hupai_player_id/*胡牌玩家*/, int64_t dianpao_pl
 			detail->set_fan_type(Asset::FAN_TYPE_ZI_MO);
 			detail->set_score(-score);
 			
-			DEBUG("player_id:{} fan:{} score:{}", player_id, Asset::FAN_TYPE_ZI_MO, -score);
+			//DEBUG("player_id:{} fan:{} score:{}", player_id, Asset::FAN_TYPE_ZI_MO, -score);
 		}
 
 		if (dianpao_player_id != hupai_player_id && player_id == dianpao_player_id) 
@@ -1206,7 +1206,7 @@ void Game::Calculate(int64_t hupai_player_id/*胡牌玩家*/, int64_t dianpao_pl
 				detail->set_score(-score);
 			}
 			
-			DEBUG("player_id:{} fan:{} score:{}", player_id, Asset::FAN_TYPE_DIAN_PAO, -score);
+			//DEBUG("player_id:{} fan:{} score:{}", player_id, Asset::FAN_TYPE_DIAN_PAO, -score);
 		}
 		
 		//
@@ -1229,7 +1229,7 @@ void Game::Calculate(int64_t hupai_player_id/*胡牌玩家*/, int64_t dianpao_pl
 			detail->set_fan_type(Asset::FAN_TYPE_BIMEN);
 			detail->set_score(-score);
 			
-			DEBUG("player_id:{} fan:{} score:{}", player_id, Asset::FAN_TYPE_BIMEN, -score);
+			//DEBUG("player_id:{} fan:{} score:{}", player_id, Asset::FAN_TYPE_BIMEN, -score);
 		}
 		
 		if (player->IsMingPiao()) 
@@ -1240,7 +1240,7 @@ void Game::Calculate(int64_t hupai_player_id/*胡牌玩家*/, int64_t dianpao_pl
 			detail->set_fan_type(Asset::FAN_TYPE_PIAO_WEIHU);
 			detail->set_score(-score);
 			
-			DEBUG("player_id:{} fan:{} score:{}", player_id, Asset::FAN_TYPE_PIAO_WEIHU, -score);
+			//DEBUG("player_id:{} fan:{} score:{}", player_id, Asset::FAN_TYPE_PIAO_WEIHU, -score);
 		}
 		
 		if (SanJiaBi(hupai_player_id)) 
@@ -1251,7 +1251,7 @@ void Game::Calculate(int64_t hupai_player_id/*胡牌玩家*/, int64_t dianpao_pl
 			detail->set_fan_type(Asset::FAN_TYPE_SAN_JIA_BI_MEN);
 			detail->set_score(-score);
 			
-			DEBUG("player_id:{} fan:{} score:{}", player_id, Asset::FAN_TYPE_SAN_JIA_BI_MEN, -score);
+			//DEBUG("player_id:{} fan:{} score:{}", player_id, Asset::FAN_TYPE_SAN_JIA_BI_MEN, -score);
 		}
 
 		//
@@ -1261,7 +1261,7 @@ void Game::Calculate(int64_t hupai_player_id/*胡牌玩家*/, int64_t dianpao_pl
 
 		record->set_score(-score); //玩家所输积分
 			
-		DEBUG("玩家:{} 因为牌型和位置输所有积分:{}", player_id, -score);
+		//DEBUG("玩家:{} 因为牌型和位置输所有积分:{}", player_id, -score);
 	}
 	
 	//
@@ -1335,7 +1335,7 @@ void Game::Calculate(int64_t hupai_player_id/*胡牌玩家*/, int64_t dianpao_pl
 
 		auto score = ming_score + an_score + xf_score; //玩家杠牌赢得其他单个玩家积分
 				
-		DEBUG("player_id:{}, ming_count:{}, an_count:{}, score:{}", player->GetID(), ming_count, an_count, score);
+		//DEBUG("player_id:{}, ming_count:{}, an_count:{}, score:{}", player->GetID(), ming_count, an_count, score);
 
 		auto record = message.mutable_record()->mutable_list(i);
 		record->set_score(record->score() + score * (MAX_PLAYER_COUNT - 1)); //增加杠牌玩家总杠积分
@@ -1957,7 +1957,7 @@ Asset::PaiElement Game::GetBaoPai(int32_t tail_index)
 
 	auto card_index = list.size() - tail_index; 
 
-	DEBUG("生成宝牌 list.size():{} tail_index:{} card_index:{}", list.size(), tail_index, card_index);
+	//DEBUG("生成宝牌 list.size():{} tail_index:{} card_index:{}", list.size(), tail_index, card_index);
 
 	return GameInstance.GetCard(list[card_index]);
 }
@@ -1980,7 +1980,7 @@ void Game::OnRefreshBaopai(int64_t player_id, int32_t random_result)
 	proto.mutable_random_result()->Add(random_result);
 	proto.set_has_rand_saizi(true);
 
-	DEBUG("刷新宝牌，玩家:{} 随机值:{}", player_id, random_result);
+	//DEBUG("刷新宝牌，玩家:{} 随机值:{}", player_id, random_result);
 
 	for (auto player : _players)
 	{
