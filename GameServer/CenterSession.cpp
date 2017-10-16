@@ -31,7 +31,7 @@ bool CenterSession::OnMessageProcess(const Asset::Meta& meta)
 {
 	auto meta_string = meta.ShortDebugString();
 
-	DEBUG("接收来自中心服务器:{} {}的数据:{}", _ip_address, _remote_endpoint.port(), meta_string);
+	//DEBUG("接收来自中心服务器:{} {}的数据:{}", _ip_address, _remote_endpoint.port(), meta_string);
 		
 	if (meta.type_t() == Asset::META_TYPE_S2S_REGISTER) //注册服务器成功
 	{
