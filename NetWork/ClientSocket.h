@@ -184,7 +184,7 @@ public:
 			return AsyncProcessQueue();
 		}
 
-		DEBUG("client bytes_to_send:{} bytes_sent:{}", bytes_to_send, bytes_sent);
+		//DEBUG("client bytes_to_send:{} bytes_sent:{}", bytes_to_send, bytes_sent);
 		_write_queue.pop();
 
 		if (_closing && _write_queue.empty()) Close("关闭");

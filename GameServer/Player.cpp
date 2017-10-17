@@ -485,6 +485,11 @@ int32_t Player::CmdCreateRoom(pb::Message* message)
 
 	return 0;
 }
+	
+void Player::OnRoomRemoved()
+{
+	ResetRoom(); //房间非法
+}
 
 void Player::OnCreateRoom(Asset::CreateRoom* create_room)
 {

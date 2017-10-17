@@ -124,8 +124,6 @@ bool Room::Enter(std::shared_ptr<Player> player)
 		player->SetPosition((Asset::POSITION_TYPE)_players.size()); //设置位置
 	}
 	
-	//DEBUG("curr_count:{} curr_enter:{} position:{}", _players.size(), player->GetID(), player->GetPosition());
-
 	return true;
 }
 	
@@ -259,9 +257,6 @@ void Room::OnReEnter(std::shared_ptr<Player> op_player)
 		}
 	}
 
-	//auto message_string = message.ShortDebugString();
-	//DEBUG("玩家:{}重入房间:{} 协议内容:{}", op_player->GetID(), GetID(), message_string);
-
 	op_player->SendProtocol(message);
 
 	_game->OnPlayerReEnter(op_player); //玩家操作
@@ -304,9 +299,6 @@ void Room::OnPlayerOperate(std::shared_ptr<Player> player, pb::Message* message)
 	auto game_operate = dynamic_cast<Asset::GameOperation*>(message);
 	if (!game_operate) return;
 
-	auto message_string = message->ShortDebugString();
-	//DEBUG("玩家房间内操作，玩家:{} 操作类型:{} message:{}", player->GetID(), game_operate->oper_type(), message_string);
-			
 	BroadCast(game_operate); //广播玩家操作
 	
 	switch(game_operate->oper_type())
@@ -344,6 +336,10 @@ void Room::OnPlayerOperate(std::shared_ptr<Player> player, pb::Message* message)
 				{
 					Remove(player->GetID(), Asset::GAME_OPER_TYPE_LEAVE); //玩家退出房间
 				}
+			}
+			else if (IsEmpty())
+			{
+				player->OnLeaveRoom(Asset::GAME_OPER_TYPE_LEAVE); //玩家退出房间
 			}
 			else
 			{
@@ -385,6 +381,10 @@ void Room::OnPlayerOperate(std::shared_ptr<Player> player, pb::Message* message)
 			{
 				KickOutPlayer();
 			}
+			else if (IsEmpty())
+			{
+				player->OnLeaveRoom(Asset::GAME_OPER_TYPE_DISMISS_AGREE); //玩家退出房间
+			}
 			else if (CanDisMiss()) 
 			{
 				DoDisMiss();
@@ -414,7 +414,7 @@ int32_t Room::GetRemainCount()
 
 bool Room::Remove(int64_t player_id, Asset::GAME_OPER_TYPE reason)
 {
-	//std::lock_guard<std::mutex> lock(_mutex);
+	std::lock_guard<std::mutex> lock(_mutex);
 
 	for (size_t i = 0; i < _players.size(); ++i)
 	{
@@ -443,7 +443,7 @@ bool Room::Remove(int64_t player_id, Asset::GAME_OPER_TYPE reason)
 	
 void Room::OnPlayerStateChanged()
 {
-	//std::lock_guard<std::mutex> lock(_mutex);
+	std::lock_guard<std::mutex> lock(_mutex);
 
 	Asset::RoomInformation message;
 	message.set_sync_type(Asset::ROOM_SYNC_TYPE_STATE_CHANGED);
@@ -464,7 +464,7 @@ void Room::OnPlayerStateChanged()
 
 void Room::OnGameStart()
 {
-	//std::lock_guard<std::mutex> lock(_mutex);
+	std::lock_guard<std::mutex> lock(_mutex);
 
 	Asset::GameStart game_start;
 	game_start.set_total_rounds(_stuff.options().open_rands());
@@ -625,6 +625,19 @@ void Room::BroadCast(pb::Message& message, int64_t exclude_player_id)
 {
 	BroadCast(&message, exclude_player_id);
 }
+	
+void Room::OnRemove()
+{
+	std::lock_guard<std::mutex> lock(_mutex);
+
+	for (auto& player : _players)
+	{
+		if (!player) continue;
+
+		player->OnRoomRemoved();
+		player.reset();
+	}
+}
 
 void Room::OnDisMiss()
 {
@@ -675,7 +688,8 @@ void Room::KickOutPlayer(int64_t player_id)
 		Remove(player->GetID(), Asset::GAME_OPER_TYPE_HOSTER_DISMISS); //踢人
 	}
 
-	RoomInstance.OnDisMiss(GetID());
+	//RoomInstance.Remove(GetID());
+	_is_dismiss = true;
 }
 	
 void Room::SyncRoom()
@@ -723,7 +737,6 @@ void Room::OnCreated(std::shared_ptr<Player> hoster)
 	_hoster = hoster;
 
 	_created_time = CommonTimerInstance.GetTime(); //创建时间
-	_created_timeout = _created_time + _stuff.options().open_rands() / 8 * 3600; //每8局1小时超时
 	SetExpiredTime(_created_time + g_const->room_last_time());
 	
 	_history.set_room_id(GetID());
@@ -875,12 +888,6 @@ bool Room::IsExpired()
 	return _expired_time < curr_time;
 }
 
-bool Room::IsTimeOut()
-{
-	auto curr_time = CommonTimerInstance.GetTime();
-	return _created_timeout < curr_time;
-}
-	
 void Room::Update()
 {
 	auto curr_time = CommonTimerInstance.GetTime();
@@ -983,10 +990,9 @@ void RoomManager::Update(int32_t diff)
 		{
 			it->second->Update();
 
-			if ((it->second->IsExpired() && it->second->IsEmpty()) || it->second->HasDisMiss() || it->second->HasBeenOver()
-					/*|| it->second->IsTimeOut()*/)
+			if ((it->second->IsExpired() && it->second->IsEmpty()) || it->second->HasDisMiss() || it->second->HasBeenOver())
 			{
-				//it->second->KickOutPlayer(); //删除玩家//不能在此处删除，必须玩家主动退出
+				it->second->OnRemove();
 				it = _rooms.erase(it); //删除房间
 			}
 			else
@@ -997,13 +1003,14 @@ void RoomManager::Update(int32_t diff)
 	}
 }
 	
-void RoomManager::OnDisMiss(int64_t room_id)
+void RoomManager::Remove(int64_t room_id)
 {
 	std::lock_guard<std::mutex> lock(_room_lock);
 
 	auto it = _rooms.find(room_id);
 	if (it == _rooms.end()) return;
 
+	it->second->OnRemove();
 	_rooms.erase(it);
 }
 
