@@ -377,7 +377,7 @@ void Room::OnPlayerOperate(std::shared_ptr<Player> player, pb::Message* message)
 			//
 			//如果房主发起解散房间，且此时尚未开局，则直接解散
 			//
-			if (IsHoster(player->GetID()) && _games.size() == 0)
+			if (IsHoster(player->GetID()) && _games.size() == 0) //GMT开房没有房主
 			{
 				KickOutPlayer();
 			}
@@ -388,6 +388,10 @@ void Room::OnPlayerOperate(std::shared_ptr<Player> player, pb::Message* message)
 			else if (CanDisMiss()) 
 			{
 				DoDisMiss();
+			}
+			else if (IsGmtOpened() && (!HasStarted()|| HasBeenOver()))
+			{
+				Remove(player->GetID(), Asset::GAME_OPER_TYPE_LEAVE); //玩家退出房间
 			}
 		}
 		break;

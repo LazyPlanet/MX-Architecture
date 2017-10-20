@@ -537,7 +537,11 @@ int32_t Player::CmdGameOperate(pb::Message* message)
 		{
 			_player_prop.set_game_oper_state(game_operate->oper_type());
 
-			if (!_room || _room->GetRemainCount() <= 0) SendRoomState(); //防止玩家不在房间内进行解散操作,出现这种情况原因是C<->S状态不一致
+			if (!_room || _room->GetRemainCount() <= 0) 
+			{
+				OnLeaveRoom(); //防止玩家不在房间内进行解散操作,出现这种情况原因是C<->S状态不一致
+				return 0;
+			}
 		}
 		break;
 
@@ -558,12 +562,7 @@ int32_t Player::CmdGameOperate(pb::Message* message)
 		break;
 	}
 
-	if (!_room) 
-	{
-		auto debug_string = game_operate->ShortDebugString();
-		LOG(ERROR, "玩家:{}尚未在房间当中，无法进行操作:{}", _player_id, debug_string);
-		return 4;
-	}
+	if (!_room) return 4;
 
 	_room->OnPlayerOperate(shared_from_this(), message); //广播给其他玩家
 
@@ -3702,6 +3701,46 @@ int32_t Player::OnFaPai(std::vector<int32_t>& cards)
 		{
 			Asset::PaiOperationAlert alert;
 
+			//是否可以胡牌
+			if (CheckZiMo())
+			{
+				auto pai_perator = alert.mutable_pais()->Add();
+				pai_perator->mutable_oper_list()->Add(Asset::PAI_OPER_TYPE_HUPAI);
+			}
+
+			//听牌检查
+			//
+			std::vector<Asset::PaiElement> ting_list;
+			if (CheckTingPai(ting_list))
+			{
+				//_oper_cache.mutable_oper_list()->Add(Asset::PAI_OPER_TYPE_TINGPAI);
+
+				for (auto pai : ting_list) 
+				{
+					auto pai_perator = alert.mutable_pais()->Add();
+					pai_perator->mutable_pai()->CopyFrom(pai);
+					pai_perator->mutable_oper_list()->Add(Asset::PAI_OPER_TYPE_TINGPAI);
+
+					//_oper_cache.mutable_ting_pais()->Add()->CopyFrom(pai);
+				}
+			}
+			
+			//
+			//明杠和暗杠检查
+			//
+			::google::protobuf::RepeatedField<Asset::PaiOperationAlert_AlertElement> gang_list;
+			if (CheckAllGangPai(gang_list)) 
+			{
+				for (auto gang : gang_list) 
+				{
+					auto pai_perator = alert.mutable_pais()->Add();
+					pai_perator->CopyFrom(gang);
+				
+					//_oper_cache.mutable_pai()->CopyFrom(gang.pai());
+					//for (auto oper_type : gang.oper_list()) _oper_cache.mutable_oper_list()->Add(Asset::PAI_OPER_TYPE(oper_type));
+				}
+			}
+			
 			//是否旋风杠
 			for (auto gang : _xf_gang)
 			{
@@ -3709,12 +3748,6 @@ int32_t Player::OnFaPai(std::vector<int32_t>& cards)
 				pai_perator->mutable_oper_list()->Add(Asset::PAI_OPER_TYPE(gang));
 			}
 
-			//是否可以胡牌
-			if (CheckZiMo())
-			{
-				auto pai_perator = alert.mutable_pais()->Add();
-				pai_perator->mutable_oper_list()->Add(Asset::PAI_OPER_TYPE_HUPAI);
-			}
 
 			if (alert.pais().size()) SendProtocol(alert); //上来即有旋风杠或者胡牌
 			

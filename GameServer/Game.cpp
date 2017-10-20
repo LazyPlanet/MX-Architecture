@@ -167,6 +167,8 @@ void Game::SavePlayBack()
 
 	auto set = client.set("playback:" + std::to_string(room_id) + "_" + std::to_string(game_index), _playback.SerializeAsString());
 	client.commit();
+	
+	LOG(INFO, "房间:{} 结果:{} 存储回放信息，局数索引:{} 当前回放信息:{}", room_id, set.get(), game_index, _playback.ShortDebugString());
 }
 	
 void Game::ClearState()
