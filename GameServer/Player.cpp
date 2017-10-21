@@ -4011,16 +4011,6 @@ void Player::SetOffline(bool offline)
 
 void Player::ClearCards() 
 {
-	/*
-	if (_game) 
-	{
-		ERROR("玩家:{}清理牌数据失败", _player_id);
-		return;
-	}
-	*/
-		
-	WARN("玩家:{}清理牌数据", _player_id);
-	
 	_fan_list.clear(); //番数
 	_cards_inhand.clear(); //清理手里牌
 	_cards_outhand.clear(); //清理墙外牌
