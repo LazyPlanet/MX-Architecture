@@ -2944,10 +2944,10 @@ bool Player::CheckAllGangPai(::google::protobuf::RepeatedField<Asset::PaiOperati
 					continue;
 				}
 			}
+			*/
 			auto gang = gang_list.Add();
 			gang->mutable_pai()->CopyFrom(pai); 
 			gang->mutable_oper_list()->Add(Asset::PAI_OPER_TYPE_GANGPAI);
-			*/
 		}
 	}
 
