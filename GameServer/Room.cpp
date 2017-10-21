@@ -381,6 +381,10 @@ void Room::OnPlayerOperate(std::shared_ptr<Player> player, pb::Message* message)
 			{
 				KickOutPlayer();
 			}
+			else if (IsGmtOpened() && (!HasStarted()|| HasBeenOver()))
+			{
+				Remove(player->GetID(), Asset::GAME_OPER_TYPE_LEAVE); //玩家退出房间
+			}
 			else if (IsEmpty())
 			{
 				player->OnLeaveRoom(Asset::GAME_OPER_TYPE_DISMISS_AGREE); //玩家退出房间
@@ -388,10 +392,6 @@ void Room::OnPlayerOperate(std::shared_ptr<Player> player, pb::Message* message)
 			else if (CanDisMiss()) 
 			{
 				DoDisMiss();
-			}
-			else if (IsGmtOpened() && (!HasStarted()|| HasBeenOver()))
-			{
-				Remove(player->GetID(), Asset::GAME_OPER_TYPE_LEAVE); //玩家退出房间
 			}
 		}
 		break;
