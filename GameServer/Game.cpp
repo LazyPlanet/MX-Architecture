@@ -450,11 +450,7 @@ void Game::OnPaiOperate(std::shared_ptr<Player> player, pb::Message* message)
 
 				auto player_next = GetPlayerByOrder(next_player_index);
 				
-				if (!player_next) 
-				{
-					DEBUG_ASSERT(false);
-					return; 
-				}
+				if (!player_next) return; 
 				
 				//DEBUG("player_id:{} next_player_id:{} _curr_player_index:{} next_player_index:{}", 
 				//		player->GetID(), player_next->GetID(), _curr_player_index, next_player_index);

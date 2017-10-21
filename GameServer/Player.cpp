@@ -2884,7 +2884,9 @@ bool Player::CheckAllGangPai(::google::protobuf::RepeatedField<Asset::PaiOperati
 	//
 	for (auto cards : _cards_outhand)
 	{
-		DEBUG_ASSERT(cards.second.size() % 3 == 0);
+		if (cards.second.size() == 0) continue;
+
+		if (cards.second.size() % 3 != 0) return false;
 
 		int32_t card_type = cards.first;
 
@@ -2903,10 +2905,13 @@ bool Player::CheckAllGangPai(::google::protobuf::RepeatedField<Asset::PaiOperati
 			Asset::PaiElement pai;
 			pai.set_card_type((Asset::CARD_TYPE)card_type);
 			pai.set_card_value(card_value);
+
+			if (HasTingPai() && !CanTingIfGang(pai)) continue; //防止杠后听牌不一致
 			
 			//
 			//明杠，不能改变现有听牌的牌型
 			//
+			/*
 			if (HasTingPai())
 			{
 				if (_zhuapai.card_type() != card_type || _zhuapai.card_value() != card_value) 
@@ -2917,6 +2922,7 @@ bool Player::CheckAllGangPai(::google::protobuf::RepeatedField<Asset::PaiOperati
 			auto gang = gang_list.Add();
 			gang->mutable_pai()->CopyFrom(pai); 
 			gang->mutable_oper_list()->Add(Asset::PAI_OPER_TYPE_GANGPAI);
+			*/
 		}
 	}
 
