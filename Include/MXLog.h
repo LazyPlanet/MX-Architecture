@@ -28,7 +28,6 @@ namespace Adoter
 	if (debug) { \
 		spdlog::get("console")->debug("[file:#{} func:#{} line:#{}] " fmt, __FILE__, __func__, __LINE__, ##__VA_ARGS__); \
 	}\
-	spdlog::get("console_history")->info("[file:#{} func:#{} line:#{}] " fmt, __FILE__, __func__, __LINE__, ##__VA_ARGS__); \
 }\
 
 #define TRACE(fmt, ...) { \

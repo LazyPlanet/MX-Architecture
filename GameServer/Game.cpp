@@ -59,11 +59,8 @@ bool Game::Start(std::vector<std::shared_ptr<Player>> players)
 	auto banker_index = _room->GetBankerIndex();
 		
 	auto player_banker = GetPlayerByOrder(banker_index);
-	if (!player_banker) 
-	{
-		DEBUG_ASSERT(false);
-		return false;
-	}
+	if (!player_banker) return false;
+
 	_banker_player_id  = player_banker->GetID();
 	
 	OnStart(); //同步本次游戏开局数据：此时玩家没有进入游戏
@@ -1408,32 +1405,20 @@ void Game::Calculate(int64_t hupai_player_id/*胡牌玩家*/, int64_t dianpao_pl
 	if (baosanjia && dianpao_player_id != 0 && dianpao_player_id != hupai_player_id) 
 	{
 		auto it_dianpao = get_record(dianpao_player_id);
-		if (it_dianpao == message.mutable_record()->mutable_list()->end()) 
-		{
-			DEBUG_ASSERT(false && "dianpao_player_id has not found"); //理论不会出现
-			return;
-		}
+		if (it_dianpao == message.mutable_record()->mutable_list()->end()) return;
 
 		int32_t baofen_total = 0; //包积分，实则包赔两个玩家的积分
 
 		for (auto player : _players)
 		{
-			if (!player)
-			{
-				DEBUG_ASSERT(false && "player in game has not found"); //理论不会出现
-				continue;
-			}
+			if (!player) continue;
 
 			auto player_id = player->GetID();
 
 			if (player_id == hupai_player_id || player_id == dianpao_player_id) continue; //和胡牌玩家无关
 
 			auto it_player = get_record(player_id);
-			if (it_player == message.mutable_record()->mutable_list()->end()) 
-			{
-				DEBUG_ASSERT(false && "player has not found"); //理论不会出现
-				continue;
-			}
+			if (it_player == message.mutable_record()->mutable_list()->end()) continue;
 
 			it_player->set_score(it_player->score() + player_score[player_id]); //返回积分
 
@@ -1546,11 +1531,8 @@ void Game::Calculate(int64_t hupai_player_id/*胡牌玩家*/, int64_t dianpao_pl
 	
 void Game::BroadCast(pb::Message* message, int64_t exclude_player_id)
 {
-	if (!_room) 
-	{
-		DEBUG_ASSERT(false);
-		return;
-	}
+	if (!_room) return;
+
 	_room->BroadCast(message, exclude_player_id);
 }
 
@@ -1570,11 +1552,8 @@ void Game::Add2CardsPool(Asset::CARD_TYPE card_type, int32_t card_value)
 
 void Game::BroadCast(pb::Message& message, int64_t exclude_player_id)
 {
-	if (!_room) 
-	{
-		DEBUG_ASSERT(false);
-		return;
-	}
+	if (!_room) return;
+
 	_room->BroadCast(message, exclude_player_id);
 }
 

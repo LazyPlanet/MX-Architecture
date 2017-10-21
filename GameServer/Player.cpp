@@ -231,7 +231,7 @@ int32_t Player::OnLogout()
 	kickout_player.set_reason(Asset::KICK_OUT_REASON_LOGOUT);
 	SendProtocol(kickout_player);
 	
-	DEBUG("玩家:{} 数据:{} 退出游戏逻辑服务器成功", _player_id, _stuff.ShortDebugString());
+	//DEBUG("玩家:{} 数据:{} 退出游戏逻辑服务器成功", _player_id, _stuff.ShortDebugString());
 
 	return 0;
 }
@@ -595,7 +595,7 @@ int32_t Player::CmdPaiOperate(pb::Message* message)
 
 	if (!_room || !_game) 
 	{
-		LOG(ERROR, "玩家:{}尚未在房间或者牌局当中，无法进行操作:{}", _player_id, debug_string);
+		//LOG(ERROR, "玩家:{}尚未在房间或者牌局当中，无法进行操作:{}", _player_id, debug_string);
 		return 2; //还没加入房间或者还没开始游戏
 	}
 
@@ -3571,11 +3571,7 @@ int32_t Player::OnFaPai(const Asset::PaiElement& pai)
 
 int32_t Player::OnFaPai(std::vector<int32_t>& cards)
 {
-	if (!_room || !_game) 
-	{
-		ERROR("玩家{}牌局数据为空", _player_id);
-		return 1;
-	}
+	if (!_room || !_game) return 1;
 
 	if (!ShouldZhuaPai()) 
 	{
@@ -3610,14 +3606,14 @@ int32_t Player::OnFaPai(std::vector<int32_t>& cards)
 		}
 	}
 
-	if (false && _player_id == 262153 && _cards_inhand.size() == 0)
+	if (false && _player_id == 263097 && _cards_inhand.size() == 0)
 	{
 		_cards_inhand = {
-			{ 1, {4, 4, 4} },
-			{ 2, {8, 8, 8} },
-			{ 3, {2, 2, 2} },
-			{ 4, {1} },
-			{ 5, { 1, 1, 1} },
+			{ 1, {1, 1, 1, 2, 2, 2, 4, 6, 6, 6, 7, 7, 7} },
+			//{ 2, {8, 8, 8} },
+			//{ 3, {2, 2, 2} },
+			//{ 4, {1} },
+			//{ 5, { 1, 1, 1} },
 		};
 		
 		_cards_outhand = {
@@ -3635,13 +3631,12 @@ int32_t Player::OnFaPai(std::vector<int32_t>& cards)
 		_minggang.push_back(gang);
 		*/
 	}
-	else if (false && _player_id == 262272 && _cards_inhand.size() == 0)
+	else if (false && _player_id == 262147 && _cards_inhand.size() == 0)
 	{
 		_cards_inhand = {
-			{ 1, {5, 6} },
-			{ 2, {6, 6, 6, 7, 8, 9} },
+			{ 1, {2, 2, 6, 7, 7, 7, 8} },
+			{ 2, {7, 8, 9} },
 			{ 3, {5, 5, 5} },
-			{ 4, {2, 2} },
 		};
 	}
 	else
@@ -4134,7 +4129,7 @@ int32_t Player::OnKickOut(pb::Message* message)
 	const auto kick_out = dynamic_cast<const Asset::KickOutPlayer*>(message);
 	if (!kick_out) return 1;
 	
-	DEBUG("玩家:{} 被踢下线，原因:{}", _player_id, kick_out->reason());
+	//DEBUG("玩家:{} 被踢下线，原因:{}", _player_id, kick_out->reason());
 
 	Logout(nullptr);
 
