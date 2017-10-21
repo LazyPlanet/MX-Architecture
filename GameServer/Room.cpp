@@ -381,7 +381,7 @@ void Room::OnPlayerOperate(std::shared_ptr<Player> player, pb::Message* message)
 			{
 				KickOutPlayer();
 			}
-			else if (IsGmtOpened() && (!HasStarted()|| HasBeenOver()))
+			else if (IsGmtOpened() && (!HasStarted() || HasBeenOver()))
 			{
 				Remove(player->GetID(), Asset::GAME_OPER_TYPE_LEAVE); //玩家退出房间
 			}
@@ -645,6 +645,8 @@ void Room::OnRemove()
 
 void Room::OnDisMiss()
 {
+	if (IsGmtOpened() && (!HasStarted() || HasBeenOver())) return; //代开房没开局不允许解散
+
 	if (_dismiss_time == 0) 
 	{
 		_dismiss_time = CommonTimerInstance.GetTime() + g_const->room_dismiss_timeout();
