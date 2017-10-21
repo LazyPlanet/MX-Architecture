@@ -2933,18 +2933,6 @@ bool Player::CheckAllGangPai(::google::protobuf::RepeatedField<Asset::PaiOperati
 
 			if (HasTingPai() && !CanTingIfGang(pai)) continue; //防止杠后听牌不一致
 			
-			//
-			//明杠，不能改变现有听牌的牌型
-			//
-			/*
-			if (HasTingPai())
-			{
-				if (_zhuapai.card_type() != card_type || _zhuapai.card_value() != card_value) 
-				{
-					continue;
-				}
-			}
-			*/
 			auto gang = gang_list.Add();
 			gang->mutable_pai()->CopyFrom(pai); 
 			gang->mutable_oper_list()->Add(Asset::PAI_OPER_TYPE_GANGPAI);
