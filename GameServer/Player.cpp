@@ -1748,14 +1748,13 @@ bool Player::CanHuPai(std::vector<Card_t>& cards, bool use_pair)
 	return pair || trips || straight; //一对、刻或者顺子
 }
 	
-bool Player::CheckBaoHu(const Asset::PaiElement& pai, bool has_fapai)
+bool Player::CheckBaoHu(const Asset::PaiElement& pai/*宝牌数据*/)
 {
 	if (!_game || !_room) return false;
 
 	if (!IsTingPai()) return false; //没有听牌显然不能胡宝牌
 
 	auto baopai = _game->GetBaoPai();
-
 	if (pai.card_type() != baopai.card_type() || pai.card_value() != baopai.card_value())  return false; //不是宝牌
 	
 	auto options = _room->GetOptions();
@@ -1763,14 +1762,9 @@ bool Player::CheckBaoHu(const Asset::PaiElement& pai, bool has_fapai)
 	auto it_baohu = std::find(options.extend_type().begin(), options.extend_type().end(), Asset::ROOM_EXTEND_TYPE_BAOPAI);
 	if (it_baohu == options.extend_type().end()) return false; //不带宝胡
 
-	if (_cards_hu.size() == 0) return false;
+	if (_cards_hu.size() == 0) return false; //尚不能胡牌
 
-	auto card = _cards_hu[0];
-
-	//
-	//玩家不可能有两张宝牌
-	//
-	bool deleted = false;
+	bool deleted = false; //理论上宝牌玩家都会自摸在手里
 
 	auto it = std::find(_cards_inhand[pai.card_type()].begin(), _cards_inhand[pai.card_type()].end(), pai.card_value());
 	if (it != _cards_inhand[pai.card_type()].end()) //宝牌已经在墙内
@@ -1779,12 +1773,47 @@ bool Player::CheckBaoHu(const Asset::PaiElement& pai, bool has_fapai)
 		deleted = true;
 	}
 
-	bool hupai = CheckHuPai(card, false);
+	//
+	//宝牌多种胡法的多种番型，求解最大番型
+	//
+	const auto fan_asset = dynamic_cast<const Asset::RoomFan*>(AssetInstance.Get(g_const->fan_id()));
+	if (!fan_asset) return false;
 
-	if (deleted)
+	auto get_multiple = [&](const int32_t fan_type)->int32_t {
+		auto it = std::find_if(fan_asset->fans().begin(), fan_asset->fans().end(), [fan_type](const Asset::RoomFan_FanElement& element){
+			return fan_type == element.fan_type();
+		});
+		if (it == fan_asset->fans().end()) return 0;
+		return pow(2, it->multiple());
+	};
+
+	auto max_fan_score = 1;
+	auto max_fan_card = _cards_hu[0];
+	auto hupai = CheckHuPai(max_fan_card, false);
+	auto max_fan_list = _fan_list;
+	for (const auto fan : _fan_list) max_fan_score *= get_multiple(fan); //番数
+
+	for (auto card : _cards_hu) //可以胡的牌
 	{
-		_cards_inhand[pai.card_type()].push_back(pai.card_value());
+		if (card.card_type() == max_fan_card.card_type() && card.card_value() == max_fan_card.card_value()) continue; //减少后续检查
+
+		hupai = CheckHuPai(card, false); //能否胡牌，理论上一定可以胡牌
+		if (!hupai) continue;
+		
+		int32_t score_base = 1;
+		for (const auto fan : _fan_list) score_base *= get_multiple(fan); //番数
+
+		if (score_base > max_fan_score)
+		{
+			max_fan_score = score_base;
+			max_fan_card = card;
+			max_fan_list = _fan_list;
+		}
 	}
+	
+	hupai = CheckHuPai(max_fan_card, false); //基础番型
+
+	if (deleted) _cards_inhand[pai.card_type()].push_back(pai.card_value());
 
 	return hupai;
 }
@@ -2043,11 +2072,7 @@ bool Player::CheckZiMo(const Asset::PaiElement& pai)
 	
 bool Player::CheckHuPai(const Asset::PaiElement& pai, bool check_zibo)
 {
-	if (!_room || !_game)
-	{
-		DEBUG_ASSERT(false);
-		return false;
-	}
+	if (!_room || !_game) return false;
 
 	_fan_list.clear(); //番型清空
 

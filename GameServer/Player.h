@@ -307,7 +307,7 @@ public:
 
 	std::vector<Asset::PAI_OPER_TYPE> CheckPai(const Asset::PaiElement& pai, int64_t from_player_id);
 
-	bool CheckBaoHu(const Asset::PaiElement& pai, bool has_fapai = true);
+	bool CheckBaoHu(const Asset::PaiElement& pai);
 	bool LookAtBaopai(bool has_saizi);
 	void ResetBaopai();
 	void ResetLookAtBaopai();
