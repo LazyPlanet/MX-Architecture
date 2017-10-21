@@ -62,6 +62,7 @@ bool GmtManager::OnInnerProcess(const Asset::InnerMeta& meta)
 			Asset::Room room;
 			room.set_room_type(Asset::ROOM_TYPE_FRIEND);
 			room.mutable_options()->ParseFromString(message.options());
+			room.mutable_options()->set_gmt_opened(true); //代开房
 
 			auto room_ptr = RoomInstance.CreateRoom(room);
 			if (!room_ptr) 
