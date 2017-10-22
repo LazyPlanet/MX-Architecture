@@ -593,18 +593,10 @@ int32_t Player::CmdPaiOperate(pb::Message* message)
 	
 	auto debug_string = pai_operate->DebugString();
 
-	if (!_room || !_game) 
-	{
-		//LOG(ERROR, "玩家:{}尚未在房间或者牌局当中，无法进行操作:{}", _player_id, debug_string);
-		return 2; //还没加入房间或者还没开始游戏
-	}
+	if (!_room || !_game) return 2; //还没加入房间或者还没开始游戏
 
 	if (!pai_operate->position()) pai_operate->set_position(GetPosition()); //设置玩家座位
 	
-	//DEBUG("接收玩家:{}的牌局操作:{}.", _player_id, debug_string);
-
-	//PrintPai(); //打印玩家当前手里的牌数据
-
 	//进行操作
 	switch (pai_operate->oper_type())
 	{
@@ -719,13 +711,8 @@ int32_t Player::CmdPaiOperate(pb::Message* message)
 	//
 	//玩家抓到杠之后，进行打牌，记录上次牌状态
 	//
-	//if (pai_operate->oper_type() != Asset::PAI_OPER_TYPE_HUPAI) 
-	{
-		_last_oper_type = _oper_type;
-		_oper_type = pai_operate->oper_type(); //记录上次牌操作
-
-		//DEBUG("玩家:{}上次牌操作:{}, 此次牌操作:{}", _player_id, _last_oper_type, _oper_type);
-	}
+	_last_oper_type = _oper_type;
+	_oper_type = pai_operate->oper_type(); //记录上次牌操作
 	
 	_game->OnPaiOperate(shared_from_this(), message);
 
@@ -796,10 +783,7 @@ int32_t Player::CmdEnterRoom(pb::Message* message)
 	{
 		if (_room) 
 		{
-			//auto enter_room_string = enter_room->ShortDebugString();
 			auto room_id = _room->GetID();
-
-			//DEBUG("玩家:{}重入房间:{} 数据:{}", _player_id, room_id, enter_room_string);
 
 			auto client_room_id = enter_room->room().room_id();
 			if (room_id != client_room_id)
@@ -1023,7 +1007,7 @@ void Player::SendProtocol(const pb::Message& message)
 
 	auto debug_string = message.ShortDebugString();
 
-	DEBUG("玩家:{} 发送协议，类型:{} 内容:{}", _player_id, type_t, debug_string);
+	//DEBUG("玩家:{} 发送协议，类型:{} 内容:{}", _player_id, type_t, debug_string);
 }
 
 void Player::Send2Roomers(pb::Message& message, int64_t exclude_player_id) 
@@ -1059,10 +1043,7 @@ bool Player::Update()
 		SayHi(); //逻辑服务器不进行心跳检查，只进行断线逻辑检查
 	}
 
-	if (_heart_count % 60 == 0) //1min
-	{
-		//DEBUG("heart_count:{} player_id:{}", _heart_count, _player_id);
-	}
+	//if (_heart_count % 60 == 0) //1min
 	return true;
 }
 	
@@ -1258,8 +1239,6 @@ void Player::BroadCast(Asset::MsgItem& item)
 	
 void Player::ResetRoom() 
 { 
-	//DEBUG("玩家:{}数据:{}", _player_id, _stuff.ShortDebugString())
-
 	if (_room) _room.reset(); //刷新房间信息
 
 	_stuff.clear_room_id(); //状态初始化
@@ -1588,7 +1567,6 @@ bool Player::AddRoomRecord(int64_t room_id)
 	SendProtocol(message);
 
 	auto message_string = message.ShortDebugString();
-	//DEBUG("当前玩家:{}历史战绩:{}", _player_id, message_string);
 	
 	_stuff.mutable_room_history()->Add(room_id); 
 	_dirty = true; 
@@ -1635,8 +1613,6 @@ const std::string Player::GetIpAddress()
 /////////////////////////////////////////////////////
 std::vector<Asset::PAI_OPER_TYPE> Player::CheckPai(const Asset::PaiElement& pai, int64_t from_player_id)
 {
-	//DEBUG("{} player_id:{} from_player_id:{} card_type:{} card_value:{}", __func__, _player_id, from_player_id, pai.card_type(), pai.card_value());
-
 	std::vector<Asset::PAI_OPER_TYPE> rtn_check;
 
 	if (CheckHuPai(pai)) 
@@ -2475,8 +2451,6 @@ bool Player::IsMingPiao()
 {
 	auto curr_count = GetCardCount();
 
-	//DEBUG("当前玩家:{}手里的牌数量:{}", _player_id, curr_count);
-
 	return curr_count == 1 || curr_count == 2;
 }
 	
@@ -2535,8 +2509,6 @@ bool Player::IsDanDiao()
 //
 bool Player::IsGangOperation()
 {
-	//DEBUG("玩家:{} 当前操作类型:{} 上一次操作类型:{}", _player_id, _oper_type, _last_oper_type);
-
 	if (_last_oper_type == Asset::PAI_OPER_TYPE_GANGPAI || _last_oper_type == Asset::PAI_OPER_TYPE_ANGANGPAI 
 			|| _last_oper_type == Asset::PAI_OPER_TYPE_XUANFENG_FENG) 
 		return true;
@@ -2743,7 +2715,6 @@ void Player::OnPengPai(const Asset::PaiElement& pai)
 		if (iit == it->second.end()) return;
 
 		it->second.erase(iit);
-		//DEBUG("删除玩家:{}手中牌，card_type:{} card_vale:{}", _player_id, pai.card_type(), pai.card_value());
 	}
 
 	for (int i = 0; i < 3; ++i) _cards_outhand[pai.card_type()].push_back(pai.card_value());
@@ -3266,8 +3237,6 @@ bool Player::CheckTingPai(std::vector<Asset::PaiElement>& pais)
 	auto it_baohu = std::find(options.extend_type().begin(), options.extend_type().end(), Asset::ROOM_EXTEND_TYPE_BAOPAI);
 	if (it_baohu == options.extend_type().end()) return false; //不带宝胡，绝对不可能听牌
 
-	//if (!HasYaoJiu()) return false; //朝阳特殊玩法,缺幺九可以胡牌不可以听牌
-	
 	auto cards_inhand = _cards_inhand; //玩家手里牌
 	auto cards_outhand = _cards_outhand; //玩家墙外牌
 	auto minggang = _minggang; //明杠
@@ -3882,8 +3851,6 @@ void Player::ResetBaopai()
 {
 	if (!_game || !_has_ting) return;
 		
-	//DEBUG("玩家:{}重置宝牌", _player_id);
-
 	while(_game->HasBaopai())
 	{
 		if (_game->GetRemainBaopai() <= 0) 
@@ -3989,13 +3956,7 @@ Asset::GAME_OPER_TYPE Player::GetOperState()
 	
 void Player::SetOffline(bool offline)
 { 
-	if (!_room) return;
-
-	//if (!_game && (_player_prop.game_oper_state() == Asset::GAME_OPER_TYPE_START ||
-	//			_player_prop.game_oper_state() == Asset::GAME_OPER_TYPE_DISMISS_AGREE)) return;
-
-	//if ((offline && _player_prop.game_oper_state() == Asset::GAME_OPER_TYPE_OFFLINE) || //已经是离线状态
-	//		(!offline && _player_prop.game_oper_state() == Asset::GAME_OPER_TYPE_ONLINE)) return; //已经是在线状态
+	if (!_room || !_game) return;
 
 	if (offline == _player_prop.offline()) return; //状态尚未发生变化
 	
@@ -4004,17 +3965,6 @@ void Player::SetOffline(bool offline)
 	_player_prop.set_offline(offline); 
 
 	_room->OnPlayerStateChanged();
-
-	if (offline) 
-	{
-		//SetOperState(Asset::GAME_OPER_TYPE_OFFLINE);
-
-		//_room->OnPlayerStateChanged();
-	}
-	else
-	{
-		//SetOperState(Asset::GAME_OPER_TYPE_ONLINE);
-	}
 }
 
 void Player::ClearCards() 
@@ -4046,8 +3996,6 @@ void Player::ClearCards()
 	
 void Player::OnGameOver()
 {
-	//if (_game) _game.reset();
-
 	ClearCards();
 	
 	if (_tuoguan_server) OnLogout();
@@ -4129,8 +4077,6 @@ int32_t Player::OnKickOut(pb::Message* message)
 	const auto kick_out = dynamic_cast<const Asset::KickOutPlayer*>(message);
 	if (!kick_out) return 1;
 	
-	//DEBUG("玩家:{} 被踢下线，原因:{}", _player_id, kick_out->reason());
-
 	Logout(nullptr);
 
 	return 0;
