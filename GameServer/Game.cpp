@@ -91,6 +91,9 @@ bool Game::Start(std::vector<std::shared_ptr<Player>> players)
 		auto player_element = _playback.mutable_player_list()->Add();
 		player_element->set_player_id(player->GetID());
 		player_element->set_position(player->GetPosition());
+		player_element->mutable_common_prop()->CopyFrom(player->CommonProp());
+		player_element->mutable_wechat()->CopyFrom(player->GetWechat());
+
 		const auto& cards_inhand = player->GetCardsInhand();
 		for (const auto& crds : cards_inhand)
 		{
@@ -1939,9 +1942,14 @@ Asset::PaiElement Game::GetBaoPai(int32_t tail_index)
 
 	auto card_index = list.size() - tail_index; 
 
-	//DEBUG("生成宝牌 list.size():{} tail_index:{} card_index:{}", list.size(), tail_index, card_index);
+	auto baopai = GameInstance.GetCard(list[card_index]);
+		
+	Asset::PaiOperation pai_operate;
+	pai_operate.set_oper_type(Asset::PAI_OPER_TYPE_BAOPAI);
+	pai_operate.mutable_pai()->CopyFrom(baopai);
+	AddPlayerOperation(pai_operate); //牌局回放
 
-	return GameInstance.GetCard(list[card_index]);
+	return baopai;
 }
 
 int32_t Game::GetRemainBaopai()
