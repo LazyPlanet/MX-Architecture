@@ -3053,6 +3053,38 @@ int32_t Player::CheckXuanFeng()
 	return gang;
 }
 
+void Player::CheckXuanFengGang()
+{
+	auto xf_card = _cards_inhand;
+
+	while (CheckFengGangPai(xf_card)) //风牌检查
+	{
+		_xf_gang.push_back(Asset::PAI_OPER_TYPE_XUANFENG_FENG);
+
+		auto it = xf_card.find(Asset::CARD_TYPE_FENG);
+		if (it == xf_card.end()) continue;
+
+		for (auto card_value = 1; card_value <= 4; ++card_value) //东南西北
+		{
+			auto it_if = std::find(it->second.begin(), it->second.end(), card_value);
+			if (it_if != it->second.end()) it->second.erase(it_if); //删除一个
+		}
+	}
+	while (CheckJianGangPai(xf_card)) //箭牌检查
+	{
+		_xf_gang.push_back(Asset::PAI_OPER_TYPE_XUANFENG_JIAN);
+
+		auto it = xf_card.find(Asset::CARD_TYPE_JIAN);
+		if (it == xf_card.end()) continue;
+
+		for (auto card_value = 1; card_value <= 3; ++card_value) //中发白
+		{
+			auto it_if = std::find(it->second.begin(), it->second.end(), card_value);
+			if (it_if != it->second.end()) it->second.erase(it_if); //删除一个
+		}
+	}
+}
+
 //玩家能不能听牌的检查
 //
 //玩家打出一张牌后，查看玩家再拿到一张牌后可以胡牌
@@ -3644,53 +3676,24 @@ int32_t Player::OnFaPai(std::vector<int32_t>& cards)
 		
 		notify.set_data_type(Asset::PaiNotify_CARDS_DATA_TYPE_CARDS_DATA_TYPE_START); //操作类型：开局
 
-		//
-		//旋风杠检查
-		//
-		//缓存旋风杠给玩家
-		//
-		auto xf_card = _cards_inhand;
-
-		//风牌检查
-		while (CheckFengGangPai(xf_card))
-		{
-			_xf_gang.push_back(Asset::PAI_OPER_TYPE_XUANFENG_FENG);
-
-			auto it = xf_card.find(Asset::CARD_TYPE_FENG);
-			if (it == xf_card.end()) continue;
-
-			for (auto card_value = 1; card_value <= 4; ++card_value) //东南西北
-			{
-				auto it_if = std::find(it->second.begin(), it->second.end(), card_value);
-				if (it_if != it->second.end()) it->second.erase(it_if); //删除一个
-			}
-		}
-		//箭牌检查
-		while (CheckJianGangPai(xf_card))
-		{
-			_xf_gang.push_back(Asset::PAI_OPER_TYPE_XUANFENG_JIAN);
-
-			auto it = xf_card.find(Asset::CARD_TYPE_JIAN);
-			if (it == xf_card.end()) continue;
-
-			for (auto card_value = 1; card_value <= 3; ++card_value) //中发白
-			{
-				auto it_if = std::find(it->second.begin(), it->second.end(), card_value);
-				if (it_if != it->second.end()) it->second.erase(it_if); //删除一个
-			}
-		}
-
 		if (cards.size() == 14) //庄家检查
 		{
-			Asset::PaiOperationAlert alert;
+			_fapai_count = 1; //默认已经发牌
 
+			CheckXuanFengGang(); //庄家起手，旋风杠检查
+
+			Asset::PaiOperationAlert alert; //提示协议
+
+			//
 			//是否可以胡牌
+			//
 			if (CheckZiMo())
 			{
 				auto pai_perator = alert.mutable_pais()->Add();
 				pai_perator->mutable_oper_list()->Add(Asset::PAI_OPER_TYPE_HUPAI);
 			}
 
+			//
 			//听牌检查
 			//
 			std::vector<Asset::PaiElement> ting_list;
@@ -3731,18 +3734,16 @@ int32_t Player::OnFaPai(std::vector<int32_t>& cards)
 				pai_perator->mutable_oper_list()->Add(Asset::PAI_OPER_TYPE(gang));
 			}
 
-
 			if (alert.pais().size()) SendProtocol(alert); //上来即有旋风杠或者胡牌
-			
-			//_xf_gang.clear(); //庄家直接清理 
 		}
 	}
 	else if (cards.size() == 1)
 	{
 		auto card = GameInstance.GetCard(cards[0]);
-		_zhuapai = card;
-
 		if (card.card_type() == 0 || card.card_type() == 0) return 11;
+
+		_zhuapai = card;
+		++_fapai_count; //发牌数量
 
 		notify.set_data_type(Asset::PaiNotify_CARDS_DATA_TYPE_CARDS_DATA_TYPE_FAPAI); //操作类型:发牌
 		notify.mutable_pai()->set_card_type(card.card_type());
@@ -3755,6 +3756,8 @@ int32_t Player::OnFaPai(std::vector<int32_t>& cards)
 		_game->AddPlayerOperation(pai_operate); //牌局回放
 
 		if (IsTingPai()) ++_oper_count_tingpai; //听牌后发了//抓了多少张牌
+
+		if (_fapai_count == 1) CheckXuanFengGang(); //非庄家旋风杠检查
 			
 		//
 		//如果玩家处于服务器托管状态，则自动出牌
@@ -3978,14 +3981,12 @@ void Player::ClearCards()
  	_minggang.clear(); //清理杠牌
 	_angang.clear(); //清理杠牌
 
-	_jiangang = 0; //清理旋风杠
-	_fenggang = 0; //清理旋风杠
+	_jiangang = _fenggang = 0; //清理旋风杠
 	
 	_oper_count_tingpai = 0;
-	_oper_count = 0; 
-	_has_ting = false;
+	_fapai_count = _oper_count = 0; 
+	_has_ting = _jinbao = false;
 	_tuoguan_server = false;
-	_jinbao = false;
 	_last_oper_type = _oper_type = Asset::PAI_OPER_TYPE_BEGIN; //初始化操作
 	_player_prop.clear_game_oper_state(); //准备//离开
 	_baopai.Clear();
