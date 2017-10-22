@@ -3154,6 +3154,9 @@ bool Player::CanTingPai(const Asset::PaiElement& pai)
 
 	if (_cards_hu.size() > 0 && cards_hu.size() > 0)
 	{
+		/*
+		 * 听牌减少了可以杠
+		 *
 		for (auto card_hu : _cards_hu)
 		{
 			auto it = std::find_if(cards_hu.begin(), cards_hu.end(), [&card_hu](const Asset::PaiElement& pai){
@@ -3161,6 +3164,7 @@ bool Player::CanTingPai(const Asset::PaiElement& pai)
 				});
 			if (it == cards_hu.end()) return false; //不能换听
 		}
+		*/
 
 		for (auto card_hu : cards_hu)
 		{
@@ -3230,6 +3234,7 @@ bool Player::CanTingPai(std::map<int32_t, std::vector<int32_t>> cards_inhand, //
 	
 	if (_cards_hu.size() > 0 && cards_hu.size() > 0)
 	{
+		/*
 		for (auto card_hu : _cards_hu)
 		{
 			auto it = std::find_if(cards_hu.begin(), cards_hu.end(), [&card_hu](const Asset::PaiElement& pai){
@@ -3237,7 +3242,7 @@ bool Player::CanTingPai(std::map<int32_t, std::vector<int32_t>> cards_inhand, //
 				});
 			if (it == cards_hu.end()) return false; //不能换听
 		}
-		
+		*/
 		for (auto card_hu : cards_hu)
 		{
 			auto it = std::find_if(_cards_hu.begin(), _cards_hu.end(), [&card_hu](const Asset::PaiElement& pai){
@@ -3607,12 +3612,12 @@ int32_t Player::OnFaPai(std::vector<int32_t>& cards)
 		}
 	}
 
-	if (false && _player_id == 263097 && _cards_inhand.size() == 0)
+	if (false && _player_id == 262153 && _cards_inhand.size() == 0)
 	{
 		_cards_inhand = {
-			{ 1, {1, 1, 1, 2, 2, 2, 4, 6, 6, 6, 7, 7, 7} },
-			//{ 2, {8, 8, 8} },
-			//{ 3, {2, 2, 2} },
+			{ 1, {2, 3, 4} },
+			{ 2, {4, 5, 6} },
+			{ 3, {7, 7, 7, 8, 8, 8, 9} },
 			//{ 4, {1} },
 			//{ 5, { 1, 1, 1} },
 		};
@@ -3632,12 +3637,12 @@ int32_t Player::OnFaPai(std::vector<int32_t>& cards)
 		_minggang.push_back(gang);
 		*/
 	}
-	else if (false && _player_id == 262147 && _cards_inhand.size() == 0)
+	else if (false && _player_id == 262271 && _cards_inhand.size() == 0)
 	{
 		_cards_inhand = {
 			{ 1, {2, 2, 6, 7, 7, 7, 8} },
 			{ 2, {7, 8, 9} },
-			{ 3, {5, 5, 5} },
+			{ 3, {7, 7, 8} },
 		};
 	}
 	else
