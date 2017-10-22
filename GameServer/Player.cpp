@@ -679,13 +679,13 @@ int32_t Player::CmdPaiOperate(pb::Message* message)
 			auto it = std::find(pais.begin(), pais.end(), pai.card_value()); //查找第一个满足条件的牌即可
 			if (it == pais.end()) 
 			{
-				LOG(ERROR, "玩家:{}不能听牌, 原因:没找到牌", _player_id);
+				LOG(ERROR, "玩家:{}不能听牌:{}, 原因:没找到牌", _player_id, pai.ShortDebugString());
 				return 7; //没有这张牌
 			}
 
 			if (!CanTingPai(pai)) 
 			{
-				LOG(ERROR, "玩家:{}不能听牌, 原因:不满足牌型", _player_id);
+				LOG(ERROR, "玩家:{}不能听牌:{}, 原因:不满足牌型", _player_id, pai.ShortDebugString());
 				return 8; //不能听牌
 			}
 
