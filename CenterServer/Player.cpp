@@ -408,14 +408,14 @@ void Player::SendProtocol(const pb::Message& message)
 	session->SendProtocol(message);
 
 	//调试
-	const pb::FieldDescriptor* field = message.GetDescriptor()->FindFieldByName("type_t");
-	if (!field) return;
+	//const pb::FieldDescriptor* field = message.GetDescriptor()->FindFieldByName("type_t");
+	//if (!field) return;
 
-	const pb::EnumValueDescriptor* enum_value = message.GetReflection()->GetEnum(message, field);
-	if (!enum_value) return;
+	//const pb::EnumValueDescriptor* enum_value = message.GetReflection()->GetEnum(message, field);
+	//if (!enum_value) return;
 
-	auto debug_string = message.ShortDebugString();
-	DEBUG("send protocol to player_id:{} protocol_name:{} content:{}", _player_id, enum_value->name().c_str(), debug_string);
+	//auto debug_string = message.ShortDebugString();
+	//DEBUG("send protocol to player_id:{} protocol_name:{} content:{}", _player_id, enum_value->name().c_str(), debug_string);
 }
 	
 void Player::SendMeta(const Asset::Meta& meta)
@@ -431,7 +431,7 @@ void Player::SendMeta(const Asset::Meta& meta)
 	auto session = WorldSessionInstance.GetPlayerSession(_player_id);
 	if (!session || !session->IsConnect()) return;
 	
-	DEBUG("玩家:{}发送协议:{}到游戏逻辑服务器", _player_id, meta.ShortDebugString());
+	//DEBUG("玩家:{}发送协议:{}到游戏逻辑服务器", _player_id, meta.ShortDebugString());
 
 	session->SendMeta(meta);
 }
@@ -469,7 +469,7 @@ bool Player::SendProtocol2GameServer(const pb::Message& message)
 	meta.set_stuff(stuff);
 	meta.set_player_id(_player_id); 
 
-	DEBUG("玩家:{}发送到游戏逻辑服务器:{}内容:{}", _player_id, _stuff.server_id(), debug_string);
+	//DEBUG("玩家:{}发送到游戏逻辑服务器:{}内容:{}", _player_id, _stuff.server_id(), debug_string);
 
 	_gs_session->SendMeta(meta); 
 
@@ -800,7 +800,7 @@ void Player::SayHi()
 	message.set_heart_count(_heart_count);
 	SendProtocol(message);
 
-	DEBUG("玩家:{} 发送心跳:{}", _player_id, _hi_time);
+	//DEBUG("玩家:{} 发送心跳:{}", _player_id, _hi_time);
 }
 	
 int32_t Player::CmdGameSetting(pb::Message* message)
@@ -1031,13 +1031,13 @@ void Player::SetOffline(bool offline)
 	{
 		_player_state = Asset::GAME_OPER_TYPE_OFFLINE;
 
-		ERROR("玩家:{}离线", _player_id);
+		//ERROR("玩家:{}离线", _player_id);
 	}
 	else
 	{
 		_player_state = Asset::GAME_OPER_TYPE_ONLINE;
 
-		WARN("玩家:{}上线", _player_id);
+		//WARN("玩家:{}上线", _player_id);
 	}
 				
 	Asset::PlayerState state;

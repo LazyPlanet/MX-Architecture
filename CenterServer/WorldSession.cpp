@@ -537,7 +537,7 @@ void WorldSession::KickOutPlayer(Asset::KICK_OUT_REASON reason)
 
 		if (session && session->GetRemotePoint() != GetRemotePoint()) 
 		{
-			ERROR("全局ID:{}会话失效:", _global_id);
+			ERROR("全局ID:{}会话失效", _global_id);
 			//WorldSessionInstance.AddPlayer(_global_id, shared_from_this()); //在线玩家//该会话已经失效，不应该重复赋值
 			return;
 		}

@@ -3612,12 +3612,12 @@ int32_t Player::OnFaPai(std::vector<int32_t>& cards)
 		}
 	}
 
-	if (false && _player_id == 262153 && _cards_inhand.size() == 0)
+	if (false && _player_id == 263183 && _cards_inhand.size() == 0)
 	{
 		_cards_inhand = {
-			{ 1, {2, 3, 4} },
+			{ 1, {1, 2, 7, 7, 7, 8, 9} },
 			{ 2, {4, 5, 6} },
-			{ 3, {7, 7, 7, 8, 8, 8, 9} },
+			{ 3, {7, 7, 7} },
 			//{ 4, {1} },
 			//{ 5, { 1, 1, 1} },
 		};
