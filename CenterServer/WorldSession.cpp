@@ -243,7 +243,7 @@ void WorldSession::OnProcessMessage(const Asset::Meta& meta)
 			auto set = client.set("user:" + login->account().username(), _user.SerializeAsString());
 			client.sync_commit();
 
-			PLAYER(_user); //账号查询
+			LOG_BI("account", _user); //账号查询
 			
 			//
 			//发送当前的角色信息

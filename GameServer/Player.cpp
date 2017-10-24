@@ -98,7 +98,7 @@ int32_t Player::Load()
 
 int32_t Player::Save(bool force)
 {
-	PLAYER(_stuff);	//BI日志
+	LOG_BI("player", _stuff);
 
 	if (!force && !IsDirty()) return 1;
 
@@ -390,7 +390,7 @@ int32_t Player::OnEnterGame()
 
 	SetDirty(); //存盘
 
-	PLAYER(_stuff);	//BI日志
+	LOG_BI("player", _stuff);
 
 	//WorldSessionInstance.Emplace(_player_id, _session); //网络会话数据
 	PlayerInstance.Emplace(_player_id, shared_from_this()); //玩家管理

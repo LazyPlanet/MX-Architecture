@@ -95,7 +95,7 @@ int32_t Player::Load()
 //
 int32_t Player::Save(bool force)
 {
-	PLAYER(_stuff);	//数据日志
+	LOG_BI("player", _stuff);	
 
 	if (!force && !IsDirty()) return 1;
 
@@ -174,8 +174,8 @@ int32_t Player::OnEnterGame(bool is_login)
 
 	Save(true); //存盘
 
-	PLAYER(_stuff);	//BI日志
-
+	LOG_BI("player", _stuff);
+	
 	PlayerInstance.Emplace(_player_id, shared_from_this()); //玩家管理
 
 	OnLogin(is_login);

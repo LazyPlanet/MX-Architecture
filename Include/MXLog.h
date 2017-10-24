@@ -46,12 +46,12 @@ namespace Adoter
 		spdlog::get("console")->critical("[file:#{} func:#{} line:#{}] " fmt, __FILE__, __func__, __LINE__, ##__VA_ARGS__); \
 }\
 
-//玩家数据，主要供BI日志查询
-#define PLAYER(message) { \
+//主要供BI日志查询
+#define LOG_BI(log_name, message) { \
 		std::string json; \
 		pbjson::pb2json(&message, json); \
-		spdlog::get("player_info")->info(json); \
-		spdlog::get("player")->info("[file:#{} func:#{} line:#{}] info:{}", __FILE__, __func__, __LINE__, message.ShortDebugString()); \
+		auto log = spdlog::get(log_name); \
+		if (log) log->info(json); \
 }\
 
 //通用日志
@@ -113,14 +113,15 @@ public:
 		auto console = spdlog::stdout_color_mt("console");
 		console->set_level(spdlog::level::trace);
 		//控制台日志历史记录
-		auto rotating_logger = spdlog::rotating_logger_mt("console_history", "logs/history", 1048576 * 500, 20); //500MB 20个文件
-		rotating_logger->flush_on(spdlog::level::trace);
+		//auto rotating_logger = spdlog::rotating_logger_mt("console_history", "logs/history", 1048576 * 500, 20); //500MB 20个文件
+		//rotating_logger->flush_on(spdlog::level::trace);
 		//玩家日志
-		auto player_info = spdlog::daily_logger_st("player_info", "logs/player");
-		player_info->flush_on(spdlog::level::trace);
-		
-		auto player = spdlog::daily_logger_st("player", "logs/player_pb");
+		auto player = spdlog::daily_logger_st("player", "logs/player");
 		player->flush_on(spdlog::level::trace);
+		
+		//账号数据
+		auto account = spdlog::daily_logger_st("account", "logs/account");
+		account->flush_on(spdlog::level::trace);
 		//通用日志
 		auto common = spdlog::daily_logger_st("common", "logs/log");
 		common->flush_on(spdlog::level::trace);
