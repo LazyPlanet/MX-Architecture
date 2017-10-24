@@ -88,6 +88,7 @@ bool Game::Start(std::vector<std::shared_ptr<Player>> players)
 		player->OnFaPai(cards);  
 
 		//回放缓存：初始牌数据
+		_playback.mutable_options()->CopyFrom(_room->GetOptions()); //房间玩法
 		auto player_element = _playback.mutable_player_list()->Add();
 		player_element->set_player_id(player->GetID());
 		player_element->set_position(player->GetPosition());
@@ -1773,12 +1774,13 @@ bool Game::CheckLiuJu()
 		auto cards = FaPai(1); 
 		const Asset::PaiElement card = GameInstance.GetCard(cards[0]); //玩家待抓的牌
 		
-		int32_t rst = player->OnFaPai(card); //放入玩家牌内
-		if (rst)
-		{
-			auto player_id = player->GetID();
-			LOG(ERROR, "玩家:{}流局抓牌出现问题，牌数据:[{} {}}错误码:{}", player_id, card.card_type(), card.card_value(), rst);
-		}
+		player->OnFaPai(card); //放入玩家牌内
+	
+		Asset::PaiOperation pai_operate;
+		pai_operate.set_oper_type(Asset::PAI_OPER_TYPE_LIUJU);
+		pai_operate.set_position(player->GetPosition());
+		pai_operate.mutable_pai()->CopyFrom(card);
+		AddPlayerOperation(pai_operate); //牌局回放
 
 		//
 		//各个玩家分张
