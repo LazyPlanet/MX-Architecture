@@ -1053,7 +1053,7 @@ void PlayerManager::Emplace(int64_t player_id, std::shared_ptr<Player> player)
 
 	_players[player_id] = player;
 	
-	DEBUG("插入玩家:{}成功，当前在线玩家数量:{}", player_id, _players.size());
+	LOG(INFO, "插入玩家:{}成功，当前在线玩家数量:{}", player_id, _players.size());
 }
 
 std::shared_ptr<Player> PlayerManager::GetPlayer(int64_t player_id)
@@ -1103,7 +1103,7 @@ void PlayerManager::Remove(int64_t player_id)
 
 	_players.erase(it);
 	
-	DEBUG("删除玩家:{}成功，当前在线玩家数量:{}", player_id, _players.size());
+	LOG(INFO, "删除玩家:{}成功，当前在线玩家数量:{}", player_id, _players.size());
 }
 
 void PlayerManager::Remove(std::shared_ptr<Player> player)
