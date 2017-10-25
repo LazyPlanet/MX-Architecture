@@ -837,6 +837,8 @@ void WorldSessionManager::BroadCast2GameServer(const pb::Message& message)
 	
 void WorldSessionManager::BroadCast(const pb::Message& message)
 {
+	std::lock_guard<std::mutex> lock(_client_mutex);
+
 	for (auto session : _client_list)
 	{
 		if (!session.second) continue;
