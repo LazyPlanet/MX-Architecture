@@ -99,6 +99,7 @@ bool GmtSession::OnInnerProcess(const Asset::InnerMeta& meta)
 
 			OnSystemBroadcast(message);
 		}
+		break;
 
 		case Asset::INNER_TYPE_ACTIVITY_CONTROL: //活动控制
 		{
@@ -108,6 +109,7 @@ bool GmtSession::OnInnerProcess(const Asset::InnerMeta& meta)
 
 			OnActivityControl(message);
 		}
+		break;
 
 		default:
 		{
