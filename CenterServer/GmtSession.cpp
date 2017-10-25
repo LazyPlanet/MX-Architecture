@@ -257,6 +257,7 @@ Asset::COMMAND_ERROR_CODE GmtSession::OnCommandProcess(const Asset::Command& com
 Asset::COMMAND_ERROR_CODE GmtSession::OnSystemBroadcast(const Asset::SystemBroadcast& command)
 {
 	Asset::SystemBroadcasting message;
+	message.set_broad_cast_type(Asset::SYSTEM_BROADCAST_TYPE_SCROLL);
 	message.set_content(command.content());
 
 	WorldSessionInstance.BroadCast(message);
