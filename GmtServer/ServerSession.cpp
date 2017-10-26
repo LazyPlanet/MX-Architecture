@@ -41,7 +41,7 @@ void ServerSession::InitializeHandler(const boost::system::error_code error, con
 			{
 				unsigned short body_size = _buffer[index] * 256 + _buffer[1 + index];
 					
-				DEBUG("解析的头:{} {} 包长:{}", (int)_buffer[index] * 256, (int)_buffer[1 + index], body_size);
+				//DEBUG("解析的头:{} {} 包长:{}", (int)_buffer[index] * 256, (int)_buffer[1 + index], body_size);
 
 				if (body_size > MAX_DATA_SIZE)
 				{
@@ -100,6 +100,8 @@ bool ServerSession::OnInnerProcess(const Asset::InnerMeta& meta)
 			{
 				ServerSessionInstance.Add(message.server_id(), shared_from_this());
 			}
+
+			_server_id = message.server_id();
 
 			SendProtocol(message);
 		}
@@ -202,12 +204,9 @@ bool ServerSession::OnInnerProcess(const Asset::InnerMeta& meta)
 			auto result = message.ParseFromString(meta.stuff());
 			if (!result) return false;
 
-			LOG(TRACE, "Receive command:{} from server:{}", message.ShortDebugString(), _ip_address);
-
-			if (ServerSessionInstance.IsGmtServer(shared_from_this())) //处理GMT服务器发送的数据
-			{
-				OnSystemBroadcast(message);
-			}
+			if (!ServerSessionInstance.IsGmtServer(shared_from_this())) return false; //处理GMT服务器发送的数据
+				
+			OnSystemBroadcast(message);
 		}
 		break;
 		
@@ -535,6 +534,7 @@ bool ServerSession::Update()
 
 void ServerSession::OnClose()
 {
+	ServerSessionInstance.Remove(_server_id);
 }
 
 void ServerSession::SendProtocol(const pb::Message* message)
@@ -556,7 +556,6 @@ void ServerSession::SendProtocol(const pb::Message& message)
 	meta.set_stuff(message.SerializeAsString());
 
 	std::string content = meta.SerializeAsString();
-
 	if (content.empty()) return;
 
 	DEBUG("GMT服务器向服务器:{}发送协议数据:{}", _ip_address, meta.ShortDebugString());
@@ -571,6 +570,8 @@ void ServerSessionManager::BroadCastProtocol(const pb::Message* message)
 
 void ServerSessionManager::BroadCastProtocol(const pb::Message& message)
 {
+	std::lock_guard<std::mutex> lock(_server_mutex);
+
 	for (auto session : _sessions)
 	{
 		if (!session.second) continue;
@@ -580,8 +581,21 @@ void ServerSessionManager::BroadCastProtocol(const pb::Message& message)
 
 void ServerSessionManager::Add(int64_t server_id, std::shared_ptr<ServerSession> session)
 {
+	std::lock_guard<std::mutex> lock(_server_mutex);
+
 	_sessions.emplace(server_id, session);
 }	
+	
+void ServerSessionManager::Remove(int64_t server_id)
+{
+	std::lock_guard<std::mutex> lock(_server_mutex);
+
+	auto it = _sessions.find(server_id);
+	if (it == _sessions.end()) return;
+
+	if (it->second) it->second.reset();
+	_sessions.erase(it);
+}
 
 NetworkThread<ServerSession>* ServerSessionManager::CreateThreads() const
 {    

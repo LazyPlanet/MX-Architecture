@@ -42,7 +42,7 @@ bool GmtSession::OnInnerProcess(const Asset::InnerMeta& meta)
 {
 	auto debug_string = meta.ShortDebugString(); 
 
-	DEBUG("接收GMT服务器:{}协议:{}", _ip_address, debug_string);
+	DEBUG("中心服务器接收GMT服务器:{}协议:{}", _ip_address, debug_string);
 
 	switch (meta.type_t())
 	{
