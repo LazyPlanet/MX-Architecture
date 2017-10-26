@@ -21,6 +21,7 @@ enum INNER_TYPE {
 	INNER_TYPE_SEND_MAIL = 4; //GMT指令-发送邮件
 	INNER_TYPE_SYSTEM_BROADCAST = 5; //GMT指令-系统广播
 	INNER_TYPE_ACTIVITY_CONTROL = 6; //GMT指令-活动控制
+	INNER_TYPE_QUERY_PLAYER = 7; //查询玩家信息
 }
 
 /////////////////////////////////////////////////////
@@ -118,6 +119,13 @@ message ActivityControl {
 	optional bytes stop_time = 5; //结束时间(示例：2017-02-20 20:00:00)
 }
 
+//查询玩家信息
+message QueryPlayer {
+	optional INNER_TYPE type_t = 1 [default = INNER_TYPE_QUERY_PLAYER];
+	optional COMMAND_ERROR_CODE error_code = 2; //返回码
+	optional int64 player_id = 3; //角色ID
+	optional bytes common_prop = 4;
+}
 /////////////////////////////////////////////////////
 //
 // 各种服务器相互通信协议定义区

@@ -226,6 +226,25 @@ bool ServerSession::OnInnerProcess(const Asset::InnerMeta& meta)
 		}
 		break;
 
+		case Asset::INNER_TYPE_QUERY_PLAYER:
+		{
+			Asset::QueryPlayer message;
+			auto result = message.ParseFromString(meta.stuff());
+			if (!result) return false;
+	
+			auto redis = make_unique<Redis>();
+
+			Asset::Player player; //玩家数据
+			auto success = redis->GetPlayer(message.player_id(), player);
+			if (!success) message.set_error_code(Asset::COMMAND_ERROR_CODE_NO_PLAYER);
+			else message.set_common_prop(player.common_prop().SerializeAsString());
+
+			message.set_error_code(Asset::COMMAND_ERROR_CODE_SUCCESS);
+
+			SendProtocol(message);
+		}
+		break;
+
 		default:
 		{
 			WARN("Receive message:{} from server has no process type:{}", meta.ShortDebugString(), meta.type_t());
