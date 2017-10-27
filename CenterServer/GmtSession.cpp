@@ -235,9 +235,13 @@ Asset::COMMAND_ERROR_CODE GmtSession::OnCommandProcess(const Asset::Command& com
 		case Asset::COMMAND_TYPE_ROOM_CARD:
 		{
 			if (command.count() >= 0)
+			{
 				player_ptr->GainRoomCard(Asset::ROOM_CARD_CHANGED_TYPE_GMT, command.count());   
+			}
 			else
+			{
 				player_ptr->ConsumeRoomCard(Asset::ROOM_CARD_CHANGED_TYPE_GMT, -command.count());   
+			}
 		}
 		break;
 		

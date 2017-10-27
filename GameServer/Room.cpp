@@ -43,7 +43,7 @@ Asset::ERROR_CODE Room::TryEnter(std::shared_ptr<Player> player)
 	{
 		return Asset::ERROR_ROOM_IS_FULL; //房间已满
 	}
-	else if (!_game && GetRemainCount() <= 0) 
+	else if (HasBeenOver()) 
 	{
 		return Asset::ERROR_ROOM_BEEN_OVER; //战局结束
 	}
@@ -138,7 +138,7 @@ void Room::OnReEnter(std::shared_ptr<Player> op_player)
 	//
 	SyncRoom();
 
-	if (!HasStarted() || (!_game && GetRemainCount() <= 0 /*单纯记录局数不能判定对局已经结束*/)) return; //尚未开局或者已经对局结束
+	if (!HasStarted() || HasBeenOver()/*单纯记录局数不能判定对局已经结束*/) return; //尚未开局或者已经对局结束
 
 	//
 	//房间内玩家数据推送
@@ -322,7 +322,7 @@ void Room::OnPlayerOperate(std::shared_ptr<Player> player, pb::Message* message)
 
 		case Asset::GAME_OPER_TYPE_LEAVE: //离开游戏
 		{
-			if (!HasDisMiss() && _games.size() != 0 && GetRemainCount() > 0) return; //没有开局，且没有对战完，则不允许退出
+			if (!HasDisMiss() && HasStarted() && !HasBeenOver()) return; //没有开局，且没有对战完，则不允许退出
 			//
 			//如果房主离开房间，且此时尚未开局，则直接解散
 			//
@@ -521,7 +521,7 @@ void Room::OnGameOver(int64_t player_id)
 		++_streak_wins[player_id];
 	}
 
-	if (GetRemainCount() > 0 && !HasDisMiss()) return; //没有对局结束，且没有解散房间
+	if (!HasBeenOver() && !HasDisMiss()) return; //没有对局结束，且没有解散房间
 
 	if (_games.size() == 0) return; //没有对局
 	
@@ -675,8 +675,10 @@ void Room::OnDisMiss()
 
 void Room::DoDisMiss()
 {
-	_is_dismiss = true;
+	DEBUG("房间:{}解散成功", _stuff.room_id());
 
+	_is_dismiss = true;
+					
 	OnGameOver();
 }
 	

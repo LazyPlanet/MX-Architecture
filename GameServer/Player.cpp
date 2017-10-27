@@ -144,7 +144,7 @@ int32_t Player::Logout(pb::Message* message)
 	//
 	if (_room) 
 	{
-		if (_game || (_room->HasStarted() && _room->GetRemainCount() > 0 && !_room->HasDisMiss())) //游戏中，或已经开局且尚未对局完成且不是解散，则不让退出房间
+		if (_game || (_room->HasStarted() && !_room->HasBeenOver() && !_room->HasDisMiss())) //游戏中，或已经开局且尚未对局完成且不是解散，则不让退出房间
 		{
 			SetOffline(); //玩家状态
 
@@ -184,7 +184,7 @@ int32_t Player::Logout(pb::Message* message)
 			//
 			//房主在尚未开局状态，不能因为离线而解散或者退出房间
 			//
-			if (_room->IsHoster(_player_id) && _room->GetRemainCount() > 0 && !_room->HasDisMiss())
+			if (_room->IsHoster(_player_id) && !_room->HasBeenOver() && !_room->HasDisMiss())
 			{
 				SetOffline(); //玩家状态
 
@@ -208,10 +208,7 @@ int32_t Player::Logout(pb::Message* message)
 	
 int32_t Player::OnLogout()
 {
-	//_stuff.set_login_time(0);
-	//_stuff.set_logout_time(CommonTimerInstance.GetTime());
-	
-	if (!_game && _room && (!_room->HasStarted() || _room->GetRemainCount() <= 0 || _room->HasDisMiss())) 
+	if (!_game && _room && (!_room->HasStarted() || _room->HasBeenOver() || _room->HasDisMiss())) 
 	{
 		ResetRoom();
 	}
@@ -231,8 +228,6 @@ int32_t Player::OnLogout()
 	kickout_player.set_reason(Asset::KICK_OUT_REASON_LOGOUT);
 	SendProtocol(kickout_player);
 	
-	//DEBUG("玩家:{} 数据:{} 退出游戏逻辑服务器成功", _player_id, _stuff.ShortDebugString());
-
 	return 0;
 }
 	
@@ -555,7 +550,7 @@ int32_t Player::CmdGameOperate(pb::Message* message)
 		{
 			_player_prop.set_game_oper_state(game_operate->oper_type());
 
-			if (!_room || _room->GetRemainCount() <= 0) 
+			if (!_room || _room->HasBeenOver()) 
 			{
 				OnLeaveRoom(); //防止玩家不在房间内进行解散操作,出现这种情况原因是C<->S状态不一致
 				return 0;
