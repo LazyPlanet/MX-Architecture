@@ -862,6 +862,7 @@ int32_t Player::CmdPlayBack(pb::Message* message)
 	if (!client.is_connected()) 
 	{
 		SendProtocol(play_back);
+		AlertMessage(Asset::ERROR_ROOM_PLAYBACK_NO_RECORD, Asset::ERROR_TYPE_NORMAL, Asset::ERROR_SHOW_TYPE_MESSAGE_BOX);
 		return 5;
 	}
 	
@@ -869,13 +870,11 @@ int32_t Player::CmdPlayBack(pb::Message* message)
 	if (has_auth.get().ko()) 
 	{
 		SendProtocol(play_back);
+		AlertMessage(Asset::ERROR_ROOM_PLAYBACK_NO_RECORD, Asset::ERROR_TYPE_NORMAL, Asset::ERROR_SHOW_TYPE_MESSAGE_BOX);
 		return 2;
 	}
 
-	auto room_id = play_back->room_id();
-	auto game_index = play_back->game_index();
-
-	std::string key = "playback:" + std::to_string(room_id) + "_" + std::to_string(game_index);
+	std::string key = "playback:" + std::to_string(play_back->room_id()) + "_" + std::to_string(play_back->game_index());
 	auto get = client.get(key);
 	cpp_redis::reply reply = get.get();
 	client.commit();
@@ -883,6 +882,7 @@ int32_t Player::CmdPlayBack(pb::Message* message)
 	if (!reply.is_string()) 
 	{
 		SendProtocol(play_back);
+		AlertMessage(Asset::ERROR_ROOM_PLAYBACK_NO_RECORD, Asset::ERROR_TYPE_NORMAL, Asset::ERROR_SHOW_TYPE_MESSAGE_BOX);
 		return 3;
 	}
 		
@@ -891,6 +891,7 @@ int32_t Player::CmdPlayBack(pb::Message* message)
 	if (!success) 
 	{
 		SendProtocol(play_back);
+		AlertMessage(Asset::ERROR_ROOM_PLAYBACK_NO_RECORD, Asset::ERROR_TYPE_NORMAL, Asset::ERROR_SHOW_TYPE_MESSAGE_BOX);
 		return 4;
 	}
 
