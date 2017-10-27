@@ -128,7 +128,7 @@ bool ServerSession::OnInnerProcess(const Asset::InnerMeta& meta)
 
 				if (Asset::COMMAND_ERROR_CODE_SUCCESS == error_code)
 				{
-					DEBUG("服务器:{} 处理指令数据成功:{} error_code:{}", _ip_address, message.ShortDebugString(), error_code);
+					LOG(INFO, "服务器:{} 处理指令数据成功:{}", _ip_address, message.ShortDebugString());
 				}
 				else if (Asset::COMMAND_ERROR_CODE_PLAYER_ONLINE != error_code) //在线
 				{
@@ -318,12 +318,15 @@ Asset::COMMAND_ERROR_CODE ServerSession::OnCommandProcess(const Asset::Command& 
 		case Asset::COMMAND_TYPE_RECHARGE:
 		{
 			player.mutable_common_prop()->set_diamond(player.common_prop().diamond() + command.count());
+			if (player.common_prop().diamond() < 0) player.mutable_common_prop()->set_diamond(0);
 		}
 		break;
 		
 		case Asset::COMMAND_TYPE_ROOM_CARD:
 		{
 			player.mutable_common_prop()->set_room_card_count(player.common_prop().room_card_count() + command.count());
+			if (player.common_prop().room_card_count() < 0) player.mutable_common_prop()->set_room_card_count(0);
+
 			/*
 			auto global_id = command.item_id();
 			const auto message = AssetInstance.Get(global_id); //例如：Asset::Item_Potion
@@ -428,6 +431,7 @@ Asset::COMMAND_ERROR_CODE ServerSession::OnCommandProcess(const Asset::Command& 
 		case Asset::COMMAND_TYPE_HUANLEDOU:
 		{
 			player.mutable_common_prop()->set_huanledou(player.common_prop().huanledou() + command.count());
+			if (player.common_prop().huanledou() < 0) player.mutable_common_prop()->set_huanledou(0);
 		}
 		break;
 		
