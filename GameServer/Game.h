@@ -33,6 +33,8 @@ private:
 	int32_t _curr_player_index = 0; //当前在操作的玩家索引
 	int64_t _banker_player_id = 0; //庄家
 	std::vector<int64_t> _ting_players; //听牌玩家
+	int64_t _room_id = 0;
+	int32_t _game_id = 0;
 
 	Asset::PaiElement _baopai; //宝牌
 	int32_t _random_result = 0; //宝牌随机：1~6
@@ -51,7 +53,7 @@ private:
 	Asset::PlayBack _playback; //回放数据
 public:
 	virtual void Init(std::shared_ptr<Room> room); //初始化
-	virtual bool Start(std::vector<std::shared_ptr<Player>> players); //开始游戏
+	virtual bool Start(std::vector<std::shared_ptr<Player>> players, int64_t room_id = 0, int32_t game_id = 0); //开始游戏
 	virtual void OnStart(); //开始游戏回调
 
 	virtual bool OnGameOver(int64_t player_id); //游戏结束

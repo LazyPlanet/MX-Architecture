@@ -311,7 +311,7 @@ void Room::OnPlayerOperate(std::shared_ptr<Player> player, pb::Message* message)
 
 			_game->Init(shared_from_this()); //洗牌
 
-			_game->Start(_players); //开始游戏
+			_game->Start(_players, _stuff.room_id(), _games.size()); //开始游戏
 
 			//for (int32_t i = 0; i < 8; ++i) //直接第8局
 				_games.push_back(_game); //游戏
