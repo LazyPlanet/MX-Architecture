@@ -230,25 +230,25 @@ int64_t Player::ConsumeRoomCard(Asset::ROOM_CARD_CHANGED_TYPE changed_type, int6
 {
 	if (count <= 0) return 0;
 
-	//if (!CheckRoomCard(count)) return 0;
-
 	_stuff.mutable_common_prop()->set_room_card_count(_stuff.common_prop().room_card_count() - count);
 	_dirty = true;
 	
 	SyncCommonProperty();
 	
+	LOG(INFO, "玩家:{}消耗房卡，原因:{} 数量:{}成功", _player_id, changed_type, count);
 	return count;
 }
 
 int64_t Player::GainRoomCard(Asset::ROOM_CARD_CHANGED_TYPE changed_type, int64_t count) 
 {
-	//if (count <= 0) return 0;
+	if (count <= 0) return 0;
 
 	_stuff.mutable_common_prop()->set_room_card_count(_stuff.common_prop().room_card_count() + count);
 	_dirty = true;
 	
 	SyncCommonProperty();
 	
+	LOG(INFO, "玩家:{}获得房卡，原因:{} 数量:{}成功", _player_id, changed_type, count);
 	return count;
 }
 
@@ -1053,7 +1053,7 @@ void PlayerManager::Emplace(int64_t player_id, std::shared_ptr<Player> player)
 
 	_players[player_id] = player;
 	
-	LOG(INFO, "插入玩家:{}成功，当前在线玩家数量:{}", player_id, _players.size());
+	DEBUG("插入玩家:{}成功，当前在线玩家数量:{}", player_id, _players.size());
 }
 
 std::shared_ptr<Player> PlayerManager::GetPlayer(int64_t player_id)
@@ -1103,7 +1103,7 @@ void PlayerManager::Remove(int64_t player_id)
 
 	_players.erase(it);
 	
-	LOG(INFO, "删除玩家:{}成功，当前在线玩家数量:{}", player_id, _players.size());
+	DEBUG("删除玩家:{}成功，当前在线玩家数量:{}", player_id, _players.size());
 }
 
 void PlayerManager::Remove(std::shared_ptr<Player> player)
@@ -1131,9 +1131,12 @@ void PlayerManager::Update(int32_t diff)
 {
 	++_heart_count;
 
-	//if (_heart_count % 20 != 0) return;
-
 	std::lock_guard<std::mutex> lock(_mutex);
+	
+	if (_heart_count % 20 * 60 * 30 != 0) 
+	{
+		LOG(INFO, "当前在线玩家数量:{}", _players.size()); //30分钟查询一次
+	}
 
 	for (auto it = _players.begin(); it != _players.end();)
 	{

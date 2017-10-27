@@ -668,10 +668,7 @@ void Room::OnDisMiss()
 		list->set_oper_type(player->GetOperState());
 	}
 
-	//auto proto_string = proto.ShortDebugString();
-	//auto room_id = GetID();
-
-	//DEBUG("解散房间:{} 协议:{}", room_id, proto_string);
+	DEBUG("玩家发起解散房间:{}", _stuff.room_id());
 
 	BroadCast(proto); //投票状态
 }

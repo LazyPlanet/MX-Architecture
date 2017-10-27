@@ -234,7 +234,10 @@ Asset::COMMAND_ERROR_CODE GmtSession::OnCommandProcess(const Asset::Command& com
 		
 		case Asset::COMMAND_TYPE_ROOM_CARD:
 		{
-			player_ptr->GainRoomCard(Asset::ROOM_CARD_CHANGED_TYPE_GMT, command.count());   
+			if (command.count() >= 0)
+				player_ptr->GainRoomCard(Asset::ROOM_CARD_CHANGED_TYPE_GMT, command.count());   
+			else
+				player_ptr->ConsumeRoomCard(Asset::ROOM_CARD_CHANGED_TYPE_GMT, -command.count());   
 		}
 		break;
 		
@@ -374,8 +377,6 @@ void GmtSession::OnReadSome(const boost::system::error_code& error, std::size_t 
 		return;
 	}
 	
-	DEBUG("Receive message from server:{} bytes_transferred:{} error:{}", _ip_address, bytes_transferred, error.message());
-
 	Asset::InnerMeta meta;
 	auto result = meta.ParseFromArray(_buffer.data(), bytes_transferred);
 	if (!result)

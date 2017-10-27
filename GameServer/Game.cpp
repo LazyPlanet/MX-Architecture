@@ -555,11 +555,6 @@ void Game::OnPaiOperate(std::shared_ptr<Player> player, pb::Message* message)
 		case Asset::PAI_OPER_TYPE_HUPAI: //胡牌
 		case Asset::PAI_OPER_TYPE_QIANGGANG: //抢杠胡
 		{
-			if (pai.card_type() != _oper_cache.pai().card_type() || pai.card_value() != _oper_cache.pai().card_value())
-			{
-				LOG(ERROR, "玩家:{}胡牌，服务器缓存的牌:{}和玩家发送的牌:{}不一致", player->GetID(), pai.ShortDebugString(), _oper_cache.pai().ShortDebugString());
-			}
-
 			if (player->CheckCardsInhand() && player->CheckHuPai(pai)) //玩家点炮
 			{
 				auto fan_list = player->GetFanList();

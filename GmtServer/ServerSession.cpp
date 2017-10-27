@@ -35,8 +35,6 @@ void ServerSession::InitializeHandler(const boost::system::error_code error, con
 		}
 		else
 		{
-			DEBUG("Receive message from game server:{} bytes_transferred:{}", _ip_address, bytes_transferred);
-
 			for (size_t index = 0; index < bytes_transferred;)
 			{
 				unsigned short body_size = _buffer[index] * 256 + _buffer[1 + index];
@@ -203,6 +201,8 @@ bool ServerSession::OnInnerProcess(const Asset::InnerMeta& meta)
 			Asset::SystemBroadcast message;
 			auto result = message.ParseFromString(meta.stuff());
 			if (!result) return false;
+	
+			DEBUG("接收GMT跑马灯:{} 来自地址:{}", message.ShortDebugString(), _ip_address);
 
 			if (!ServerSessionInstance.IsGmtServer(shared_from_this())) return false; //处理GMT服务器发送的数据
 				
@@ -517,6 +517,8 @@ Asset::COMMAND_ERROR_CODE ServerSession::OnSendMail(const Asset::SendMail& comma
 	
 Asset::COMMAND_ERROR_CODE ServerSession::OnSystemBroadcast(const Asset::SystemBroadcast& command)
 {
+	DEBUG("GMT广播数据:{}", command.ShortDebugString());
+
 	ServerSessionInstance.BroadCastProtocol(command);
 
 	RETURN(Asset::COMMAND_ERROR_CODE_SUCCESS); //成功执行
@@ -558,7 +560,7 @@ void ServerSession::SendProtocol(const pb::Message& message)
 	std::string content = meta.SerializeAsString();
 	if (content.empty()) return;
 
-	DEBUG("GMT服务器向服务器:{}发送协议数据:{}", _ip_address, meta.ShortDebugString());
+	DEBUG("GMT服务器向服务器ID:{} 地址:{} 发送协议数据:{} 具体内容:{}", _server_id, _ip_address, meta.ShortDebugString(), message.ShortDebugString());
 	AsyncSend(content);
 }
 	
