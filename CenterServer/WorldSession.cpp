@@ -170,11 +170,7 @@ void WorldSession::OnProcessMessage(const Asset::Meta& meta)
 			if (!client.is_connected()) return;
 
 			auto has_auth = client.auth(ConfigInstance.GetString("Redis_Password", "!QAZ%TGB&UJM9ol."));
-			if (has_auth.get().ko()) 
-			{
-				DEBUG_ASSERT(false);
-				return;
-			}
+			if (has_auth.get().ko()) return;
 
 			auto get = client.get("user:" + login->account().username());
 			cpp_redis::reply reply = get.get();
@@ -187,11 +183,7 @@ void WorldSession::OnProcessMessage(const Asset::Meta& meta)
 			}
 	
 			auto success = _user.ParseFromString(reply.as_string());
-			if (!success)
-			{
-				DEBUG_ASSERT(false);
-				return;
-			}
+			if (!success) return;
 
 			//
 			//Client数据
@@ -227,16 +219,12 @@ void WorldSession::OnProcessMessage(const Asset::Meta& meta)
 				_player->Save(true); //存盘，防止数据库无数据
 				_user.mutable_player_list()->Add(player_id);
 				
-				auto user_string = _user.ShortDebugString();
-				LOG(INFO, "账号:{}下尚未创建角色，创建角色:{} 账号数据:{}", login->account().username(), player_id, user_string);
+				LOG(INFO, "账号:{}下尚未创建角色，创建角色:{} 账号数据:{}", login->account().username(), player_id, _user.ShortDebugString());
 			}
 
 			if (_player_list.size()) _player_list.clear(); 
 			for (auto player_id : _user.player_list()) _player_list.emplace(player_id); //玩家数据
 			
-			auto user_string = _user.ShortDebugString();
-			auto account_string = _account.ShortDebugString();
-				
 			//
 			//账号数据存储
 			//
@@ -273,7 +261,9 @@ void WorldSession::OnProcessMessage(const Asset::Meta& meta)
 			if (!login) return; 
 			
 			std::string account;
+
 			auto redis = make_unique<Redis>();
+
 			if (redis->GetGuestAccount(account)) 
 			{
 				login->set_account(account);
@@ -283,6 +273,8 @@ void WorldSession::OnProcessMessage(const Asset::Meta& meta)
 			}
 
 			_user.mutable_account()->CopyFrom(_account);
+			_user.set_created_time(CommonTimerInstance.GetTime()); //创建时间
+
 			redis->SaveUser(account, _user); //存盘
 
 			SendProtocol(login); 
@@ -720,8 +712,7 @@ int32_t WorldSession::OnWechatLogin(const pb::Message* message)
 	}
 	else
 	{
-		//if (!_user.has_wechat_token()) _user.mutable_wechat_token()->CopyFrom(_access_token);
-		//if (!_user.has_wechat()) _user.mutable_wechat()->CopyFrom(_wechat); //微信数据
+		_user.set_created_time(CommonTimerInstance.GetTime()); //创建时间
 
 		auto redis = make_unique<Redis>();
 		if (_user.wechat().has_openid()) redis->SaveUser(_user.wechat().openid(), _user); //账号数据存盘
