@@ -773,7 +773,7 @@ bool Room::CanStarGame()
 	{
 		if (GetRemainCount() <= 0) 
 		{
-			LOG(ERROR, "房间:{}牌局结束，不能继续进行游戏，总局数:{} 当前局数:{}", GetID(), _stuff.options().open_rands(), _games.size());
+			LOG(ERROR, "房间:{}牌局结束，不能继续进行游戏，总局数:{} 当前局数:{}", _stuff.room_id(), _stuff.options().open_rands(), _games.size());
 			return false;
 		}
 
@@ -793,23 +793,59 @@ bool Room::CanStarGame()
 		if (_hoster && _games.size() == 0) //开局消耗
 		{
 			const auto room_card = dynamic_cast<const Asset::Item_RoomCard*>(AssetInstance.Get(g_const->room_card_id()));
-			if (!room_card) return false;
+			if (!room_card || room_card->rounds()) return false;
 
-			auto rounds = room_card->rounds(); //该张房卡可以玩多少局麻将
-			if (rounds <= 0) return false;
-
-			auto open_rands = GetOptions().open_rands(); //局数
-			auto consume_count = open_rands / rounds; //待消耗房卡数
-			auto consume_real = _hoster->ConsumeRoomCard(Asset::ROOM_CARD_CHANGED_TYPE_OPEN_ROOM, consume_count); //消耗
-			if (consume_count != consume_real)
+			auto consume_count = GetOptions().open_rands() / room_card->rounds(); //待消耗房卡数
+			auto pay_type = GetOptions().pay_type(); //付费方式
+		
+			switch (pay_type)
 			{
-				LOG(ERROR, "消耗玩家:{}房卡错误，需要消耗:{} 实际消耗:{}", _hoster->GetID(), consume_count, consume_real);
-				return false;
+				case Asset::ROOM_PAY_TYPE_HOSTER: //房主付卡
+				{
+					if (!_hoster->CheckRoomCard(consume_count)) 
+					{
+						_hoster->AlertMessage(Asset::ERROR_ROOM_CARD_NOT_ENOUGH); //房卡不足
+						return false;
+					}
+					_hoster->ConsumeRoomCard(Asset::ROOM_CARD_CHANGED_TYPE_OPEN_ROOM, consume_count); //消耗
+				}
+				break;
+				
+				case Asset::ROOM_PAY_TYPE_AA: //AA付卡
+				{
+					int32_t diamond_count = g_const->room_aapay_diamond() * consume_count; //钻石数量
+
+					for (auto player : _players) //钻石检查
+					{
+						if (!player) return false;
+
+						if (!player->CheckDiamond(diamond_count)) 
+						{
+							player->AlertMessage(Asset::ERROR_DIAMOND_NOT_ENOUGH); //钻石不足，理论上一定会过，玩家进入AA付卡已经前置检查
+							return false;
+						}
+					}
+					
+					for (auto player : _players) //钻石消耗
+					{
+						if (!player) return false;
+
+						player->ConsumeDiamond(Asset::DIAMOND_CHANGED_TYPE_OPEN_ROOM, diamond_count); //消耗钻石
+					}
+				}
+				break;
+
+				default:
+				{
+					return false;
+				}
+				break;
 			}
 		}
 		else if (_games.size() == 0)
 		{
-			LOG(ERROR, "房间:{}尚未消耗房卡进行开房, 房主:{}", GetID(), _hoster->GetID()); //记录
+			LOG(ERROR, "房间:{}尚未消耗房卡进行开房, 房主:{}", _stuff.room_id(), _hoster->GetID()); //记录
+			return false;
 		}
 	}
 	else

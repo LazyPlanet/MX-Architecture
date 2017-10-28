@@ -430,13 +430,6 @@ void Player::SendPlayer()
 
 int32_t Player::CmdCreateRoom(pb::Message* message)
 {
-	//
-	//调试命令
-	//
-	//如果不用，请勿忘注释
-	//
-	//DebugCommand();
-
 	Asset::CreateRoom* create_room = dynamic_cast<Asset::CreateRoom*>(message);
 	if (!create_room) return 1;
 	
@@ -465,22 +458,44 @@ int32_t Player::CmdCreateRoom(pb::Message* message)
 	else
 	{
 		auto open_rands = create_room->room().options().open_rands(); //局数
+		auto pay_type = create_room->room().options().pay_type(); //付费方式
 
 		const Asset::Item_RoomCard* room_card = dynamic_cast<const Asset::Item_RoomCard*>(AssetInstance.Get(g_const->room_card_id()));
-		if (!room_card) return 3;
+		if (!room_card || room_card->rounds() <= 0) return 3;
 
-		int32_t rounds = room_card->rounds(); //该张房卡可以玩多少局麻将
-		if (rounds <= 0) return 4;
+		int32_t consume_count = open_rands / room_card->rounds(); //待消耗房卡数量
 
-		int32_t consume_count = open_rands / rounds; //待消耗房卡数量
-
-		if (!CheckRoomCard(consume_count)) 
+		switch (pay_type)
 		{
-			LOG(ERROR, "玩家:{}开房房卡不足，当前房卡数量:{}需要消耗房卡数量:{}，开局数量:{}，单个房卡可以开房数量:{}", 
-					_player_id, _stuff.common_prop().room_card_count(), consume_count, open_rands, rounds);
+			case Asset::ROOM_PAY_TYPE_HOSTER:
+			{
+				if (!CheckRoomCard(consume_count)) 
+				{
+					AlertMessage(Asset::ERROR_ROOM_CARD_NOT_ENOUGH); //房卡不足
 
-			AlertMessage(Asset::ERROR_ROOM_CARD_NOT_ENOUGH); //房卡不足
-			return 5;
+					LOG(ERROR, "玩家:{}开房房卡不足，当前房卡数量:{}需要消耗房卡数量:{}，开局数量:{}，单个房卡可以开房数量:{}", _player_id, _stuff.common_prop().room_card_count(), consume_count, open_rands, room_card->rounds());
+					return 5;
+				}
+			}
+			break;
+			
+			case Asset::ROOM_PAY_TYPE_AA:
+			{
+				int32_t diamond_count = g_const->room_aapay_diamond() * consume_count; //钻石数量
+
+				if (!CheckDiamond(diamond_count)) 
+				{
+					AlertMessage(Asset::ERROR_DIAMOND_NOT_ENOUGH); //钻石不足
+					return 6;
+				}
+			}
+			break;
+
+			default:
+			{
+				return 7;
+			}
+			break;
 		}
 	}
 
@@ -494,7 +509,7 @@ int32_t Player::CmdCreateRoom(pb::Message* message)
 	
 	OnCreateRoom(create_room); //创建房间成功
 
-	LOG(ACTION, "player_id:{} create room_id:{}", _player_id, room_id);
+	LOG(INFO, "玩家:{} 创建房间:{} 成功", _player_id, room_id);
 
 	return 0;
 }
@@ -892,6 +907,21 @@ int32_t Player::CmdEnterRoom(pb::Message* message)
 			}
 			else
 			{
+				if (locate_room->GetOptions().pay_type() == Asset::ROOM_PAY_TYPE_AA) //AA付卡
+				{
+					const Asset::Item_RoomCard* room_card = dynamic_cast<const Asset::Item_RoomCard*>(AssetInstance.Get(g_const->room_card_id()));
+					if (!room_card || room_card->rounds() <= 0) return Asset::ERROR_INNER;
+
+					int32_t consume_count = locate_room->GetOpenRands() / room_card->rounds() * g_const->room_aapay_diamond(); //待消耗钻石数量
+					if (consume_count <= 0 || !CheckDiamond(consume_count))
+					{
+						enter_room->set_error_code(Asset::ERROR_ROOM_AA_DIAMOND_NOT_ENOUGH); //钻石不足
+						SendProtocol(enter_room);
+
+						return Asset::ERROR_ROOM_AA_DIAMOND_NOT_ENOUGH;
+					}
+				}
+
 				auto enter_status = locate_room->TryEnter(shared_from_this()); //玩家进入房间
 				enter_room->mutable_room()->CopyFrom(locate_room->Get());
 				enter_room->set_error_code(enter_status); //是否可以进入场景//房间
