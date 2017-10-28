@@ -1154,7 +1154,7 @@ void PlayerManager::Update(int32_t diff)
 
 	std::lock_guard<std::mutex> lock(_mutex);
 	
-	if (_heart_count % 20 * 60 * 30 != 0) 
+	if (_heart_count % (20 * 60 * 30) == 0) 
 	{
 		LOG(INFO, "当前在线玩家数量:{}", _players.size()); //30分钟查询一次
 	}

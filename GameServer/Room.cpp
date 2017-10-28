@@ -793,7 +793,7 @@ bool Room::CanStarGame()
 		if (_hoster && _games.size() == 0) //开局消耗
 		{
 			const auto room_card = dynamic_cast<const Asset::Item_RoomCard*>(AssetInstance.Get(g_const->room_card_id()));
-			if (!room_card || room_card->rounds()) return false;
+			if (!room_card || room_card->rounds() <= 0) return false;
 
 			auto consume_count = GetOptions().open_rands() / room_card->rounds(); //待消耗房卡数
 			auto pay_type = GetOptions().pay_type(); //付费方式
