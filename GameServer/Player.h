@@ -403,8 +403,6 @@ public:
 	int32_t GetJianGang() { return _jiangang; } //旋风杠，本质是明杠
 	int32_t GetFengGang() { return _fenggang; } //旋风杠，本质是暗杠
 
-	void NormalCheckAfterFaPai(const Asset::PaiElement& pai); //发牌后，玩家手里牌通用检查
-
 	bool IsReady() { return _player_prop.game_oper_state() == Asset::GAME_OPER_TYPE_START; } //是否已经在准备状态 
 	bool AgreeDisMiss() { return _player_prop.game_oper_state() == Asset::GAME_OPER_TYPE_DISMISS_AGREE; } //是否同意解散 
 	bool DisAgreeDisMiss() { return _player_prop.game_oper_state() == Asset::GAME_OPER_TYPE_DISMISS_DISAGREE; } //是否拒绝解散 

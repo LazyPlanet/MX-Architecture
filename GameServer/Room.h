@@ -21,6 +21,7 @@ class Room : public std::enable_shared_from_this<Room>
 private:
 	int32_t _banker_index = 0; //庄家索引
 	int64_t _banker = 0; //庄家//玩家ID
+	int64_t _hoster_id = 0; //房主ID
 	int32_t _expired_time = 0; //过期时间
 	bool _gmt_opened = false; //GMT开房
 private:

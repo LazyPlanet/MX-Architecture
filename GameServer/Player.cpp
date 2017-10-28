@@ -1887,11 +1887,7 @@ bool Player::CheckHuPai(const std::map<int32_t, std::vector<int32_t>>& cards_inh
 		int32_t fenggang, //旋风杠，本质是暗杠
 		const Asset::PaiElement& pai) //胡牌
 {
-	if (!_room || !_game) 
-	{
-		DEBUG_ASSERT(false);
-		return false;
-	}
+	if (!_room || !_game) return false;
 
 	auto cards = cards_inhand;
 
@@ -2084,6 +2080,8 @@ bool Player::CheckZiMo()
 
 bool Player::CheckZiMo(const Asset::PaiElement& pai)
 {
+	if (!_room || !_game) return false;
+
 	if (_tuoguan_server) return false;
 
 	return CheckHuPai(pai, true);
@@ -2565,6 +2563,8 @@ bool Player::IsGangOperation()
 //
 bool Player::CheckMingPiao(const Asset::PAI_OPER_TYPE& oper_type)
 {
+	if (!_room || !_game) return false;
+
 	auto curr_count = GetCardCount();
 	
 	if (Asset::PAI_OPER_TYPE_ANGANGPAI == oper_type)
@@ -2722,6 +2722,8 @@ void Player::OnChiPai(const Asset::PaiElement& pai, pb::Message* message)
 
 bool Player::CheckPengPai(const Asset::PaiElement& pai)
 {
+	if (!_room || !_game) return false;
+
 	if (_has_ting || _tuoguan_server) return false; //已经听牌，不再提示
 	
 	if (!CheckMingPiao(Asset::PAI_OPER_TYPE_PENGPAI)) return false; //明飘检查
@@ -2880,6 +2882,8 @@ bool Player::CanTingIfGang(const Asset::PaiElement& pai)
 //
 bool Player::CheckAllGangPai(::google::protobuf::RepeatedField<Asset::PaiOperationAlert_AlertElement>& gang_list)
 {
+	if (!_room || !_game) return false;
+
 	if (!CheckMingPiao(Asset::PAI_OPER_TYPE_GANGPAI)) return false; //明飘检查
 
 	//
@@ -3045,6 +3049,8 @@ void Player::OnBeenQiangGang(const Asset::PaiElement& pai, int64_t from_player_i
 
 bool Player::CheckFengGangPai() 
 { 
+	if (!_room || !_game) return false;
+
 	//if (_oper_count >= 1) return false;
 
 	return CheckFengGangPai(_cards_inhand); 
@@ -3052,6 +3058,8 @@ bool Player::CheckFengGangPai()
 
 bool Player::CheckJianGangPai() 
 { 
+	if (!_room || !_game) return false;
+
 	//if (_oper_count >= 1) return false;
 
 	return CheckJianGangPai(_cards_inhand); 
@@ -3498,6 +3506,8 @@ void Player::OnGangFengPai()
 		auto pai_perator = alert.mutable_pais()->Add();
 		pai_perator->mutable_pai()->CopyFrom(zhuapai);
 		pai_perator->mutable_oper_list()->Add(Asset::PAI_OPER_TYPE_HUPAI);
+
+		_game->SetPaiOperation(_player_id, _player_id, zhuapai);
 	}
 	//
 	//听牌检查
@@ -3518,7 +3528,7 @@ void Player::OnGangFengPai()
 
 bool Player::CheckJianGangPai(std::map<int32_t/*麻将牌类型*/, std::vector<int32_t>/*牌值*/>& cards)
 {
-	if (!_room) return false;
+	if (!_room || !_game) return false;
 
 	auto options = _room->GetOptions();
 
@@ -3596,10 +3606,6 @@ void Player::OnGangJianPai()
 	}
 	
 	if (alert.pais().size()) SendProtocol(alert); //提示Client
-}
-	
-void Player::NormalCheckAfterFaPai(const Asset::PaiElement& pai)
-{
 }
 	
 int32_t Player::OnFaPai(const Asset::PaiElement& pai)
@@ -3739,6 +3745,8 @@ int32_t Player::OnFaPai(std::vector<int32_t>& cards)
 			{
 				auto pai_perator = alert.mutable_pais()->Add();
 				pai_perator->mutable_oper_list()->Add(Asset::PAI_OPER_TYPE_HUPAI);
+
+				LOG(INFO, "玩家:{}起手可以胡牌", _player_id);
 			}
 
 			//
@@ -3747,15 +3755,11 @@ int32_t Player::OnFaPai(std::vector<int32_t>& cards)
 			std::vector<Asset::PaiElement> ting_list;
 			if (CheckTingPai(ting_list))
 			{
-				//_oper_cache.mutable_oper_list()->Add(Asset::PAI_OPER_TYPE_TINGPAI);
-
 				for (auto pai : ting_list) 
 				{
 					auto pai_perator = alert.mutable_pais()->Add();
 					pai_perator->mutable_pai()->CopyFrom(pai);
 					pai_perator->mutable_oper_list()->Add(Asset::PAI_OPER_TYPE_TINGPAI);
-
-					//_oper_cache.mutable_ting_pais()->Add()->CopyFrom(pai);
 				}
 			}
 			
@@ -3769,9 +3773,6 @@ int32_t Player::OnFaPai(std::vector<int32_t>& cards)
 				{
 					auto pai_perator = alert.mutable_pais()->Add();
 					pai_perator->CopyFrom(gang);
-				
-					//_oper_cache.mutable_pai()->CopyFrom(gang.pai());
-					//for (auto oper_type : gang.oper_list()) _oper_cache.mutable_oper_list()->Add(Asset::PAI_OPER_TYPE(oper_type));
 				}
 			}
 			

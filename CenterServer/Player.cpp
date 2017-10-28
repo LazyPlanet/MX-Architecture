@@ -214,6 +214,8 @@ int32_t Player::OnLogin(bool is_login)
 
 void Player::SetLocalServer(int32_t server_id) 
 { 
+	if (server_id == _stuff.server_id()) return;
+
 	_stuff.set_server_id(server_id); 
 
 	Save(true); //必须强制存盘，否则会覆盖数据

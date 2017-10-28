@@ -742,6 +742,7 @@ void Room::SyncRoom()
 void Room::OnCreated(std::shared_ptr<Player> hoster) 
 { 
 	_hoster = hoster;
+	if (hoster) _hoster_id = hoster->GetID();
 
 	_created_time = CommonTimerInstance.GetTime(); //创建时间
 	SetExpiredTime(_created_time + g_const->room_last_time());
@@ -749,6 +750,8 @@ void Room::OnCreated(std::shared_ptr<Player> hoster)
 	_history.set_room_id(GetID());
 	_history.set_create_time(CommonTimerInstance.GetTime()); //创建时间
 	_history.mutable_options()->CopyFrom(GetOptions());
+
+	LOG(INFO, "玩家:{} 创建房间:{} 数据:{}成功", _hoster_id, _stuff.room_id(), _stuff.ShortDebugString());
 }
 	
 bool Room::CanStarGame()

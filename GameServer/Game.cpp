@@ -39,7 +39,7 @@ bool Game::Start(std::vector<std::shared_ptr<Player>> players, int64_t room_id, 
 
 	if (!_room) return false;
 
-	_game_id = game_id;
+	_game_id = game_id + 1;
 	_room_id = room_id;
 
 	//
@@ -159,9 +159,6 @@ void Game::SavePlayBack()
 {
 	if (!_room) return;
 
-	auto room_id = _room->GetID();
-	auto game_index = _room->GetGamesCount();
-	
 	cpp_redis::future_client client;
 	client.connect(ConfigInstance.GetString("Redis_ServerIP", "127.0.0.1"), ConfigInstance.GetInt("Redis_ServerPort", 6379));
 	if (!client.is_connected()) return;
@@ -169,10 +166,10 @@ void Game::SavePlayBack()
 	auto has_auth = client.auth(ConfigInstance.GetString("Redis_Password", "!QAZ%TGB&UJM9ol."));
 	if (has_auth.get().ko()) return;
 
-	auto set = client.set("playback:" + std::to_string(room_id) + "_" + std::to_string(game_index), _playback.SerializeAsString());
+	auto set = client.set("playback:" + std::to_string(_room_id) + "_" + std::to_string(_game_id), _playback.SerializeAsString());
 	client.commit();
 	
-	LOG(INFO, "房间:{} 结果:{} 存储回放信息，局数索引:{} 当前回放信息:{}", room_id, set.get(), game_index, _playback.ShortDebugString());
+	//LOG(INFO, "房间:{} 结果:{} 存储回放信息，局数索引:{} 当前回放信息:{}", room_id, set.get(), game_index, _playback.ShortDebugString()); //防止日志太多
 }
 	
 void Game::ClearState()
@@ -187,15 +184,6 @@ void Game::ClearState()
 	
 	_liuju = false;
 }
-
-/*
-int32_t Game::GetRemainGameCount() 
-{ 
-	if (!_room) return 0;
-
-	return _room->GetRemainCount();
-}
-*/
 
 /////////////////////////////////////////////////////
 //
