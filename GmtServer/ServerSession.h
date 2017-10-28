@@ -62,13 +62,14 @@ public:
 private:
 	boost::asio::ip::tcp::endpoint _remote_endpoint;
 	std::string _ip_address;
+	int64_t _server_id = 0;
 };
 
 class ServerSessionManager : public SocketManager<ServerSession> 
 {
 	typedef SocketManager<ServerSession> SuperSocketManager;
 private:
-	std::mutex _mutex;
+	std::mutex _server_mutex;
 	std::unordered_map<int64_t/*server_id*/, std::shared_ptr<ServerSession>> _sessions; //定时清理断开的会话
 
 	std::shared_ptr<ServerSession> _gmt_session = nullptr;
@@ -83,6 +84,7 @@ public:
 	void BroadCastProtocol(const pb::Message* message);
 
 	void Add(int64_t server_id, std::shared_ptr<ServerSession> session);
+	void Remove(int64_t server_id);
 	std::shared_ptr<ServerSession> Get(int64_t server_id) { return _sessions[server_id]; }
 
 	bool StartNetwork(boost::asio::io_service& io_service, const std::string& bind_ip, int32_t port, int thread_count = 1) override;

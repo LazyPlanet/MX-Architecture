@@ -134,6 +134,7 @@ public:
 	//创建房间
 	virtual int32_t CmdCreateRoom(pb::Message* message);
 	virtual void OnCreateRoom(Asset::CreateRoom* create_room);
+	virtual void OnRoomRemoved();
 	//进入房间
 	virtual int32_t CmdEnterRoom(pb::Message* message);
 	virtual bool OnEnterRoom(int64_t room_id = 0);
@@ -263,6 +264,7 @@ private:
 	int32_t _fenggang = 0; //旋风杠，本质是暗杠
 
 	int32_t _oper_count = 0; //牌操作次数
+	int32_t _fapai_count = 0; //发牌次数
 	int32_t _oper_count_tingpai = 0; //听牌后操作次数
 	bool _has_ting = false; //听牌
 	bool _tuoguan_server = false; //服务器托管
@@ -306,7 +308,7 @@ public:
 
 	std::vector<Asset::PAI_OPER_TYPE> CheckPai(const Asset::PaiElement& pai, int64_t from_player_id);
 
-	bool CheckBaoHu(const Asset::PaiElement& pai, bool has_fapai = true);
+	bool CheckBaoHu(const Asset::PaiElement& pai);
 	bool LookAtBaopai(bool has_saizi);
 	void ResetBaopai();
 	void ResetLookAtBaopai();
@@ -359,6 +361,7 @@ public:
 	bool CheckJianGangPai(); //是否可以旋风杠-箭杠
 
 	int32_t CheckXuanFeng(); //检查旋风杠
+	void CheckXuanFengGang(); //检查旋风杠//初始化状态检查//非庄家抓牌后检查
 	
 	bool CanTingPai(const Asset::PaiElement& pai);
 	bool CanTingIfGang(const Asset::PaiElement& pai);

@@ -42,7 +42,7 @@ bool GmtSession::OnInnerProcess(const Asset::InnerMeta& meta)
 {
 	auto debug_string = meta.ShortDebugString(); 
 
-	DEBUG("接收GMT服务器:{}协议:{}", _ip_address, debug_string);
+	DEBUG("中心服务器接收GMT服务器:{}协议:{}", _ip_address, debug_string);
 
 	switch (meta.type_t())
 	{
@@ -99,6 +99,7 @@ bool GmtSession::OnInnerProcess(const Asset::InnerMeta& meta)
 
 			OnSystemBroadcast(message);
 		}
+		break;
 
 		case Asset::INNER_TYPE_ACTIVITY_CONTROL: //活动控制
 		{
@@ -108,6 +109,7 @@ bool GmtSession::OnInnerProcess(const Asset::InnerMeta& meta)
 
 			OnActivityControl(message);
 		}
+		break;
 
 		default:
 		{
@@ -232,7 +234,14 @@ Asset::COMMAND_ERROR_CODE GmtSession::OnCommandProcess(const Asset::Command& com
 		
 		case Asset::COMMAND_TYPE_ROOM_CARD:
 		{
-			player_ptr->GainRoomCard(Asset::ROOM_CARD_CHANGED_TYPE_GMT, command.count());   
+			if (command.count() >= 0)
+			{
+				player_ptr->GainRoomCard(Asset::ROOM_CARD_CHANGED_TYPE_GMT, command.count());   
+			}
+			else
+			{
+				player_ptr->ConsumeRoomCard(Asset::ROOM_CARD_CHANGED_TYPE_GMT, -command.count());   
+			}
 		}
 		break;
 		
@@ -257,6 +266,7 @@ Asset::COMMAND_ERROR_CODE GmtSession::OnCommandProcess(const Asset::Command& com
 Asset::COMMAND_ERROR_CODE GmtSession::OnSystemBroadcast(const Asset::SystemBroadcast& command)
 {
 	Asset::SystemBroadcasting message;
+	message.set_broad_cast_type(Asset::SYSTEM_BROADCAST_TYPE_SCROLL);
 	message.set_content(command.content());
 
 	WorldSessionInstance.BroadCast(message);
@@ -371,8 +381,6 @@ void GmtSession::OnReadSome(const boost::system::error_code& error, std::size_t 
 		return;
 	}
 	
-	DEBUG("Receive message from server:{} bytes_transferred:{} error:{}", _ip_address, bytes_transferred, error.message());
-
 	Asset::InnerMeta meta;
 	auto result = meta.ParseFromArray(_buffer.data(), bytes_transferred);
 	if (!result)

@@ -95,7 +95,7 @@ int32_t Player::Load()
 //
 int32_t Player::Save(bool force)
 {
-	PLAYER(_stuff);	//数据日志
+	LOG_BI("player", _stuff);	
 
 	if (!force && !IsDirty()) return 1;
 
@@ -174,8 +174,8 @@ int32_t Player::OnEnterGame(bool is_login)
 
 	Save(true); //存盘
 
-	PLAYER(_stuff);	//BI日志
-
+	LOG_BI("player", _stuff);
+	
 	PlayerInstance.Emplace(_player_id, shared_from_this()); //玩家管理
 
 	OnLogin(is_login);
@@ -230,25 +230,33 @@ int64_t Player::ConsumeRoomCard(Asset::ROOM_CARD_CHANGED_TYPE changed_type, int6
 {
 	if (count <= 0) return 0;
 
-	//if (!CheckRoomCard(count)) return 0;
+	if (_stuff.common_prop().room_card_count() - count > 0)
+	{
+		_stuff.mutable_common_prop()->set_room_card_count(_stuff.common_prop().room_card_count() - count);
+	}
+	else
+	{
+		_stuff.mutable_common_prop()->set_room_card_count(0);
+	}
 
-	_stuff.mutable_common_prop()->set_room_card_count(_stuff.common_prop().room_card_count() - count);
 	_dirty = true;
 	
 	SyncCommonProperty();
 	
+	LOG(INFO, "玩家:{}消耗房卡，原因:{} 数量:{}成功", _player_id, changed_type, count);
 	return count;
 }
 
 int64_t Player::GainRoomCard(Asset::ROOM_CARD_CHANGED_TYPE changed_type, int64_t count) 
 {
-	//if (count <= 0) return 0;
+	if (count <= 0) return 0;
 
 	_stuff.mutable_common_prop()->set_room_card_count(_stuff.common_prop().room_card_count() + count);
 	_dirty = true;
 	
 	SyncCommonProperty();
 	
+	LOG(INFO, "玩家:{}获得房卡，原因:{} 数量:{}成功", _player_id, changed_type, count);
 	return count;
 }
 
@@ -267,13 +275,20 @@ int64_t Player::ConsumeHuanledou(Asset::HUANLEDOU_CHANGED_TYPE changed_type, int
 {
 	if (count <= 0) return 0;
 
-	if (!CheckHuanledou(count)) return 0;
+	if (_stuff.common_prop().huanledou() - count > 0)
+	{
+		_stuff.mutable_common_prop()->set_huanledou(_stuff.common_prop().huanledou() - count);
+	}
+	else
+	{
+		_stuff.mutable_common_prop()->set_huanledou(0);
+	}
 
-	_stuff.mutable_common_prop()->set_huanledou(_stuff.common_prop().huanledou() - count);
 	_dirty = true;
 	
 	SyncCommonProperty();
 	
+	LOG(INFO, "玩家:{}消耗欢乐豆，原因:{} 数量:{}成功", _player_id, changed_type, count);
 	return count;
 }
 
@@ -286,6 +301,7 @@ int64_t Player::GainHuanledou(Asset::HUANLEDOU_CHANGED_TYPE changed_type, int64_
 	
 	SyncCommonProperty();
 	
+	LOG(INFO, "玩家:{}获得欢乐豆，原因:{} 数量:{}成功", _player_id, changed_type, count);
 	return count;
 }
 
@@ -309,15 +325,20 @@ int64_t Player::ConsumeDiamond(Asset::DIAMOND_CHANGED_TYPE changed_type, int64_t
 {
 	if (count <= 0) return 0;
 
-	if (!CheckDiamond(count)) return 0;
+	if (_stuff.common_prop().diamond() - count > 0)
+	{
+		_stuff.mutable_common_prop()->set_diamond(_stuff.common_prop().diamond() - count);
+	}
+	else
+	{
+		_stuff.mutable_common_prop()->set_diamond(0);
+	}
 
-	_stuff.mutable_common_prop()->set_diamond(_stuff.common_prop().diamond() - count);
 	_dirty = true;
 	
 	SyncCommonProperty();
 	
 	LOG(INFO, "玩家:{}消耗钻石:{}原因:{}", _player_id, count, changed_type);
-	
 	return count;
 }
 
@@ -331,7 +352,6 @@ int64_t Player::GainDiamond(Asset::DIAMOND_CHANGED_TYPE changed_type, int64_t co
 	SyncCommonProperty();
 
 	LOG(INFO, "玩家:{}获取钻石:{}原因:{}", _player_id, count, changed_type);
-	
 	return count;
 }
 
@@ -408,14 +428,14 @@ void Player::SendProtocol(const pb::Message& message)
 	session->SendProtocol(message);
 
 	//调试
-	const pb::FieldDescriptor* field = message.GetDescriptor()->FindFieldByName("type_t");
-	if (!field) return;
+	//const pb::FieldDescriptor* field = message.GetDescriptor()->FindFieldByName("type_t");
+	//if (!field) return;
 
-	const pb::EnumValueDescriptor* enum_value = message.GetReflection()->GetEnum(message, field);
-	if (!enum_value) return;
+	//const pb::EnumValueDescriptor* enum_value = message.GetReflection()->GetEnum(message, field);
+	//if (!enum_value) return;
 
-	auto debug_string = message.ShortDebugString();
-	DEBUG("send protocol to player_id:{} protocol_name:{} content:{}", _player_id, enum_value->name().c_str(), debug_string);
+	//auto debug_string = message.ShortDebugString();
+	//DEBUG("send protocol to player_id:{} protocol_name:{} content:{}", _player_id, enum_value->name().c_str(), debug_string);
 }
 	
 void Player::SendMeta(const Asset::Meta& meta)
@@ -431,7 +451,7 @@ void Player::SendMeta(const Asset::Meta& meta)
 	auto session = WorldSessionInstance.GetPlayerSession(_player_id);
 	if (!session || !session->IsConnect()) return;
 	
-	DEBUG("玩家:{}发送协议:{}到游戏逻辑服务器", _player_id, meta.ShortDebugString());
+	//DEBUG("玩家:{}发送协议:{}到游戏逻辑服务器", _player_id, meta.ShortDebugString());
 
 	session->SendMeta(meta);
 }
@@ -469,7 +489,7 @@ bool Player::SendProtocol2GameServer(const pb::Message& message)
 	meta.set_stuff(stuff);
 	meta.set_player_id(_player_id); 
 
-	DEBUG("玩家:{}发送到游戏逻辑服务器:{}内容:{}", _player_id, _stuff.server_id(), debug_string);
+	//DEBUG("玩家:{}发送到游戏逻辑服务器:{}内容:{}", _player_id, _stuff.server_id(), debug_string);
 
 	_gs_session->SendMeta(meta); 
 
@@ -800,7 +820,7 @@ void Player::SayHi()
 	message.set_heart_count(_heart_count);
 	SendProtocol(message);
 
-	DEBUG("玩家:{} 发送心跳:{}", _player_id, _hi_time);
+	//DEBUG("玩家:{} 发送心跳:{}", _player_id, _hi_time);
 }
 	
 int32_t Player::CmdGameSetting(pb::Message* message)
@@ -862,6 +882,7 @@ int32_t Player::CmdPlayBack(pb::Message* message)
 	if (!client.is_connected()) 
 	{
 		SendProtocol(play_back);
+		AlertMessage(Asset::ERROR_ROOM_PLAYBACK_NO_RECORD, Asset::ERROR_TYPE_NORMAL, Asset::ERROR_SHOW_TYPE_MESSAGE_BOX);
 		return 5;
 	}
 	
@@ -869,13 +890,11 @@ int32_t Player::CmdPlayBack(pb::Message* message)
 	if (has_auth.get().ko()) 
 	{
 		SendProtocol(play_back);
+		AlertMessage(Asset::ERROR_ROOM_PLAYBACK_NO_RECORD, Asset::ERROR_TYPE_NORMAL, Asset::ERROR_SHOW_TYPE_MESSAGE_BOX);
 		return 2;
 	}
 
-	auto room_id = play_back->room_id();
-	auto game_index = play_back->game_index();
-
-	std::string key = "playback:" + std::to_string(room_id) + "_" + std::to_string(game_index);
+	std::string key = "playback:" + std::to_string(play_back->room_id()) + "_" + std::to_string(play_back->game_index());
 	auto get = client.get(key);
 	cpp_redis::reply reply = get.get();
 	client.commit();
@@ -883,6 +902,7 @@ int32_t Player::CmdPlayBack(pb::Message* message)
 	if (!reply.is_string()) 
 	{
 		SendProtocol(play_back);
+		AlertMessage(Asset::ERROR_ROOM_PLAYBACK_NO_RECORD, Asset::ERROR_TYPE_NORMAL, Asset::ERROR_SHOW_TYPE_MESSAGE_BOX);
 		return 3;
 	}
 		
@@ -891,6 +911,7 @@ int32_t Player::CmdPlayBack(pb::Message* message)
 	if (!success) 
 	{
 		SendProtocol(play_back);
+		AlertMessage(Asset::ERROR_ROOM_PLAYBACK_NO_RECORD, Asset::ERROR_TYPE_NORMAL, Asset::ERROR_SHOW_TYPE_MESSAGE_BOX);
 		return 4;
 	}
 
@@ -1031,13 +1052,13 @@ void Player::SetOffline(bool offline)
 	{
 		_player_state = Asset::GAME_OPER_TYPE_OFFLINE;
 
-		ERROR("玩家:{}离线", _player_id);
+		//ERROR("玩家:{}离线", _player_id);
 	}
 	else
 	{
 		_player_state = Asset::GAME_OPER_TYPE_ONLINE;
 
-		WARN("玩家:{}上线", _player_id);
+		//WARN("玩家:{}上线", _player_id);
 	}
 				
 	Asset::PlayerState state;
@@ -1131,9 +1152,12 @@ void PlayerManager::Update(int32_t diff)
 {
 	++_heart_count;
 
-	//if (_heart_count % 20 != 0) return;
-
 	std::lock_guard<std::mutex> lock(_mutex);
+	
+	if (_heart_count % 20 * 60 * 30 != 0) 
+	{
+		LOG(INFO, "当前在线玩家数量:{}", _players.size()); //30分钟查询一次
+	}
 
 	for (auto it = _players.begin(); it != _players.end();)
 	{

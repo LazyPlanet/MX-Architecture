@@ -98,7 +98,7 @@ int32_t Player::Load()
 
 int32_t Player::Save(bool force)
 {
-	PLAYER(_stuff);	//BI日志
+	LOG_BI("player", _stuff);
 
 	if (!force && !IsDirty()) return 1;
 
@@ -144,7 +144,7 @@ int32_t Player::Logout(pb::Message* message)
 	//
 	if (_room) 
 	{
-		if (_game || (_room->HasStarted() && _room->GetRemainCount() > 0 && !_room->HasDisMiss())) //游戏中，或已经开局且尚未对局完成且不是解散，则不让退出房间
+		if (_game || (_room->HasStarted() && !_room->HasBeenOver() && !_room->HasDisMiss())) //游戏中，或已经开局且尚未对局完成且不是解散，则不让退出房间
 		{
 			SetOffline(); //玩家状态
 
@@ -184,7 +184,7 @@ int32_t Player::Logout(pb::Message* message)
 			//
 			//房主在尚未开局状态，不能因为离线而解散或者退出房间
 			//
-			if (_room->IsHoster(_player_id) && _room->GetRemainCount() > 0 && !_room->HasDisMiss())
+			if (_room->IsHoster(_player_id) && !_room->HasBeenOver() && !_room->HasDisMiss())
 			{
 				SetOffline(); //玩家状态
 
@@ -208,10 +208,7 @@ int32_t Player::Logout(pb::Message* message)
 	
 int32_t Player::OnLogout()
 {
-	//_stuff.set_login_time(0);
-	//_stuff.set_logout_time(CommonTimerInstance.GetTime());
-	
-	if (!_game && _room && (!_room->HasStarted() || _room->GetRemainCount() <= 0 || _room->HasDisMiss())) 
+	if (!_game && _room && (!_room->HasStarted() || _room->HasBeenOver() || _room->HasDisMiss())) 
 	{
 		ResetRoom();
 	}
@@ -231,8 +228,6 @@ int32_t Player::OnLogout()
 	kickout_player.set_reason(Asset::KICK_OUT_REASON_LOGOUT);
 	SendProtocol(kickout_player);
 	
-	DEBUG("玩家:{} 数据:{} 退出游戏逻辑服务器成功", _player_id, _stuff.ShortDebugString());
-
 	return 0;
 }
 	
@@ -253,33 +248,35 @@ int32_t Player::CmdEnterGame(pb::Message* message)
 	
 int64_t Player::ConsumeRoomCard(Asset::ROOM_CARD_CHANGED_TYPE changed_type, int64_t count)
 {
-	//if (count <= 0) return 0;
+	if (count <= 0) return 0;
 
-	/*
-	if (!CheckRoomCard(count)) 
+	if (_stuff.common_prop().room_card_count() - count > 0)
 	{
-		LOG(ERROR, "消耗玩家:{}房卡，消耗类型:{} 数量:{}失败", _player_id, changed_type, count);
-		return 0;
+		_stuff.mutable_common_prop()->set_room_card_count(_stuff.common_prop().room_card_count() - count);
 	}
-	*/
+	else
+	{
+		_stuff.mutable_common_prop()->set_room_card_count(0);
+	}
 
-	_stuff.mutable_common_prop()->set_room_card_count(_stuff.common_prop().room_card_count() - count);
 	_dirty = true;
 	
 	SyncCommonProperty();
 	
+	LOG(INFO, "玩家:{}消耗房卡，原因:{} 数量:{}成功", _player_id, changed_type, count);
 	return count;
 }
 
 int64_t Player::GainRoomCard(Asset::ROOM_CARD_CHANGED_TYPE changed_type, int64_t count) 
 {
-	//if (count <= 0) return 0;
-
+	if (count <= 0) return 0;
+	
 	_stuff.mutable_common_prop()->set_room_card_count(_stuff.common_prop().room_card_count() + count);
 	_dirty = true;
 	
 	SyncCommonProperty();
 	
+	LOG(INFO, "玩家:{}获得房卡，原因:{} 数量:{}成功", _player_id, changed_type, count);
 	return count;
 }
 
@@ -298,13 +295,20 @@ int64_t Player::ConsumeHuanledou(Asset::HUANLEDOU_CHANGED_TYPE changed_type, int
 {
 	if (count <= 0) return 0;
 
-	if (!CheckHuanledou(count)) return 0;
-
-	_stuff.mutable_common_prop()->set_huanledou(_stuff.common_prop().huanledou() - count);
+	if (_stuff.common_prop().huanledou() - count > 0)
+	{
+		_stuff.mutable_common_prop()->set_huanledou(_stuff.common_prop().huanledou() - count);
+	}
+	else
+	{
+		_stuff.mutable_common_prop()->set_huanledou(0);
+	}
+	
 	_dirty = true;
 	
 	SyncCommonProperty();
 	
+	LOG(INFO, "玩家:{}消耗欢乐豆，原因:{} 数量:{}成功", _player_id, changed_type, count);
 	return count;
 }
 
@@ -317,6 +321,7 @@ int64_t Player::GainHuanledou(Asset::HUANLEDOU_CHANGED_TYPE changed_type, int64_
 	
 	SyncCommonProperty();
 	
+	LOG(INFO, "玩家:{}获得欢乐豆，原因:{} 数量:{}成功", _player_id, changed_type, count);
 	return count;
 }
 
@@ -340,13 +345,20 @@ int64_t Player::ConsumeDiamond(Asset::DIAMOND_CHANGED_TYPE changed_type, int64_t
 {
 	if (count <= 0) return 0;
 
-	if (!CheckDiamond(count)) return 0;
-
-	_stuff.mutable_common_prop()->set_diamond(_stuff.common_prop().diamond() - count);
+	if (_stuff.common_prop().diamond() - count > 0)
+	{
+		_stuff.mutable_common_prop()->set_diamond(_stuff.common_prop().diamond() - count);
+	}
+	else
+	{
+		_stuff.mutable_common_prop()->set_diamond(0);
+	}
+	
 	_dirty = true;
 	
 	SyncCommonProperty();
 	
+	LOG(INFO, "玩家:{}消耗钻石:{}原因:{}", _player_id, count, changed_type);
 	return count;
 }
 
@@ -359,6 +371,7 @@ int64_t Player::GainDiamond(Asset::DIAMOND_CHANGED_TYPE changed_type, int64_t co
 
 	SyncCommonProperty();
 	
+	LOG(INFO, "玩家:{}获得钻石:{}原因:{}", _player_id, count, changed_type);
 	return count;
 }
 
@@ -390,7 +403,7 @@ int32_t Player::OnEnterGame()
 
 	SetDirty(); //存盘
 
-	PLAYER(_stuff);	//BI日志
+	LOG_BI("player", _stuff);
 
 	//WorldSessionInstance.Emplace(_player_id, _session); //网络会话数据
 	PlayerInstance.Emplace(_player_id, shared_from_this()); //玩家管理
@@ -417,13 +430,6 @@ void Player::SendPlayer()
 
 int32_t Player::CmdCreateRoom(pb::Message* message)
 {
-	//
-	//调试命令
-	//
-	//如果不用，请勿忘注释
-	//
-	//DebugCommand();
-
 	Asset::CreateRoom* create_room = dynamic_cast<Asset::CreateRoom*>(message);
 	if (!create_room) return 1;
 	
@@ -452,22 +458,44 @@ int32_t Player::CmdCreateRoom(pb::Message* message)
 	else
 	{
 		auto open_rands = create_room->room().options().open_rands(); //局数
+		auto pay_type = create_room->room().options().pay_type(); //付费方式
 
 		const Asset::Item_RoomCard* room_card = dynamic_cast<const Asset::Item_RoomCard*>(AssetInstance.Get(g_const->room_card_id()));
-		if (!room_card) return 3;
+		if (!room_card || room_card->rounds() <= 0) return 3;
 
-		int32_t rounds = room_card->rounds(); //该张房卡可以玩多少局麻将
-		if (rounds <= 0) return 4;
+		int32_t consume_count = open_rands / room_card->rounds(); //待消耗房卡数量
 
-		int32_t consume_count = open_rands / rounds; //待消耗房卡数量
-
-		if (!CheckRoomCard(consume_count)) 
+		switch (pay_type)
 		{
-			LOG(ERROR, "玩家:{}开房房卡不足，当前房卡数量:{}需要消耗房卡数量:{}，开局数量:{}，单个房卡可以开房数量:{}", 
-					_player_id, _stuff.common_prop().room_card_count(), consume_count, open_rands, rounds);
+			case Asset::ROOM_PAY_TYPE_HOSTER:
+			{
+				if (!CheckRoomCard(consume_count)) 
+				{
+					AlertMessage(Asset::ERROR_ROOM_CARD_NOT_ENOUGH); //房卡不足
 
-			AlertMessage(Asset::ERROR_ROOM_CARD_NOT_ENOUGH); //房卡不足
-			return 5;
+					LOG(ERROR, "玩家:{}开房房卡不足，当前房卡数量:{}需要消耗房卡数量:{}，开局数量:{}，单个房卡可以开房数量:{}", _player_id, _stuff.common_prop().room_card_count(), consume_count, open_rands, room_card->rounds());
+					return 5;
+				}
+			}
+			break;
+			
+			case Asset::ROOM_PAY_TYPE_AA:
+			{
+				int32_t diamond_count = g_const->room_aapay_diamond() * consume_count; //钻石数量
+
+				if (!CheckDiamond(diamond_count)) 
+				{
+					AlertMessage(Asset::ERROR_DIAMOND_NOT_ENOUGH); //钻石不足
+					return 6;
+				}
+			}
+			break;
+
+			default:
+			{
+				return 7;
+			}
+			break;
 		}
 	}
 
@@ -481,9 +509,14 @@ int32_t Player::CmdCreateRoom(pb::Message* message)
 	
 	OnCreateRoom(create_room); //创建房间成功
 
-	LOG(ACTION, "player_id:{} create room_id:{}", _player_id, room_id);
+	LOG(INFO, "玩家:{} 创建房间:{} 成功", _player_id, room_id);
 
 	return 0;
+}
+	
+void Player::OnRoomRemoved()
+{
+	ResetRoom(); //房间非法
 }
 
 void Player::OnCreateRoom(Asset::CreateRoom* create_room)
@@ -532,7 +565,11 @@ int32_t Player::CmdGameOperate(pb::Message* message)
 		{
 			_player_prop.set_game_oper_state(game_operate->oper_type());
 
-			if (!_room || _room->GetRemainCount() <= 0) SendRoomState(); //防止玩家不在房间内进行解散操作,出现这种情况原因是C<->S状态不一致
+			if (!_room || _room->HasBeenOver()) 
+			{
+				OnLeaveRoom(); //防止玩家不在房间内进行解散操作,出现这种情况原因是C<->S状态不一致
+				return 0;
+			}
 		}
 		break;
 
@@ -553,12 +590,7 @@ int32_t Player::CmdGameOperate(pb::Message* message)
 		break;
 	}
 
-	if (!_room) 
-	{
-		auto debug_string = game_operate->ShortDebugString();
-		LOG(ERROR, "玩家:{}尚未在房间当中，无法进行操作:{}", _player_id, debug_string);
-		return 4;
-	}
+	if (!_room) return 4;
 
 	_room->OnPlayerOperate(shared_from_this(), message); //广播给其他玩家
 
@@ -589,18 +621,10 @@ int32_t Player::CmdPaiOperate(pb::Message* message)
 	
 	auto debug_string = pai_operate->DebugString();
 
-	if (!_room || !_game) 
-	{
-		LOG(ERROR, "玩家:{}尚未在房间或者牌局当中，无法进行操作:{}", _player_id, debug_string);
-		return 2; //还没加入房间或者还没开始游戏
-	}
+	if (!_room || !_game) return 2; //还没加入房间或者还没开始游戏
 
 	if (!pai_operate->position()) pai_operate->set_position(GetPosition()); //设置玩家座位
 	
-	//DEBUG("接收玩家:{}的牌局操作:{}.", _player_id, debug_string);
-
-	//PrintPai(); //打印玩家当前手里的牌数据
-
 	//进行操作
 	switch (pai_operate->oper_type())
 	{
@@ -683,13 +707,13 @@ int32_t Player::CmdPaiOperate(pb::Message* message)
 			auto it = std::find(pais.begin(), pais.end(), pai.card_value()); //查找第一个满足条件的牌即可
 			if (it == pais.end()) 
 			{
-				LOG(ERROR, "玩家:{}不能听牌, 原因:没找到牌", _player_id);
+				LOG(ERROR, "玩家:{}不能听牌:{}, 原因:没找到牌", _player_id, pai.ShortDebugString());
 				return 7; //没有这张牌
 			}
 
 			if (!CanTingPai(pai)) 
 			{
-				LOG(ERROR, "玩家:{}不能听牌, 原因:不满足牌型", _player_id);
+				LOG(ERROR, "玩家:{}不能听牌:{}, 原因:不满足牌型", _player_id, pai.ShortDebugString());
 				return 8; //不能听牌
 			}
 
@@ -715,13 +739,8 @@ int32_t Player::CmdPaiOperate(pb::Message* message)
 	//
 	//玩家抓到杠之后，进行打牌，记录上次牌状态
 	//
-	//if (pai_operate->oper_type() != Asset::PAI_OPER_TYPE_HUPAI) 
-	{
-		_last_oper_type = _oper_type;
-		_oper_type = pai_operate->oper_type(); //记录上次牌操作
-
-		//DEBUG("玩家:{}上次牌操作:{}, 此次牌操作:{}", _player_id, _last_oper_type, _oper_type);
-	}
+	_last_oper_type = _oper_type;
+	_oper_type = pai_operate->oper_type(); //记录上次牌操作
 	
 	_game->OnPaiOperate(shared_from_this(), message);
 
@@ -792,10 +811,7 @@ int32_t Player::CmdEnterRoom(pb::Message* message)
 	{
 		if (_room) 
 		{
-			//auto enter_room_string = enter_room->ShortDebugString();
 			auto room_id = _room->GetID();
-
-			//DEBUG("玩家:{}重入房间:{} 数据:{}", _player_id, room_id, enter_room_string);
 
 			auto client_room_id = enter_room->room().room_id();
 			if (room_id != client_room_id)
@@ -891,6 +907,21 @@ int32_t Player::CmdEnterRoom(pb::Message* message)
 			}
 			else
 			{
+				if (locate_room->GetOptions().pay_type() == Asset::ROOM_PAY_TYPE_AA) //AA付卡
+				{
+					const Asset::Item_RoomCard* room_card = dynamic_cast<const Asset::Item_RoomCard*>(AssetInstance.Get(g_const->room_card_id()));
+					if (!room_card || room_card->rounds() <= 0) return Asset::ERROR_INNER;
+
+					int32_t consume_count = locate_room->GetOpenRands() / room_card->rounds() * g_const->room_aapay_diamond(); //待消耗钻石数量
+					if (consume_count <= 0 || !CheckDiamond(consume_count))
+					{
+						enter_room->set_error_code(Asset::ERROR_ROOM_AA_DIAMOND_NOT_ENOUGH); //钻石不足
+						SendProtocol(enter_room);
+
+						return Asset::ERROR_ROOM_AA_DIAMOND_NOT_ENOUGH;
+					}
+				}
+
 				auto enter_status = locate_room->TryEnter(shared_from_this()); //玩家进入房间
 				enter_room->mutable_room()->CopyFrom(locate_room->Get());
 				enter_room->set_error_code(enter_status); //是否可以进入场景//房间
@@ -1019,7 +1050,7 @@ void Player::SendProtocol(const pb::Message& message)
 
 	auto debug_string = message.ShortDebugString();
 
-	DEBUG("玩家:{} 发送协议，类型:{} 内容:{}", _player_id, type_t, debug_string);
+	//DEBUG("玩家:{} 发送协议，类型:{} 内容:{}", _player_id, type_t, debug_string);
 }
 
 void Player::Send2Roomers(pb::Message& message, int64_t exclude_player_id) 
@@ -1055,10 +1086,7 @@ bool Player::Update()
 		SayHi(); //逻辑服务器不进行心跳检查，只进行断线逻辑检查
 	}
 
-	if (_heart_count % 60 == 0) //1min
-	{
-		//DEBUG("heart_count:{} player_id:{}", _heart_count, _player_id);
-	}
+	//if (_heart_count % 60 == 0) //1min
 	return true;
 }
 	
@@ -1254,8 +1282,6 @@ void Player::BroadCast(Asset::MsgItem& item)
 	
 void Player::ResetRoom() 
 { 
-	//DEBUG("玩家:{}数据:{}", _player_id, _stuff.ShortDebugString())
-
 	if (_room) _room.reset(); //刷新房间信息
 
 	_stuff.clear_room_id(); //状态初始化
@@ -1584,7 +1610,6 @@ bool Player::AddRoomRecord(int64_t room_id)
 	SendProtocol(message);
 
 	auto message_string = message.ShortDebugString();
-	//DEBUG("当前玩家:{}历史战绩:{}", _player_id, message_string);
 	
 	_stuff.mutable_room_history()->Add(room_id); 
 	_dirty = true; 
@@ -1631,8 +1656,6 @@ const std::string Player::GetIpAddress()
 /////////////////////////////////////////////////////
 std::vector<Asset::PAI_OPER_TYPE> Player::CheckPai(const Asset::PaiElement& pai, int64_t from_player_id)
 {
-	//DEBUG("{} player_id:{} from_player_id:{} card_type:{} card_value:{}", __func__, _player_id, from_player_id, pai.card_type(), pai.card_value());
-
 	std::vector<Asset::PAI_OPER_TYPE> rtn_check;
 
 	if (CheckHuPai(pai)) 
@@ -1744,14 +1767,13 @@ bool Player::CanHuPai(std::vector<Card_t>& cards, bool use_pair)
 	return pair || trips || straight; //一对、刻或者顺子
 }
 	
-bool Player::CheckBaoHu(const Asset::PaiElement& pai, bool has_fapai)
+bool Player::CheckBaoHu(const Asset::PaiElement& pai/*宝牌数据*/)
 {
 	if (!_game || !_room) return false;
 
 	if (!IsTingPai()) return false; //没有听牌显然不能胡宝牌
 
 	auto baopai = _game->GetBaoPai();
-
 	if (pai.card_type() != baopai.card_type() || pai.card_value() != baopai.card_value())  return false; //不是宝牌
 	
 	auto options = _room->GetOptions();
@@ -1759,14 +1781,9 @@ bool Player::CheckBaoHu(const Asset::PaiElement& pai, bool has_fapai)
 	auto it_baohu = std::find(options.extend_type().begin(), options.extend_type().end(), Asset::ROOM_EXTEND_TYPE_BAOPAI);
 	if (it_baohu == options.extend_type().end()) return false; //不带宝胡
 
-	if (_cards_hu.size() == 0) return false;
+	if (_cards_hu.size() == 0) return false; //尚不能胡牌
 
-	auto card = _cards_hu[0];
-
-	//
-	//玩家不可能有两张宝牌
-	//
-	bool deleted = false;
+	bool deleted = false; //理论上宝牌玩家都会自摸在手里
 
 	auto it = std::find(_cards_inhand[pai.card_type()].begin(), _cards_inhand[pai.card_type()].end(), pai.card_value());
 	if (it != _cards_inhand[pai.card_type()].end()) //宝牌已经在墙内
@@ -1775,12 +1792,47 @@ bool Player::CheckBaoHu(const Asset::PaiElement& pai, bool has_fapai)
 		deleted = true;
 	}
 
-	bool hupai = CheckHuPai(card, false);
+	//
+	//宝牌多种胡法的多种番型，求解最大番型
+	//
+	const auto fan_asset = dynamic_cast<const Asset::RoomFan*>(AssetInstance.Get(g_const->fan_id()));
+	if (!fan_asset) return false;
 
-	if (deleted)
+	auto get_multiple = [&](const int32_t fan_type)->int32_t {
+		auto it = std::find_if(fan_asset->fans().begin(), fan_asset->fans().end(), [fan_type](const Asset::RoomFan_FanElement& element){
+			return fan_type == element.fan_type();
+		});
+		if (it == fan_asset->fans().end()) return 0;
+		return pow(2, it->multiple());
+	};
+
+	auto max_fan_score = 1;
+	auto max_fan_card = _cards_hu[0];
+	auto hupai = CheckHuPai(max_fan_card, false);
+	auto max_fan_list = _fan_list;
+	for (const auto fan : _fan_list) max_fan_score *= get_multiple(fan); //番数
+
+	for (auto card : _cards_hu) //可以胡的牌
 	{
-		_cards_inhand[pai.card_type()].push_back(pai.card_value());
+		if (card.card_type() == max_fan_card.card_type() && card.card_value() == max_fan_card.card_value()) continue; //减少后续检查
+
+		hupai = CheckHuPai(card, false); //能否胡牌，理论上一定可以胡牌
+		if (!hupai) continue;
+		
+		int32_t score_base = 1;
+		for (const auto fan : _fan_list) score_base *= get_multiple(fan); //番数
+
+		if (score_base > max_fan_score)
+		{
+			max_fan_score = score_base;
+			max_fan_card = card;
+			max_fan_list = _fan_list;
+		}
 	}
+	
+	hupai = CheckHuPai(max_fan_card, false); //基础番型
+
+	if (deleted) _cards_inhand[pai.card_type()].push_back(pai.card_value());
 
 	return hupai;
 }
@@ -2039,11 +2091,7 @@ bool Player::CheckZiMo(const Asset::PaiElement& pai)
 	
 bool Player::CheckHuPai(const Asset::PaiElement& pai, bool check_zibo)
 {
-	if (!_room || !_game)
-	{
-		DEBUG_ASSERT(false);
-		return false;
-	}
+	if (!_room || !_game) return false;
 
 	_fan_list.clear(); //番型清空
 
@@ -2446,8 +2494,6 @@ bool Player::IsMingPiao()
 {
 	auto curr_count = GetCardCount();
 
-	//DEBUG("当前玩家:{}手里的牌数量:{}", _player_id, curr_count);
-
 	return curr_count == 1 || curr_count == 2;
 }
 	
@@ -2506,8 +2552,6 @@ bool Player::IsDanDiao()
 //
 bool Player::IsGangOperation()
 {
-	//DEBUG("玩家:{} 当前操作类型:{} 上一次操作类型:{}", _player_id, _oper_type, _last_oper_type);
-
 	if (_last_oper_type == Asset::PAI_OPER_TYPE_GANGPAI || _last_oper_type == Asset::PAI_OPER_TYPE_ANGANGPAI 
 			|| _last_oper_type == Asset::PAI_OPER_TYPE_XUANFENG_FENG) 
 		return true;
@@ -2714,7 +2758,6 @@ void Player::OnPengPai(const Asset::PaiElement& pai)
 		if (iit == it->second.end()) return;
 
 		it->second.erase(iit);
-		//DEBUG("删除玩家:{}手中牌，card_type:{} card_vale:{}", _player_id, pai.card_type(), pai.card_value());
 	}
 
 	for (int i = 0; i < 3; ++i) _cards_outhand[pai.card_type()].push_back(pai.card_value());
@@ -2880,7 +2923,9 @@ bool Player::CheckAllGangPai(::google::protobuf::RepeatedField<Asset::PaiOperati
 	//
 	for (auto cards : _cards_outhand)
 	{
-		DEBUG_ASSERT(cards.second.size() % 3 == 0);
+		if (cards.second.size() == 0) continue;
+
+		if (cards.second.size() % 3 != 0) return false;
 
 		int32_t card_type = cards.first;
 
@@ -2899,17 +2944,9 @@ bool Player::CheckAllGangPai(::google::protobuf::RepeatedField<Asset::PaiOperati
 			Asset::PaiElement pai;
 			pai.set_card_type((Asset::CARD_TYPE)card_type);
 			pai.set_card_value(card_value);
+
+			if (HasTingPai() && !CanTingIfGang(pai)) continue; //防止杠后听牌不一致
 			
-			//
-			//明杠，不能改变现有听牌的牌型
-			//
-			if (HasTingPai())
-			{
-				if (_zhuapai.card_type() != card_type || _zhuapai.card_value() != card_value) 
-				{
-					continue;
-				}
-			}
 			auto gang = gang_list.Add();
 			gang->mutable_pai()->CopyFrom(pai); 
 			gang->mutable_oper_list()->Add(Asset::PAI_OPER_TYPE_GANGPAI);
@@ -3059,6 +3096,38 @@ int32_t Player::CheckXuanFeng()
 	return gang;
 }
 
+void Player::CheckXuanFengGang()
+{
+	auto xf_card = _cards_inhand;
+
+	while (CheckFengGangPai(xf_card)) //风牌检查
+	{
+		_xf_gang.push_back(Asset::PAI_OPER_TYPE_XUANFENG_FENG);
+
+		auto it = xf_card.find(Asset::CARD_TYPE_FENG);
+		if (it == xf_card.end()) continue;
+
+		for (auto card_value = 1; card_value <= 4; ++card_value) //东南西北
+		{
+			auto it_if = std::find(it->second.begin(), it->second.end(), card_value);
+			if (it_if != it->second.end()) it->second.erase(it_if); //删除一个
+		}
+	}
+	while (CheckJianGangPai(xf_card)) //箭牌检查
+	{
+		_xf_gang.push_back(Asset::PAI_OPER_TYPE_XUANFENG_JIAN);
+
+		auto it = xf_card.find(Asset::CARD_TYPE_JIAN);
+		if (it == xf_card.end()) continue;
+
+		for (auto card_value = 1; card_value <= 3; ++card_value) //中发白
+		{
+			auto it_if = std::find(it->second.begin(), it->second.end(), card_value);
+			if (it_if != it->second.end()) it->second.erase(it_if); //删除一个
+		}
+	}
+}
+
 //玩家能不能听牌的检查
 //
 //玩家打出一张牌后，查看玩家再拿到一张牌后可以胡牌
@@ -3128,6 +3197,9 @@ bool Player::CanTingPai(const Asset::PaiElement& pai)
 
 	if (_cards_hu.size() > 0 && cards_hu.size() > 0)
 	{
+		/*
+		 * 听牌减少了可以杠
+		 *
 		for (auto card_hu : _cards_hu)
 		{
 			auto it = std::find_if(cards_hu.begin(), cards_hu.end(), [&card_hu](const Asset::PaiElement& pai){
@@ -3135,6 +3207,7 @@ bool Player::CanTingPai(const Asset::PaiElement& pai)
 				});
 			if (it == cards_hu.end()) return false; //不能换听
 		}
+		*/
 
 		for (auto card_hu : cards_hu)
 		{
@@ -3204,6 +3277,7 @@ bool Player::CanTingPai(std::map<int32_t, std::vector<int32_t>> cards_inhand, //
 	
 	if (_cards_hu.size() > 0 && cards_hu.size() > 0)
 	{
+		/*
 		for (auto card_hu : _cards_hu)
 		{
 			auto it = std::find_if(cards_hu.begin(), cards_hu.end(), [&card_hu](const Asset::PaiElement& pai){
@@ -3211,7 +3285,7 @@ bool Player::CanTingPai(std::map<int32_t, std::vector<int32_t>> cards_inhand, //
 				});
 			if (it == cards_hu.end()) return false; //不能换听
 		}
-		
+		*/
 		for (auto card_hu : cards_hu)
 		{
 			auto it = std::find_if(_cards_hu.begin(), _cards_hu.end(), [&card_hu](const Asset::PaiElement& pai){
@@ -3243,8 +3317,6 @@ bool Player::CheckTingPai(std::vector<Asset::PaiElement>& pais)
 	auto it_baohu = std::find(options.extend_type().begin(), options.extend_type().end(), Asset::ROOM_EXTEND_TYPE_BAOPAI);
 	if (it_baohu == options.extend_type().end()) return false; //不带宝胡，绝对不可能听牌
 
-	//if (!HasYaoJiu()) return false; //朝阳特殊玩法,缺幺九可以胡牌不可以听牌
-	
 	auto cards_inhand = _cards_inhand; //玩家手里牌
 	auto cards_outhand = _cards_outhand; //玩家墙外牌
 	auto minggang = _minggang; //明杠
@@ -3548,11 +3620,7 @@ int32_t Player::OnFaPai(const Asset::PaiElement& pai)
 
 int32_t Player::OnFaPai(std::vector<int32_t>& cards)
 {
-	if (!_room || !_game) 
-	{
-		ERROR("玩家{}牌局数据为空", _player_id);
-		return 1;
-	}
+	if (!_room || !_game) return 1;
 
 	if (!ShouldZhuaPai()) 
 	{
@@ -3587,14 +3655,14 @@ int32_t Player::OnFaPai(std::vector<int32_t>& cards)
 		}
 	}
 
-	if (false && _player_id == 262153 && _cards_inhand.size() == 0)
+	if (false && _player_id == 263183 && _cards_inhand.size() == 0)
 	{
 		_cards_inhand = {
-			{ 1, {4, 4, 4} },
-			{ 2, {8, 8, 8} },
-			{ 3, {2, 2, 2} },
-			{ 4, {1} },
-			{ 5, { 1, 1, 1} },
+			{ 1, {1, 2, 7, 7, 7, 8, 9} },
+			{ 2, {4, 5, 6} },
+			{ 3, {7, 7, 7} },
+			//{ 4, {1} },
+			//{ 5, { 1, 1, 1} },
 		};
 		
 		_cards_outhand = {
@@ -3612,13 +3680,12 @@ int32_t Player::OnFaPai(std::vector<int32_t>& cards)
 		_minggang.push_back(gang);
 		*/
 	}
-	else if (false && _player_id == 262272 && _cards_inhand.size() == 0)
+	else if (false && _player_id == 262271 && _cards_inhand.size() == 0)
 	{
 		_cards_inhand = {
-			{ 1, {5, 6} },
-			{ 2, {6, 6, 6, 7, 8, 9} },
-			{ 3, {5, 5, 5} },
-			{ 4, {2, 2} },
+			{ 1, {2, 2, 6, 7, 7, 7, 8} },
+			{ 2, {7, 8, 9} },
+			{ 3, {7, 7, 8} },
 		};
 	}
 	else
@@ -3657,46 +3724,57 @@ int32_t Player::OnFaPai(std::vector<int32_t>& cards)
 		
 		notify.set_data_type(Asset::PaiNotify_CARDS_DATA_TYPE_CARDS_DATA_TYPE_START); //操作类型：开局
 
-		//
-		//旋风杠检查
-		//
-		//缓存旋风杠给玩家
-		//
-		auto xf_card = _cards_inhand;
-
-		//风牌检查
-		while (CheckFengGangPai(xf_card))
-		{
-			_xf_gang.push_back(Asset::PAI_OPER_TYPE_XUANFENG_FENG);
-
-			auto it = xf_card.find(Asset::CARD_TYPE_FENG);
-			if (it == xf_card.end()) continue;
-
-			for (auto card_value = 1; card_value <= 4; ++card_value) //东南西北
-			{
-				auto it_if = std::find(it->second.begin(), it->second.end(), card_value);
-				if (it_if != it->second.end()) it->second.erase(it_if); //删除一个
-			}
-		}
-		//箭牌检查
-		while (CheckJianGangPai(xf_card))
-		{
-			_xf_gang.push_back(Asset::PAI_OPER_TYPE_XUANFENG_JIAN);
-
-			auto it = xf_card.find(Asset::CARD_TYPE_JIAN);
-			if (it == xf_card.end()) continue;
-
-			for (auto card_value = 1; card_value <= 3; ++card_value) //中发白
-			{
-				auto it_if = std::find(it->second.begin(), it->second.end(), card_value);
-				if (it_if != it->second.end()) it->second.erase(it_if); //删除一个
-			}
-		}
-
 		if (cards.size() == 14) //庄家检查
 		{
-			Asset::PaiOperationAlert alert;
+			_fapai_count = 1; //默认已经发牌
 
+			CheckXuanFengGang(); //庄家起手，旋风杠检查
+
+			Asset::PaiOperationAlert alert; //提示协议
+
+			//
+			//是否可以胡牌
+			//
+			if (CheckZiMo())
+			{
+				auto pai_perator = alert.mutable_pais()->Add();
+				pai_perator->mutable_oper_list()->Add(Asset::PAI_OPER_TYPE_HUPAI);
+			}
+
+			//
+			//听牌检查
+			//
+			std::vector<Asset::PaiElement> ting_list;
+			if (CheckTingPai(ting_list))
+			{
+				//_oper_cache.mutable_oper_list()->Add(Asset::PAI_OPER_TYPE_TINGPAI);
+
+				for (auto pai : ting_list) 
+				{
+					auto pai_perator = alert.mutable_pais()->Add();
+					pai_perator->mutable_pai()->CopyFrom(pai);
+					pai_perator->mutable_oper_list()->Add(Asset::PAI_OPER_TYPE_TINGPAI);
+
+					//_oper_cache.mutable_ting_pais()->Add()->CopyFrom(pai);
+				}
+			}
+			
+			//
+			//明杠和暗杠检查
+			//
+			::google::protobuf::RepeatedField<Asset::PaiOperationAlert_AlertElement> gang_list;
+			if (CheckAllGangPai(gang_list)) 
+			{
+				for (auto gang : gang_list) 
+				{
+					auto pai_perator = alert.mutable_pais()->Add();
+					pai_perator->CopyFrom(gang);
+				
+					//_oper_cache.mutable_pai()->CopyFrom(gang.pai());
+					//for (auto oper_type : gang.oper_list()) _oper_cache.mutable_oper_list()->Add(Asset::PAI_OPER_TYPE(oper_type));
+				}
+			}
+			
 			//是否旋风杠
 			for (auto gang : _xf_gang)
 			{
@@ -3704,24 +3782,16 @@ int32_t Player::OnFaPai(std::vector<int32_t>& cards)
 				pai_perator->mutable_oper_list()->Add(Asset::PAI_OPER_TYPE(gang));
 			}
 
-			//是否可以胡牌
-			if (CheckZiMo())
-			{
-				auto pai_perator = alert.mutable_pais()->Add();
-				pai_perator->mutable_oper_list()->Add(Asset::PAI_OPER_TYPE_HUPAI);
-			}
-
 			if (alert.pais().size()) SendProtocol(alert); //上来即有旋风杠或者胡牌
-			
-			//_xf_gang.clear(); //庄家直接清理 
 		}
 	}
 	else if (cards.size() == 1)
 	{
 		auto card = GameInstance.GetCard(cards[0]);
-		_zhuapai = card;
-
 		if (card.card_type() == 0 || card.card_type() == 0) return 11;
+
+		_zhuapai = card;
+		++_fapai_count; //发牌数量
 
 		notify.set_data_type(Asset::PaiNotify_CARDS_DATA_TYPE_CARDS_DATA_TYPE_FAPAI); //操作类型:发牌
 		notify.mutable_pai()->set_card_type(card.card_type());
@@ -3734,6 +3804,8 @@ int32_t Player::OnFaPai(std::vector<int32_t>& cards)
 		_game->AddPlayerOperation(pai_operate); //牌局回放
 
 		if (IsTingPai()) ++_oper_count_tingpai; //听牌后发了//抓了多少张牌
+
+		if (_fapai_count == 1) CheckXuanFengGang(); //非庄家旋风杠检查
 			
 		//
 		//如果玩家处于服务器托管状态，则自动出牌
@@ -3830,8 +3902,6 @@ void Player::ResetBaopai()
 {
 	if (!_game || !_has_ting) return;
 		
-	//DEBUG("玩家:{}重置宝牌", _player_id);
-
 	while(_game->HasBaopai())
 	{
 		if (_game->GetRemainBaopai() <= 0) 
@@ -3937,13 +4007,7 @@ Asset::GAME_OPER_TYPE Player::GetOperState()
 	
 void Player::SetOffline(bool offline)
 { 
-	if (!_room) return;
-
-	//if (!_game && (_player_prop.game_oper_state() == Asset::GAME_OPER_TYPE_START ||
-	//			_player_prop.game_oper_state() == Asset::GAME_OPER_TYPE_DISMISS_AGREE)) return;
-
-	//if ((offline && _player_prop.game_oper_state() == Asset::GAME_OPER_TYPE_OFFLINE) || //已经是离线状态
-	//		(!offline && _player_prop.game_oper_state() == Asset::GAME_OPER_TYPE_ONLINE)) return; //已经是在线状态
+	if (!_room || !_game) return;
 
 	if (offline == _player_prop.offline()) return; //状态尚未发生变化
 	
@@ -3952,31 +4016,10 @@ void Player::SetOffline(bool offline)
 	_player_prop.set_offline(offline); 
 
 	_room->OnPlayerStateChanged();
-
-	if (offline) 
-	{
-		//SetOperState(Asset::GAME_OPER_TYPE_OFFLINE);
-
-		//_room->OnPlayerStateChanged();
-	}
-	else
-	{
-		//SetOperState(Asset::GAME_OPER_TYPE_ONLINE);
-	}
 }
 
 void Player::ClearCards() 
 {
-	/*
-	if (_game) 
-	{
-		ERROR("玩家:{}清理牌数据失败", _player_id);
-		return;
-	}
-	*/
-		
-	WARN("玩家:{}清理牌数据", _player_id);
-	
 	_fan_list.clear(); //番数
 	_cards_inhand.clear(); //清理手里牌
 	_cards_outhand.clear(); //清理墙外牌
@@ -3986,14 +4029,12 @@ void Player::ClearCards()
  	_minggang.clear(); //清理杠牌
 	_angang.clear(); //清理杠牌
 
-	_jiangang = 0; //清理旋风杠
-	_fenggang = 0; //清理旋风杠
+	_jiangang = _fenggang = 0; //清理旋风杠
 	
 	_oper_count_tingpai = 0;
-	_oper_count = 0; 
-	_has_ting = false;
+	_fapai_count = _oper_count = 0; 
+	_has_ting = _jinbao = false;
 	_tuoguan_server = false;
-	_jinbao = false;
 	_last_oper_type = _oper_type = Asset::PAI_OPER_TYPE_BEGIN; //初始化操作
 	_player_prop.clear_game_oper_state(); //准备//离开
 	_baopai.Clear();
@@ -4004,8 +4045,6 @@ void Player::ClearCards()
 	
 void Player::OnGameOver()
 {
-	//if (_game) _game.reset();
-
 	ClearCards();
 	
 	if (_tuoguan_server) OnLogout();
@@ -4087,8 +4126,6 @@ int32_t Player::OnKickOut(pb::Message* message)
 	const auto kick_out = dynamic_cast<const Asset::KickOutPlayer*>(message);
 	if (!kick_out) return 1;
 	
-	DEBUG("玩家:{} 被踢下线，原因:{}", _player_id, kick_out->reason());
-
 	Logout(nullptr);
 
 	return 0;

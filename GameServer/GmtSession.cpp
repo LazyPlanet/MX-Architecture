@@ -62,6 +62,7 @@ bool GmtManager::OnInnerProcess(const Asset::InnerMeta& meta)
 			Asset::Room room;
 			room.set_room_type(Asset::ROOM_TYPE_FRIEND);
 			room.mutable_options()->ParseFromString(message.options());
+			room.mutable_options()->set_gmt_opened(true); //代开房
 
 			auto room_ptr = RoomInstance.CreateRoom(room);
 			if (!room_ptr) 
@@ -228,7 +229,14 @@ Asset::COMMAND_ERROR_CODE GmtManager::OnCommandProcess(const Asset::Command& com
 		
 		case Asset::COMMAND_TYPE_ROOM_CARD:
 		{
-			player_ptr->GainRoomCard(Asset::ROOM_CARD_CHANGED_TYPE_GMT, command.count());   
+			if (command.count() >= 0)
+			{
+				player_ptr->GainRoomCard(Asset::ROOM_CARD_CHANGED_TYPE_GMT, command.count());   
+			}
+			else
+			{
+				player_ptr->ConsumeRoomCard(Asset::ROOM_CARD_CHANGED_TYPE_GMT, -command.count());
+			}
 		}
 		break;
 		

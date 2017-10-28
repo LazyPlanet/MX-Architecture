@@ -111,7 +111,7 @@ void WorldSession::OnProcessMessage(const Asset::Meta& meta)
 	auto meta_string = meta.ShortDebugString();
 
 	if (Asset::META_TYPE_SHARE_SAY_HI != meta.type_t())
-		WARN("中心服务器接收数据, 玩家:{} 协议:{} {} 内容:{}", meta.player_id(), meta.type_t(), enum_value->name(), message_string);
+		DEBUG("中心服务器接收数据, 玩家:{} 协议:{} {} 内容:{}", meta.player_id(), meta.type_t(), enum_value->name(), message_string);
 
 	//
 	// C2S协议可能存在两种情况：
@@ -170,11 +170,7 @@ void WorldSession::OnProcessMessage(const Asset::Meta& meta)
 			if (!client.is_connected()) return;
 
 			auto has_auth = client.auth(ConfigInstance.GetString("Redis_Password", "!QAZ%TGB&UJM9ol."));
-			if (has_auth.get().ko()) 
-			{
-				DEBUG_ASSERT(false);
-				return;
-			}
+			if (has_auth.get().ko()) return;
 
 			auto get = client.get("user:" + login->account().username());
 			cpp_redis::reply reply = get.get();
@@ -187,11 +183,7 @@ void WorldSession::OnProcessMessage(const Asset::Meta& meta)
 			}
 	
 			auto success = _user.ParseFromString(reply.as_string());
-			if (!success)
-			{
-				DEBUG_ASSERT(false);
-				return;
-			}
+			if (!success) return;
 
 			//
 			//Client数据
@@ -227,23 +219,19 @@ void WorldSession::OnProcessMessage(const Asset::Meta& meta)
 				_player->Save(true); //存盘，防止数据库无数据
 				_user.mutable_player_list()->Add(player_id);
 				
-				auto user_string = _user.ShortDebugString();
-				LOG(INFO, "账号:{}下尚未创建角色，创建角色:{} 账号数据:{}", login->account().username(), player_id, user_string);
+				LOG(INFO, "账号:{}下尚未创建角色，创建角色:{} 账号数据:{}", login->account().username(), player_id, _user.ShortDebugString());
 			}
 
 			if (_player_list.size()) _player_list.clear(); 
 			for (auto player_id : _user.player_list()) _player_list.emplace(player_id); //玩家数据
 			
-			auto user_string = _user.ShortDebugString();
-			auto account_string = _account.ShortDebugString();
-				
 			//
 			//账号数据存储
 			//
 			auto set = client.set("user:" + login->account().username(), _user.SerializeAsString());
 			client.sync_commit();
 
-			PLAYER(_user); //账号查询
+			LOG_BI("account", _user); //账号查询
 			
 			//
 			//发送当前的角色信息
@@ -273,7 +261,9 @@ void WorldSession::OnProcessMessage(const Asset::Meta& meta)
 			if (!login) return; 
 			
 			std::string account;
+
 			auto redis = make_unique<Redis>();
+
 			if (redis->GetGuestAccount(account)) 
 			{
 				login->set_account(account);
@@ -283,6 +273,8 @@ void WorldSession::OnProcessMessage(const Asset::Meta& meta)
 			}
 
 			_user.mutable_account()->CopyFrom(_account);
+			_user.set_created_time(CommonTimerInstance.GetTime()); //创建时间
+
 			redis->SaveUser(account, _user); //存盘
 
 			SendProtocol(login); 
@@ -537,7 +529,7 @@ void WorldSession::KickOutPlayer(Asset::KICK_OUT_REASON reason)
 
 		if (session && session->GetRemotePoint() != GetRemotePoint()) 
 		{
-			ERROR("全局ID:{}会话失效:", _global_id);
+			ERROR("全局ID:{}会话失效", _global_id);
 			//WorldSessionInstance.AddPlayer(_global_id, shared_from_this()); //在线玩家//该会话已经失效，不应该重复赋值
 			return;
 		}
@@ -720,8 +712,7 @@ int32_t WorldSession::OnWechatLogin(const pb::Message* message)
 	}
 	else
 	{
-		//if (!_user.has_wechat_token()) _user.mutable_wechat_token()->CopyFrom(_access_token);
-		//if (!_user.has_wechat()) _user.mutable_wechat()->CopyFrom(_wechat); //微信数据
+		_user.set_created_time(CommonTimerInstance.GetTime()); //创建时间
 
 		auto redis = make_unique<Redis>();
 		if (_user.wechat().has_openid()) redis->SaveUser(_user.wechat().openid(), _user); //账号数据存盘
@@ -837,6 +828,8 @@ void WorldSessionManager::BroadCast2GameServer(const pb::Message& message)
 	
 void WorldSessionManager::BroadCast(const pb::Message& message)
 {
+	std::lock_guard<std::mutex> lock(_client_mutex);
+
 	for (auto session : _client_list)
 	{
 		if (!session.second) continue;

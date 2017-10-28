@@ -35,13 +35,11 @@ void ServerSession::InitializeHandler(const boost::system::error_code error, con
 		}
 		else
 		{
-			DEBUG("Receive message from game server:{} bytes_transferred:{}", _ip_address, bytes_transferred);
-
 			for (size_t index = 0; index < bytes_transferred;)
 			{
 				unsigned short body_size = _buffer[index] * 256 + _buffer[1 + index];
 					
-				DEBUG("解析的头:{} {} 包长:{}", (int)_buffer[index] * 256, (int)_buffer[1 + index], body_size);
+				//DEBUG("解析的头:{} {} 包长:{}", (int)_buffer[index] * 256, (int)_buffer[1 + index], body_size);
 
 				if (body_size > MAX_DATA_SIZE)
 				{
@@ -101,6 +99,8 @@ bool ServerSession::OnInnerProcess(const Asset::InnerMeta& meta)
 				ServerSessionInstance.Add(message.server_id(), shared_from_this());
 			}
 
+			_server_id = message.server_id();
+
 			SendProtocol(message);
 		}
 		break;
@@ -128,7 +128,7 @@ bool ServerSession::OnInnerProcess(const Asset::InnerMeta& meta)
 
 				if (Asset::COMMAND_ERROR_CODE_SUCCESS == error_code)
 				{
-					DEBUG("服务器:{} 处理指令数据成功:{} error_code:{}", _ip_address, message.ShortDebugString(), error_code);
+					LOG(INFO, "服务器:{} 处理指令数据成功:{}", _ip_address, message.ShortDebugString());
 				}
 				else if (Asset::COMMAND_ERROR_CODE_PLAYER_ONLINE != error_code) //在线
 				{
@@ -201,13 +201,12 @@ bool ServerSession::OnInnerProcess(const Asset::InnerMeta& meta)
 			Asset::SystemBroadcast message;
 			auto result = message.ParseFromString(meta.stuff());
 			if (!result) return false;
+	
+			DEBUG("接收GMT跑马灯:{} 来自地址:{}", message.ShortDebugString(), _ip_address);
 
-			LOG(TRACE, "Receive command:{} from server:{}", message.ShortDebugString(), _ip_address);
-
-			if (ServerSessionInstance.IsGmtServer(shared_from_this())) //处理GMT服务器发送的数据
-			{
-				OnSystemBroadcast(message);
-			}
+			if (!ServerSessionInstance.IsGmtServer(shared_from_this())) return false; //处理GMT服务器发送的数据
+				
+			OnSystemBroadcast(message);
 		}
 		break;
 		
@@ -223,6 +222,25 @@ bool ServerSession::OnInnerProcess(const Asset::InnerMeta& meta)
 			{
 				OnActivityControl(message);
 			}
+		}
+		break;
+
+		case Asset::INNER_TYPE_QUERY_PLAYER:
+		{
+			Asset::QueryPlayer message;
+			auto result = message.ParseFromString(meta.stuff());
+			if (!result) return false;
+	
+			auto redis = make_unique<Redis>();
+
+			Asset::Player player; //玩家数据
+			auto success = redis->GetPlayer(message.player_id(), player);
+			if (!success) message.set_error_code(Asset::COMMAND_ERROR_CODE_NO_PLAYER);
+			else message.set_common_prop(player.common_prop().SerializeAsString());
+
+			message.set_error_code(Asset::COMMAND_ERROR_CODE_SUCCESS);
+
+			SendProtocol(message);
 		}
 		break;
 
@@ -300,12 +318,15 @@ Asset::COMMAND_ERROR_CODE ServerSession::OnCommandProcess(const Asset::Command& 
 		case Asset::COMMAND_TYPE_RECHARGE:
 		{
 			player.mutable_common_prop()->set_diamond(player.common_prop().diamond() + command.count());
+			if (player.common_prop().diamond() < 0) player.mutable_common_prop()->set_diamond(0);
 		}
 		break;
 		
 		case Asset::COMMAND_TYPE_ROOM_CARD:
 		{
 			player.mutable_common_prop()->set_room_card_count(player.common_prop().room_card_count() + command.count());
+			if (player.common_prop().room_card_count() < 0) player.mutable_common_prop()->set_room_card_count(0);
+
 			/*
 			auto global_id = command.item_id();
 			const auto message = AssetInstance.Get(global_id); //例如：Asset::Item_Potion
@@ -410,6 +431,7 @@ Asset::COMMAND_ERROR_CODE ServerSession::OnCommandProcess(const Asset::Command& 
 		case Asset::COMMAND_TYPE_HUANLEDOU:
 		{
 			player.mutable_common_prop()->set_huanledou(player.common_prop().huanledou() + command.count());
+			if (player.common_prop().huanledou() < 0) player.mutable_common_prop()->set_huanledou(0);
 		}
 		break;
 		
@@ -499,6 +521,8 @@ Asset::COMMAND_ERROR_CODE ServerSession::OnSendMail(const Asset::SendMail& comma
 	
 Asset::COMMAND_ERROR_CODE ServerSession::OnSystemBroadcast(const Asset::SystemBroadcast& command)
 {
+	DEBUG("GMT广播数据:{}", command.ShortDebugString());
+
 	ServerSessionInstance.BroadCastProtocol(command);
 
 	RETURN(Asset::COMMAND_ERROR_CODE_SUCCESS); //成功执行
@@ -516,6 +540,7 @@ bool ServerSession::Update()
 
 void ServerSession::OnClose()
 {
+	ServerSessionInstance.Remove(_server_id);
 }
 
 void ServerSession::SendProtocol(const pb::Message* message)
@@ -537,10 +562,9 @@ void ServerSession::SendProtocol(const pb::Message& message)
 	meta.set_stuff(message.SerializeAsString());
 
 	std::string content = meta.SerializeAsString();
-
 	if (content.empty()) return;
 
-	DEBUG("GMT服务器向服务器:{}发送协议数据:{}", _ip_address, meta.ShortDebugString());
+	DEBUG("GMT服务器向服务器ID:{} 地址:{} 发送协议数据:{} 具体内容:{}", _server_id, _ip_address, meta.ShortDebugString(), message.ShortDebugString());
 	AsyncSend(content);
 }
 	
@@ -552,6 +576,8 @@ void ServerSessionManager::BroadCastProtocol(const pb::Message* message)
 
 void ServerSessionManager::BroadCastProtocol(const pb::Message& message)
 {
+	std::lock_guard<std::mutex> lock(_server_mutex);
+
 	for (auto session : _sessions)
 	{
 		if (!session.second) continue;
@@ -561,8 +587,21 @@ void ServerSessionManager::BroadCastProtocol(const pb::Message& message)
 
 void ServerSessionManager::Add(int64_t server_id, std::shared_ptr<ServerSession> session)
 {
+	std::lock_guard<std::mutex> lock(_server_mutex);
+
 	_sessions.emplace(server_id, session);
 }	
+	
+void ServerSessionManager::Remove(int64_t server_id)
+{
+	std::lock_guard<std::mutex> lock(_server_mutex);
+
+	auto it = _sessions.find(server_id);
+	if (it == _sessions.end()) return;
+
+	if (it->second) it->second.reset();
+	_sessions.erase(it);
+}
 
 NetworkThread<ServerSession>* ServerSessionManager::CreateThreads() const
 {    

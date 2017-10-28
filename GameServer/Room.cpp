@@ -43,7 +43,7 @@ Asset::ERROR_CODE Room::TryEnter(std::shared_ptr<Player> player)
 	{
 		return Asset::ERROR_ROOM_IS_FULL; //房间已满
 	}
-	else if (!_game && GetRemainCount() <= 0) 
+	else if (HasBeenOver()) 
 	{
 		return Asset::ERROR_ROOM_BEEN_OVER; //战局结束
 	}
@@ -91,6 +91,8 @@ bool Room::Enter(std::shared_ptr<Player> player)
 	if (!player) return false;
 	
 	auto enter_status = TryEnter(player);
+	
+	std::lock_guard<std::mutex> lock(_mutex);
 
 	if (enter_status != Asset::ERROR_SUCCESS && enter_status != Asset::ERROR_ROOM_HAS_BEEN_IN) 
 	{
@@ -124,8 +126,6 @@ bool Room::Enter(std::shared_ptr<Player> player)
 		player->SetPosition((Asset::POSITION_TYPE)_players.size()); //设置位置
 	}
 	
-	//DEBUG("curr_count:{} curr_enter:{} position:{}", _players.size(), player->GetID(), player->GetPosition());
-
 	return true;
 }
 	
@@ -140,7 +140,7 @@ void Room::OnReEnter(std::shared_ptr<Player> op_player)
 	//
 	SyncRoom();
 
-	if (!HasStarted() || (!_game && GetRemainCount() <= 0 /*单纯记录局数不能判定对局已经结束*/)) return; //尚未开局或者已经对局结束
+	if (!HasStarted() || HasBeenOver()/*单纯记录局数不能判定对局已经结束*/) return; //尚未开局或者已经对局结束
 
 	//
 	//房间内玩家数据推送
@@ -259,9 +259,6 @@ void Room::OnReEnter(std::shared_ptr<Player> op_player)
 		}
 	}
 
-	//auto message_string = message.ShortDebugString();
-	//DEBUG("玩家:{}重入房间:{} 协议内容:{}", op_player->GetID(), GetID(), message_string);
-
 	op_player->SendProtocol(message);
 
 	_game->OnPlayerReEnter(op_player); //玩家操作
@@ -304,9 +301,6 @@ void Room::OnPlayerOperate(std::shared_ptr<Player> player, pb::Message* message)
 	auto game_operate = dynamic_cast<Asset::GameOperation*>(message);
 	if (!game_operate) return;
 
-	auto message_string = message->ShortDebugString();
-	//DEBUG("玩家房间内操作，玩家:{} 操作类型:{} message:{}", player->GetID(), game_operate->oper_type(), message_string);
-			
 	BroadCast(game_operate); //广播玩家操作
 	
 	switch(game_operate->oper_type())
@@ -319,7 +313,7 @@ void Room::OnPlayerOperate(std::shared_ptr<Player> player, pb::Message* message)
 
 			_game->Init(shared_from_this()); //洗牌
 
-			_game->Start(_players); //开始游戏
+			_game->Start(_players, _stuff.room_id(), _games.size()); //开始游戏
 
 			//for (int32_t i = 0; i < 8; ++i) //直接第8局
 				_games.push_back(_game); //游戏
@@ -330,7 +324,7 @@ void Room::OnPlayerOperate(std::shared_ptr<Player> player, pb::Message* message)
 
 		case Asset::GAME_OPER_TYPE_LEAVE: //离开游戏
 		{
-			if (!HasDisMiss() && _games.size() != 0 && GetRemainCount() > 0) return; //没有开局，且没有对战完，则不允许退出
+			if (!HasDisMiss() && HasStarted() && !HasBeenOver()) return; //没有开局，且没有对战完，则不允许退出
 			//
 			//如果房主离开房间，且此时尚未开局，则直接解散
 			//
@@ -344,6 +338,10 @@ void Room::OnPlayerOperate(std::shared_ptr<Player> player, pb::Message* message)
 				{
 					Remove(player->GetID(), Asset::GAME_OPER_TYPE_LEAVE); //玩家退出房间
 				}
+			}
+			else if (IsEmpty())
+			{
+				player->OnLeaveRoom(Asset::GAME_OPER_TYPE_LEAVE); //玩家退出房间
 			}
 			else
 			{
@@ -381,9 +379,17 @@ void Room::OnPlayerOperate(std::shared_ptr<Player> player, pb::Message* message)
 			//
 			//如果房主发起解散房间，且此时尚未开局，则直接解散
 			//
-			if (IsHoster(player->GetID()) && _games.size() == 0)
+			if (IsHoster(player->GetID()) && _games.size() == 0) //GMT开房没有房主
 			{
 				KickOutPlayer();
+			}
+			else if (IsGmtOpened() && (!HasStarted() || HasBeenOver()))
+			{
+				Remove(player->GetID(), Asset::GAME_OPER_TYPE_LEAVE); //玩家退出房间
+			}
+			else if (IsEmpty())
+			{
+				player->OnLeaveRoom(Asset::GAME_OPER_TYPE_DISMISS_AGREE); //玩家退出房间
 			}
 			else if (CanDisMiss()) 
 			{
@@ -414,7 +420,7 @@ int32_t Room::GetRemainCount()
 
 bool Room::Remove(int64_t player_id, Asset::GAME_OPER_TYPE reason)
 {
-	//std::lock_guard<std::mutex> lock(_mutex);
+	std::lock_guard<std::mutex> lock(_mutex);
 
 	for (size_t i = 0; i < _players.size(); ++i)
 	{
@@ -443,7 +449,7 @@ bool Room::Remove(int64_t player_id, Asset::GAME_OPER_TYPE reason)
 	
 void Room::OnPlayerStateChanged()
 {
-	//std::lock_guard<std::mutex> lock(_mutex);
+	std::lock_guard<std::mutex> lock(_mutex);
 
 	Asset::RoomInformation message;
 	message.set_sync_type(Asset::ROOM_SYNC_TYPE_STATE_CHANGED);
@@ -464,7 +470,7 @@ void Room::OnPlayerStateChanged()
 
 void Room::OnGameStart()
 {
-	//std::lock_guard<std::mutex> lock(_mutex);
+	std::lock_guard<std::mutex> lock(_mutex);
 
 	Asset::GameStart game_start;
 	game_start.set_total_rounds(_stuff.options().open_rands());
@@ -517,7 +523,7 @@ void Room::OnGameOver(int64_t player_id)
 		++_streak_wins[player_id];
 	}
 
-	if (GetRemainCount() > 0 && !HasDisMiss()) return; //没有对局结束，且没有解散房间
+	if (!HasBeenOver() && !HasDisMiss()) return; //没有对局结束，且没有解散房间
 
 	if (_games.size() == 0) return; //没有对局
 	
@@ -625,9 +631,24 @@ void Room::BroadCast(pb::Message& message, int64_t exclude_player_id)
 {
 	BroadCast(&message, exclude_player_id);
 }
+	
+void Room::OnRemove()
+{
+	std::lock_guard<std::mutex> lock(_mutex);
+
+	for (auto& player : _players)
+	{
+		if (!player) continue;
+
+		player->OnRoomRemoved();
+		player.reset();
+	}
+}
 
 void Room::OnDisMiss()
 {
+	if (IsGmtOpened() && (!HasStarted() || HasBeenOver())) return; //代开房没开局不允许解散
+
 	if (_dismiss_time == 0) 
 	{
 		_dismiss_time = CommonTimerInstance.GetTime() + g_const->room_dismiss_timeout();
@@ -649,18 +670,17 @@ void Room::OnDisMiss()
 		list->set_oper_type(player->GetOperState());
 	}
 
-	//auto proto_string = proto.ShortDebugString();
-	//auto room_id = GetID();
-
-	//DEBUG("解散房间:{} 协议:{}", room_id, proto_string);
+	DEBUG("玩家发起解散房间:{}", _stuff.room_id());
 
 	BroadCast(proto); //投票状态
 }
 
 void Room::DoDisMiss()
 {
-	_is_dismiss = true;
+	DEBUG("房间:{}解散成功", _stuff.room_id());
 
+	_is_dismiss = true;
+					
 	OnGameOver();
 }
 	
@@ -675,7 +695,8 @@ void Room::KickOutPlayer(int64_t player_id)
 		Remove(player->GetID(), Asset::GAME_OPER_TYPE_HOSTER_DISMISS); //踢人
 	}
 
-	RoomInstance.OnDisMiss(GetID());
+	//RoomInstance.Remove(GetID());
+	_is_dismiss = true;
 }
 	
 void Room::SyncRoom()
@@ -723,7 +744,6 @@ void Room::OnCreated(std::shared_ptr<Player> hoster)
 	_hoster = hoster;
 
 	_created_time = CommonTimerInstance.GetTime(); //创建时间
-	_created_timeout = _created_time + _stuff.options().open_rands() / 8 * 3600; //每8局1小时超时
 	SetExpiredTime(_created_time + g_const->room_last_time());
 	
 	_history.set_room_id(GetID());
@@ -753,7 +773,7 @@ bool Room::CanStarGame()
 	{
 		if (GetRemainCount() <= 0) 
 		{
-			LOG(ERROR, "房间:{}牌局结束，不能继续进行游戏，总局数:{} 当前局数:{}", GetID(), _stuff.options().open_rands(), _games.size());
+			LOG(ERROR, "房间:{}牌局结束，不能继续进行游戏，总局数:{} 当前局数:{}", _stuff.room_id(), _stuff.options().open_rands(), _games.size());
 			return false;
 		}
 
@@ -773,23 +793,59 @@ bool Room::CanStarGame()
 		if (_hoster && _games.size() == 0) //开局消耗
 		{
 			const auto room_card = dynamic_cast<const Asset::Item_RoomCard*>(AssetInstance.Get(g_const->room_card_id()));
-			if (!room_card) return false;
+			if (!room_card || room_card->rounds()) return false;
 
-			auto rounds = room_card->rounds(); //该张房卡可以玩多少局麻将
-			if (rounds <= 0) return false;
-
-			auto open_rands = GetOptions().open_rands(); //局数
-			auto consume_count = open_rands / rounds; //待消耗房卡数
-			auto consume_real = _hoster->ConsumeRoomCard(Asset::ROOM_CARD_CHANGED_TYPE_OPEN_ROOM, consume_count); //消耗
-			if (consume_count != consume_real)
+			auto consume_count = GetOptions().open_rands() / room_card->rounds(); //待消耗房卡数
+			auto pay_type = GetOptions().pay_type(); //付费方式
+		
+			switch (pay_type)
 			{
-				LOG(ERROR, "消耗玩家:{}房卡错误，需要消耗:{} 实际消耗:{}", _hoster->GetID(), consume_count, consume_real);
-				return false;
+				case Asset::ROOM_PAY_TYPE_HOSTER: //房主付卡
+				{
+					if (!_hoster->CheckRoomCard(consume_count)) 
+					{
+						_hoster->AlertMessage(Asset::ERROR_ROOM_CARD_NOT_ENOUGH); //房卡不足
+						return false;
+					}
+					_hoster->ConsumeRoomCard(Asset::ROOM_CARD_CHANGED_TYPE_OPEN_ROOM, consume_count); //消耗
+				}
+				break;
+				
+				case Asset::ROOM_PAY_TYPE_AA: //AA付卡
+				{
+					int32_t diamond_count = g_const->room_aapay_diamond() * consume_count; //钻石数量
+
+					for (auto player : _players) //钻石检查
+					{
+						if (!player) return false;
+
+						if (!player->CheckDiamond(diamond_count)) 
+						{
+							player->AlertMessage(Asset::ERROR_DIAMOND_NOT_ENOUGH); //钻石不足，理论上一定会过，玩家进入AA付卡已经前置检查
+							return false;
+						}
+					}
+					
+					for (auto player : _players) //钻石消耗
+					{
+						if (!player) return false;
+
+						player->ConsumeDiamond(Asset::DIAMOND_CHANGED_TYPE_OPEN_ROOM, diamond_count); //消耗钻石
+					}
+				}
+				break;
+
+				default:
+				{
+					return false;
+				}
+				break;
 			}
 		}
 		else if (_games.size() == 0)
 		{
-			LOG(ERROR, "房间:{}尚未消耗房卡进行开房, 房主:{}", GetID(), _hoster->GetID()); //记录
+			LOG(ERROR, "房间:{}尚未消耗房卡进行开房, 房主:{}", _stuff.room_id(), _hoster->GetID()); //记录
+			return false;
 		}
 	}
 	else
@@ -875,12 +931,6 @@ bool Room::IsExpired()
 	return _expired_time < curr_time;
 }
 
-bool Room::IsTimeOut()
-{
-	auto curr_time = CommonTimerInstance.GetTime();
-	return _created_timeout < curr_time;
-}
-	
 void Room::Update()
 {
 	auto curr_time = CommonTimerInstance.GetTime();
@@ -983,10 +1033,9 @@ void RoomManager::Update(int32_t diff)
 		{
 			it->second->Update();
 
-			if ((it->second->IsExpired() && it->second->IsEmpty()) || it->second->HasDisMiss() || it->second->HasBeenOver()
-					/*|| it->second->IsTimeOut()*/)
+			if ((it->second->IsExpired() && it->second->IsEmpty()) || it->second->HasDisMiss() || it->second->HasBeenOver())
 			{
-				//it->second->KickOutPlayer(); //删除玩家//不能在此处删除，必须玩家主动退出
+				it->second->OnRemove();
 				it = _rooms.erase(it); //删除房间
 			}
 			else
@@ -997,13 +1046,14 @@ void RoomManager::Update(int32_t diff)
 	}
 }
 	
-void RoomManager::OnDisMiss(int64_t room_id)
+void RoomManager::Remove(int64_t room_id)
 {
 	std::lock_guard<std::mutex> lock(_room_lock);
 
 	auto it = _rooms.find(room_id);
 	if (it == _rooms.end()) return;
 
+	it->second->OnRemove();
 	_rooms.erase(it);
 }
 

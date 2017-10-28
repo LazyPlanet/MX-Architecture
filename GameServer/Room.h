@@ -38,7 +38,6 @@ private:
 	bool _is_dismiss = false;
 	int32_t _dismiss_time = 0; //解散时间
 	int32_t _created_time = 0; //创建时间
-	int32_t _created_timeout = 0; //超时时间
 	int32_t _dismiss_cooldown = 0; //解散冷却时间
 public:
 	explicit Room(Asset::Room room) {  _stuff = room; }
@@ -121,6 +120,7 @@ public:
 	bool IsTimeOut(); //是否超时
 	bool HasDisMiss() { return _is_dismiss; } //是否解散状态
 	void ClearDisMiss(); //清除解散状态
+	void OnRemove();
 };
 
 /////////////////////////////////////////////////////
@@ -162,7 +162,7 @@ public:
 	bool CheckPassword(int64_t room_id, std::string password); //密码检查
 	void Update(int32_t diff); //心跳
 
-	void OnDisMiss(int64_t room_id);
+	void Remove(int64_t room_id);
 };
 
 #define RoomInstance RoomManager::Instance()

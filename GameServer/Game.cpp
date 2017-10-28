@@ -33,11 +33,14 @@ void Game::Init(std::shared_ptr<Room> room)
 	_room = room;
 }
 
-bool Game::Start(std::vector<std::shared_ptr<Player>> players)
+bool Game::Start(std::vector<std::shared_ptr<Player>> players, int64_t room_id, int32_t game_id)
 {
 	if (MAX_PLAYER_COUNT != players.size()) return false; //做下检查，是否满足开局条件
 
 	if (!_room) return false;
+
+	_game_id = game_id;
+	_room_id = room_id;
 
 	//
 	//房间(Room)其实是游戏(Game)的管理类
@@ -59,11 +62,8 @@ bool Game::Start(std::vector<std::shared_ptr<Player>> players)
 	auto banker_index = _room->GetBankerIndex();
 		
 	auto player_banker = GetPlayerByOrder(banker_index);
-	if (!player_banker) 
-	{
-		DEBUG_ASSERT(false);
-		return false;
-	}
+	if (!player_banker) return false;
+
 	_banker_player_id  = player_banker->GetID();
 	
 	OnStart(); //同步本次游戏开局数据：此时玩家没有进入游戏
@@ -91,9 +91,13 @@ bool Game::Start(std::vector<std::shared_ptr<Player>> players)
 		player->OnFaPai(cards);  
 
 		//回放缓存：初始牌数据
+		_playback.mutable_options()->CopyFrom(_room->GetOptions()); //房间玩法
 		auto player_element = _playback.mutable_player_list()->Add();
 		player_element->set_player_id(player->GetID());
 		player_element->set_position(player->GetPosition());
+		player_element->mutable_common_prop()->CopyFrom(player->CommonProp());
+		player_element->mutable_wechat()->CopyFrom(player->GetWechat());
+
 		const auto& cards_inhand = player->GetCardsInhand();
 		for (const auto& crds : cards_inhand)
 		{
@@ -167,6 +171,8 @@ void Game::SavePlayBack()
 
 	auto set = client.set("playback:" + std::to_string(room_id) + "_" + std::to_string(game_index), _playback.SerializeAsString());
 	client.commit();
+	
+	LOG(INFO, "房间:{} 结果:{} 存储回放信息，局数索引:{} 当前回放信息:{}", room_id, set.get(), game_index, _playback.ShortDebugString());
 }
 	
 void Game::ClearState()
@@ -390,7 +396,7 @@ void Game::OnPaiOperate(std::shared_ptr<Player> player, pb::Message* message)
 	auto pai_operate_string = pai_operate->ShortDebugString();
 	auto oper_limit_string = _oper_cache.ShortDebugString();
 
-	DEBUG("当前操作玩家ID:{} 所在的位置索引:{} 进行的操作:{} 服务器记录的当前可操作玩家索引:{} 服务器缓存玩家操作:{}", curr_player_id, player_index, pai_operate_string, _curr_player_index, oper_limit_string);
+	DEBUG("房间:{} 当前牌局:{} 当前操作玩家ID:{} 所在的位置索引:{} 进行的操作:{} 服务器记录的当前可操作玩家索引:{} 服务器缓存玩家操作:{}", _room_id, _game_id, curr_player_id, player_index, pai_operate_string, _curr_player_index, oper_limit_string);
 
 	if (!CanPaiOperate(player)) 
 	{
@@ -448,11 +454,7 @@ void Game::OnPaiOperate(std::shared_ptr<Player> player, pb::Message* message)
 
 				auto player_next = GetPlayerByOrder(next_player_index);
 				
-				if (!player_next) 
-				{
-					DEBUG_ASSERT(false);
-					return; 
-				}
+				if (!player_next) return; 
 				
 				//DEBUG("player_id:{} next_player_id:{} _curr_player_index:{} next_player_index:{}", 
 				//		player->GetID(), player_next->GetID(), _curr_player_index, next_player_index);
@@ -1410,32 +1412,20 @@ void Game::Calculate(int64_t hupai_player_id/*胡牌玩家*/, int64_t dianpao_pl
 	if (baosanjia && dianpao_player_id != 0 && dianpao_player_id != hupai_player_id) 
 	{
 		auto it_dianpao = get_record(dianpao_player_id);
-		if (it_dianpao == message.mutable_record()->mutable_list()->end()) 
-		{
-			DEBUG_ASSERT(false && "dianpao_player_id has not found"); //理论不会出现
-			return;
-		}
+		if (it_dianpao == message.mutable_record()->mutable_list()->end()) return;
 
 		int32_t baofen_total = 0; //包积分，实则包赔两个玩家的积分
 
 		for (auto player : _players)
 		{
-			if (!player)
-			{
-				DEBUG_ASSERT(false && "player in game has not found"); //理论不会出现
-				continue;
-			}
+			if (!player) continue;
 
 			auto player_id = player->GetID();
 
 			if (player_id == hupai_player_id || player_id == dianpao_player_id) continue; //和胡牌玩家无关
 
 			auto it_player = get_record(player_id);
-			if (it_player == message.mutable_record()->mutable_list()->end()) 
-			{
-				DEBUG_ASSERT(false && "player has not found"); //理论不会出现
-				continue;
-			}
+			if (it_player == message.mutable_record()->mutable_list()->end()) continue;
 
 			it_player->set_score(it_player->score() + player_score[player_id]); //返回积分
 
@@ -1548,11 +1538,8 @@ void Game::Calculate(int64_t hupai_player_id/*胡牌玩家*/, int64_t dianpao_pl
 	
 void Game::BroadCast(pb::Message* message, int64_t exclude_player_id)
 {
-	if (!_room) 
-	{
-		DEBUG_ASSERT(false);
-		return;
-	}
+	if (!_room) return;
+
 	_room->BroadCast(message, exclude_player_id);
 }
 
@@ -1572,11 +1559,8 @@ void Game::Add2CardsPool(Asset::CARD_TYPE card_type, int32_t card_value)
 
 void Game::BroadCast(pb::Message& message, int64_t exclude_player_id)
 {
-	if (!_room) 
-	{
-		DEBUG_ASSERT(false);
-		return;
-	}
+	if (!_room) return;
+
 	_room->BroadCast(message, exclude_player_id);
 }
 
@@ -1788,12 +1772,13 @@ bool Game::CheckLiuJu()
 		auto cards = FaPai(1); 
 		const Asset::PaiElement card = GameInstance.GetCard(cards[0]); //玩家待抓的牌
 		
-		int32_t rst = player->OnFaPai(card); //放入玩家牌内
-		if (rst)
-		{
-			auto player_id = player->GetID();
-			LOG(ERROR, "玩家:{}流局抓牌出现问题，牌数据:[{} {}}错误码:{}", player_id, card.card_type(), card.card_value(), rst);
-		}
+		player->OnFaPai(card); //放入玩家牌内
+	
+		Asset::PaiOperation pai_operate;
+		pai_operate.set_oper_type(Asset::PAI_OPER_TYPE_LIUJU);
+		pai_operate.set_position(player->GetPosition());
+		pai_operate.mutable_pai()->CopyFrom(card);
+		AddPlayerOperation(pai_operate); //牌局回放
 
 		//
 		//各个玩家分张
@@ -1957,9 +1942,14 @@ Asset::PaiElement Game::GetBaoPai(int32_t tail_index)
 
 	auto card_index = list.size() - tail_index; 
 
-	//DEBUG("生成宝牌 list.size():{} tail_index:{} card_index:{}", list.size(), tail_index, card_index);
+	auto baopai = GameInstance.GetCard(list[card_index]);
+		
+	Asset::PaiOperation pai_operate;
+	pai_operate.set_oper_type(Asset::PAI_OPER_TYPE_BAOPAI);
+	pai_operate.mutable_pai()->CopyFrom(baopai);
+	AddPlayerOperation(pai_operate); //牌局回放
 
-	return GameInstance.GetCard(list[card_index]);
+	return baopai;
 }
 
 int32_t Game::GetRemainBaopai()
