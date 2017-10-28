@@ -79,7 +79,7 @@ public:
 					
 					std::time_t cur_t = CommonTimerInstance.GetTime();
 					boost::posix_time::ptime curr_time = boost::posix_time::from_time_t(cur_t);
-					auto curr_time_duration = curr_time.time_of_day(); //19:00:00
+					auto curr_time_duration = curr_time.time_of_day() + boost::posix_time::time_duration(-8, 0, 0); //19:00:00
 
 					//DEBUG("start_date:{} stop_date:{} curr_time:{}", boost::posix_time::to_simple_string(start_date), 
 					//		boost::posix_time::to_simple_string(stop_date), boost::posix_time::to_simple_string(curr_time));
