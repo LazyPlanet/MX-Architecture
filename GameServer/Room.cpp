@@ -91,6 +91,8 @@ bool Room::Enter(std::shared_ptr<Player> player)
 	if (!player) return false;
 	
 	auto enter_status = TryEnter(player);
+	
+	std::lock_guard<std::mutex> lock(_mutex);
 
 	if (enter_status != Asset::ERROR_SUCCESS && enter_status != Asset::ERROR_ROOM_HAS_BEEN_IN) 
 	{
