@@ -2074,6 +2074,8 @@ bool Player::CheckHuPai(const std::map<int32_t, std::vector<int32_t>>& cards_inh
 
 bool Player::CheckZiMo()
 {
+	if (!CheckHuCardsInhand()) return false; //胡牌数量检查
+
 	Asset::PaiElement pai;
 	return CheckZiMo(pai);
 }
@@ -3865,7 +3867,7 @@ int32_t Player::OnFaPai(std::vector<int32_t>& cards)
 //
 bool Player::LookAtBaopai(bool has_saizi)
 {
-	if (!_game) return false;
+	if (!_room || !_game) return false;
 
 	auto baopai = _game->GetBaoPai();
 
@@ -3893,7 +3895,7 @@ bool Player::LookAtBaopai(bool has_saizi)
 		pai_perator->mutable_oper_list()->Add(Asset::PAI_OPER_TYPE_HUPAI);
 		SendProtocol(alert); //进宝 
 	
-		//DEBUG("玩家:{}看宝牌:{}之后胡牌", _player_id, baopai.ShortDebugString());
+		_game->SetZiMoCache(shared_from_this(), baopai); //自摸胡牌缓存
 
 		return true;
 	}

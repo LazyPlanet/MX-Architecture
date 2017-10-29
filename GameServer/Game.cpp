@@ -294,12 +294,8 @@ void Game::OnPlayerReEnter(std::shared_ptr<Player> player)
 		pai_perator->mutable_pai()->CopyFrom(card);
 		pai_perator->mutable_oper_list()->Add(Asset::PAI_OPER_TYPE_HUPAI);
 					
-		_oper_cache.mutable_oper_list()->Add(Asset::PAI_OPER_TYPE_HUPAI);
-		_oper_cache.mutable_pai()->CopyFrom(card);
+		SetZiMoCache(player, card); //自摸胡牌缓存
 	}
-
-	//if (player->HasTuoGuan()) return; //托管检查，防止递归
-	
 	//
 	//玩家摸宝之后进行抓牌正好抓到宝胡
 	//
@@ -309,8 +305,7 @@ void Game::OnPlayerReEnter(std::shared_ptr<Player> player)
 		pai_perator->mutable_pai()->CopyFrom(card);
 		pai_perator->mutable_oper_list()->Add(Asset::PAI_OPER_TYPE_HUPAI);
 		
-		_oper_cache.mutable_oper_list()->Add(Asset::PAI_OPER_TYPE_HUPAI);
-		_oper_cache.mutable_pai()->CopyFrom(card);
+		SetZiMoCache(player, card); //自摸胡牌缓存
 	}
 
 	//
@@ -465,8 +460,7 @@ void Game::OnPaiOperate(std::shared_ptr<Player> player, pb::Message* message)
 					pai_perator->mutable_pai()->CopyFrom(card);
 					pai_perator->mutable_oper_list()->Add(Asset::PAI_OPER_TYPE_HUPAI);
 						
-					_oper_cache.mutable_oper_list()->Add(Asset::PAI_OPER_TYPE_HUPAI);
-					_oper_cache.mutable_pai()->CopyFrom(card);
+					SetZiMoCache(player_next, card); //自摸胡牌缓存
 				}
 				//
 				//玩家进行抓牌正好抓到宝胡
@@ -565,9 +559,7 @@ void Game::OnPaiOperate(std::shared_ptr<Player> player, pb::Message* message)
 			{
 				auto fan_list = player->GetFanList();
 
-				_oper_cache.set_from_player_id(player->GetID()); //自摸
-				_oper_cache.mutable_oper_list()->Add(Asset::PAI_OPER_TYPE_HUPAI);
-				_oper_cache.mutable_pai()->CopyFrom(pai);
+				SetZiMoCache(player, pai); //自摸胡牌缓存
 
 				if (player->IsJinbao()) 
 				{
@@ -671,6 +663,8 @@ void Game::OnPaiOperate(std::shared_ptr<Player> player, pb::Message* message)
 					auto pai_perator = alert.mutable_pais()->Add();
 					pai_perator->mutable_pai()->CopyFrom(zhuapai);
 					pai_perator->mutable_oper_list()->Add(Asset::PAI_OPER_TYPE_HUPAI);
+					
+					SetZiMoCache(player, zhuapai); //自摸胡牌缓存
 				}
 				//
 				//听牌检查
@@ -897,8 +891,7 @@ void Game::OnPaiOperate(std::shared_ptr<Player> player, pb::Message* message)
 				pai_perator->mutable_pai()->CopyFrom(card);
 				pai_perator->mutable_oper_list()->Add(Asset::PAI_OPER_TYPE_HUPAI);
 				
-				_oper_cache.mutable_oper_list()->Add(Asset::PAI_OPER_TYPE_HUPAI);
-				_oper_cache.mutable_pai()->CopyFrom(card);
+				SetZiMoCache(player_next, card); //自摸胡牌缓存
 			}
 
 			//
@@ -910,8 +903,7 @@ void Game::OnPaiOperate(std::shared_ptr<Player> player, pb::Message* message)
 				pai_perator->mutable_pai()->CopyFrom(card);
 				pai_perator->mutable_oper_list()->Add(Asset::PAI_OPER_TYPE_HUPAI);
 				
-				_oper_cache.mutable_oper_list()->Add(Asset::PAI_OPER_TYPE_HUPAI);
-				_oper_cache.mutable_pai()->CopyFrom(card);
+				SetZiMoCache(player_next, card); //自摸胡牌缓存
 			}
 			//	
 			//听牌检查
@@ -1715,6 +1707,16 @@ void Game::SetPaiOperation(int64_t player_id, int64_t from_player_id, Asset::Pai
 	_oper_cache.set_from_player_id(from_player_id); 
 	_oper_cache.mutable_pai()->CopyFrom(pai);
 	_oper_cache.mutable_oper_list()->Add(oper_type);
+}
+	
+void Game::SetZiMoCache(std::shared_ptr<Player> player, Asset::PaiElement pai)
+{
+	if (!player) return;
+
+	_oper_cache.set_player_id(player->GetID()); 
+	_oper_cache.set_from_player_id(player->GetID()); 
+	_oper_cache.mutable_pai()->CopyFrom(pai);
+	_oper_cache.mutable_oper_list()->Add(Asset::PAI_OPER_TYPE_HUPAI);
 }
 
 std::vector<int32_t> Game::TailPai(size_t card_count)
