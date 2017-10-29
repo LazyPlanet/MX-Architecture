@@ -1608,7 +1608,7 @@ bool Game::SendCheckRtn()
 		return player_id == operation.player_id();
 	});
 
-	if (it != _oper_list.end()) _oper_list.erase(it);
+	if (it != _oper_list.end()) _oper_list.erase(it); //删除第一个满足条件的数据
 
 	return true;
 }

@@ -2093,8 +2093,9 @@ bool Player::CheckHuPai(const Asset::PaiElement& pai, bool check_zibo)
 
 	_fan_list.clear(); //番型清空
 
-	std::map<int32_t/*麻将牌类型*/, std::vector<int32_t>/*牌值*/> cards;
+	//std::map<int32_t/*麻将牌类型*/, std::vector<int32_t>/*牌值*/> cards;
 
+	/*
 	try {
 		std::unique_lock<std::mutex> lock(_card_lock, std::defer_lock);
 
@@ -2115,6 +2116,11 @@ bool Player::CheckHuPai(const Asset::PaiElement& pai, bool check_zibo)
 		ERROR("Copy cards from player_id:{} error:{}.", _player_id, error.what());
 		return false;
 	}
+	*/
+			
+	_hu_result.clear();
+
+	auto cards = _cards_inhand; //复制当前牌
 
 	for (const auto& crds : _cards_outhand) //复制牌外牌
 		cards[crds.first].insert(cards[crds.first].end(), crds.second.begin(), crds.second.end());
@@ -2136,7 +2142,9 @@ bool Player::CheckHuPai(const Asset::PaiElement& pai, bool check_zibo)
 	//
 	auto options = _room->GetOptions();
 
-	////////是否可以缺门、清一色
+	//
+	//是否可以缺门、清一色
+	//
 	{
 		int32_t has_count = 0; //万饼条数量
 
@@ -2171,7 +2179,6 @@ bool Player::CheckHuPai(const Asset::PaiElement& pai, bool check_zibo)
 				{
 					if (has_count == 2) //有两门显然不是清一色
 					{
-						//DEBUG("player_id:{} card_type:{} card_value:{} reason:缺门也不是清一色.", _player_id, pai.card_type(), pai.card_value());
 						return false; //不可缺门
 					}
 					else // <= 1
@@ -2181,7 +2188,6 @@ bool Player::CheckHuPai(const Asset::PaiElement& pai, bool check_zibo)
 				}
 				else //断门还不可以清一色
 				{
-					//DEBUG("player_id:{} card_type:{} card_value:{} reason:缺门.", _player_id, pai.card_type(), pai.card_value());
 					return false;
 				}
 			}
@@ -2201,17 +2207,15 @@ bool Player::CheckHuPai(const Asset::PaiElement& pai, bool check_zibo)
 			}
 		}
 	}
-			
-	////////是否可以站立胡
+	
+	//
+	//是否可以站立胡
+	//
 	{
 		auto it_zhanli = std::find(options.extend_type().begin(), options.extend_type().end(), Asset::ROOM_EXTEND_TYPE_ZHANLIHU);
 		if (it_zhanli == options.extend_type().end()) //不可以站立胡牌
 		{
-			if (_cards_outhand.size() == 0 && _minggang.size() == 0) 
-			{
-				//DEBUG("player_id:{} card_type:{} card_value:{} reason:没开门.", _player_id, pai.card_type(), pai.card_value());
-				return false; //没开门
-			}
+			if (_cards_outhand.size() == 0 && _minggang.size() == 0) return false; //没开门
 		}
 		else
 		{
@@ -2219,7 +2223,9 @@ bool Player::CheckHuPai(const Asset::PaiElement& pai, bool check_zibo)
 		}
 	}
 	
-	////////是否有幺九
+	//
+	//是否有幺九
+	//
 	bool has_yao = false;
 
 	for (auto crds : cards) //不同牌类别的牌
@@ -2261,11 +2267,7 @@ bool Player::CheckHuPai(const Asset::PaiElement& pai, bool check_zibo)
 		xuanfenggang = true;
 	}
 	
-	if (!has_yao) 
-	{
-		//DEBUG("player_id:{} card_type:{} card_value:{} reason:没幺九.", _player_id, pai.card_type(), pai.card_value());
-		return false;
-	}
+	if (!has_yao) return false;
 	
 	//
 	//是否可以宝胡：单独处理
@@ -2283,11 +2285,7 @@ bool Player::CheckHuPai(const Asset::PaiElement& pai, bool check_zibo)
 	}
 	
 	bool can_hu = CanHuPai(card_list);	
-	if (!can_hu) 
-	{
-		//DEBUG("player_id:{} card_type:{} card_value:{} reason:牌内无法满足胡牌条件.", _player_id, pai.card_type(), pai.card_value());
-		return false;
-	}
+	if (!can_hu) return false;
 	
 	//
 	//胡牌时至少有刻子或杠，或有中发白
@@ -2310,11 +2308,7 @@ bool Player::CheckHuPai(const Asset::PaiElement& pai, bool check_zibo)
 	
 	if (!has_ke && (_jiangang > 0 || _fenggang > 0 || _minggang.size() > 0 || _angang.size() > 0)) has_ke = true;
 	
-	if (!has_ke) 
-	{
-		//DEBUG("player_id:{} card_type:{} card_value:{} reason:没有刻.", _player_id, pai.card_type(), pai.card_value());
-		return false;
-	}
+	if (!has_ke) return false;
 
 	//
 	//飘胡检查，严重依赖上面的刻的数量
