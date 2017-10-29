@@ -2318,7 +2318,9 @@ bool Player::CheckHuPai(const Asset::PaiElement& pai, bool check_zibo)
 
 	if (shunzi_count == 0) 
 	{
-		piao = true; //未能处理：玩家吃了三套副一样的，如 7 7 7 8 8 8 9 9 9
+		piao = true; 
+
+		if (!IsPiao()) piao = false; //尝试处理：玩家吃了三套副一样的，如[7 7 7 8 8 8 9 9 9]牌型
 	}
 
 	//
@@ -2487,6 +2489,27 @@ bool Player::IsMingPiao()
 	auto curr_count = GetCardCount();
 
 	return curr_count == 1 || curr_count == 2;
+}
+
+bool Player::IsPiao()
+{
+	const auto& cards_outhand = _cards_outhand;
+
+	for (auto cards : cards_outhand)
+	{
+		if (cards.second.size() == 0) continue;
+
+		if (cards.second.size() % 3 != 0) return false;
+
+		for (size_t i = 0; i < cards.second.size(); i = i + 3)
+		{
+			auto card_value = cards.second.at(i);
+
+			if ((card_value != cards.second.at(i + 1)) || (card_value != cards.second.at(i + 2))) return false; //外面是否碰了3张
+		}
+	}
+
+	return true;
 }
 	
 //
