@@ -39,9 +39,7 @@ message MsgItems {
 	repeated MsgItem items = 1;
 }
 
-//
 //玩家名称
-//
 message FamilyName {
 	repeated bytes name = 1;
 }
@@ -54,9 +52,7 @@ message ManName {
 	repeated bytes name = 1;
 }
 
-//
 //服务器配置数据
-//
 message SeverConfig {
 	optional int32 zone_id = 1;
 	optional bytes description = 2;
@@ -74,3 +70,12 @@ message SeverConfig {
 	optional SeverElement game_server = 6; //逻辑服务器
 }
 
+//白名单
+message WhiteList {
+	repeated bytes ip_address = 1;
+}
+
+//黑名单
+message BlackList {
+	repeated bytes ip_address = 1;
+}

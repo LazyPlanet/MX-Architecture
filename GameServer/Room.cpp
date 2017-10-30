@@ -751,7 +751,7 @@ void Room::OnCreated(std::shared_ptr<Player> hoster)
 	_history.set_create_time(CommonTimerInstance.GetTime()); //创建时间
 	_history.mutable_options()->CopyFrom(GetOptions());
 
-	LOG(INFO, "玩家:{} 创建房间:{} 数据:{}成功", _hoster_id, _stuff.room_id(), _stuff.ShortDebugString());
+	LOG(INFO, "玩家:{} 创建房间:{} 玩法:{}成功", _hoster_id, _stuff.room_id(), _stuff.ShortDebugString());
 }
 	
 bool Room::CanStarGame()

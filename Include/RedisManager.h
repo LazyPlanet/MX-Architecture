@@ -4,6 +4,8 @@
 #include <string>
 #include <iostream>
 
+#include <cpp_redis/cpp_redis>  
+
 #include "MXLog.h" 
 #include "Config.h" 
 
@@ -106,6 +108,44 @@ public:
 
 	bool GetPlayer(int64_t player_id, Asset::Player& player)
 	{
+		std::string key = "player:" + std::to_string(player_id);
+
+		cpp_redis::future_client client;
+		client.connect(ConfigInstance.GetString("Redis_ServerIP", "127.0.0.1"), ConfigInstance.GetInt("Redis_ServerPort", 6379));
+
+		if (!client.is_connected()) 
+		{
+			LOG(ERROR, "Redis获取玩家:{}数据失败，Key:{} 原因:未能连接数据库", player_id, key);
+			return false;
+		}
+		
+		auto has_auth = client.auth(ConfigInstance.GetString("Redis_Password", "!QAZ%TGB&UJM9ol."));
+		if (has_auth.get().ko()) 
+		{
+			LOG(ERROR, "Redis获取玩家:{}数据失败，Key:{} 原因:权限不足", player_id, key);
+			return false;
+		}
+
+		auto get = client.get(key);
+		cpp_redis::reply reply = get.get();
+		client.commit();
+	
+		if (!reply.is_string()) 
+		{
+			LOG(ERROR, "Redis获取玩家:{}数据失败，Key:{} 原因:返回值不是字符串", player_id, key);
+			return false;
+		}
+	
+		auto success = player.ParseFromString(reply.as_string());
+		if (!success) 
+		{
+			LOG(ERROR, "Redis获取玩家:{}数据失败，Key:{} 原因:不能反序列化成protobuff结构", player_id, key);
+			return false;
+		}
+
+		return true;
+		
+		/*
 		std::string command = "Get player:" + std::to_string(player_id);
 		redisReply* reply = (redisReply*)redisCommand(_client, command.c_str());
 
@@ -129,10 +169,32 @@ public:
 		freeReplyObject(reply);
 
 		return success;
+		*/
 	}
 	
 	bool SavePlayer(int64_t player_id, const Asset::Player& player)
 	{
+		std::string key = "player:" + std::to_string(player_id);
+
+		cpp_redis::future_client client;
+		client.connect(ConfigInstance.GetString("Redis_ServerIP", "127.0.0.1"), ConfigInstance.GetInt("Redis_ServerPort", 6379));
+		if (!client.is_connected()) 
+		{
+			LOG(ERROR, "Redis获取玩家:{}数据失败，Key:{} 原因:未能连接数据库", player_id, key);
+			return false;
+		}
+		
+		auto has_auth = client.auth(ConfigInstance.GetString("Redis_Password", "!QAZ%TGB&UJM9ol."));
+		if (has_auth.get().ko()) 
+		{
+			LOG(ERROR, "Redis获取玩家:{}数据失败，Key:{} 原因:权限不足", player_id, key);
+			return false;
+		}
+
+		auto set = client.set(key, player.SerializeAsString());
+		client.commit();
+
+		/*
 		const int player_length = player.ByteSize();
 		char player_buff[player_length];
 		memset(player_buff, 0, player_length);
@@ -151,7 +213,10 @@ public:
 		freeReplyObject(reply);
 			
 		LOG(INFO, "保存玩家数据，player_id:{} player:{}", player_id, player.ShortDebugString());
-		
+		*/
+	
+		LOG(INFO, "存储玩家:{} Key:{} 结果:{} 数据:{}", player_id, key, set.get(), player.ShortDebugString()); 
+
 		return true;
 	}
 	
