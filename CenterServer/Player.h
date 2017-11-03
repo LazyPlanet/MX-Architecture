@@ -23,6 +23,7 @@ private:
 	int64_t _player_id = 0; //玩家ID
 	Asset::Player _stuff; //玩家数据，存盘数据
 	Asset::GAME_OPER_TYPE _player_state; //玩家状态//在线//离线
+	Asset::ACCOUNT_TYPE _account_type;
 
 	int64_t _heart_count = 0; //心跳次数
 	std::time_t _hi_time = 0;
@@ -85,7 +86,10 @@ public:
 	virtual void SetName(std::string name) { _stuff.mutable_common_prop()->set_name(name); } 
 	//账号
 	virtual std::string GetAccount() { return _stuff.account(); }
-	virtual void SetAccount(std::string account) { _stuff.set_account(account); } 
+	virtual void SetAccount(std::string account, Asset::ACCOUNT_TYPE account_type) { 
+		_stuff.set_account(account); 
+		_account_type = account_type; //账号类型
+	} 
 	//获取级别
 	virtual int32_t GetLevel() { return _stuff.common_prop().level(); }
 	//获取性别
@@ -101,6 +105,8 @@ public:
 
 	virtual void SendGmtProtocol(const pb::Message* message);
 	virtual void SendGmtProtocol(const pb::Message& message);
+
+	Asset::ERROR_CODE CommonCheck(int32_t type_t);
 	//玩家登出
 	virtual int32_t Logout(pb::Message* message);
 	virtual int32_t OnLogout();
@@ -197,6 +203,8 @@ public:
 	void OnKickOut(Asset::KICK_OUT_REASON reason);
 	//玩家离线
 	void SetOffline(bool offline = true);
+
+	void SetAccountType(Asset::ACCOUNT_TYPE account_type) { _account_type = account_type; }
 };
 
 class PlayerManager : public std::enable_shared_from_this<PlayerManager>

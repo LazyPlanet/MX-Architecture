@@ -576,12 +576,31 @@ int32_t Player::DefaultMethod(pb::Message* message)
 	return 0;
 }
 
+Asset::ERROR_CODE Player::CommonCheck(int32_t type_t)
+{
+	switch (type_t)
+	{
+		case Asset::META_TYPE_SHARE_CREATE_ROOM: //创建房间
+		{
+			if (g_const->guest_forbid_friend_room() && Asset::ACCOUNT_TYPE_GUEST == _account_type) return Asset::ERROR_ROOM_FRIEND_NOT_FORBID; //游客禁止进入好友房
+		}
+		break;
+
+		default:
+		{
+			return Asset::ERROR_SUCCESS; //无限制
+		}
+		break;
+	}
+
+	return Asset::ERROR_SUCCESS;
+}
+
 bool Player::HandleProtocol(int32_t type_t, pb::Message* message)
 {
 	if (!message) return false;
 
 	auto debug_string = message->ShortDebugString();
-
 	DEBUG("当前玩家{}所在服务器:{} 接收协议数据:{}", _player_id, _stuff.server_id(), debug_string);
 	//
 	//如果中心服务器没有协议处理回调，则发往游戏服务器进行处理
@@ -591,6 +610,13 @@ bool Player::HandleProtocol(int32_t type_t, pb::Message* message)
 	auto it = _callbacks.find(type_t);
 	if (it == _callbacks.end() && IsCenterServer()) //还在中心服
 	{
+		auto result = CommonCheck(type_t); //通用限制检查
+		if (result)
+		{
+			AlertMessage(result, Asset::ERROR_TYPE_NORMAL, Asset::ERROR_SHOW_TYPE_MESSAGE_BOX); //通用错误码
+			return false;
+		}
+
 		if (IsCenterServer())
 		{
 			int64_t server_id = WorldSessionInstance.RandomServer(); //随机一个逻辑服务器
@@ -883,7 +909,6 @@ int32_t Player::CmdPlayBack(pb::Message* message)
 	client.connect(ConfigInstance.GetString("Redis_ServerIP", "127.0.0.1"), ConfigInstance.GetInt("Redis_ServerPort", 6379));
 	if (!client.is_connected()) 
 	{
-		SendProtocol(play_back);
 		AlertMessage(Asset::ERROR_ROOM_PLAYBACK_NO_RECORD, Asset::ERROR_TYPE_NORMAL, Asset::ERROR_SHOW_TYPE_MESSAGE_BOX);
 		return 5;
 	}
@@ -891,7 +916,6 @@ int32_t Player::CmdPlayBack(pb::Message* message)
 	auto has_auth = client.auth(ConfigInstance.GetString("Redis_Password", "!QAZ%TGB&UJM9ol."));
 	if (has_auth.get().ko()) 
 	{
-		SendProtocol(play_back);
 		AlertMessage(Asset::ERROR_ROOM_PLAYBACK_NO_RECORD, Asset::ERROR_TYPE_NORMAL, Asset::ERROR_SHOW_TYPE_MESSAGE_BOX);
 		return 2;
 	}
@@ -903,7 +927,6 @@ int32_t Player::CmdPlayBack(pb::Message* message)
 
 	if (!reply.is_string()) 
 	{
-		SendProtocol(play_back);
 		AlertMessage(Asset::ERROR_ROOM_PLAYBACK_NO_RECORD, Asset::ERROR_TYPE_NORMAL, Asset::ERROR_SHOW_TYPE_MESSAGE_BOX);
 		return 3;
 	}
@@ -912,7 +935,6 @@ int32_t Player::CmdPlayBack(pb::Message* message)
 	auto success = playback.ParseFromString(reply.as_string());
 	if (!success) 
 	{
-		SendProtocol(play_back);
 		AlertMessage(Asset::ERROR_ROOM_PLAYBACK_NO_RECORD, Asset::ERROR_TYPE_NORMAL, Asset::ERROR_SHOW_TYPE_MESSAGE_BOX);
 		return 4;
 	}

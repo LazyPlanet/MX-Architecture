@@ -16,6 +16,7 @@ namespace Adoter
 {
 
 namespace spd = spdlog;
+extern const Asset::CommonConst* g_const;
 
 WorldSession::WorldSession(boost::asio::ip::tcp::socket&& socket) : Socket(std::move(socket))
 {
@@ -214,7 +215,7 @@ void WorldSession::OnProcessMessage(const Asset::Meta& meta)
 
 				std::string player_name = NameInstance.Get();
 				_player->SetName(player_name);
-				_player->SetAccount(login->account().username());
+				_player->SetAccount(login->account().username(), _account.account_type());
 
 				_player->Save(true); //存盘，防止数据库无数据
 				_user.mutable_player_list()->Add(player_id);
@@ -368,7 +369,7 @@ void WorldSession::OnProcessMessage(const Asset::Meta& meta)
 			//
 			if (_player->GetAccount().empty()) 
 			{
-				_player->SetAccount(_account.username());
+				_player->SetAccount(_account.username(), _account.account_type());
 				_player->Save(true); //存盘，防止数据库无数据
 			}
 
@@ -434,6 +435,12 @@ void WorldSession::OnProcessMessage(const Asset::Meta& meta)
 
 			if (Asset::ROOM_TYPE_FRIEND == room_type)
 			{
+				if (g_const->guest_forbid_friend_room() && Asset::ACCOUNT_TYPE_GUEST == _account.account_type()) //游客禁止进入好友房
+				{
+					_player->AlertMessage(Asset::ERROR_ROOM_FRIEND_NOT_FORBID, Asset::ERROR_TYPE_NORMAL, Asset::ERROR_SHOW_TYPE_MESSAGE_BOX); //通用错误码
+					return;
+				}
+
 				auto room_id = enter_room->room().room_id();
 				server_id = room_id >> 16;
 
