@@ -59,7 +59,7 @@ void WorldSession::InitializeHandler(const boost::system::error_code error, cons
 
 				if (!result) 
 				{
-					if (_player && _player->GetID()) LOG(ERROR, "接收来自地址:{} 端口:{} 玩家:{} 转换Protobuff数据失败.", _ip_address, _remote_endpoint.port(), _player ? _player->GetID() : 0);
+					LOG(ERROR, "会话类型:{} 会话全局ID:{} 来自地址:{} 端口:{} 玩家:{} 转换Protobuff数据失败.", _role_type, _global_id, _ip_address, _remote_endpoint.port(), _player ? _player->GetID() : 0);
 					AsyncReceiveWithCallback(&WorldSession::InitializeHandler); //递归持续接收	
 					return; //非法协议
 				}
@@ -189,7 +189,7 @@ void WorldSession::OnProcessMessage(const Asset::Meta& meta)
 			//
 			//Client数据
 			//
-			_user.mutable_client_info()->set_client_ip(_ip_address);
+			_user.mutable_client_info()->set_ip_address(_ip_address);
 
 			Asset::UpdateClientData client_data;
 			client_data.mutable_client_info()->CopyFrom(_user.client_info());
@@ -489,10 +489,7 @@ void WorldSession::OnProcessMessage(const Asset::Meta& meta)
 
 			if (!_player) return;
 
-			//auto player_id = _player->GetID();
-			//DEBUG("设置位置信息，玩家:{} 数据:{}", player_id, message_string);
-
-			_user.mutable_client_info()->set_client_ip(_ip_address);
+			_user.mutable_client_info()->set_ip_address(_ip_address);
 			_user.mutable_client_info()->mutable_location()->CopyFrom(client_data->client_info().location());
 				
 			auto redis = make_unique<Redis>();

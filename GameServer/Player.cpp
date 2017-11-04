@@ -1648,7 +1648,7 @@ const std::string Player::GetIpAddress()
 		redis->GetUser(_stuff.account(), _user);
 	//}
 
-	return _user.client_info().client_ip();
+	return _user.client_info().ip_address();
 }
 
 /////////////////////////////////////////////////////
