@@ -3,6 +3,7 @@
 #include "PlayerName.h"
 #include "MXLog.h"
 #include "Activity.h"
+#include "WhiteBlackManager.h"
 
 namespace Adoter
 {
@@ -15,13 +16,13 @@ bool World::Load()
 	//协议初始化：必须最先初始化
 	if (!ProtocolInstance.Load()) 
 	{
-		ERROR("ProtocolInstance load error.");
+		ERROR("协议加载失败.");
 		return false;
 	}
 	//数据初始化：必须最先初始化
 	if (!AssetInstance.Load()) 
 	{
-		ERROR("AssetInstance load error.");
+		ERROR("资源加载失败.");
 		return false;
 	}
 
@@ -31,7 +32,13 @@ bool World::Load()
 	
 	if (!NameInstance.Load())
 	{
-		ERROR("NameInstance load error.");
+		ERROR("名字生成加载失败.");
+		return false;
+	}
+	
+	if (!WhiteBlackInstance.Load())
+	{
+		ERROR("黑白名单加载失败.");
 		return false;
 	}
 
@@ -47,7 +54,7 @@ bool World::Load()
 	//活动
 	if (!ActivityInstance.Load())
 	{
-		ERROR("ActivityInstance load error.");
+		ERROR("活动加载失败.");
 		return false;
 	}
 	
