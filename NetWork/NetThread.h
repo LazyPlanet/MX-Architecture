@@ -27,10 +27,11 @@ public:
 	{        
 		Stop();        
 		
-		if (_thread)        
-		{            
+		if (_thread) {            
+
 			Wait();            
-			_thread.reset();        
+
+			if (_thread) _thread.reset();        
 		}
 	}
 
@@ -41,9 +42,9 @@ public:
 
 	virtual bool Start() { 
 		
-		_thread = std::make_shared<std::thread>(std::bind(&NetworkThread::Run, this));
+		if (_thread) return false;
 		
-		if (!_thread) return false;
+		_thread = std::make_shared<std::thread>(std::bind(&NetworkThread::Run, this));
 	
 		return true;
 	}

@@ -26,6 +26,14 @@ public:
 	S _socket; 
 public:
 	explicit Socket(boost::asio::ip::tcp::socket&& socket) : _socket(std::move(socket)), _closed(false), _closing(false) { }
+
+	virtual ~Socket()
+	{
+		_closed = true;
+
+	    boost::system::error_code error;
+	    _socket.close(error); //关闭网络连接
+	}
 	
 	virtual bool Update() 
 	{
