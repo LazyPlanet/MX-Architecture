@@ -37,6 +37,7 @@ private:
 	//std::shared_ptr<WorldSession> _gs_session = nullptr; //游戏逻辑服务器网络连接
 
 public:
+	~Player();
 	Player();
 	Player(int64_t player_id/*, std::shared_ptr<WorldSession> session*/);
 	

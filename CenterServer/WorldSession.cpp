@@ -17,6 +17,11 @@ namespace Adoter
 
 namespace spd = spdlog;
 extern const Asset::CommonConst* g_const;
+	
+WorldSession::~WorldSession()
+{
+	Close(); //关闭网络
+}
 
 WorldSession::WorldSession(boost::asio::ip::tcp::socket&& socket) : Socket(std::move(socket))
 {

@@ -24,6 +24,11 @@ extern const Asset::CommonConst* g_const;
 
 using namespace std::chrono;
 
+Player::~Player()
+{
+	WorldSessionInstance.RemovePlayer(_player_id); //网络会话数据
+}
+
 Player::Player()
 {
 	//协议默认处理函数
