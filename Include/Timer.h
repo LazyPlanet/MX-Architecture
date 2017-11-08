@@ -35,11 +35,11 @@ public:
 	//
 	inline std::time_t GetTime()
 	{
-		std::time_t now_time = time(nullptr);
-		return now_time;
-		//boost::posix_time::ptime ptime(boost::posix_time::second_clock::local_time()); //local_time// universal_time: Get the UTC time.
-		//std::time_t time = boost::posix_time::to_time_t(ptime);
-		//return time;
+		//std::time_t now_time = time(nullptr);
+		//return now_time;
+		boost::posix_time::ptime ptime(boost::posix_time::second_clock::local_time()); //local_time// universal_time: Get the UTC time.
+		std::time_t time = boost::posix_time::to_time_t(ptime);
+		return time;
 	}
 
 	inline int32_t GetTimeDiff(int32_t old_time, int32_t new_time)
@@ -63,7 +63,7 @@ public:
 	{
 		boost::posix_time::ptime ptime = boost::posix_time::from_time_t(cur_t);
 
-		boost::posix_time::ptime day_begin(ptime.date(), boost::posix_time::time_duration(-8, 0, 0));
+		boost::posix_time::ptime day_begin(ptime.date()/*, boost::posix_time::time_duration(-8, 0, 0)*/);
 
 		return boost::posix_time::to_time_t(day_begin);
 	}
@@ -91,7 +91,7 @@ public:
 
 		ptime += boost::posix_time::hours(-24 * day_of_week);
 
-		boost::posix_time::ptime week_begin(ptime.date(), boost::posix_time::time_duration(-8, 0, 0));
+		boost::posix_time::ptime week_begin(ptime.date()/*, boost::posix_time::time_duration(-8, 0, 0)*/);
 
 		auto time = boost::posix_time::to_time_t(week_begin);
 		return time;
@@ -109,7 +109,7 @@ public:
 	{
 		boost::posix_time::ptime ptime = boost::posix_time::from_time_t(cur_t);
 		
-		boost::posix_time::ptime month_begin(boost::gregorian::date(ptime.date().year(), ptime.date().month(), 1), boost::posix_time::time_duration(-8, 0, 0));
+		boost::posix_time::ptime month_begin(boost::gregorian::date(ptime.date().year(), ptime.date().month(), 1)/*, boost::posix_time::time_duration(-8, 0, 0)*/);
 
 		auto time = boost::posix_time::to_time_t(month_begin);
 		return time;
