@@ -4252,6 +4252,19 @@ void Player::SendRoomState()
 
 	SendProtocol(proto);
 }
+	
+void Player::AddWinRounds(bool is_win)
+{
+	if (is_win)
+	{
+		_stuff.mutable_common_prop()->set_score_win_rounds(_stuff.common_prop().score_win_rounds() + 1); //获胜
+	}
+	else
+	{
+		_stuff.mutable_common_prop()->set_score_win_rounds(_stuff.common_prop().score_win_rounds() - 1);
+		if (_stuff.common_prop().score_win_rounds() < 0) _stuff.mutable_common_prop()->set_score_win_rounds(0); //失败
+	}
+}
 
 void PlayerManager::Update(int32_t diff)
 {

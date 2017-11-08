@@ -562,6 +562,9 @@ void Room::OnGameOver(int64_t player_id)
 			for (int j = 0; j < _history.list(i).list().size(); ++j)
 				if (player_id == _history.list(i).list(j).player_id())
 					record->set_score(record->score() + _history.list(i).list(j).score());
+
+		if (record->score()) player->AddWinRounds(); //胜率
+		else player->AddWinRounds(false);     
 	}
 
 	LOG(INFO, "房间:{} 整局结算，房间局数:{} 实际局数:{} 结算数据:{}", _stuff.room_id(), _stuff.options().open_rands(), _games.size(), message.ShortDebugString());

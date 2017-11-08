@@ -287,6 +287,7 @@ public:
 	virtual int32_t CmdSaizi(pb::Message* message); //打股子
 	virtual int32_t CmdGetRoomData(pb::Message* message); //获取房间数据
 	virtual int32_t CmdUpdateRoom(pb::Message* message); //更新房间数据
+	virtual int32_t CmdRecharge(pb::Message* message); //充值
 
 	//进入房间回调
 	void OnEnterScene(bool is_reenter);
@@ -445,9 +446,8 @@ public:
 	bool IsGangOperation(); //上次牌是否杠操作
 
 	bool AddRoomRecord(int64_t room_id);
-	void SendRoomState();
-	//充值
-	virtual int32_t CmdRecharge(pb::Message* message);
+	void SendRoomState(); //房间状态
+	void AddWinRounds(bool is_win = true); //胜率
 };
 
 /////////////////////////////////////////////////////

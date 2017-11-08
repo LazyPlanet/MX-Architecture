@@ -269,7 +269,6 @@ void WorldSession::OnProcessMessage(const Asset::Meta& meta)
 			std::string account;
 
 			auto redis = make_unique<Redis>();
-
 			if (redis->GetGuestAccount(account)) 
 			{
 				login->set_account(account);
