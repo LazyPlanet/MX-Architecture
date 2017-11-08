@@ -168,6 +168,18 @@ void WorldSession::OnProcessMessage(const Asset::Meta& meta)
 		{
 			Asset::Login* login = dynamic_cast<Asset::Login*>(message);
 			if (!login) return; 
+
+			//
+			//Client版本号检查
+			//
+			int32_t limit_version = g_const->limit_version();
+			if (limit_version > 0 && _user.client_info().version() < limit_version)
+			{
+				AlertMessage(Asset::ERROR_VERSION_LIMIT, Asset::ERROR_TYPE_NORMAL, Asset::ERROR_SHOW_TYPE_MESSAGE_BOX); //Client版本低
+
+				LOG(ERROR, "Client版本不满足条件，最低版本要求:{}，Client版本:{}", limit_version, _user.client_info().version());
+				return;
+			}
 			
 			_account.CopyFrom(login->account()); //账号信息
 
@@ -812,6 +824,16 @@ void WorldSession::SendMeta(const Asset::Meta& meta)
 	if (content.empty()) return;
 
 	EnterQueue(std::move(content));
+}
+
+void WorldSession::AlertMessage(Asset::ERROR_CODE error_code, Asset::ERROR_TYPE error_type/*= Asset::ERROR_TYPE_NORMAL*/, Asset::ERROR_SHOW_TYPE error_show_type/* = Asset::ERROR_SHOW_TYPE_NORMAL*/)
+{
+	Asset::AlertMessage message;
+	message.set_error_type(error_type);
+	message.set_error_show_type(error_show_type);
+	message.set_error_code(error_code);
+
+	SendProtocol(message);
 }
 
 void WorldSessionManager::BroadCast2GameServer(const pb::Message* message)
