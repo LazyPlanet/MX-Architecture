@@ -482,8 +482,6 @@ void WorldSession::OnProcessMessage(const Asset::Meta& meta)
 			}
 	
 			_player->SetLocalServer(server_id); //设置玩家当前所在服务器
-
-			//_player->SetGameServer(game_server);
 			_player->SendProtocol2GameServer(enter_room); //转发
 		}
 		else if (Asset::META_TYPE_SHARE_UPDATE_CLIENT_DATA == meta.type_t()) //Client参数数据
