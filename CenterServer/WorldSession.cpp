@@ -494,7 +494,7 @@ void WorldSession::OnProcessMessage(const Asset::Meta& meta)
 
 			if (!_player) return;
 
-			_user.mutable_client_info()->set_ip_address(_ip_address);
+			_user.mutable_client_info()->set_ip_address(_ip_address); //服务器存储
 			_user.mutable_client_info()->mutable_location()->CopyFrom(client_data->client_info().location());
 				
 			auto redis = make_unique<Redis>();
@@ -522,7 +522,7 @@ void WorldSession::OnProcessMessage(const Asset::Meta& meta)
 
 void WorldSession::KickOutPlayer(Asset::KICK_OUT_REASON reason)
 {
-	DEBUG("角色类型:{} 全局ID:{} 被踢下线原因:{}", _role_type, _global_id, reason);
+	DEBUG("角色类型:{} 全局ID:{} 被踢下线,原因:{}", _role_type, _global_id, reason);
 
 	if (_global_id == 0 || _role_type == Asset::ROLE_TYPE_NULL) return;
 	
@@ -538,8 +538,7 @@ void WorldSession::KickOutPlayer(Asset::KICK_OUT_REASON reason)
 
 		if (session && session->GetRemotePoint() != GetRemotePoint()) 
 		{
-			ERROR("全局ID:{}会话失效", _global_id);
-			//WorldSessionInstance.AddPlayer(_global_id, shared_from_this()); //在线玩家//该会话已经失效，不应该重复赋值
+			ERROR("角色类型:{} 全局ID:{} 会话失效,原因:{}", _role_type, _global_id, reason);
 			return;
 		}
 

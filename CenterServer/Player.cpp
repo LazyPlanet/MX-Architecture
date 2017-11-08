@@ -1190,8 +1190,15 @@ void PlayerManager::Update(int32_t diff)
 
 	for (auto it = _players.begin(); it != _players.end();)
 	{
-		if (!it->second || it->second->IsExpire()) //退出或者离线时间过长
+		if (!it->second)
 		{
+			it = _players.erase(it);
+			continue; 
+		}
+		else if (it->second->IsExpire()) //退出或者离线时间过长
+		{
+			it->second.reset(); //玩家数据
+
 			it = _players.erase(it);
 			continue; 
 		}
