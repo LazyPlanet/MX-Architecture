@@ -279,14 +279,28 @@ void WorldSession::OnProcessMessage(const Asset::Meta& meta)
 			if (!login) return; 
 			
 			std::string account;
-
 			auto redis = make_unique<Redis>();
-			if (redis->GetGuestAccount(account)) 
-			{
-				login->set_account(account);
 
-				_account.set_account_type(Asset::ACCOUNT_TYPE_GUEST); 
-				_account.set_username(login->account()); //账号信息
+			if (_user.client_info().has_imei() && !_user.client_info().imei().empty()) //直接获取IEMI对应的游客账号，防止刷卡
+			{
+				auto has_key = Redis().Get(_user.client_info().imei(), account);
+				if (!has_key) 
+				{
+					LOG(ERROR, "玩家账号游客登录错误，手机唯一识别码:{}已经存在游客账号,不能再次游客登录，防止刷卡.", _user.client_info().imei());
+					return;
+				}
+			}
+			else
+			{
+				if (redis->GetGuestAccount(account)) 
+				{
+					login->set_account(account);
+
+					_account.set_account_type(Asset::ACCOUNT_TYPE_GUEST); 
+					_account.set_username(login->account()); //账号信息
+				}
+				
+				Redis().Save(_user.client_info().imei(), account); //存储IMEI和账号对应关系
 			}
 
 			_user.mutable_account()->CopyFrom(_account);
