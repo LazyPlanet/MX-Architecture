@@ -30,7 +30,9 @@ void ServerSession::InitializeHandler(const boost::system::error_code error, con
 	{
 		if (error)
 		{
-			ERROR("Remote client disconnect, remote_ip:{}", _ip_address);
+			ERROR("远程断开与GMT服务器连接, 地址:{} 端口:{}，错误码:{} 错误描述:{}", _ip_address, _remote_endpoint.port(), error.value(), error.message());
+
+			Close();
 			return;
 		}
 		else
@@ -66,7 +68,9 @@ void ServerSession::InitializeHandler(const boost::system::error_code error, con
 	}
 	catch (std::exception& e)
 	{
-		ERROR("Remote client disconnect, remote_ip:{}, error:{}", _ip_address, e.what());
+		ERROR("远程连接断开与GMT服务器连接，IP地址:{}, 错误信息:{}", _ip_address, e.what());
+
+		Close();
 		return;
 	}
 	//递归持续接收	
