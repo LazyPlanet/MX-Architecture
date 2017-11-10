@@ -68,8 +68,8 @@ Player::Player(int64_t player_id, std::shared_ptr<WorldSession> session) : Playe
 int32_t Player::Load()
 {
 	//加载数据库
-	auto redis = make_unique<Redis>();
-	auto success = redis->GetPlayer(_player_id, _stuff);
+	//auto redis = make_unique<Redis>();
+	auto success = Redis().GetPlayer(_player_id, _stuff);
 	if (!success) return 1;
 		
 	//初始化包裹
@@ -102,8 +102,8 @@ int32_t Player::Save(bool force)
 
 	if (!force && !IsDirty()) return 1;
 
-	auto redis = make_unique<Redis>();
-	auto success = redis->SavePlayer(_player_id, _stuff);
+	//auto redis = make_unique<Redis>();
+	auto success = Redis().SavePlayer(_player_id, _stuff);
 	if (!success) 
 	{
 		LOG(ERROR, "保存玩家:{}数据:{}失败", _player_id, _stuff.ShortDebugString());
@@ -1644,8 +1644,8 @@ const std::string Player::GetIpAddress()
 {
 	//if (!_user.has_client_info() || !_user.client_info().has_client_ip())
 	//{
-		auto redis = make_unique<Redis>();
-		redis->GetUser(_stuff.account(), _user);
+		//auto redis = make_unique<Redis>();
+		Redis().GetUser(_stuff.account(), _user);
 	//}
 
 	return _user.client_info().ip_address();
@@ -4197,8 +4197,8 @@ const Asset::WechatUnion Player::GetWechat()
 { 
 	if (!_user.has_wechat())
 	{
-		auto redis = make_unique<Redis>();
-		redis->GetUser(_stuff.account(), _user);
+		//auto redis = make_unique<Redis>();
+		Redis().GetUser(_stuff.account(), _user);
 	}
 
 	return _user.wechat();

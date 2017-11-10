@@ -68,6 +68,7 @@ int32_t Player::Load()
 {
 	if (_player_id == 0) return 1;
 
+	/*
 	cpp_redis::future_client client;
 	client.connect(ConfigInstance.GetString("Redis_ServerIP", "127.0.0.1"), ConfigInstance.GetInt("Redis_ServerPort", 6379));
 	if (!client.is_connected()) return 2;
@@ -83,6 +84,11 @@ int32_t Player::Load()
 
 	auto success = _stuff.ParseFromString(reply.as_string());
 	if (!success) return 5;
+	*/
+
+	auto key = "player:" + std::to_string(_player_id);
+	auto loaded = Redis().Get(key, _stuff);
+	if (!loaded) return 2;
 
 	_loaded = true;
 
@@ -108,11 +114,7 @@ int32_t Player::Save(bool force)
 
 	auto redis = make_unique<Redis>();
 	auto success = redis->SavePlayer(_player_id, _stuff); 
-	if (!success) 
-	{
-		DEBUG_ASSERT(false);
-		return 3;
-	}
+	if (!success) return 3;
 
 	_dirty = false;
 	
@@ -137,7 +139,7 @@ int32_t Player::Logout(pb::Message* message)
 	
 int32_t Player::OnLogout()
 {
-	_expire_time = CommonTimerInstance.GetTime() + 1800; //30分钟之内没有上线，则删除
+	_expire_time = CommonTimerInstance.GetTime() + 300; //30分钟之内没有上线，则删除
 
 	if (!IsCenterServer()) 
 	{
@@ -910,6 +912,7 @@ int32_t Player::CmdPlayBack(pb::Message* message)
 	auto play_back = dynamic_cast<const Asset::PlayBack*>(message);
 	if (!play_back) return 1;
 	
+	/*
 	cpp_redis::future_client client;
 	client.connect(ConfigInstance.GetString("Redis_ServerIP", "127.0.0.1"), ConfigInstance.GetInt("Redis_ServerPort", 6379));
 	if (!client.is_connected()) 
@@ -924,8 +927,10 @@ int32_t Player::CmdPlayBack(pb::Message* message)
 		AlertMessage(Asset::ERROR_ROOM_PLAYBACK_NO_RECORD, Asset::ERROR_TYPE_NORMAL, Asset::ERROR_SHOW_TYPE_MESSAGE_BOX);
 		return 2;
 	}
+	*/
 
 	std::string key = "playback:" + std::to_string(play_back->room_id()) + "_" + std::to_string(play_back->game_index());
+	/*
 	auto get = client.get(key);
 	cpp_redis::reply reply = get.get();
 	client.commit();
@@ -942,6 +947,15 @@ int32_t Player::CmdPlayBack(pb::Message* message)
 	{
 		AlertMessage(Asset::ERROR_ROOM_PLAYBACK_NO_RECORD, Asset::ERROR_TYPE_NORMAL, Asset::ERROR_SHOW_TYPE_MESSAGE_BOX);
 		return 4;
+	}
+	*/
+	
+	Asset::PlayBack playback;
+	auto has_record = Redis().Get(key, playback);
+	if (!has_record)
+	{
+		AlertMessage(Asset::ERROR_ROOM_PLAYBACK_NO_RECORD, Asset::ERROR_TYPE_NORMAL, Asset::ERROR_SHOW_TYPE_MESSAGE_BOX);
+		return 2;
 	}
 
 	SendProtocol(playback);
@@ -1197,6 +1211,8 @@ void PlayerManager::Update(int32_t diff)
 		}
 		else if (it->second->IsExpire()) //退出或者离线时间过长
 		{
+			DEBUG("玩家:{}太长时间没有操作，掉线.", it->second->GetID());
+
 			it->second.reset(); //玩家数据
 
 			it = _players.erase(it);

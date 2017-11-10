@@ -27,7 +27,7 @@ class WorldSession : public Socket<WorldSession>
 public:
 	typedef std::function<int32_t(Message*)> CallBack;
 public:
-	~WorldSession();
+	virtual ~WorldSession();
 	WorldSession(boost::asio::ip::tcp::socket&& socket);
 	WorldSession(WorldSession const& right) = delete;    
 	WorldSession& operator = (WorldSession const& right) = delete;

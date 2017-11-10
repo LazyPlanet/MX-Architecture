@@ -1,6 +1,6 @@
 #include <spdlog/spdlog.h>
 #include <CkHttp.h>
-#include <cpp_redis/cpp_redis>
+//#include <cpp_redis/cpp_redis>
 
 #include "WorldSession.h"
 #include "RedisManager.h"
@@ -78,6 +78,8 @@ void WorldSession::InitializeHandler(const boost::system::error_code error, cons
 	catch (std::exception& e)
 	{
 		ERROR("地址:{} 端口:{} 玩家:{}断开连接，错误码:{}", _ip_address, _remote_endpoint.port(), _player ? _player->GetID() : 0, e.what());
+		Close();
+
 		KickOutPlayer(Asset::KICK_OUT_REASON_DISCONNECT);
 		return;
 	}
@@ -183,6 +185,7 @@ void WorldSession::OnProcessMessage(const Asset::Meta& meta)
 			
 			_account.CopyFrom(login->account()); //账号信息
 
+			/*
 			cpp_redis::future_client client;
 			client.connect(ConfigInstance.GetString("Redis_ServerIP", "127.0.0.1"), ConfigInstance.GetInt("Redis_ServerPort", 6379));
 			if (!client.is_connected()) return;
@@ -202,6 +205,12 @@ void WorldSession::OnProcessMessage(const Asset::Meta& meta)
 	
 			auto success = _user.ParseFromString(reply.as_string());
 			if (!success) return;
+			*/
+
+			auto redis_cli = make_unique<Redis>();
+			auto key = "user:" + login->account().username();
+			auto success = redis_cli->Get(key, _user);
+			if (!success) return;
 
 			//
 			//Client数据
@@ -219,8 +228,8 @@ void WorldSession::OnProcessMessage(const Asset::Meta& meta)
 			//
 			if (_user.player_list().size() == 0)
 			{
-				auto redis = make_unique<Redis>();
-				int64_t player_id = redis->CreatePlayer(); //如果账号下没有角色，创建一个给Client
+				//auto redis = make_unique<Redis>();
+				int64_t player_id = redis_cli->CreatePlayer(); //如果账号下没有角色，创建一个给Client
 				if (player_id == 0) return;
 				
 				_player = std::make_shared<Player>(player_id);
@@ -246,8 +255,11 @@ void WorldSession::OnProcessMessage(const Asset::Meta& meta)
 			//
 			//账号数据存储
 			//
+			/*
 			auto set = client.set("user:" + login->account().username(), _user.SerializeAsString());
 			client.sync_commit();
+			*/
+			redis_cli->Save(key, _user.SerializeAsString());
 
 			LOG_BI("account", _user); //账号查询
 			
@@ -279,7 +291,7 @@ void WorldSession::OnProcessMessage(const Asset::Meta& meta)
 			if (!login) return; 
 			
 			std::string account;
-			auto redis = make_unique<Redis>();
+			auto redis_cli = make_unique<Redis>();
 
 			if (_user.client_info().has_imei() && !_user.client_info().imei().empty()) //直接获取IEMI对应的游客账号，防止刷卡
 			{
@@ -292,7 +304,7 @@ void WorldSession::OnProcessMessage(const Asset::Meta& meta)
 			}
 			else
 			{
-				if (redis->GetGuestAccount(account)) 
+				if (redis_cli->GetGuestAccount(account)) 
 				{
 					login->set_account(account);
 
@@ -300,13 +312,13 @@ void WorldSession::OnProcessMessage(const Asset::Meta& meta)
 					_account.set_username(login->account()); //账号信息
 				}
 				
-				Redis().Save(_user.client_info().imei(), account); //存储IMEI和账号对应关系
+				redis_cli->Save(_user.client_info().imei(), account); //存储IMEI和账号对应关系
 			}
 
 			_user.mutable_account()->CopyFrom(_account);
 			_user.set_created_time(CommonTimerInstance.GetTime()); //创建时间
 
-			redis->SaveUser(account, _user); //存盘
+			redis_cli->SaveUser(account, _user); //存盘
 
 			SendProtocol(login); 
 		}
@@ -439,8 +451,8 @@ void WorldSession::OnProcessMessage(const Asset::Meta& meta)
 
 			if (!_player || _player->GetID() != switch_account->player_id()) return;
 
-			auto redis = make_unique<Redis>();
-			redis->SaveUser(_account.username(), _user); //存盘退出
+			//auto redis = make_unique<Redis>();
+			Redis().SaveUser(_account.username(), _user); //存盘退出
 
 			_player->Save(true);
 			_player.reset();
@@ -520,8 +532,8 @@ void WorldSession::OnProcessMessage(const Asset::Meta& meta)
 			_user.mutable_client_info()->set_ip_address(_ip_address); //服务器存储
 			_user.mutable_client_info()->mutable_location()->CopyFrom(client_data->client_info().location());
 				
-			auto redis = make_unique<Redis>();
-			redis->SetLocation(_player->GetID(), client_data->client_info().location()); //位置信息
+			//auto redis = make_unique<Redis>();
+			Redis().SetLocation(_player->GetID(), client_data->client_info().location()); //位置信息
 
 			client_data->mutable_client_info()->CopyFrom(_user.client_info());
 			SendProtocol(message);
@@ -720,6 +732,7 @@ int32_t WorldSession::OnWechatLogin(const pb::Message* message)
 	//2.微信登陆之后，直接进行存盘，防止玩家此时退出
 	//
 	
+	/*
 	cpp_redis::future_client client;
 	client.connect(ConfigInstance.GetString("Redis_ServerIP", "127.0.0.1"), ConfigInstance.GetInt("Redis_ServerPort", 6379));
 	if (!client.is_connected()) return 1;
@@ -747,6 +760,17 @@ int32_t WorldSession::OnWechatLogin(const pb::Message* message)
 
 		auto redis = make_unique<Redis>();
 		if (_user.wechat().has_openid()) redis->SaveUser(_user.wechat().openid(), _user); //账号数据存盘
+	}
+	*/
+	
+	auto client_cli = make_unique<Redis>();
+	auto key = "user:" + _user.wechat().openid();
+	auto success = client_cli->Get(key, _user);
+
+	if (!success)
+	{
+		_user.set_created_time(CommonTimerInstance.GetTime()); //创建时间
+		if (_user.wechat().has_openid()) client_cli->SaveUser(_user.wechat().openid(), _user); //账号数据存盘
 	}
 
 	return 0;

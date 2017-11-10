@@ -977,8 +977,8 @@ bool RoomManager::CheckPassword(int64_t room_id, std::string password)
 
 int64_t RoomManager::AllocRoom()
 {
-	auto redis = make_unique<Redis>();
-	return redis->CreateRoom();
+	//auto redis = make_unique<Redis>();
+	return Redis().CreateRoom();
 }
 	
 std::shared_ptr<Room> RoomManager::CreateRoom(const Asset::Room& room)

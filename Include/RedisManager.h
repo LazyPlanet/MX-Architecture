@@ -1,6 +1,6 @@
 #pragma once
 
-#include <hiredis.h>
+//#include <hiredis.h>
 #include <string>
 #include <iostream>
 
@@ -25,24 +25,30 @@ class Redis
 private:
 	std::string _hostname = "127.0.0.1";
 	int32_t _port = 6379;
-	struct timeval _timeout = {1, 500000}; //1.5秒 
+	//struct timeval _timeout = {1, 500000}; //1.5秒 
 	std::string _password = "!QAZ%TGB&UJM9ol.";
 
-	redisContext* _client = nullptr;
+	//redisContext* _client = nullptr;
+	cpp_redis::future_client _client;
 public:
-	~Redis() { if (_client) redisFree(_client);	}
+	//~Redis() { if (_client) redisFree(_client);	}
 	
+	~Redis() { 
+		//if (_client.is_connected()) _client.disconnect(); 
+	}
+
 	//
 	//Redis多线程限制
 	//
 	//不能利用单例模式
 	//
+	/*
 	static Redis& Instance()
 	{
 		static Redis _instance;
 		return _instance;
 	}
-
+	*/
 	Redis() 
 	{ 
 		std::string hostname = ConfigInstance.GetString("Redis_ServerIP", "127.0.0.1");
@@ -53,17 +59,20 @@ public:
 		if (!hostname.empty()) _hostname = hostname;
 		if (!password.empty()) _password = password;
 
-		_client = redisConnectWithTimeout(_hostname.c_str(), _port, _timeout);
+		//_client = redisConnectWithTimeout(_hostname.c_str(), _port, _timeout);
 
+		/*
 		redisReply* reply= (redisReply*)redisCommand(_client, "auth %s", _password.c_str()); 
 		if (reply && reply->type == REDIS_REPLY_ERROR) { 
 			LOG(ERROR, "Redis密码错误");
 		} 
 		freeReplyObject(reply);
+		*/
 	}
 
 	Redis(std::string& hostname, int32_t port) : _hostname(hostname), _port(port)
 	{ 
+		/*
 		_client = redisConnectWithTimeout(hostname.c_str(), port, _timeout);
 		
 		redisReply* reply= (redisReply*)redisCommand(_client, "auth %s", _password.c_str()); 
@@ -71,18 +80,185 @@ public:
 			LOG(ERROR, "Redis密码错误");
 		} 
 		freeReplyObject(reply);
+		*/
 	}
 
-	redisContext* GetClient() { return _client; }
+	//redisContext* GetClient() { return _client; }
 
+	/*
 	redisReply* ExcuteCommand(std::string command)
 	{
 		redisReply* reply = (redisReply*)redisCommand(_client, command.c_str());
 		return reply;
 	}
+	*/
+	
+	bool Get(const std::string& key, std::string& value, bool async = true)
+	{
+		if (!_client.is_connected()) 
+		{
+			_client.connect(_hostname, _port);
+
+			if (!_client.is_connected()) 
+			{
+				LOG(ERROR, "数据库获取:{}数据失败，原因:未能连接数据库", key);
+				return false;
+			}
+			
+			auto has_auth = _client.auth(_password);
+			if (has_auth.get().ko()) 
+			{
+				LOG(ERROR, "数据库获取:{}数据失败，原因:权限不足", key);
+				return false;
+			}
+		}
+
+		auto get = _client.get(key);
+		cpp_redis::reply reply = get.get();
+		
+		if (async)	
+		{
+			_client.commit(); //异步存储
+		}
+		else 
+		{
+			_client.sync_commit(); //同步存储
+		}
+	
+		if (!reply.is_string()) 
+		{
+			LOG(ERROR, "数据库获取:{}数据失败，原因:没有数据", key);
+			return false;
+		}
+	
+		value = reply.as_string();
+
+		return true;
+	}
+	
+	bool Save(const std::string& key, const std::string& value, bool async = true)
+	{
+		if (!_client.is_connected()) 
+		{
+			_client.connect(_hostname, _port);
+
+			if (!_client.is_connected()) 
+			{
+				LOG(ERROR, "数据库获取:{}数据失败，原因:未能连接数据库", key);
+				return false;
+			}
+			
+			auto has_auth = _client.auth(_password);
+			if (has_auth.get().ko()) 
+			{
+				LOG(ERROR, "数据库获取:{}数据失败，原因:权限不足", key);
+				return false;
+			}
+		}
+
+		auto set = _client.set(key, value);
+
+		if (async)	
+		{
+			_client.commit(); //异步存储
+		}
+		else 
+		{
+			_client.sync_commit(); //同步存储
+		}
+
+		LOG(INFO, "存储数据，Key:{} 数据:{}", key, value); 
+
+		return true;
+	}
+	
+	bool Get(const std::string& key, google::protobuf::Message& value, bool async = true)
+	{
+		if (!_client.is_connected()) 
+		{
+			_client.connect(_hostname, _port);
+
+			if (!_client.is_connected()) 
+			{
+				LOG(ERROR, "数据库获取:{}数据失败，原因:未能连接数据库", key);
+				return false;
+			}
+			
+			auto has_auth = _client.auth(_password);
+			if (has_auth.get().ko()) 
+			{
+				LOG(ERROR, "数据库获取:{}数据失败，原因:权限不足", key);
+				return false;
+			}
+		}
+
+		auto get = _client.get(key);
+		cpp_redis::reply reply = get.get();
+		
+		if (async)	
+		{
+			_client.commit(); //异步存储
+		}
+		else 
+		{
+			_client.sync_commit(); //同步存储
+		}
+	
+		if (!reply.is_string()) 
+		{
+			LOG(ERROR, "数据库获取:{}数据失败，原因:没有数据", key);
+			return false;
+		}
+	
+		auto success = value.ParseFromString(reply.as_string());
+		if (!success) 
+		{
+			LOG(ERROR, "数据库获取:{}数据失败，原因:不能反序列化成protobuff结构", key);
+			return false;
+		}
+
+		return true;
+	}
+	
+	bool Save(const std::string& key, const google::protobuf::Message& value, bool async = true)
+	{
+		if (!_client.is_connected()) 
+		{
+			_client.connect(_hostname, _port);
+
+			if (!_client.is_connected()) 
+			{
+				LOG(ERROR, "数据库获取:{}数据失败，原因:未能连接数据库", key);
+				return false;
+			}
+			
+			auto has_auth = _client.auth(_password);
+			if (has_auth.get().ko()) 
+			{
+				LOG(ERROR, "数据库获取:{}数据失败，原因:权限不足", key);
+				return false;
+			}
+		}
+
+		auto set = _client.set(key, value.SerializeAsString());
+
+		if (async)	
+		{
+			_client.commit(); //异步存储
+		}
+		else 
+		{
+			_client.sync_commit(); //同步存储
+		}
+
+		LOG(INFO, "存储数据，Key:{} 数据:{}成功", key, value.ShortDebugString()); 
+
+		return true;
+	}
 
 	int64_t CreatePlayer()
 	{
+		/*
 		redisReply* reply = (redisReply*)redisCommand(_client, "Incr player_counter");
 		if (!reply) return 0;
 
@@ -91,9 +267,38 @@ public:
 			freeReplyObject(reply);
 			return 0;
 		}
+		*/
 		
-		int64_t player_id = reply->integer;
-		freeReplyObject(reply);
+		if (!_client.is_connected()) 
+		{
+			_client.connect(_hostname, _port);
+
+			if (!_client.is_connected()) 
+			{
+				LOG(ERROR, "数据库连接失败，原因:未能连接数据库");
+				return false;
+			}
+			
+			auto has_auth = _client.auth(_password);
+			if (has_auth.get().ko()) 
+			{
+				LOG(ERROR, "数据库验证失败，原因:权限不足");
+				return false;
+			}
+
+		}
+
+		auto incrby = _client.incrby("player_counter", 1);
+		_client.commit();
+
+		int64_t player_id = 0;
+
+		auto reply = incrby.get();
+		if (reply.is_integer()) player_id = reply.as_integer();
+
+		if (player_id == 0) return 0;
+
+		//freeReplyObject(reply);
 		
 		//
 		//角色ID带有服务器ID
@@ -109,26 +314,29 @@ public:
 	bool GetPlayer(int64_t player_id, Asset::Player& player)
 	{
 		std::string key = "player:" + std::to_string(player_id);
+		auto success = Get(key, player, false);
+		return success;
 
-		cpp_redis::future_client client;
-		client.connect(ConfigInstance.GetString("Redis_ServerIP", "127.0.0.1"), ConfigInstance.GetInt("Redis_ServerPort", 6379));
+		/*
 
-		if (!client.is_connected()) 
+		_client.connect(ConfigInstance.GetString("Redis_ServerIP", "127.0.0.1"), ConfigInstance.GetInt("Redis_ServerPort", 6379));
+
+		if (!_client.is_connected()) 
 		{
 			LOG(ERROR, "Redis获取玩家:{}数据失败，Key:{} 原因:未能连接数据库", player_id, key);
 			return false;
 		}
 		
-		auto has_auth = client.auth(ConfigInstance.GetString("Redis_Password", "!QAZ%TGB&UJM9ol."));
+		auto has_auth = _client.auth(ConfigInstance.GetString("Redis_Password", "!QAZ%TGB&UJM9ol."));
 		if (has_auth.get().ko()) 
 		{
 			LOG(ERROR, "Redis获取玩家:{}数据失败，Key:{} 原因:权限不足", player_id, key);
 			return false;
 		}
 
-		auto get = client.get(key);
+		auto get = _client.get(key);
 		cpp_redis::reply reply = get.get();
-		client.commit();
+		_client.commit();
 	
 		if (!reply.is_string()) 
 		{
@@ -144,6 +352,7 @@ public:
 		}
 
 		return true;
+		*/
 		
 		/*
 		std::string command = "Get player:" + std::to_string(player_id);
@@ -175,24 +384,30 @@ public:
 	bool SavePlayer(int64_t player_id, const Asset::Player& player)
 	{
 		std::string key = "player:" + std::to_string(player_id);
+		auto success = Save(key, player, false);
+		return success;
+		
+		/*
+		std::string key = "player:" + std::to_string(player_id);
 
-		cpp_redis::future_client client;
-		client.connect(ConfigInstance.GetString("Redis_ServerIP", "127.0.0.1"), ConfigInstance.GetInt("Redis_ServerPort", 6379));
-		if (!client.is_connected()) 
+		_client.connect(ConfigInstance.GetString("Redis_ServerIP", "127.0.0.1"), ConfigInstance.GetInt("Redis_ServerPort", 6379));
+		if (!_client.is_connected()) 
 		{
-			LOG(ERROR, "Redis获取玩家:{}数据失败，Key:{} 原因:未能连接数据库", player_id, key);
+			LOG(ERROR, "Redis保存玩家:{}数据失败，Key:{} 原因:未能连接数据库", player_id, key);
 			return false;
 		}
 		
-		auto has_auth = client.auth(ConfigInstance.GetString("Redis_Password", "!QAZ%TGB&UJM9ol."));
+		auto has_auth = _client.auth(ConfigInstance.GetString("Redis_Password", "!QAZ%TGB&UJM9ol."));
 		if (has_auth.get().ko()) 
 		{
-			LOG(ERROR, "Redis获取玩家:{}数据失败，Key:{} 原因:权限不足", player_id, key);
+			LOG(ERROR, "Redis保存玩家:{}数据失败，Key:{} 原因:权限不足", player_id, key);
 			return false;
 		}
 
-		auto set = client.set(key, player.SerializeAsString());
-		client.commit();
+		auto set = _client.set(key, player.SerializeAsString());
+
+		_client.sync_commit();
+		*/
 
 		/*
 		const int player_length = player.ByteSize();
@@ -215,13 +430,14 @@ public:
 		LOG(INFO, "保存玩家数据，player_id:{} player:{}", player_id, player.ShortDebugString());
 		*/
 	
-		LOG(INFO, "存储玩家:{} Key:{} 结果:{} 数据:{}", player_id, key, set.get(), player.ShortDebugString()); 
+		//if (set.get().is_string()) LOG(INFO, "存储玩家:{} Key:{} 结果:{} 数据:{}", player_id, key, set.get().as_string(), player.ShortDebugString()); 
 
 		return true;
 	}
 	
 	int64_t CreateRoom()
 	{
+		/*
 		redisReply* reply = (redisReply*)redisCommand(_client, "Incr room_counter");
 		if (!reply) return 0;
 
@@ -233,7 +449,33 @@ public:
 		
 		int64_t room_id = reply->integer;
 		freeReplyObject(reply);
+		*/
 		
+		_client.connect(_hostname, _port);
+
+		if (!_client.is_connected()) 
+		{
+			LOG(ERROR, "数据库连接失败，原因:未能连接数据库");
+			return false;
+		}
+		
+		auto has_auth = _client.auth(_password);
+		if (has_auth.get().ko()) 
+		{
+			LOG(ERROR, "数据库验证失败，原因:权限不足");
+			return false;
+		}
+
+		auto incrby = _client.incrby("room_counter", 1);
+		_client.commit();
+
+		int64_t room_id = 0;
+
+		auto reply = incrby.get();
+		if (reply.is_integer()) room_id = reply.as_integer();
+
+		if (room_id == 0) return 0;
+
 		//
 		//房间ID带有服务器ID
 		//
@@ -247,8 +489,33 @@ public:
 		return room_id;
 	}
 
-	int32_t GetUser(std::string username, Asset::User& user)
+	bool GetUser(std::string username, Asset::User& user)
 	{
+		std::string key = "user:" + username;
+
+		return Get(key, user);
+		/*
+		_client.connect(_hostname, _port);
+
+		if (!_client.is_connected()) 
+		{
+			LOG(ERROR, "数据库连接失败，原因:未能连接数据库");
+			return false;
+		}
+		
+		auto has_auth = _client.auth(_password);
+		if (has_auth.get().ko()) 
+		{
+			LOG(ERROR, "数据库验证失败，原因:权限不足");
+			return false;
+		}
+
+		_client.set("user:" + username, user.SerializeAsString());
+		_client.sync_commit();
+
+		return true;
+		*/
+		/*
 		std::string command = "Get user:" + username;
 		redisReply* reply = (redisReply*)redisCommand(_client, command.c_str());
 
@@ -284,10 +551,19 @@ public:
 		freeReplyObject(reply);
 
 		return type;
+		*/
 	}
 	
 	bool SaveUser(std::string username, const Asset::User& user)
 	{
+		std::string key = "user:" + username;
+
+		auto success = Save(key, user, false);
+		if (!success) return false;
+
+		LOG(INFO, "保存账号数据，username:{} user:{}", username, user.ShortDebugString());
+		return true;
+		/*
 		const int user_length = user.ByteSize();
 		char user_buff[user_length];
 		memset(user_buff, 0, user_length);
@@ -308,10 +584,37 @@ public:
 		LOG(INFO, "保存账号数据，username:{} user:{}", username, user.ShortDebugString());
 
 		return true;
+		*/
 	}
 	
 	bool GetGuestAccount(std::string& account)
 	{
+		_client.connect(_hostname, _port);
+
+		if (!_client.is_connected()) 
+		{
+			LOG(ERROR, "数据库连接失败，原因:未能连接数据库");
+			return false;
+		}
+		
+		auto has_auth = _client.auth(_password);
+		if (has_auth.get().ko()) 
+		{
+			LOG(ERROR, "数据库验证失败，原因:权限不足");
+			return false;
+		}
+
+		auto incrby = _client.incrby("guest_counter", 1);
+		_client.sync_commit();
+
+		int64_t guest_id = 0;
+
+		auto reply = incrby.get();
+		if (reply.is_integer()) guest_id = reply.as_integer();
+
+		if (guest_id == 0) return 0;
+
+		/*
 		redisReply* reply = (redisReply*)redisCommand(_client, "Incr guest_counter");
 		if (!reply) return false;
 
@@ -324,13 +627,15 @@ public:
 		
 		int64_t guest_id = reply->integer;
 		freeReplyObject(reply);
-		
+		*/
+
 		account = "guest_" + std::to_string(guest_id);
 		return true;
 	}
 
 	bool SetLocation(int64_t player_id, Asset::Location location)
 	{
+		/*
 		double longitude = location.longitude();
 		double latitude = location.latitude();
 
@@ -339,12 +644,14 @@ public:
 
 		redisReply* reply = (redisReply*)redisCommand(_client, command.c_str()); 
 		if (!reply) return false;
+		*/
 
 		return true;
 	}
 
 	bool GetLocation(int64_t player_id, Asset::Location& location)
 	{
+		/*
 		std::string key = "player:" + std::to_string(player_id);
 		std::string command = "geopos players_location " + key;
 
@@ -375,12 +682,13 @@ public:
 
 		location.set_longitude(longitude);
 		location.set_latitude(latitude);
-		
+		*/
 		return true;
 	}
 
 	double GetDistance(int64_t player_id1, int64_t player_id2)
 	{
+		/*
 		std::string command = "geodist players_location player:" + std::to_string(player_id1) + " player:" + std::to_string(player_id2);
 
 		redisReply* reply = (redisReply*)redisCommand(_client, command.c_str());
@@ -395,10 +703,14 @@ public:
 		double dist = atof(reply->str);
 		freeReplyObject(reply);
 		return dist;
+		*/
+		return 0;
 	}
 	
 	int32_t GetRoomHistory(int64_t room_id, Asset::RoomHistory history)
 	{
+		return 0;
+		/*
 		std::string command = "Get room_history:" + std::to_string(room_id);
 		redisReply* reply = (redisReply*)redisCommand(_client, command.c_str());
 
@@ -433,10 +745,12 @@ public:
 		freeReplyObject(reply);
 
 		return type;
+		*/
 	}
 	
 	bool SaveRoomHistory(int64_t room_id, const Asset::RoomHistory& history)
 	{
+		/*
 		const int user_length = history.ByteSize();
 		char user_buff[user_length];
 		memset(user_buff, 0, user_length);
@@ -453,8 +767,12 @@ public:
 			LOG(ERROR, "保存历史战绩数据失败，room_id:{} history:{}", room_id, history.ShortDebugString());
 		}
 		freeReplyObject(reply);
-			
-		LOG(INFO, "保存历史战绩数据，room_id:{} history:{}", room_id, history.ShortDebugString());
+		*/
+
+		auto success = Save("room_history:" + std::to_string(room_id), history);
+		if (!success) return false;
+
+		LOG(INFO, "保存历史战绩数据，房间:{} 数据:{}", room_id, history.ShortDebugString());
 
 		return true;
 	}
