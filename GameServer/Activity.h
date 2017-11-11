@@ -77,8 +77,8 @@ public:
 					boost::posix_time::time_duration start_time_duration(boost::posix_time::duration_from_string(it->second->start_time()));
 					boost::posix_time::time_duration stop_time_duration(boost::posix_time::duration_from_string(it->second->stop_time()));
 					
-					std::time_t cur_t = CommonTimerInstance.GetTime();
-					boost::posix_time::ptime curr_time = boost::posix_time::from_time_t(cur_t);
+					auto curr_time = CommonTimerInstance.GetPTime();
+					//boost::posix_time::ptime curr_time = boost::posix_time::from_time_t(cur_t);
 					auto curr_time_duration = curr_time.time_of_day()/* + boost::posix_time::time_duration(-8, 0, 0)*/; //19:00:00
 
 					//DEBUG("start_date:{} stop_date:{} curr_time:{}", boost::posix_time::to_simple_string(start_date), 
@@ -127,14 +127,14 @@ public:
 				case Asset::ACTIVITY_CYCLE_TYPE_DURATION: //时间段
 				{
 					boost::posix_time::ptime start_time(boost::posix_time::time_from_string(it->second->start_date() + " " + it->second->start_time()));
-					auto start_time_t = boost::posix_time::to_time_t(start_time);
+					//auto start_time_t = boost::posix_time::to_time_t(start_time);
 
 					boost::posix_time::ptime stop_time(boost::posix_time::time_from_string(it->second->start_date() + " " + it->second->stop_time()));
-					auto stop_time_t = boost::posix_time::to_time_t(stop_time);
+					//auto stop_time_t = boost::posix_time::to_time_t(stop_time);
 					
-					std::time_t cur_t = CommonTimerInstance.GetTime();
+					auto curr_time = TimerInstance.GetPTime();
 
-					if (cur_t < start_time_t || cur_t > stop_time_t) //不在时间段内
+					if (curr_time < start_time || curr_time > stop_time) //不在时间段内
 					{
 						if (_state[it->first])
 						{

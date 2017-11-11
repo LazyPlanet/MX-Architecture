@@ -33,13 +33,21 @@ public:
 	//
 	//获取当前系统时间(单位：秒)
 	//
+	//local_time获取当前时间是正确时间，转换为time_t后会多8个小时，因此不能直接转换后使用
+	//
 	inline std::time_t GetTime()
 	{
-		//std::time_t now_time = time(nullptr);
-		//return now_time;
+		std::time_t now_time = time(nullptr);
+		return now_time;
+		//boost::posix_time::ptime ptime(boost::posix_time::second_clock::local_time()); //local_time// universal_time: Get the UTC time.
+		//std::time_t time = boost::posix_time::to_time_t(ptime);
+		//return time;
+	}
+	
+	inline boost::posix_time::ptime GetPTime()
+	{
 		boost::posix_time::ptime ptime(boost::posix_time::second_clock::local_time()); //local_time// universal_time: Get the UTC time.
-		std::time_t time = boost::posix_time::to_time_t(ptime);
-		return time;
+		return ptime;
 	}
 
 	inline int32_t GetTimeDiff(int32_t old_time, int32_t new_time)
@@ -139,6 +147,7 @@ public:
 };
 
 #define CommonTimerInstance CommonTimer::Instance()
+#define TimerInstance CommonTimer::Instance()
 
 /*
 struct IntervalTimer

@@ -974,7 +974,11 @@ void WorldSessionManager::RemovePlayer(int64_t player_id)
 	auto it = _client_list.find(player_id);
 	if (it == _client_list.end()) return;
 	
-	if (it->second) it->second.reset();
+	if (it->second) 
+	{
+		it->second->Close();
+		it->second.reset();
+	}
 
 	_client_list.erase(it); 
 }

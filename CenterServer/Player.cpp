@@ -1211,7 +1211,7 @@ void PlayerManager::Update(int32_t diff)
 		}
 		else if (it->second->IsExpire()) //退出或者离线时间过长
 		{
-			DEBUG("玩家:{}太长时间没有操作，掉线.", it->second->GetID());
+			ERROR("玩家:{}太长时间没有操作，掉线.", it->second->GetID());
 
 			it->second.reset(); //玩家数据
 
