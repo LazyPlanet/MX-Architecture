@@ -812,6 +812,8 @@ bool WorldSession::IsExpire()
 {
 	if (_expire_time == 0) return false;
 
+	WARN("角色类型:{} 全局ID:{} 地址:{} 由于长时间未进行操关闭网络连接", _role_type, _global_id, _ip_address);
+
 	return _expire_time < CommonTimerInstance.GetTime();
 }
 
