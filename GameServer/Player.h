@@ -447,7 +447,7 @@ public:
 
 	bool AddRoomRecord(int64_t room_id);
 	void SendRoomState(); //房间状态
-	void AddWinRounds(bool is_win = true); //胜率
+	void AddRoomScore(int32_t score); //胜率
 };
 
 /////////////////////////////////////////////////////

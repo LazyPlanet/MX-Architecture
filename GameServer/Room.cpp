@@ -563,8 +563,7 @@ void Room::OnGameOver(int64_t player_id)
 				if (player_id == _history.list(i).list(j).player_id())
 					record->set_score(record->score() + _history.list(i).list(j).score());
 
-		if (record->score()) player->AddWinRounds(); //胜率
-		else player->AddWinRounds(false);     
+		player->AddRoomScore(record->score()); //总积分
 	}
 
 	LOG(INFO, "房间:{} 整局结算，房间局数:{} 实际局数:{} 结算数据:{}", _stuff.room_id(), _stuff.options().open_rands(), _games.size(), message.ShortDebugString());
@@ -977,8 +976,8 @@ bool RoomManager::CheckPassword(int64_t room_id, std::string password)
 
 int64_t RoomManager::AllocRoom()
 {
-	//auto redis = make_unique<Redis>();
-	return Redis().CreateRoom();
+	auto redis = make_unique<Redis>();
+	return redis->CreateRoom();
 }
 	
 std::shared_ptr<Room> RoomManager::CreateRoom(const Asset::Room& room)
