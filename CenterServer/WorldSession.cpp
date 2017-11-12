@@ -11,6 +11,7 @@
 #include "PlayerName.h"
 #include "Timer.h"
 #include "bin2ascii.h"
+#include "WhiteBlackManager.h"
 
 namespace Adoter
 {
@@ -173,7 +174,22 @@ void WorldSession::OnProcessMessage(const Asset::Meta& meta)
 			if (!login) return; 
 
 			//
-			//Client版本号检查
+			//1.黑白名单检查
+			//
+			if (WBInstance.EnabledWhite() && !WBInstance.IsWhite(_ip_address))
+			{
+				LOG(ERROR, "只能白名单进行登录，当前IP地址:{}", _ip_address);
+				return;
+			}
+			
+			if (WBInstance.EnabledBlack() && WBInstance.IsBlack(_ip_address))
+			{
+				LOG(ERROR, "黑名单不允许进行登录，当前IP地址:{}", _ip_address);
+				return;
+			}
+
+			//
+			//2.Client版本号检查
 			//
 			int32_t limit_version = g_const->limit_version();
 			if (limit_version > 0 && _user.client_info().version() < limit_version)
@@ -977,7 +993,7 @@ void WorldSessionManager::RemovePlayer(int64_t player_id)
 	
 	if (it->second) 
 	{
-		it->second->Close();
+		//it->second->Close(); //创建账号后会导致Player析构调用删除
 		it->second.reset();
 	}
 

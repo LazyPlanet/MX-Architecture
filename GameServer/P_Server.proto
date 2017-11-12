@@ -72,10 +72,12 @@ message SeverConfig {
 
 //白名单
 message WhiteList {
-	repeated bytes ip_address = 1;
+	optional bool open = 1;
+	repeated bytes ip_address = 2;
 }
 
 //黑名单
 message BlackList {
-	repeated bytes ip_address = 1;
+	optional bool open = 1;
+	repeated bytes ip_address = 2;
 }

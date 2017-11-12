@@ -28,6 +28,10 @@ public:
 
 	bool Load()
 	{
+		_white_list.set_open(false);
+		_white_list.add_ip_address("127.0.0.1");
+		DEBUG("例子:{}", _white_list.DebugString());
+
 		std::ifstream wfi("WhiteList", std::ifstream::in);
 		pb::io::IstreamInputStream wh_iis(&wfi);
 		auto result = pb::TextFormat::Parse(&wh_iis, &_white_list);
@@ -41,7 +45,7 @@ public:
 		bfi.close();
 
 		if (!result) return false;
-		
+
 		return true;
 	}
 
@@ -60,8 +64,12 @@ public:
 
 		return true;
 	}
+	
+	bool EnabledWhite() { return _white_list.open(); }
+	bool EnabledBlack() { return _black_list.open(); }
 };
 
 #define WhiteBlackInstance WhiteBlackManager::Instance()
+#define WBInstance WhiteBlackManager::Instance()
 
 }
