@@ -125,9 +125,10 @@ int32_t Player::Save(bool force)
 
 bool Player::IsExpire()
 {
-	if (_expire_time == 0) return false;
+	//if (_expire_time == 0) return false;
 
-	return _expire_time < CommonTimerInstance.GetTime();
+	//return _expire_time < CommonTimerInstance.GetTime();
+	return false;
 }
 	
 int32_t Player::Logout(pb::Message* message)
@@ -139,7 +140,7 @@ int32_t Player::Logout(pb::Message* message)
 	
 int32_t Player::OnLogout()
 {
-	_expire_time = CommonTimerInstance.GetTime() + 300; //30分钟之内没有上线，则删除
+	//_expire_time = CommonTimerInstance.GetTime() + 300; //30分钟之内没有上线，则删除
 
 	if (!IsCenterServer()) 
 	{
@@ -644,7 +645,7 @@ bool Player::HandleProtocol(int32_t type_t, pb::Message* message)
 		callback(std::forward<pb::Message*>(message));	
 	}
 
-	if (_expire_time > 0) _expire_time = 0;
+	//if (_expire_time > 0) _expire_time = 0;
 
 	return true;
 }
@@ -1209,6 +1210,7 @@ void PlayerManager::Update(int32_t diff)
 			it = _players.erase(it);
 			continue; 
 		}
+		/*
 		else if (it->second->IsExpire()) //退出或者离线时间过长
 		{
 			ERROR("玩家:{}太长时间没有操作，掉线.", it->second->GetID());
@@ -1218,6 +1220,7 @@ void PlayerManager::Update(int32_t diff)
 			it = _players.erase(it);
 			continue; 
 		}
+		*/
 		else
 		{
 			it->second->Update();

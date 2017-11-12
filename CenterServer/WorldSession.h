@@ -44,6 +44,8 @@ public:
 
 	void KickOutPlayer(Asset::KICK_OUT_REASON reason);
 	void OnLogout();
+	void OnHeartBeat1s();
+	bool IsExpire();
 
 	boost::asio::ip::tcp::endpoint GetRemotePoint() { return _remote_endpoint; }
 	std::string GetRemoteAddress() {return _remote_endpoint.address().to_string(); }
@@ -86,6 +88,7 @@ private:
 	std::time_t _hi_time = 0;
 	int32_t _pings_count = 0;
 	int64_t _heart_count = 0; //心跳次数
+	int64_t _expire_time = 0;
 };
 
 class WorldSessionManager : public SocketManager<WorldSession> 

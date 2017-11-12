@@ -164,6 +164,7 @@ void WorldSession::OnProcessMessage(const Asset::Meta& meta)
 		//DEBUG("3.中心服务器接收来自Client的协议:{}", meta.type_t());
 
 		_pings_count = 0;
+		_expire_time = 0;
 		_hi_time = CommonTimerInstance.GetTime(); 
 		
 		if (Asset::META_TYPE_C2S_LOGIN == meta.type_t()) //账号登陆
@@ -790,30 +791,28 @@ bool WorldSession::Update()
 
 	if (!Socket::Update()) return false;
 
-	//if (!_online) return false;
-	
-	/*
-	if (_heart_count % 6000 != 0) return true; //10分钟
-
-	auto curr_time = CommonTimerInstance.GetTime();
-	auto duration_pass = curr_time - _hi_time;
-
-	if (duration_pass > 1800 && _role_type != Asset::ROLE_TYPE_GAME_SERVER) //30分钟
-	{
-		++_pings_count;
-		
-		static int32_t max_allowed = 6;
-
-		if (max_allowed && _pings_count > max_allowed) 
-		{
-			LOG(ERROR, "玩家:{}长时间没有操作，关闭网络连接，服务器主动断线，PING数量:{}，过期时间:{}", _player ? _player->GetID() : 0, _pings_count, duration_pass);
-
-			//Close();
-		}
-	}
-	*/
+	if (_heart_count % 60 == 0) OnHeartBeat1s();
 
 	return true;
+}
+
+void WorldSession::OnHeartBeat1s()
+{
+	auto duration_pass = TimerInstance.GetTime() - _hi_time;
+
+	if (duration_pass > 60 && _expire_time == 0) 
+	{
+		_expire_time = TimerInstance.GetTime() + 60 * 10; //10分钟之内没有上线，则删除
+	}
+
+	if (IsExpire()) Close(); //关闭网络连接
+}
+
+bool WorldSession::IsExpire()
+{
+	if (_expire_time == 0) return false;
+
+	return _expire_time < CommonTimerInstance.GetTime();
 }
 
 void WorldSession::OnClose()
