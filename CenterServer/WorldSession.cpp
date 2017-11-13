@@ -225,8 +225,7 @@ void WorldSession::OnProcessMessage(const Asset::Meta& meta)
 			*/
 
 			auto redis_cli = make_unique<Redis>();
-			auto key = "user:" + login->account().username();
-			auto success = redis_cli->Get(key, _user);
+			auto success = redis_cli->GetUser(login->account().username(), _user);
 			if (!success) return;
 
 			//
@@ -276,7 +275,7 @@ void WorldSession::OnProcessMessage(const Asset::Meta& meta)
 			auto set = client.set("user:" + login->account().username(), _user.SerializeAsString());
 			client.sync_commit();
 			*/
-			redis_cli->Save(key, _user.SerializeAsString());
+			redis_cli->SaveUser(login->account().username(), _user);
 
 			LOG_BI("account", _user); //账号查询
 			
