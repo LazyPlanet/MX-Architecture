@@ -624,6 +624,8 @@ int32_t Player::CmdPaiOperate(pb::Message* message)
 	if (!_room || !_game) return 2; //还没加入房间或者还没开始游戏
 
 	if (!pai_operate->position()) pai_operate->set_position(GetPosition()); //设置玩家座位
+			
+	const auto& pai = pai_operate->pai(); 
 	
 	//进行操作
 	switch (pai_operate->oper_type())
@@ -633,10 +635,8 @@ int32_t Player::CmdPaiOperate(pb::Message* message)
 			if (!ShouldDaPai()) 
 			{
 				LOG(ERROR, "玩家:{}不能打牌，当前牌数量:{} 无法进行操作:{}", _player_id, GetCardCount(), debug_string);
-				return 9;
+				return 3;
 			}
-
-			const auto& pai = pai_operate->pai(); 
 
 			auto& pais = _cards_inhand[pai.card_type()]; //获取该类型的牌
 			
@@ -644,7 +644,7 @@ int32_t Player::CmdPaiOperate(pb::Message* message)
 			if (it == pais.end()) 
 			{
 				LOG(ERROR, "玩家:{}不能打牌，无法找到牌:{}", _player_id, debug_string);
-				return 3; //没有这张牌
+				return 4; //没有这张牌
 			}
 
 			pais.erase(it); //打出牌
@@ -661,9 +661,76 @@ int32_t Player::CmdPaiOperate(pb::Message* message)
 				const auto& pais = _cards_inhand[pai.card_type()];
 
 				auto it = std::find(pais.begin(), pais.end(), pai.card_value());
-				if (it == pais.end()) return 4; //没有这张牌
+				if (it == pais.end()) 
+				{
+					LOG(ERROR, "玩家:{}不能吃牌，尚未找到牌数据，类型:{} 值:{} 不满足条件:{}", _player_id, pai.card_type(), pai.card_value(), debug_string);
+					return 5; //没有这张牌
+				}
 
-				//if (pais[pai.card_index()] != pai.card_value()) return 4; //Server<->Client 不一致 TODO:暂时不做检查
+				//if (pais[pai.card_index()] != pai.card_value()) return 6; //Server<->Client 不一致，暂时不做检查
+			}
+		}
+		break;
+		
+		case Asset::PAI_OPER_TYPE_PENGPAI: //碰牌
+		{
+			bool ret = CheckPengPai(pai);
+			if (!ret) 
+			{
+				LOG(ERROR, "玩家:{}不能碰牌，不满足条件:{}", _player_id, debug_string);
+				return 7;
+			}
+		}
+		break;
+		
+		case Asset::PAI_OPER_TYPE_GANGPAI: //明杠：简单牌数量检查
+		{
+			auto it = _cards_inhand.find(pai.card_type());
+			if (it == _cards_inhand.end()) 
+			{
+				LOG(ERROR, "玩家:{}不能明杠，没找到牌数据:{}", _player_id, debug_string);
+				return 8;
+			}
+
+			int32_t count = std::count(it->second.begin(), it->second.end(), pai.card_value());
+
+			if (count == 1)
+			{
+				for (auto cards : _cards_outhand)
+				{
+					if (cards.second.size() == 0) continue;
+
+					if (cards.second.size() % 3 != 0) return 9;
+
+					for (size_t i = 0; i < cards.second.size(); i = i + 3)
+					{
+						auto card_value = cards.second.at(i);
+
+						if ((card_value != cards.second.at(i + 1)) || (card_value != cards.second.at(i + 2))) 
+						{
+							LOG(ERROR, "玩家:{}不能明杠，不满足条件:{}", _player_id, debug_string);
+							return 10; //外面是否碰了3张
+						}
+					}
+				}
+			}
+			else if (count == 3)
+			{
+				//理论上可以杠牌
+			}
+		}
+		break;
+
+		case Asset::PAI_OPER_TYPE_ANGANGPAI: //暗杠：简单牌数量检查
+		{
+			auto it = _cards_inhand.find(pai.card_type());
+			if (it == _cards_inhand.end()) return 11;
+
+			int32_t count = std::count(it->second.begin(), it->second.end(), pai.card_value());
+			if (count != 4)
+			{
+				LOG(ERROR, "玩家:{}不能暗杠，不满足条件:{}", _player_id, debug_string);
+				return 12;
 			}
 		}
 		break;
@@ -708,13 +775,13 @@ int32_t Player::CmdPaiOperate(pb::Message* message)
 			if (it == pais.end()) 
 			{
 				LOG(ERROR, "玩家:{}不能听牌:{}, 原因:没找到牌", _player_id, pai.ShortDebugString());
-				return 7; //没有这张牌
+				return 13; //没有这张牌
 			}
 
 			if (!CanTingPai(pai)) 
 			{
 				LOG(ERROR, "玩家:{}不能听牌:{}, 原因:不满足牌型", _player_id, pai.ShortDebugString());
-				return 8; //不能听牌
+				return 14; //不能听牌
 			}
 
 			pais.erase(it); //删除牌
