@@ -829,7 +829,6 @@ void WorldSession::OnHeartBeat1m()
 		WARN("角色类型:{} 全局ID:{} 地址:{} 由于长时间未进行操关闭网络连接", _role_type, _global_id, _ip_address);
 		Close(); //关闭网络连接
 	}
-
 }
 
 bool WorldSession::IsExpire()
@@ -985,7 +984,7 @@ void WorldSessionManager::AddPlayer(int64_t player_id, std::shared_ptr<WorldSess
 	std::lock_guard<std::mutex> lock(_client_mutex);
 
 	auto it = _client_list.find(player_id);
-	if (it != _client_list.end() && it->second) it->second.reset();
+	if (it != _client_list.end() && it->second && session != it->second) it->second.reset();
 
 	_client_list[player_id] = session; 
 }
