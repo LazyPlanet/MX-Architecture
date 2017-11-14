@@ -45,6 +45,7 @@ public:
 	void KickOutPlayer(Asset::KICK_OUT_REASON reason);
 	void OnLogout();
 	void OnHeartBeat1s();
+	void OnHeartBeat1m();
 	bool IsExpire();
 
 	boost::asio::ip::tcp::endpoint GetRemotePoint() { return _remote_endpoint; }

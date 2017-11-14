@@ -807,6 +807,7 @@ bool WorldSession::Update()
 	if (!Socket::Update()) return false;
 
 	if (_heart_count % 60 == 0) OnHeartBeat1s();
+	if (_heart_count % 3600 == 0) OnHeartBeat1m();
 
 	return true;
 }
@@ -819,15 +820,21 @@ void WorldSession::OnHeartBeat1s()
 	{
 		_expire_time = TimerInstance.GetTime() + 60 * 10; //10分钟之内没有上线，则删除
 	}
+}
 
-	if (IsExpire()) Close(); //关闭网络连接
+void WorldSession::OnHeartBeat1m()
+{
+	if (IsExpire()) 
+	{
+		WARN("角色类型:{} 全局ID:{} 地址:{} 由于长时间未进行操关闭网络连接", _role_type, _global_id, _ip_address);
+		Close(); //关闭网络连接
+	}
+
 }
 
 bool WorldSession::IsExpire()
 {
 	if (_expire_time == 0) return false;
-
-	WARN("角色类型:{} 全局ID:{} 地址:{} 由于长时间未进行操关闭网络连接", _role_type, _global_id, _ip_address);
 
 	return _expire_time < CommonTimerInstance.GetTime();
 }
