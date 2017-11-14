@@ -696,6 +696,8 @@ int32_t Player::CmdPaiOperate(pb::Message* message)
 
 			if (count == 1)
 			{
+				bool has_peng = false;
+
 				for (auto cards : _cards_outhand)
 				{
 					if (cards.second.size() == 0) continue;
@@ -705,13 +707,20 @@ int32_t Player::CmdPaiOperate(pb::Message* message)
 					for (size_t i = 0; i < cards.second.size(); i = i + 3)
 					{
 						auto card_value = cards.second.at(i);
+						if (pai.card_value() != card_value) continue;
 
-						if ((card_value != cards.second.at(i + 1)) || (card_value != cards.second.at(i + 2))) 
+						if ((card_value == cards.second.at(i + 1)) && (card_value == cards.second.at(i + 2))) 
 						{
-							LOG(ERROR, "玩家:{}不能明杠，不满足条件:{}", _player_id, debug_string);
-							return 10; //外面是否碰了3张
+							has_peng = true;
+							break;
 						}
 					}
+				}
+
+				if (!has_peng) 
+				{
+					LOG(ERROR, "玩家:{}不能明杠，不满足条件:{}", _player_id, debug_string);
+					return 10;
 				}
 			}
 			else if (count == 3)
@@ -3980,7 +3989,7 @@ bool Player::LookAtBaopai(bool has_saizi)
 
 void Player::OnTingPai()
 {
-	if (!_game) return;
+	if (!_game || !_room) return;
 
 	_has_ting = true;
 	_oper_count_tingpai = 1;
