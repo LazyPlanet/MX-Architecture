@@ -1,6 +1,6 @@
 #include <iostream>
 
-#include <hiredis.h>
+//#include <hiredis.h>
 
 #include <spdlog/spdlog.h>
 #include <pbjson.hpp>
