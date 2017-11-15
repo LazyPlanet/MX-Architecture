@@ -50,7 +50,7 @@ public:
 		return ptime;
 	}
 
-	inline int32_t GetTimeDiff(int32_t old_time, int32_t new_time)
+	inline uint32_t GetTimeDiff(uint32_t old_time, uint32_t new_time)
 	{
 		if (old_time > new_time)
 		{

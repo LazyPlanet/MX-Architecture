@@ -34,17 +34,19 @@ void SignalHandler(const boost::system::error_code& error, int)
 
 void WorldUpdateLoop()
 {
-	int32_t curr_time = 0, prev_sleep_time = 0;
+	uint32_t curr_time = 0, prev_sleep_time = 0;
 	
-	int32_t prev_time = CommonTimerInstance.GetStartTime();
+	uint32_t prev_time = CommonTimerInstance.GetStartTime();
 
 	while (!WorldInstance.IsStopped())
 	{
 		curr_time = CommonTimerInstance.GetStartTime();
 		
-		int32_t diff = CommonTimerInstance.GetTimeDiff(prev_time, curr_time);
+		uint32_t diff = CommonTimerInstance.GetTimeDiff(prev_time, curr_time);
 		
 		WorldInstance.Update(diff);        
+			
+		DEBUG("测试:prev_time:{} curr_time:{} diff:{}", prev_time, curr_time, diff);
 		
 		prev_time = curr_time;
 		
@@ -52,9 +54,12 @@ void WorldUpdateLoop()
 		{            
 			prev_sleep_time = const_world_sleep + prev_sleep_time - diff;            
 			std::this_thread::sleep_for(std::chrono::milliseconds(prev_sleep_time));        
+			
+			DEBUG("测试:prev_time:{} curr_time:{} prev_sleep_time:{} diff:{}", prev_time, curr_time, prev_sleep_time, diff);
 		}        
 		else    
 		{	
+			ERROR("测试:prev_time:{} curr_time:{} prev_sleep_time:{} diff:{}", prev_time, curr_time, prev_sleep_time, diff);
 			prev_sleep_time = 0;
 		}
 	}
