@@ -108,19 +108,18 @@ void WorldSession::OnProcessMessage(const Asset::Meta& meta)
 		return;		//非法协议
 	}
 
-	//调试
+	//显示协议内容
 	const pb::FieldDescriptor* field = message->GetDescriptor()->FindFieldByName("type_t");
 	if (!field) return;
 
 	const pb::EnumValueDescriptor* enum_value = message->GetReflection()->GetEnum(*message, field);
 	if (!enum_value) return;
 
-
 	auto message_string = message->ShortDebugString();
-	auto meta_string = meta.ShortDebugString();
+	//auto meta_string = meta.ShortDebugString();
 
 	if (Asset::META_TYPE_SHARE_SAY_HI != meta.type_t())
-		DEBUG("中心服务器接收数据, 玩家:{} 协议:{} {} 内容:{}", meta.player_id(), meta.type_t(), enum_value->name(), message_string);
+		DEBUG("中心服务器接收数据, 玩家:{} 协议ID:{} 协议名称:{} 内容:{}", meta.player_id(), meta.type_t(), enum_value->name(), message_string);
 
 	//
 	// C2S协议可能存在两种情况：
@@ -148,6 +147,8 @@ void WorldSession::OnProcessMessage(const Asset::Meta& meta)
 		if (!player) 
 		{
 			ERROR("未能找到玩家:{}", meta.player_id());
+
+			message->Clear();
 			return;
 		}
 		player->SendProtocol(message);
@@ -179,12 +180,16 @@ void WorldSession::OnProcessMessage(const Asset::Meta& meta)
 			if (WBInstance.EnabledWhite() && !WBInstance.IsWhite(_ip_address))
 			{
 				LOG(ERROR, "只能白名单进行登录，当前IP地址:{}", _ip_address);
+			
+				message->Clear();
 				return;
 			}
 			
 			if (WBInstance.EnabledBlack() && WBInstance.IsBlack(_ip_address))
 			{
 				LOG(ERROR, "黑名单不允许进行登录，当前IP地址:{}", _ip_address);
+				
+				message->Clear();
 				return;
 			}
 
@@ -195,8 +200,9 @@ void WorldSession::OnProcessMessage(const Asset::Meta& meta)
 			if (limit_version > 0 && _user.client_info().version() < limit_version)
 			{
 				AlertMessage(Asset::ERROR_VERSION_LIMIT, Asset::ERROR_TYPE_NORMAL, Asset::ERROR_SHOW_TYPE_MESSAGE_BOX); //Client版本低
-
 				LOG(ERROR, "Client版本不满足条件，最低版本要求:{}，Client版本:{}", limit_version, _user.client_info().version());
+				
+				message->Clear();
 				return;
 			}
 			
@@ -563,11 +569,15 @@ void WorldSession::OnProcessMessage(const Asset::Meta& meta)
 			if (!_player) 
 			{
 				LOG(ERROR, "玩家尚未初始化，收到协议:{}", meta.type_t());
+				
+				message->Clear();
 				return; //尚未初始化
 			}
 			//协议处理
 			_player->HandleProtocol(meta.type_t(), message);
 		}
+
+		message->Clear();
 	}
 }
 
