@@ -119,7 +119,7 @@ void WorldSession::OnProcessMessage(const Asset::Meta& meta)
 	//auto meta_string = meta.ShortDebugString();
 
 	if (Asset::META_TYPE_SHARE_SAY_HI != meta.type_t())
-		DEBUG("中心服务器接收数据, 玩家:{} 协议ID:{} 协议名称:{} 内容:{}", meta.player_id(), meta.type_t(), enum_value->name(), message_string);
+		DEBUG("中心服务器接收数据, 玩家:{} 全局ID:{} 协议ID:{} 协议名称:{} 内容:{}", meta.player_id(), _global_id, meta.type_t(), enum_value->name(), message_string);
 
 	//
 	// C2S协议可能存在两种情况：

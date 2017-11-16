@@ -44,6 +44,8 @@ void WorldUpdateLoop()
 		
 		uint32_t diff = CommonTimerInstance.GetTimeDiff(prev_time, curr_time);
 		
+		DEBUG("测试:prev_time:{} curr_time:{} diff:{}", prev_time, curr_time, diff);
+		
 		WorldInstance.Update(diff);        
 			
 		DEBUG("测试:prev_time:{} curr_time:{} diff:{}", prev_time, curr_time, diff);

@@ -3545,6 +3545,7 @@ void Player::OnGangFengPai()
 	auto it = _cards_inhand.find(Asset::CARD_TYPE_FENG);
 	if (it == _cards_inhand.end()) return;
 
+	/*
 	try {
 		std::unique_lock<std::mutex> lock(_card_lock, std::defer_lock);
 
@@ -3571,6 +3572,17 @@ void Player::OnGangFengPai()
 		ERROR("Delete card from player_id:{} error:{}.", _player_id, error.what());
 		return;
 	}
+	*/
+
+	for (int32_t card_value = 1; card_value <= 4; ++card_value) //东南西北
+	{
+		auto it_if = std::find(it->second.begin(), it->second.end(), card_value);
+		if (it_if != it->second.end())  
+		{	
+			_game->Add2CardsPool(Asset::CARD_TYPE_FENG, card_value);
+			it->second.erase(it_if); //删除
+		}
+	}
 
 	++_fenggang;
 	
@@ -3591,6 +3603,18 @@ void Player::OnGangFengPai()
 	{
 		auto pai_perator = alert.mutable_pais()->Add();
 		pai_perator->mutable_oper_list()->Add((Asset::PAI_OPER_TYPE)gang);
+	}
+	//
+	//杠检查(明杠和暗杠)
+	//
+	RepeatedField<Asset::PaiOperationAlert_AlertElement> gang_list;
+	if (CheckAllGangPai(gang_list)) 
+	{
+		for (auto gang : gang_list) 
+		{
+			auto pai_perator = alert.mutable_pais()->Add();
+			pai_perator->CopyFrom(gang);
+		}
 	}
 	//
 	//自摸检查
@@ -3645,12 +3669,15 @@ void Player::OnGangJianPai()
 {
 	if (!CheckJianGangPai(_cards_inhand)) return;
 	
+	/*
 	try {
 		std::unique_lock<std::mutex> lock(_card_lock, std::defer_lock);
 
 		if (lock.try_lock())
 		{
 			auto it = _cards_inhand.find(Asset::CARD_TYPE_JIAN);
+			if (it == _cards_inhand.end()) return;
+
 			for (auto card_value = 1; card_value <= 3; ++card_value) //中发白
 			{
 				auto it_if = std::find(it->second.begin(), it->second.end(), card_value);
@@ -3672,6 +3699,20 @@ void Player::OnGangJianPai()
 		ERROR("Delete card from player_id:{} error:{}.", _player_id, error.what());
 		return;
 	}
+	*/
+
+	auto it = _cards_inhand.find(Asset::CARD_TYPE_JIAN);
+	if (it == _cards_inhand.end()) return;
+
+	for (auto card_value = 1; card_value <= 3; ++card_value) //中发白
+	{
+		auto it_if = std::find(it->second.begin(), it->second.end(), card_value);
+		if (it_if != it->second.end())  
+		{
+			_game->Add2CardsPool(Asset::CARD_TYPE_JIAN, card_value);
+			it->second.erase(it_if); //删除
+		}
+	}
 
 	++_jiangang;
 	
@@ -3685,6 +3726,18 @@ void Player::OnGangJianPai()
 	{
 		auto pai_perator = alert.mutable_pais()->Add();
 		pai_perator->mutable_oper_list()->Add((Asset::PAI_OPER_TYPE)gang);
+	}
+	//
+	//杠检查(明杠和暗杠)
+	//
+	RepeatedField<Asset::PaiOperationAlert_AlertElement> gang_list;
+	if (CheckAllGangPai(gang_list)) 
+	{
+		for (auto gang : gang_list) 
+		{
+			auto pai_perator = alert.mutable_pais()->Add();
+			pai_perator->CopyFrom(gang);
+		}
 	}
 	//
 	//听牌检查
@@ -3756,14 +3809,14 @@ int32_t Player::OnFaPai(std::vector<int32_t>& cards)
 		}
 	}
 
-	if (false && _player_id == 262147 && _cards_inhand.size() == 0)
+	if (false && _player_id == 264193 && _cards_inhand.size() == 0)
 	{
 		_cards_inhand = {
-			{ 1, {2, 3, 4, 7, 8, 9} },
+			{ 1, {2, 3, 4} },
 			{ 2, {4, 5, 6} },
-			{ 3, {7, 7, 7} },
+			{ 3, {7, 7, 7, 7} },
 			//{ 4, {1} },
-			{ 5, { 1, 1} },
+			{ 5, { 1, 2, 3} },
 		};
 		
 		_cards_outhand = {
