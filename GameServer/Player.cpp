@@ -3605,8 +3605,9 @@ void Player::OnGangFengPai()
 		pai_perator->mutable_oper_list()->Add((Asset::PAI_OPER_TYPE)gang);
 	}
 	//
-	//杠检查(明杠和暗杠)
+	//杠检查(明杠和暗杠)：发牌中检查
 	//
+	/*
 	RepeatedField<Asset::PaiOperationAlert_AlertElement> gang_list;
 	if (CheckAllGangPai(gang_list)) 
 	{
@@ -3616,6 +3617,7 @@ void Player::OnGangFengPai()
 			pai_perator->CopyFrom(gang);
 		}
 	}
+	*/
 	//
 	//自摸检查
 	//
