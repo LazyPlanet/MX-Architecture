@@ -845,7 +845,7 @@ bool WorldSession::IsExpire()
 {
 	if (_expire_time == 0) return false;
 
-	return _expire_time < CommonTimerInstance.GetTime();
+	return _expire_time < TimerInstance.GetTime();
 }
 
 void WorldSession::OnClose()

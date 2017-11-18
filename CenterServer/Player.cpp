@@ -1210,17 +1210,6 @@ void PlayerManager::Update(int32_t diff)
 			it = _players.erase(it);
 			continue; 
 		}
-		/*
-		else if (it->second->IsExpire()) //退出或者离线时间过长
-		{
-			ERROR("玩家:{}太长时间没有操作，掉线.", it->second->GetID());
-
-			it->second.reset(); //玩家数据
-
-			it = _players.erase(it);
-			continue; 
-		}
-		*/
 		else
 		{
 			it->second->Update();
