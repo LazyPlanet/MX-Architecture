@@ -171,7 +171,8 @@ public:
 	void SyncCommonProperty(Asset::SyncCommonProperty_SYNC_REASON_TYPE reason = Asset::SyncCommonProperty_SYNC_REASON_TYPE_SYNC_REASON_TYPE_SELF);
 	//离线状态实时监测
 	virtual int32_t CmdSayHi(pb::Message* message);
-	void SayHi();
+	void OnSayHi();
+	void OnlineCheck();
 	//游戏设置
 	virtual int32_t CmdGameSetting(pb::Message* message);
 	//系统聊天

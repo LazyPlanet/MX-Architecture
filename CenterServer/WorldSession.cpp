@@ -874,14 +874,11 @@ void WorldSession::SendProtocol(const pb::Message& message)
 	int type_t = field->default_value_enum()->number();
 	if (!Asset::META_TYPE_IsValid(type_t)) return;	//如果不合法，不检查会宕线
 
-	auto message_string = message.SerializeAsString();
-	
 	Asset::Meta meta;
 	meta.set_type_t((Asset::META_TYPE)type_t);
-	meta.set_stuff(message_string);
+	meta.set_stuff(message.SerializeAsString());
 	
 	std::string content = meta.SerializeAsString();
-
 	if (content.empty()) return;
 
 	EnterQueue(std::move(content));
@@ -890,7 +887,6 @@ void WorldSession::SendProtocol(const pb::Message& message)
 void WorldSession::SendMeta(const Asset::Meta& meta)
 {
 	std::string content = meta.SerializeAsString();
-
 	if (content.empty()) return;
 
 	EnterQueue(std::move(content));

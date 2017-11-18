@@ -492,14 +492,12 @@ bool Player::SendProtocol2GameServer(const pb::Message& message)
 	int type_t = field->default_value_enum()->number();
 	if (!Asset::META_TYPE_IsValid(type_t)) return false;	//如果不合法，不检查会宕线
 
-	auto stuff = message.SerializeAsString(); //复制，防止析构
-	
 	Asset::Meta meta;
 	meta.set_type_t((Asset::META_TYPE)type_t);
-	meta.set_stuff(stuff);
+	meta.set_stuff(message.SerializeAsString());
 	meta.set_player_id(_player_id); 
 
-	//DEBUG("玩家:{}发送到游戏逻辑服务器:{}内容:{}", _player_id, _stuff.server_id(), debug_string);
+	DEBUG("玩家:{}发送到游戏逻辑服务器:{}内容:{}", _player_id, _stuff.server_id(), debug_string);
 
 	_gs_session->SendMeta(meta); 
 
@@ -561,7 +559,7 @@ bool Player::Update()
 	//
 	//大厅玩家(中心服务器上玩家)心跳时间5s，游戏逻辑服务器上玩家心跳3s
 	//
-	if ((_heart_count % 100 == 0 && IsCenterServer()) || (_heart_count % 60 == 0 && !IsCenterServer())) SayHi();
+	//if ((_heart_count % 100 == 0 && IsCenterServer()) || (_heart_count % 60 == 0 && !IsCenterServer())) SayHi();
 
 	return true;
 }
@@ -820,6 +818,8 @@ int32_t Player::CmdSayHi(pb::Message* message)
 {
 	auto say_hi = dynamic_cast<const Asset::SayHi*>(message);
 	if (!say_hi) return 1;
+
+	SayHi(); //回复心跳
     
 	_pings_count = 0;
 	_hi_time = CommonTimerInstance.GetTime(); 
@@ -856,7 +856,7 @@ void Player::SayHi()
 	message.set_heart_count(_heart_count);
 	SendProtocol(message);
 
-	//DEBUG("玩家:{} 发送心跳:{}", _player_id, _hi_time);
+	DEBUG("玩家:{} 发送心跳:{}", _player_id, _hi_time);
 }
 	
 int32_t Player::CmdGameSetting(pb::Message* message)

@@ -1111,22 +1111,17 @@ void Player::SendProtocol(const pb::Message& message)
 	int type_t = field->default_value_enum()->number();
 	if (!Asset::META_TYPE_IsValid(type_t)) return;	//如果不合法，不检查会宕线
 	
-	auto message_string = message.SerializeAsString();
-
 	Asset::Meta meta;
 	meta.set_type_t((Asset::META_TYPE)type_t);
-	meta.set_stuff(message_string);
+	meta.set_stuff(message.SerializeAsString());
 	meta.set_player_id(_player_id);
 
 	std::string content = meta.SerializeAsString();
-
 	if (content.empty()) return;
 
 	g_center_session->AsyncSendMessage(content);
 
-	auto debug_string = message.ShortDebugString();
-
-	//DEBUG("玩家:{} 发送协议，类型:{} 内容:{}", _player_id, type_t, debug_string);
+	//DEBUG("玩家:{} 发送协议，类型:{} 内容:{}", _player_id, type_t,  message.ShortDebugString());
 }
 
 void Player::Send2Roomers(pb::Message& message, int64_t exclude_player_id) 
@@ -1157,9 +1152,9 @@ bool Player::Update()
 		if (_dirty) Save(); //触发存盘
 	}
 	
-	if (_heart_count % 2 == 0) //2s
+	if (_heart_count % 3 == 0) //3秒检查一次
 	{
-		SayHi(); //逻辑服务器不进行心跳检查，只进行断线逻辑检查
+		OnlineCheck(); //逻辑服务器不进行心跳检查，只进行断线逻辑检查
 	}
 
 	//if (_heart_count % 60 == 0) //1min
@@ -4215,20 +4210,24 @@ int32_t Player::CmdSayHi(pb::Message* message)
 	if (!say_hi) return 1;
 
 	_hi_time = CommonTimerInstance.GetTime();
-		
-	//SetOffline(false); //玩家上线
+	
+	OnSayHi(); //心跳回复
 
 	return 0;
 }
-	
-void Player::SayHi()
+
+void Player::OnlineCheck()
 {
 	auto curr_time = CommonTimerInstance.GetTime();
 	auto duration_pass = curr_time - _hi_time;
 
-	if (duration_pass <= 0) return;
+	if (duration_pass <= 0) 
+	{
+		ERROR("玩家:{}收到心跳", _player_id);
+		return;
+	}
 
-	if (duration_pass > 2)
+	if (duration_pass > 5)
 	{
 		++_pings_count;
 		
@@ -4245,11 +4244,15 @@ void Player::SayHi()
 		
 		_pings_count = 0;
 	}
-	/*
+}
+	
+void Player::OnSayHi()
+{
 	Asset::SayHi message;
 	message.set_heart_count(_heart_count);
 	SendProtocol(message);
-	*/
+	
+	DEBUG("玩家:{}收到心跳发送心跳", _player_id);
 }
 	
 int32_t Player::CmdGameSetting(pb::Message* message)
@@ -4404,8 +4407,6 @@ void Player::AddRoomScore(int32_t score)
 
 void PlayerManager::Update(int32_t diff)
 {
-	return;
-
 	++_heart_count;
 
 	if (_heart_count % 20 == 0) //1s
