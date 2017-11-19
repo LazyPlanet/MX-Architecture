@@ -4209,7 +4209,7 @@ int32_t Player::CmdSayHi(pb::Message* message)
 	auto say_hi = dynamic_cast<const Asset::SayHi*>(message);
 	if (!say_hi) return 1;
 
-	_hi_time = CommonTimerInstance.GetTime();
+	_hi_time = TimerInstance.GetTime();
 	
 	OnSayHi(); //心跳回复
 
@@ -4218,14 +4218,10 @@ int32_t Player::CmdSayHi(pb::Message* message)
 
 void Player::OnlineCheck()
 {
-	auto curr_time = CommonTimerInstance.GetTime();
+	auto curr_time = TimerInstance.GetTime();
 	auto duration_pass = curr_time - _hi_time;
 
-	if (duration_pass <= 0) 
-	{
-		ERROR("玩家:{}收到心跳", _player_id);
-		return;
-	}
+	if (duration_pass <= 0) return;
 
 	if (duration_pass > 5)
 	{
