@@ -102,7 +102,6 @@ int32_t Player::Save(bool force)
 
 	if (!force && !IsDirty()) return 1;
 
-	//auto redis = make_unique<Redis>();
 	auto success = Redis().SavePlayer(_player_id, _stuff);
 	if (!success) 
 	{
@@ -110,8 +109,6 @@ int32_t Player::Save(bool force)
 		return 2;
 	}
 	
-	//DEBUG("玩家:{}保存数据:{}", _player_id, _stuff.ShortDebugString())
-
 	_dirty = false;
 
 	return 0;

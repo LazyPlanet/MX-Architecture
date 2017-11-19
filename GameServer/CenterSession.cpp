@@ -29,9 +29,7 @@ void CenterSession::OnConnected()
 
 bool CenterSession::OnMessageProcess(const Asset::Meta& meta)
 {
-	auto meta_string = meta.ShortDebugString();
-
-	DEBUG("接收来自中心服务器:{} {}的数据:{}", _ip_address, _remote_endpoint.port(), meta_string);
+	DEBUG("接收来自中心服务器:{} {}的数据:{}", _ip_address, _remote_endpoint.port(), meta.ShortDebugString());
 		
 	if (meta.type_t() == Asset::META_TYPE_S2S_REGISTER) //注册服务器成功
 	{
@@ -77,23 +75,26 @@ bool CenterSession::OnMessageProcess(const Asset::Meta& meta)
 
 			AddPlayer(meta.player_id(), player);
 		}
+		else if (meta.type_t() == Asset::META_TYPE_SHARE_CREATE_ROOM)
+		{
+			player->Load(); //创建房间加载数据，防止数据错误，可能丢房卡情况
+		}
 
 		pb::Message* msg = ProtocolInstance.GetMessage(meta.type_t());	
 		if (!msg) 
 		{
-			DEBUG("Could not found message of type:%d", meta.type_t());
+			ERROR("游戏逻辑服务器，尚未找到协议:{}的处理回调.", meta.type_t());
 			return false;		//非法协议
 		}
 
 		auto message = msg->New();
-		
 		auto result = message->ParseFromArray(meta.stuff().c_str(), meta.stuff().size());
-		if (!result) 
-		{
-			DEBUG_ASSERT(false);
-			return false;		//非法协议
-		}
+		if (!result) return false;		//非法协议
+
 		player->HandleProtocol(meta.type_t(), message);
+
+		delete message; //防止内存泄漏
+		message = nullptr;
 	}
 	return true;
 }
