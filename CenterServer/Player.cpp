@@ -968,6 +968,7 @@ int32_t Player::CmdPlayBack(pb::Message* message)
 void Player::MultiplyRoomCard()
 {
 	if (_stuff.card_count_changed()) return;
+	_stuff.set_card_count_changed(true); //倍率
 
 	auto curr_count = GetRoomCard();
 	GainRoomCard(Asset::ROOM_CARD_CHANGED_TYPE_FANBEI, curr_count * (g_const->room_card_beishu() - 1));
