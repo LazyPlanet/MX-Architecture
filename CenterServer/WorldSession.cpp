@@ -147,8 +147,6 @@ void WorldSession::OnProcessMessage(const Asset::Meta& meta)
 		if (!player) 
 		{
 			ERROR("未能找到玩家:{}", meta.player_id());
-
-			message->Clear();
 			return;
 		}
 		player->SendProtocol(message);
@@ -180,16 +178,12 @@ void WorldSession::OnProcessMessage(const Asset::Meta& meta)
 			if (WBInstance.EnabledWhite() && !WBInstance.IsWhite(_ip_address))
 			{
 				LOG(ERROR, "只能白名单进行登录，当前IP地址:{}", _ip_address);
-			
-				message->Clear();
 				return;
 			}
 			
 			if (WBInstance.EnabledBlack() && WBInstance.IsBlack(_ip_address))
 			{
 				LOG(ERROR, "黑名单不允许进行登录，当前IP地址:{}", _ip_address);
-				
-				message->Clear();
 				return;
 			}
 
@@ -201,8 +195,6 @@ void WorldSession::OnProcessMessage(const Asset::Meta& meta)
 			{
 				AlertMessage(Asset::ERROR_VERSION_LIMIT, Asset::ERROR_TYPE_NORMAL, Asset::ERROR_SHOW_TYPE_MESSAGE_BOX); //Client版本低
 				LOG(ERROR, "Client版本不满足条件，最低版本要求:{}，Client版本:{}", limit_version, _user.client_info().version());
-				
-				message->Clear();
 				return;
 			}
 			
@@ -569,15 +561,16 @@ void WorldSession::OnProcessMessage(const Asset::Meta& meta)
 			if (!_player) 
 			{
 				LOG(ERROR, "玩家尚未初始化，收到协议:{}", meta.type_t());
-				
-				message->Clear();
 				return; //尚未初始化
 			}
 			//协议处理
 			_player->HandleProtocol(meta.type_t(), message);
 		}
 
-		message->Clear();
+		defer {
+			delete message;
+			message = nullptr;
+		};
 	}
 }
 
