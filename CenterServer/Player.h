@@ -206,6 +206,7 @@ public:
 	void SetOffline(bool offline = true);
 
 	void SetAccountType(Asset::ACCOUNT_TYPE account_type) { _account_type = account_type; }
+	void MultiplyRoomCard();
 };
 
 class PlayerManager : public std::enable_shared_from_this<PlayerManager>

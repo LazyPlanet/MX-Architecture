@@ -524,7 +524,7 @@ void WorldSession::OnProcessMessage(const Asset::Meta& meta)
 				if (server_id == 0) 
 				{
 					LOG(ERROR, "玩家:{}进入匹配房未能分配到逻辑服务器", _player->GetID());
-					DEBUG_ASSERT(false);
+					return;
 				}
 			}
 				

@@ -820,24 +820,23 @@ bool Room::CanStarGame()
 				
 				case Asset::ROOM_PAY_TYPE_AA: //AA付卡
 				{
-					int32_t diamond_count = g_const->room_aapay_diamond() * consume_count; //钻石数量
+					consume_count = consume_count / MAX_PLAYER_COUNT; //单人付卡数量
 
-					for (auto player : _players) //钻石检查
+					for (auto player : _players) //房卡检查
 					{
 						if (!player) return false;
 
-						if (!player->CheckDiamond(diamond_count)) 
+						if (!player->CheckRoomCard(consume_count)) 
 						{
-							player->AlertMessage(Asset::ERROR_DIAMOND_NOT_ENOUGH); //钻石不足，理论上一定会过，玩家进入AA付卡已经前置检查
+							player->AlertMessage(Asset::ERROR_DIAMOND_NOT_ENOUGH); //理论上一定会过，玩家进入AA付卡已经前置检查
 							return false;
 						}
 					}
 					
-					for (auto player : _players) //钻石消耗
+					for (auto player : _players) //房卡消耗
 					{
 						if (!player) return false;
-
-						player->ConsumeDiamond(Asset::DIAMOND_CHANGED_TYPE_OPEN_ROOM, diamond_count); //消耗钻石
+						player->ConsumeRoomCard(Asset::ROOM_CARD_CHANGED_TYPE_OPEN_ROOM, consume_count); 
 					}
 				}
 				break;

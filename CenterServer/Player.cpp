@@ -216,6 +216,7 @@ int32_t Player::OnLogin(bool is_login)
 	ActivityInstance.OnPlayerLogin(shared_from_this()); //活动数据
 
 	if (is_login) BattleHistory(); //历史对战表
+	if (is_login) MultiplyRoomCard(); //房卡翻倍
 
 	return 0;
 }
@@ -962,6 +963,14 @@ int32_t Player::CmdPlayBack(pb::Message* message)
 	SendProtocol(playback);
 	
 	return 0;
+}
+	
+void Player::MultiplyRoomCard()
+{
+	if (_stuff.card_count_changed()) return;
+
+	auto curr_count = GetRoomCard();
+	GainRoomCard(Asset::ROOM_CARD_CHANGED_TYPE_FANBEI, curr_count * (g_const->room_card_beishu() - 1));
 }
 
 void Player::BattleHistory(int32_t start_index, int32_t end_index)

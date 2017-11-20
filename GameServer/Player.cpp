@@ -478,9 +478,9 @@ int32_t Player::CmdCreateRoom(pb::Message* message)
 			
 			case Asset::ROOM_PAY_TYPE_AA:
 			{
-				int32_t diamond_count = g_const->room_aapay_diamond() * consume_count; //钻石数量
+				consume_count = consume_count / MAX_PLAYER_COUNT; //单人付卡数量
 
-				if (!CheckDiamond(diamond_count)) 
+				if (!CheckRoomCard(consume_count)) 
 				{
 					AlertMessage(Asset::ERROR_DIAMOND_NOT_ENOUGH); //钻石不足
 					return 6;
