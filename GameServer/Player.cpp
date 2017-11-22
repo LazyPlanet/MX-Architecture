@@ -985,8 +985,8 @@ int32_t Player::CmdEnterRoom(pb::Message* message)
 					const Asset::Item_RoomCard* room_card = dynamic_cast<const Asset::Item_RoomCard*>(AssetInstance.Get(g_const->room_card_id()));
 					if (!room_card || room_card->rounds() <= 0) return Asset::ERROR_INNER;
 
-					int32_t consume_count = locate_room->GetOpenRands() / room_card->rounds() * g_const->room_aapay_diamond(); //待消耗钻石数量
-					if (consume_count <= 0 || !CheckDiamond(consume_count))
+					int32_t consume_count = locate_room->GetOpenRands() / room_card->rounds() / MAX_PLAYER_COUNT;
+					if (consume_count <= 0 || !CheckRoomCard(consume_count))
 					{
 						enter_room->set_error_code(Asset::ERROR_ROOM_AA_DIAMOND_NOT_ENOUGH); //钻石不足
 						SendProtocol(enter_room);
