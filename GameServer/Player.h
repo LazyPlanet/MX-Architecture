@@ -320,6 +320,10 @@ public:
 	
 	const Asset::PaiElement& GetZhuaPai() { return _zhuapai; }
 	bool HasPai(const Asset::PaiElement& pai);
+	bool CheckValidCard(const Asset::PaiElement& pai) { 
+		if (pai.card_type() < Asset::CARD_TYPE_WANZI || pai.card_type() > Asset::CARD_TYPE_JIAN || pai.card_value() <= 0) return false;
+		return true;
+	}
 
 	bool CanHuPai(std::vector<Card_t>& cards, bool use_pair = false);
 	bool CheckZiMo(); //胡牌检查-玩家手里现有牌检查

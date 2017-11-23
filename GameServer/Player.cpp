@@ -2426,7 +2426,7 @@ bool Player::CheckHuPai(const Asset::PaiElement& pai, bool check_zibo)
 		for (auto& card : cards_inhand_check)
 			std::sort(card.second.begin(), card.second.end(), [](int x, int y){ return x < y; }); //由小到大，排序
 
-		if (check_zibo)
+		if (check_zibo && CheckValidCard(_zhuapai))
 		{
 			auto it = std::find(cards_inhand_check[_zhuapai.card_type()].begin(), cards_inhand_check[_zhuapai.card_type()].end(), _zhuapai.card_value());
 			if (it == cards_inhand_check[_zhuapai.card_type()].end())
@@ -3828,12 +3828,12 @@ int32_t Player::OnFaPai(std::vector<int32_t>& cards)
 		_minggang.push_back(gang);
 		*/
 	}
-	else if (false && _player_id == 262273 && _cards_inhand.size() == 0)
+	else if (true && _player_id == 262147 && _cards_inhand.size() == 0)
 	{
 		_cards_inhand = {
-			{ 1, {2, 2, 6, 7, 7, 7, 8} },
-			{ 2, {2, 3, 7} },
-			{ 3, {7, 7, 8} },
+			{ 1, {2, 2, 2, 7, 7, 7} },
+			{ 2, {1, 2, 3} },
+			{ 3, {7, 7, 8, 8, 8} },
 		};
 	}
 	else if (false && _player_id == 263198 && _cards_inhand.size() == 0)
@@ -3891,6 +3891,9 @@ int32_t Player::OnFaPai(std::vector<int32_t>& cards)
 			//
 			//是否可以胡牌
 			//
+			//朝阳麻将不支持天胡
+			//
+			/*
 			if (CheckZiMo())
 			{
 				auto pai_perator = alert.mutable_pais()->Add();
@@ -3898,6 +3901,7 @@ int32_t Player::OnFaPai(std::vector<int32_t>& cards)
 
 				LOG(INFO, "玩家:{}起手可以胡牌", _player_id);
 			}
+			*/
 
 			//
 			//听牌检查
