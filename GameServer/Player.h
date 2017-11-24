@@ -308,7 +308,7 @@ public:
 	virtual int32_t OnFaPai(std::vector<int32_t>& cards); //发牌
 	virtual int32_t OnFaPai(const Asset::PaiElement& pai); //纯粹发牌，没有逻辑
 
-	std::vector<Asset::PAI_OPER_TYPE> CheckPai(const Asset::PaiElement& pai, int64_t from_player_id);
+	std::vector<Asset::PAI_OPER_TYPE> CheckPai(const Asset::PaiElement& pai, int64_t source_player_id);
 
 	bool CheckBaoHu(const Asset::PaiElement& pai);
 	bool LookAtBaopai(bool has_saizi);
@@ -346,15 +346,15 @@ public:
 
 	std::unordered_set<int32_t> GetFanList() { return _fan_list; }
 
-	bool CheckGangPai(const Asset::PaiElement& pai, int64_t from_player_id); //是否可以杠牌
+	bool CheckGangPai(const Asset::PaiElement& pai, int64_t source_player_id); //是否可以杠牌
 
 	//有玩家一直不杠牌，每次都要提示
 	//
 	//比如玩家碰了7条，但是手里有7-8-9条，而选择暂时不杠
 	bool CheckAllGangPai(::google::protobuf::RepeatedField<Asset::PaiOperationAlert_AlertElement>& gang_list); 
 
-	void OnGangPai(const Asset::PaiElement& pai, int64_t from_player_id); //杠牌
-	void OnBeenQiangGang(const Asset::PaiElement& pai, int64_t from_player_id); //杠牌
+	void OnGangPai(const Asset::PaiElement& pai, int64_t source_player_id); //杠牌
+	void OnBeenQiangGang(const Asset::PaiElement& pai, int64_t source_player_id); //杠牌
 	
 	bool CheckFengGangPai(std::map<int32_t/*麻将牌类型*/, std::vector<int32_t>/*牌值*/>& cards); //是否有旋风杠
 	bool CheckJianGangPai(std::map<int32_t/*麻将牌类型*/, std::vector<int32_t>/*牌值*/>& cards); //是否有箭杠

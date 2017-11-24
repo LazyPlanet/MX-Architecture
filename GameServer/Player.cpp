@@ -1722,28 +1722,28 @@ const std::string Player::GetIpAddress()
 /////////////////////////////////////////////////////
 //游戏逻辑定义
 /////////////////////////////////////////////////////
-std::vector<Asset::PAI_OPER_TYPE> Player::CheckPai(const Asset::PaiElement& pai, int64_t from_player_id)
+std::vector<Asset::PAI_OPER_TYPE> Player::CheckPai(const Asset::PaiElement& pai, int64_t source_player_id)
 {
 	std::vector<Asset::PAI_OPER_TYPE> rtn_check;
 
 	if (CheckHuPai(pai)) 
 	{
-		DEBUG("玩家{}可以胡来自玩家:{}牌:{}", _player_id, from_player_id, pai.ShortDebugString());
+		DEBUG("玩家{}可以胡来自玩家:{}牌:{}", _player_id, source_player_id, pai.ShortDebugString());
 		rtn_check.push_back(Asset::PAI_OPER_TYPE_HUPAI);
 	}
-	if (CheckGangPai(pai, from_player_id)) 
+	if (CheckGangPai(pai, source_player_id)) 
 	{
-		DEBUG("玩家{}可以杠来自玩家:{}牌:{}", _player_id, from_player_id, pai.ShortDebugString());
+		DEBUG("玩家{}可以杠来自玩家:{}牌:{}", _player_id, source_player_id, pai.ShortDebugString());
 		rtn_check.push_back(Asset::PAI_OPER_TYPE_GANGPAI);
 	}
 	if (CheckPengPai(pai)) 
 	{
-		DEBUG("玩家{}可以碰来自玩家:{}牌:{}", _player_id, from_player_id, pai.ShortDebugString());
+		DEBUG("玩家{}可以碰来自玩家:{}牌:{}", _player_id, source_player_id, pai.ShortDebugString());
 		rtn_check.push_back(Asset::PAI_OPER_TYPE_PENGPAI);
 	}
 	if (CheckChiPai(pai)) 
 	{
-		DEBUG("玩家{}可以吃来自玩家:{}牌:{}", _player_id, from_player_id, pai.ShortDebugString());
+		DEBUG("玩家{}可以吃来自玩家:{}牌:{}", _player_id, source_player_id, pai.ShortDebugString());
 		rtn_check.push_back(Asset::PAI_OPER_TYPE_CHIPAI);
 	}
 		
@@ -2855,7 +2855,7 @@ void Player::OnPengPai(const Asset::PaiElement& pai)
 	SynchronizePai();
 }
 
-bool Player::CheckGangPai(const Asset::PaiElement& pai, int64_t from_player_id)
+bool Player::CheckGangPai(const Asset::PaiElement& pai, int64_t source_player_id)
 {
 	if (!_room || !_game) return false;
 
@@ -2888,13 +2888,13 @@ bool Player::CheckGangPai(const Asset::PaiElement& pai, int64_t from_player_id)
 		}
 		else if (count == 1) //手里一张，杠后杠
 		{
-			from_player_id = _player_id;
+			source_player_id = _player_id;
 		}
 	}
 
 	if (!CheckMingPiao(Asset::PAI_OPER_TYPE_GANGPAI)) return false; //明飘检查
 	
-	if (!has_gang && from_player_id == _player_id) 
+	if (!has_gang && source_player_id == _player_id) 
 	{
 		auto it = cards_outhand.find(pai.card_type()); //牌面的牌不做排序,顺序必须3张
 		if (it == cards_outhand.end()) return false;
@@ -3047,13 +3047,13 @@ bool Player::CheckAllGangPai(::google::protobuf::RepeatedField<Asset::PaiOperati
 	return gang_list.size() > 0;
 }
 	
-void Player::OnGangPai(const Asset::PaiElement& pai, int64_t from_player_id)
+void Player::OnGangPai(const Asset::PaiElement& pai, int64_t source_player_id)
 {
 	PrintPai(); 
 
-	if (!CheckGangPai(pai, from_player_id)) 
+	if (!CheckGangPai(pai, source_player_id)) 
 	{
-		LOG(ERROR, "玩家:{}无法杠牌:{}, 牌来自:{}", _player_id, pai.ShortDebugString(), from_player_id);
+		LOG(ERROR, "玩家:{}无法杠牌:{}, 牌来自:{}", _player_id, pai.ShortDebugString(), source_player_id);
 		return; //理论上不会如此
 	}
 	
@@ -3066,7 +3066,7 @@ void Player::OnGangPai(const Asset::PaiElement& pai, int64_t from_player_id)
 	auto it = _cards_inhand.find(card_type);
 	if (it == _cards_inhand.end()) 
 	{
-		LOG(ERROR, "玩家:{}无法杠牌:{}, 牌来自:{}", _player_id, pai.ShortDebugString(), from_player_id);
+		LOG(ERROR, "玩家:{}无法杠牌:{}, 牌来自:{}", _player_id, pai.ShortDebugString(), source_player_id);
 		return; //理论上不会如此
 	}
 	
@@ -3100,11 +3100,11 @@ void Player::OnGangPai(const Asset::PaiElement& pai, int64_t from_player_id)
 	for (int32_t i = 0; i < count; ++i) _game->Add2CardsPool(pai); //加入牌池
 }
 
-void Player::OnBeenQiangGang(const Asset::PaiElement& pai, int64_t from_player_id)
+void Player::OnBeenQiangGang(const Asset::PaiElement& pai, int64_t source_player_id)
 {
 	PrintPai(); 
 
-	if (!CheckGangPai(pai, from_player_id)) return; //理论上不会如此
+	if (!CheckGangPai(pai, source_player_id)) return; //理论上不会如此
 	
 	int32_t card_type = pai.card_type();
 	int32_t card_value = pai.card_value();
@@ -3832,16 +3832,32 @@ int32_t Player::OnFaPai(std::vector<int32_t>& cards)
 	{
 		_cards_inhand = {
 			{ 1, {2, 2, 2, 7, 7, 7} },
-			{ 2, {1, 2, 3} },
+			{ 2, {2, 3} },
 			{ 3, {7, 7, 8, 8, 8} },
 		};
 	}
-	else if (false && _player_id == 263198 && _cards_inhand.size() == 0)
+	else if (true && _player_id == 265871 && _cards_inhand.size() == 0)
 	{
 		_cards_inhand = {
 			{ 1, {1, 2, 6, 8} },
-			{ 2, {4, 4, 4, 5, 7, 8} },
+			{ 2, {1, 1, 1, 5, 7, 8} },
 			{ 3, {7, 7, 8} },
+		};
+	}
+	else if (true && _player_id == 265872 && _cards_inhand.size() == 0)
+	{
+		_cards_inhand = {
+			{ 1, {1, 2, 6, 8, 9} },
+			{ 2, {2, 3, 5, 7, 8} },
+			{ 3, {7, 7, 8} },
+		};
+	}
+	else if (true && _player_id == 265873 && _cards_inhand.size() == 0)
+	{
+		_cards_inhand = {
+			{ 1, {1, 2, 6, 8, 9} },
+			{ 2, {1, 1, 5, 7, 8} },
+			{ 3, {7, 7, 8, 8} },
 		};
 	}
 	else
