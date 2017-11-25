@@ -40,9 +40,10 @@ void GmtSession::OnConnected()
 
 bool GmtSession::OnInnerProcess(const Asset::InnerMeta& meta)
 {
-	auto debug_string = meta.ShortDebugString(); 
+	std::lock_guard<std::mutex> lock(_gmt_lock);
+	_session_id = meta.session_id();
 
-	DEBUG("中心服务器接收GMT服务器:{}协议:{}", _ip_address, debug_string);
+	DEBUG("中心服务器接收GMT服务器:{}协议:{}", _ip_address, meta.ShortDebugString());
 
 	switch (meta.type_t())
 	{
@@ -73,10 +74,8 @@ bool GmtSession::OnInnerProcess(const Asset::InnerMeta& meta)
 			auto session = WorldSessionInstance.GetServerSession(server_id);
 			if (!session) return false;
 
-			auto inner_meta_string = meta.SerializeAsString();
-
 			Asset::GmtInnerMeta inner_meta;
-			inner_meta.set_inner_meta(inner_meta_string);
+			inner_meta.set_inner_meta(meta.SerializeAsString());
 			session->SendProtocol(inner_meta); //游戏逻辑均在逻辑服务器上进行
 		}
 		break;
@@ -113,7 +112,7 @@ bool GmtSession::OnInnerProcess(const Asset::InnerMeta& meta)
 
 		default:
 		{
-			WARN("Receive message:{} from server has no process type:{}", debug_string, meta.type_t());
+			WARN("接收GMT指令:{} 尚未含有处理回调，协议数据:{}", meta.type_t(), meta.ShortDebugString());
 		}
 		break;
 	}
@@ -300,6 +299,7 @@ void GmtSession::SendProtocol(pb::Message& message)
 
 	Asset::InnerMeta meta;
 	meta.set_type_t((Asset::INNER_TYPE)type_t);
+	meta.set_session_id(_session_id);
 	meta.set_stuff(inner_meta_string);
 	
 	auto debug_string = meta.ShortDebugString(); 

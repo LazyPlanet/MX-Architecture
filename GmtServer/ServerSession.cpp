@@ -88,7 +88,10 @@ bool ServerSession::OnInnerProcess(const Asset::InnerMeta& meta)
 			auto result = message.ParseFromString(meta.stuff());
 			if (!result) return false;
 			
-			DEBUG("GMT服务器接收其他服务器的注册:{} 地址:{}", message.ShortDebugString(), _ip_address);
+			_server_id = message.server_id(); 
+			_server_type = message.server_type();
+			
+			DEBUG("GMT服务器接收其他服务器:{}的注册:{} 地址:{}", _server_id, message.ShortDebugString(), _ip_address);
 
 			if (message.server_type() == Asset::SERVER_TYPE_GMT) //GMT服务器
 			{
@@ -98,9 +101,6 @@ bool ServerSession::OnInnerProcess(const Asset::InnerMeta& meta)
 			{
 				ServerSessionInstance.Add(message.server_id(), shared_from_this());
 			}
-
-			_server_id = message.server_id(); 
-			_server_type = message.server_type();
 
 			SendProtocol(message);
 		}
@@ -119,8 +119,14 @@ bool ServerSession::OnInnerProcess(const Asset::InnerMeta& meta)
 				auto error_code = OnCommandProcess(message); //处理离线玩家的指令执行
 				if (Asset::COMMAND_ERROR_CODE_PLAYER_ONLINE == error_code) 
 				{
-					DEBUG("玩家{}当前在线，发往游戏服务器进行处理", message.player_id());
-					ServerSessionInstance.BroadCastProtocol(message); //处理在线玩家的指令执行
+					DEBUG("玩家{}当前在线，发往中心服务器进行处理", message.player_id());
+					
+					Asset::InnerMeta inner_meta;
+					inner_meta.set_type_t(message.type_t());
+					inner_meta.set_session_id(_session_id);
+					inner_meta.set_stuff(message.SerializeAsString());
+
+					ServerSessionInstance.BroadCastInnerMeta(inner_meta); //处理在线玩家的指令执行
 				}
 
 				if (Asset::COMMAND_ERROR_CODE_SUCCESS == error_code)
@@ -135,7 +141,11 @@ bool ServerSession::OnInnerProcess(const Asset::InnerMeta& meta)
 			else if (Asset::SERVER_TYPE_CENTER == _server_type) //处理中心服务器返回的数据
 			{
 				auto gmt_server = ServerSessionInstance.GetGmtServer(meta.session_id());
-				if (!gmt_server) return false;
+				if (!gmt_server) 
+				{
+					ERROR("尚未找到相关会话:{} 指令数据", meta.session_id(), message.ShortDebugString());
+					return false;
+				}
 			
 				gmt_server->SendProtocol(message);
 			}
@@ -246,7 +256,7 @@ bool ServerSession::OnInnerProcess(const Asset::InnerMeta& meta)
 
 		default:
 		{
-			WARN("接收GMT指令:{} 尚未含有处理回调，协议类型:{}", meta.ShortDebugString(), meta.type_t());
+			WARN("接收GMT指令:{} 尚未含有处理回调，协议数据:{}", meta.type_t(), meta.ShortDebugString());
 		}
 		break;
 	}
@@ -594,6 +604,17 @@ void ServerSessionManager::BroadCastProtocol(const pb::Message& message)
 	{
 		if (!session.second) continue;
 		session.second->SendProtocol(message);
+	}
+}
+	
+void ServerSessionManager::BroadCastInnerMeta(const pb::Message& message)
+{
+	std::lock_guard<std::mutex> lock(_server_mutex);
+
+	for (auto session : _sessions)
+	{
+		if (!session.second) continue;
+		session.second->SendInnerMeta(message);
 	}
 }
 	

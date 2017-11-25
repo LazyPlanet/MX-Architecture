@@ -93,6 +93,8 @@ public:
 	void BroadCastProtocol(const pb::Message& message);
 	void BroadCastProtocol(const pb::Message* message);
 
+	void BroadCastInnerMeta(const pb::Message& message);
+
 	void Add(int64_t server_id, std::shared_ptr<ServerSession> session);
 	void Remove(int64_t server_id);
 	std::shared_ptr<ServerSession> Get(int64_t server_id) { return _sessions[server_id]; }

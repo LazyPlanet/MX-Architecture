@@ -12,9 +12,9 @@ namespace Adoter
 	response.set_error_code(x); \
 	auto debug_string = command.ShortDebugString(); \
 	if (x) { \
-		LOG(ERR, "command excute failed for:{} command:{}", x, debug_string); \
+		LOG(ERR, "执行指令失败:{} 指令:{}", x, command.ShortDebugString()); \
 	} else { \
-		LOG(TRACE, "command excute success for:{} command:{}", x, debug_string); \
+		LOG(TRACE, "执行指令成功:{} 指令:{}", x, command.ShortDebugString()); \
 	} \
 	SendProtocol(response); \
 	return x; \
@@ -116,7 +116,7 @@ bool GmtManager::OnInnerProcess(const Asset::InnerMeta& meta)
 
 		default:
 		{
-			WARN("Receive message:{} from server has no process type:{}", meta.ShortDebugString(), meta.type_t());
+			WARN("接收GMT指令:{} 尚未含有处理回调，协议数据:{}", meta.type_t(), meta.ShortDebugString());
 		}
 		break;
 	}

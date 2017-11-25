@@ -556,6 +556,8 @@ void Game::OnPaiOperate(std::shared_ptr<Player> player, pb::Message* message)
 					_oper_cache.set_source_player_id(player->GetID());
 					_oper_cache.mutable_oper_list()->Add(Asset::PAI_OPER_TYPE_HUPAI);
 					_oper_cache.mutable_pai()->CopyFrom(pai);
+
+					_room->AddJinBao(player->GetID()); //进宝
 				}
 
 				Calculate(player->GetID(), _oper_cache.source_player_id(), fan_list); //结算
@@ -582,6 +584,8 @@ void Game::OnPaiOperate(std::shared_ptr<Player> player, pb::Message* message)
 				_oper_cache.set_source_player_id(player->GetID());
 				_oper_cache.mutable_oper_list()->Add(Asset::PAI_OPER_TYPE_HUPAI);
 				_oper_cache.mutable_pai()->CopyFrom(_baopai);
+					
+				_room->AddLouBao(player->GetID()); //搂宝
 
 				Calculate(player->GetID(), _oper_cache.source_player_id(), fan_list); //结算
 			}

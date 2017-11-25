@@ -36,6 +36,8 @@ private:
 	std::unordered_map<int64_t, int32_t> _dianpao_players;
 	std::unordered_map<int64_t, int32_t> _bankers;
 	std::unordered_map<int64_t, int32_t> _streak_wins;
+	std::unordered_map<int64_t, int32_t> _loubao_players;
+	std::unordered_map<int64_t, int32_t> _jinbao_players;
 	bool _is_dismiss = false;
 	int32_t _dismiss_time = 0; //解散时间
 	int32_t _created_time = 0; //创建时间
@@ -64,6 +66,8 @@ public:
 	void AddHupai(int64_t player_id);
 	void AddDianpao(int64_t player_id) { ++_dianpao_players[player_id]; }
 	void AddBanker(int64_t player_id) { ++_bankers[player_id]; }
+	void AddLouBao(int64_t player_id) { ++_loubao_players[player_id]; }
+	void AddJinBao(int64_t player_id) { ++_jinbao_players[player_id]; }
 public:
 	Asset::ERROR_CODE TryEnter(std::shared_ptr<Player> player);
 	bool Enter(std::shared_ptr<Player> player);

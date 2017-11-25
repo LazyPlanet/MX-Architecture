@@ -55,6 +55,8 @@ private:
 	std::deque<Asset::InnerMeta> _receive_list;
 	boost::asio::ip::tcp::endpoint _remote_endpoint;
 	std::string _ip_address;
+	std::mutex _gmt_lock; 
+	int64_t _session_id = 0; //操作会话
 };
 
 }
