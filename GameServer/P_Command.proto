@@ -2,8 +2,8 @@ package Adoter.Asset;
 
 message InnerMeta {
 	optional INNER_TYPE type_t = 1;
-	optional bytes stuff = 2;
-	optional int64 session_id = 3;
+	optional int64 session_id = 2;
+	optional bytes stuff = 3;
 }
 
 /////////////////////////////////////////////////////
