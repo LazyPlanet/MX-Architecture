@@ -11,9 +11,9 @@ namespace Adoter
 	auto response = command; \
 	response.set_error_code(x); \
 	if (x) { \
-		LOG(ERR, "command excute failed for:{} command:{}", x, command.ShortDebugString()); \
+		LOG(ERR, "执行指令失败:{} 指令:{}", x, command.ShortDebugString()); \
 	} else { \
-		LOG(TRACE, "command excute success for:{} command:{}", x, command.ShortDebugString()); \
+		LOG(TRACE, "执行指令成功:{} 指令:{}", x, command.ShortDebugString()); \
 	} \
 	SendProtocol(response); \
 	return x; \
@@ -30,7 +30,7 @@ void ServerSession::InitializeHandler(const boost::system::error_code error, con
 	{
 		if (error)
 		{
-			ERROR("远程断开与GMT服务器连接, 地址:{} 端口:{}，错误码:{} 错误描述:{}", _ip_address, _remote_endpoint.port(), error.value(), error.message());
+			ERROR("远程断开与GMT服务器:{}连接, 地址:{} 端口:{}，错误码:{} 错误描述:{}", _server_id, _ip_address, _remote_endpoint.port(), error.value(), error.message());
 
 			Close();
 			return;
@@ -41,8 +41,6 @@ void ServerSession::InitializeHandler(const boost::system::error_code error, con
 			{
 				unsigned short body_size = _buffer[index] * 256 + _buffer[1 + index];
 					
-				//DEBUG("解析的头:{} {} 包长:{}", (int)_buffer[index] * 256, (int)_buffer[1 + index], body_size);
-
 				if (body_size > MAX_DATA_SIZE)
 				{
 					LOG(ERROR, "接收来自地址:{} 端口:{} 太大的包长:{} 丢弃.", _ip_address, _remote_endpoint.port(), body_size)
@@ -53,12 +51,10 @@ void ServerSession::InitializeHandler(const boost::system::error_code error, con
 				for (size_t i = 0; i < body_size; ++i) buffer[i] = _buffer[i + index + 2];  
 
 				Asset::InnerMeta meta;
+				if (_session_id) meta.set_session_id(_session_id);
+
 				auto result = meta.ParseFromArray(buffer, body_size);
-				if (!result) 
-				{
-					LOG(ERROR, "Receive message error from server:{}", _ip_address);
-					return;
-				}
+				if (!result) return;
 				
 				OnInnerProcess(meta);
 
@@ -82,7 +78,7 @@ void ServerSession::InitializeHandler(const boost::system::error_code error, con
 //
 bool ServerSession::OnInnerProcess(const Asset::InnerMeta& meta)
 {
-	DEBUG("接收协议数据:{} 来自地址:{}", meta.ShortDebugString(), _ip_address);
+	DEBUG("接收会话:{} 发来的议数据:{} 当前会话:{} 来自地址:{}", meta.session_id(), meta.ShortDebugString(), _session_id, _ip_address);
 
 	switch (meta.type_t())
 	{
@@ -92,18 +88,19 @@ bool ServerSession::OnInnerProcess(const Asset::InnerMeta& meta)
 			auto result = message.ParseFromString(meta.stuff());
 			if (!result) return false;
 			
-			DEBUG("GMT服务器接收其他服务器的注册:{} ip_address:{}", message.ShortDebugString(), _ip_address);
+			DEBUG("GMT服务器接收其他服务器的注册:{} 地址:{}", message.ShortDebugString(), _ip_address);
 
 			if (message.server_type() == Asset::SERVER_TYPE_GMT) //GMT服务器
 			{
-				ServerSessionInstance.SetGmtServer(shared_from_this());
+				ServerSessionInstance.AddGmtServer(shared_from_this());
 			}
-			else if (message.server_type() == Asset::SERVER_TYPE_GAME) //游戏服务器
+			else //中心服
 			{
 				ServerSessionInstance.Add(message.server_id(), shared_from_this());
 			}
 
-			_server_id = message.server_id();
+			_server_id = message.server_id(); 
+			_server_type = message.server_type();
 
 			SendProtocol(message);
 		}
@@ -115,13 +112,9 @@ bool ServerSession::OnInnerProcess(const Asset::InnerMeta& meta)
 			auto result = message.ParseFromString(meta.stuff());
 			if (!result) return false;
 
-			std::string gmt_server_address;
-			auto gmt_server = ServerSessionInstance.GetGmtServer();
-			if (gmt_server) gmt_server_address = gmt_server->GetRemoteAddress();
+			DEBUG("收到命令:{} 来自服务器:{}", message.ShortDebugString(), _ip_address);
 
-			DEBUG("收到命令:{} 来自服务器:{} GMT服务器:{}", message.ShortDebugString(), _ip_address, gmt_server_address);
-
-			if (ServerSessionInstance.IsGmtServer(shared_from_this())) //处理GMT服务器发送的数据
+			if (Asset::SERVER_TYPE_GMT == _server_type)
 			{
 				auto error_code = OnCommandProcess(message); //处理离线玩家的指令执行
 				if (Asset::COMMAND_ERROR_CODE_PLAYER_ONLINE == error_code) 
@@ -136,12 +129,12 @@ bool ServerSession::OnInnerProcess(const Asset::InnerMeta& meta)
 				}
 				else if (Asset::COMMAND_ERROR_CODE_PLAYER_ONLINE != error_code) //在线
 				{
-					LOG(ERROR, "Server:{} server send gmt message:{} error_code:{}", _ip_address, message.ShortDebugString(), error_code);
+					LOG(ERROR, "服务器地址:{} 发送GMT命令:{} 错误码:{}", _ip_address, message.ShortDebugString(), error_code);
 				}
 			}
-			else //处理游戏服务器发送的数据
+			else if (Asset::SERVER_TYPE_CENTER == _server_type) //处理中心服务器返回的数据
 			{
-				auto gmt_server = ServerSessionInstance.GetGmtServer();
+				auto gmt_server = ServerSessionInstance.GetGmtServer(meta.session_id());
 				if (!gmt_server) return false;
 			
 				gmt_server->SendProtocol(message);
@@ -155,24 +148,29 @@ bool ServerSession::OnInnerProcess(const Asset::InnerMeta& meta)
 			auto result = message.ParseFromString(meta.stuff());
 			if (!result) return false;
 
-			LOG(INFO, "Receive command:{} from server:{}", message.ShortDebugString(), _ip_address);
+			DEBUG("接收指令:{} 来自服务器:{}", message.ShortDebugString(), _ip_address);
 
-			if (ServerSessionInstance.IsGmtServer(shared_from_this())) //处理GMT服务器发送的数据
+			if (IsGmtServer()) //GMT服务器会话
 			{
-				auto game_server = ServerSessionInstance.Get(message.server_id());
-				if (!game_server) 
+				auto center_server = ServerSessionInstance.Get(message.server_id());
+				if (!center_server) 
 				{
 					message.set_error_code(Asset::COMMAND_ERROR_CODE_SERVER_NOT_FOUND);
 					SendProtocol(message); //返回给GMT服务器
 				}
 				else
 				{
-					game_server->SendProtocol(message);
+					Asset::InnerMeta inner_meta;
+					inner_meta.set_type_t(message.type_t());
+					inner_meta.set_session_id(_session_id);
+					inner_meta.set_stuff(message.SerializeAsString());
+
+					center_server->SendInnerMeta(inner_meta);
 				}
 			}
-			else //处理游戏服务器返回的数据
+			else //处理中心服务器返回的数据
 			{
-				auto gmt_server = ServerSessionInstance.GetGmtServer();
+				auto gmt_server = ServerSessionInstance.GetGmtServer(meta.session_id()); //发给相应的GMT会话
 				if (!gmt_server) return false;
 			
 				gmt_server->SendProtocol(message);
@@ -186,13 +184,13 @@ bool ServerSession::OnInnerProcess(const Asset::InnerMeta& meta)
 			auto result = message.ParseFromString(meta.stuff());
 			if (!result) return false;
 
-			if (ServerSessionInstance.IsGmtServer(shared_from_this())) //处理GMT服务器发送的数据
+			if (IsGmtServer())
 			{
 				OnSendMail(message);
 			}
 			else //处理游戏服务器返回的数据
 			{
-				auto gmt_server = ServerSessionInstance.GetGmtServer();
+				auto gmt_server = ServerSessionInstance.GetGmtServer(meta.session_id());
 				if (!gmt_server) return false;
 			
 				gmt_server->SendProtocol(message);
@@ -219,8 +217,6 @@ bool ServerSession::OnInnerProcess(const Asset::InnerMeta& meta)
 			Asset::ActivityControl message;
 			auto result = message.ParseFromString(meta.stuff());
 			if (!result) return false;
-
-			LOG(TRACE, "Receive command:{} from server:{}", message.ShortDebugString(), _ip_address);
 
 			if (ServerSessionInstance.IsGmtServer(shared_from_this())) //处理GMT服务器发送的数据
 			{
@@ -250,7 +246,7 @@ bool ServerSession::OnInnerProcess(const Asset::InnerMeta& meta)
 
 		default:
 		{
-			WARN("Receive message:{} from server has no process type:{}", meta.ShortDebugString(), meta.type_t());
+			WARN("接收GMT指令:{} 尚未含有处理回调，协议类型:{}", meta.ShortDebugString(), meta.type_t());
 		}
 		break;
 	}
@@ -544,6 +540,8 @@ bool ServerSession::Update()
 
 void ServerSession::OnClose()
 {
+	ERROR("关闭服务器:{} 会话:{}的连接", _server_id, _session_id);
+
 	ServerSessionInstance.Remove(_server_id);
 }
 
@@ -563,12 +561,22 @@ void ServerSession::SendProtocol(const pb::Message& message)
 	
 	Asset::InnerMeta meta;
 	meta.set_type_t((Asset::INNER_TYPE)type_t);
+	meta.set_session_id(_session_id);
 	meta.set_stuff(message.SerializeAsString());
 
 	std::string content = meta.SerializeAsString();
 	if (content.empty()) return;
 
 	DEBUG("GMT服务器向服务器ID:{} 地址:{} 发送协议数据:{} 具体内容:{}", _server_id, _ip_address, meta.ShortDebugString(), message.ShortDebugString());
+	AsyncSend(content);
+}
+	
+void ServerSession::SendInnerMeta(const pb::Message& meta)
+{
+	std::string content = meta.SerializeAsString();
+	if (content.empty()) return;
+
+	DEBUG("GMT服务器向服务器:{} 地址:{} 发送协议数据:{}", _server_id, _ip_address, meta.ShortDebugString());
 	AsyncSend(content);
 }
 	
@@ -588,6 +596,28 @@ void ServerSessionManager::BroadCastProtocol(const pb::Message& message)
 		session.second->SendProtocol(message);
 	}
 }
+	
+void ServerSessionManager::AddGmtServer(std::shared_ptr<ServerSession> session) 
+{ 
+	if (!session) return;
+
+	std::lock_guard<std::mutex> lock(_gmt_mutex);
+
+	++_gmt_counter; 
+
+	session->SetSession(_gmt_counter);
+	_gmt_sessions.emplace(_gmt_counter, session);
+}
+	
+std::shared_ptr<ServerSession> ServerSessionManager::GetGmtServer(int64_t session_id)
+{
+	std::lock_guard<std::mutex> lock(_gmt_mutex);
+
+	auto it = _gmt_sessions.find(session_id);
+	if (it == _gmt_sessions.end()) return nullptr;
+
+	return it->second;
+}
 
 void ServerSessionManager::Add(int64_t server_id, std::shared_ptr<ServerSession> session)
 {
@@ -603,7 +633,6 @@ void ServerSessionManager::Remove(int64_t server_id)
 	auto it = _sessions.find(server_id);
 	if (it == _sessions.end()) return;
 
-	if (it->second) it->second.reset();
 	_sessions.erase(it);
 }
 

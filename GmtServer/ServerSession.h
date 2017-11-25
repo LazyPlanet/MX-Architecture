@@ -50,6 +50,8 @@ public:
 
 	void SendProtocol(const pb::Message& message);
 	void SendProtocol(const pb::Message* message);
+	
+	void SendInnerMeta(const pb::Message& message);
 
 	const std::string GetRemoteAddress() { return _remote_endpoint.address().to_string(); }
 	const boost::asio::ip::tcp::endpoint GetRemotePoint() { return _remote_endpoint; }
@@ -59,21 +61,29 @@ public:
 	Asset::COMMAND_ERROR_CODE OnSystemBroadcast(const Asset::SystemBroadcast& command);
 	Asset::COMMAND_ERROR_CODE OnActivityControl(const Asset::ActivityControl& command);
 
+	void SetSession(int64_t session_id) { _session_id = session_id; }
+	bool IsGmtServer() { return Asset::SERVER_TYPE_GMT == _server_type; }
 private:
 	boost::asio::ip::tcp::endpoint _remote_endpoint;
 	std::string _ip_address;
 	int64_t _server_id = 0;
+	Asset::SERVER_TYPE _server_type;
+	int64_t _session_id = 0;
 };
 
 class ServerSessionManager : public SocketManager<ServerSession> 
 {
 	typedef SocketManager<ServerSession> SuperSocketManager;
 private:
+	std::atomic<int64_t> _gmt_counter;
 	std::mutex _server_mutex;
-	std::unordered_map<int64_t/*server_id*/, std::shared_ptr<ServerSession>> _sessions; //定时清理断开的会话
+	std::mutex _gmt_mutex;
 
-	std::shared_ptr<ServerSession> _gmt_session = nullptr;
+	std::unordered_map<int64_t/*server_id*/, std::shared_ptr<ServerSession>> _sessions; //中心服
+	std::unordered_map<int64_t/*session_id*/, std::shared_ptr<ServerSession>> _gmt_sessions; 
 public:
+	ServerSessionManager() : _gmt_counter(0) {}
+
 	static ServerSessionManager& Instance()
 	{
 		static ServerSessionManager _instance;
@@ -89,11 +99,11 @@ public:
 
 	bool StartNetwork(boost::asio::io_service& io_service, const std::string& bind_ip, int32_t port, int thread_count = 1) override;
 
-	void SetGmtServer(std::shared_ptr<ServerSession> session) { _gmt_session = session; }
-	std::shared_ptr<ServerSession> GetGmtServer() { return _gmt_session; }
+	void AddGmtServer(std::shared_ptr<ServerSession> session);
+	std::shared_ptr<ServerSession> GetGmtServer(int64_t session_id);
 	bool IsGmtServer(std::shared_ptr<ServerSession> sesssion) {
-		if (!sesssion || !_gmt_session) return false;
-		return sesssion->GetRemotePoint() == _gmt_session->GetRemotePoint();
+		if (!sesssion) return false;
+		return sesssion->IsGmtServer();
 	}
 protected:        
 	NetworkThread<ServerSession>* CreateThreads() const override;

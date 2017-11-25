@@ -13,9 +13,9 @@ namespace Adoter
 	response.set_error_code(x); \
 	auto debug_string = command.ShortDebugString(); \
 	if (x) { \
-		LOG(ERR, "command excute failed for:{} command:{}", x, debug_string); \
+		LOG(ERR, "执行指令失败:{} 指令:{}", x, command.ShortDebugString()); \
 	} else { \
-		LOG(TRACE, "command excute success for:{} command:{}", x, debug_string); \
+		LOG(TRACE, "执行指令成功:{} 指令:{}", x, command.ShortDebugString()); \
 	} \
 	SendProtocol(response); \
 	return x; \
@@ -32,7 +32,7 @@ void GmtSession::OnConnected()
 	DEBUG("连接GMT服务器:{} {}成功.", _ip_address, _remote_endpoint.port());
 
 	Asset::Register message;
-	message.set_server_type(Asset::SERVER_TYPE_GAME);
+	message.set_server_type(Asset::SERVER_TYPE_CENTER);
 	message.set_server_id(ConfigInstance.GetInt("ServerID", 1)); //服务器ID，全球唯一
 
 	SendProtocol(message); //注册服务器角色
@@ -279,8 +279,7 @@ void GmtSession::SendInnerMeta(const Asset::InnerMeta& meta)
 	std::string content = meta.SerializeAsString();
 	if (content.empty()) return;
 
-	auto debug_string = meta.ShortDebugString(); 
-	DEBUG("send message to gmt server:{} {}, message:{}", _ip_address, _remote_endpoint.port(), debug_string);
+	DEBUG("发送协议数据到GMT服务器:{} 协议数据:{}", _ip_address, meta.ShortDebugString());
 	AsyncSendMessage(content);
 }
 
@@ -313,7 +312,7 @@ void GmtSession::SendProtocol(pb::Message& message)
 		return;
 	}
 
-	TRACE("send message to gmt server:{} {}, message:{}", _ip_address, _remote_endpoint.port(), debug_string);
+	DEBUG("发送协议数据到GMT服务器:{} 协议数据:{} 内容:{}", _ip_address, meta.ShortDebugString(), message.ShortDebugString());
 	AsyncSendMessage(content);
 }
 

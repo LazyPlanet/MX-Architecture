@@ -1,5 +1,7 @@
 #pragma once
 
+#include <mutex>
+
 #include "P_Header.h"
 
 namespace Adoter
@@ -27,6 +29,11 @@ public:
 	
 	void SendProtocol(pb::Message& message);
 	void SendProtocol(pb::Message* message);
+	
+	void SendInnerMeta(const Asset::InnerMeta& message);
+private:
+	std::mutex _gmt_lock;
+	int64_t _session_id = 0; //操作会话
 };
 
 #define GmtInstance GmtManager::Instance()

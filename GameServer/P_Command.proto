@@ -3,6 +3,7 @@ package Adoter.Asset;
 message InnerMeta {
 	optional INNER_TYPE type_t = 1;
 	optional bytes stuff = 2;
+	optional int64 session_id = 3;
 }
 
 /////////////////////////////////////////////////////
@@ -57,7 +58,8 @@ enum COMMAND_ERROR_CODE {
 enum SERVER_TYPE {
 	SERVER_TYPE_BEGIN = 0;
 	SERVER_TYPE_GMT = 1; //GMT服务器
-	SERVER_TYPE_GAME = 2; //游戏服务器
+	SERVER_TYPE_CENTER = 2; //中心服务器
+	SERVER_TYPE_GAME = 3; //游戏服务器
 }
 
 //注册服务器

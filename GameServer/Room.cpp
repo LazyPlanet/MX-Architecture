@@ -461,6 +461,7 @@ void Room::OnPlayerStateChanged()
 		//if (!player->IsOffline()) continue;
 
 		auto p = message.mutable_player_list()->Add();
+		p->set_player_id(player->GetID());
 		p->set_position(player->GetPosition());
 		p->set_oper_type(player->GetOperState());
 	}

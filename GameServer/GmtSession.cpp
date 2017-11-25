@@ -22,7 +22,10 @@ namespace Adoter
 
 bool GmtManager::OnInnerProcess(const Asset::InnerMeta& meta)
 {
-	auto debug_string = meta.ShortDebugString(); 
+	std::lock_guard<std::mutex> lock(_gmt_lock);
+	_session_id = meta.session_id();
+	
+	DEBUG("游戏逻辑服务器接收会话:{} GMT指令:{}", _session_id, meta.ShortDebugString());
 
 	switch (meta.type_t())
 	{
@@ -58,7 +61,7 @@ bool GmtManager::OnInnerProcess(const Asset::InnerMeta& meta)
 			if (!room_limit) return Asset::ERROR_ROOM_TYPE_NOT_FOUND;
 			*/
 
-			//房间属性
+			//房间设置
 			Asset::Room room;
 			room.set_room_type(Asset::ROOM_TYPE_FRIEND);
 			room.mutable_options()->ParseFromString(message.options());
@@ -71,14 +74,15 @@ bool GmtManager::OnInnerProcess(const Asset::InnerMeta& meta)
 				return false; //未能创建成功房间，理论不会出现
 			}
 
-			DEBUG("GMT开房成功，数据:{}", room.ShortDebugString());
-
 			room_ptr->SetGmtOpened(); //设置GMT开房
 
 			message.set_room_id(room_ptr->GetID());
 			message.set_error_code(Asset::COMMAND_ERROR_CODE_SUCCESS); //成功创建
 			message.set_server_id(ConfigInstance.GetInt("ServerID", 1));
+
  			SendProtocol(message); //发送给GTM服务器
+			
+			DEBUG("GMT开房成功，房间ID:{} 会话:{} 玩法:{}", message.room_id(), meta.session_id(), room.ShortDebugString());
 		}	   
 		break;
 
@@ -112,7 +116,7 @@ bool GmtManager::OnInnerProcess(const Asset::InnerMeta& meta)
 
 		default:
 		{
-			WARN("Receive message:{} from server has no process type:{}", debug_string, meta.type_t());
+			WARN("Receive message:{} from server has no process type:{}", meta.ShortDebugString(), meta.type_t());
 		}
 		break;
 	}
@@ -287,20 +291,30 @@ void GmtManager::SendProtocol(pb::Message& message)
     int type_t = field->default_value_enum()->number();
     if (!Asset::INNER_TYPE_IsValid(type_t)) return; //如果不合法，不检查会宕线
 
-    auto message_string = message.SerializeAsString();
-
     Asset::InnerMeta meta;
     meta.set_type_t((Asset::INNER_TYPE)type_t);
-    meta.set_stuff(message_string);
-
-    auto meta_string = meta.SerializeAsString();
+	meta.set_session_id(_session_id);
+    meta.set_stuff(message.SerializeAsString());
 
     Asset::GmtInnerMeta gmt_meta;
-    gmt_meta.set_inner_meta(meta_string);
+    gmt_meta.set_inner_meta(meta.SerializeAsString());
 
-    auto gmt_meta_string = gmt_meta.ShortDebugString();
-    DEBUG("逻辑服务器处理GMT指令后发送数据到中心服务器:{}", gmt_meta_string);
-    
+    DEBUG("逻辑服务器处理来自会话:{}GMT指令后发送数据到中心服务器:{}", _session_id, gmt_meta.ShortDebugString());
+    g_center_session->SendProtocol(gmt_meta);
+}
+
+void GmtManager::SendInnerMeta(const Asset::InnerMeta& message)
+{
+    if (!g_center_session)
+    {
+        ERROR("尚未连接中心服服务器");
+        return;
+    }
+
+    Asset::GmtInnerMeta gmt_meta;
+    gmt_meta.set_inner_meta(message.SerializeAsString());
+
+    DEBUG("逻辑服务器处理GMT指令后发送数据到中心服务器:{}", gmt_meta.ShortDebugString());
     g_center_session->SendProtocol(gmt_meta);
 }
 
