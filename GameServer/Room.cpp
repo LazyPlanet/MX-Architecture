@@ -558,6 +558,8 @@ void Room::OnGameOver(int64_t player_id)
 		record->set_banker_count(_bankers[player_id]);
 		record->set_win_count(_hupai_players[player_id]);
 		record->set_dianpao_count(_dianpao_players[player_id]);
+		record->set_loubao_count(_loubao_players[player_id]);
+		record->set_jinbao_count(_jinbao_players[player_id]);
 
 		for(int i = 0; i < _history.list().size(); ++i)
 			for (int j = 0; j < _history.list(i).list().size(); ++j)
