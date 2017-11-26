@@ -592,6 +592,7 @@ void Game::OnPaiOperate(std::shared_ptr<Player> player, pb::Message* message)
 			else
 			{
 				player->PrintPai(); //打印玩家牌
+
 				LOG(ERROR, "玩家:{}胡牌不满足条件，可能是外挂行为, 胡牌, 牌类型:{} 牌值:{}", player->GetID(), pai.card_type(), pai.card_value());
 				
 				player->AlertMessage(Asset::ERROR_GAME_PAI_UNSATISFIED); //没有牌满足条件
@@ -625,7 +626,7 @@ void Game::OnPaiOperate(std::shared_ptr<Player> player, pb::Message* message)
 
 				SendCheckRtn();
 
-				_oper_list.clear(); //防止抢杠胡点过的情况，下家还能吃牌，从而会多牌
+				//_oper_list.clear(); //防止抢杠胡点过的情况，下家还能吃牌，从而会多牌
 			}
 			else
 			{
@@ -851,7 +852,7 @@ void Game::OnPaiOperate(std::shared_ptr<Player> player, pb::Message* message)
 		
 		case Asset::PAI_OPER_TYPE_GIVEUP: //放弃
 		{
-			if (IsQiangGang(player->GetID() && _oper_cache.source_player_id())) //抢杠不胡
+			if (IsQiangGang(player->GetID())) //抢杠不胡
 			{
 				auto player = GetPlayer(_oper_cache.source_player_id());
 				if (!player) return;
@@ -1090,7 +1091,7 @@ void Game::OnPaiOperate(std::shared_ptr<Player> player, pb::Message* message)
 
 void Game::ClearOperation()
 {
-	//DEBUG("清理缓存状态，_oper_cache:{}", _oper_cache.DebugString());
+	DEBUG("清理缓存状态:{}", _oper_cache.ShortDebugString());
 
 	_oper_cache.Clear(); //清理状态
 }
@@ -1753,11 +1754,10 @@ bool Game::CheckPai(const Asset::PaiElement& pai, int64_t source_player_id)
 bool Game::IsQiangGang(int64_t player_id)
 {
 	if (_oper_cache.player_id() != player_id) return false;
+	if (_oper_cache.source_player_id() == 0) return false;
 
 	auto it = std::find(_oper_cache.oper_list().begin(), _oper_cache.oper_list().end(), Asset::PAI_OPER_TYPE_QIANGGANG);
 	if (it == _oper_cache.oper_list().end()) return false;
-
-	//source_player_id = _oper_cache.source_player_id();
 	return true;
 }
 
