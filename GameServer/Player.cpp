@@ -1150,7 +1150,7 @@ bool Player::Update()
 		if (_dirty) Save(); //触发存盘
 	}
 	
-	if (_heart_count % 3 == 0) //3秒检查一次
+	if (_heart_count % 5 == 0) //3秒检查一次
 	{
 		OnlineCheck(); //逻辑服务器不进行心跳检查，只进行断线逻辑检查
 	}
@@ -4239,7 +4239,11 @@ void Player::OnlineCheck()
 	auto curr_time = TimerInstance.GetTime();
 	auto duration_pass = curr_time - _hi_time;
 
-	if (duration_pass <= 0) return;
+	if (duration_pass <= 0) 
+	{
+		_pings_count = 0;
+		return;
+	}
 
 	if (duration_pass > 5)
 	{
