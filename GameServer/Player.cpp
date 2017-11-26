@@ -3829,7 +3829,7 @@ int32_t Player::OnFaPai(std::vector<int32_t>& cards)
 		_minggang.push_back(gang);
 		*/
 	}
-	else if (true && _player_id == 262147 && _cards_inhand.size() == 0)
+	else if (false && _player_id == 262147 && _cards_inhand.size() == 0)
 	{
 		_cards_inhand = {
 			{ 1, {2, 2, 2, 7, 7, 7} },
@@ -3837,7 +3837,7 @@ int32_t Player::OnFaPai(std::vector<int32_t>& cards)
 			{ 3, {7, 7, 8, 8, 8} },
 		};
 	}
-	else if (true && _player_id == 265871 && _cards_inhand.size() == 0)
+	else if (false && _player_id == 265871 && _cards_inhand.size() == 0)
 	{
 		_cards_inhand = {
 			{ 1, {1, 2, 6, 8} },
@@ -3845,7 +3845,7 @@ int32_t Player::OnFaPai(std::vector<int32_t>& cards)
 			{ 3, {7, 7, 8} },
 		};
 	}
-	else if (true && _player_id == 265872 && _cards_inhand.size() == 0)
+	else if (false && _player_id == 265872 && _cards_inhand.size() == 0)
 	{
 		_cards_inhand = {
 			{ 1, {1, 2, 6, 8, 9} },
@@ -3853,7 +3853,7 @@ int32_t Player::OnFaPai(std::vector<int32_t>& cards)
 			{ 3, {7, 7, 8} },
 		};
 	}
-	else if (true && _player_id == 265873 && _cards_inhand.size() == 0)
+	else if (false && _player_id == 265873 && _cards_inhand.size() == 0)
 	{
 		_cards_inhand = {
 			{ 1, {1, 2, 6, 8, 9} },

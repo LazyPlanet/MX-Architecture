@@ -583,6 +583,8 @@ void Room::OnGameOver(int64_t player_id)
 	_hupai_players.clear();
 	_dianpao_players.clear();
 	_streak_wins.clear();
+	_loubao_players.clear();
+	_jinbao_players.clear();
 }
 
 void Room::AddGameRecord(const Asset::GameRecord& record)
