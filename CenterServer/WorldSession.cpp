@@ -592,7 +592,7 @@ void WorldSession::KickOutPlayer(Asset::KICK_OUT_REASON reason)
 
 		if (session && session->GetRemotePoint() != GetRemotePoint()) 
 		{
-			ERROR("角色类型:{} 全局ID:{} 会话失效,原因:{}", _role_type, _global_id, reason);
+			ERROR("服务器主动断开连接，角色类型:{}全局ID:{}会话失效,原因:玩家连接冗余，删除废弃连接", _role_type, _global_id);
 			return;
 		}
 
@@ -821,7 +821,7 @@ void WorldSession::OnHeartBeat1s()
 
 	if (duration_pass > 60 && _expire_time == 0) 
 	{
-		_expire_time = TimerInstance.GetTime() + 60 * 10; //10分钟之内没有上线，则删除
+		_expire_time = TimerInstance.GetTime() + 60 * 3; //3分钟之内没有上线(进行网络收发)，则删除
 	}
 }
 
@@ -983,7 +983,11 @@ void WorldSessionManager::AddPlayer(int64_t player_id, std::shared_ptr<WorldSess
 	std::lock_guard<std::mutex> lock(_client_mutex);
 
 	auto it = _client_list.find(player_id);
-	if (it != _client_list.end() && it->second && session != it->second) it->second.reset();
+	if (it != _client_list.end() && it->second && session != it->second) 
+	{
+		//it->second->Close(); //断线后进行连接，导致之前网络连接释放KickOutPlayer被调用删除玩家
+		it->second.reset();
+	}
 
 	_client_list[player_id] = session; 
 }
@@ -997,7 +1001,7 @@ void WorldSessionManager::RemovePlayer(int64_t player_id)
 	
 	if (it->second) 
 	{
-		//it->second->Close(); //创建账号后会导致Player析构调用删除
+		//it->second->Close(); //创建账号后会导致Player析构调用删除，从而玩家会有一次掉线
 		it->second.reset();
 	}
 
