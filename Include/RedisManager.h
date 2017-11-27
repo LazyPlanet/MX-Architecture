@@ -167,7 +167,7 @@ public:
 			_client.sync_commit(); //同步存储
 		}
 
-		LOG(INFO, "存储数据，Key:{} 数据:{}", key, value); 
+		//LOG(INFO, "存储数据，Key:{} 数据:{}成功", key, value); 
 
 		return true;
 	}
@@ -228,14 +228,14 @@ public:
 
 			if (!_client.is_connected()) 
 			{
-				LOG(ERROR, "数据库获取:{}数据失败，原因:未能连接数据库", key);
+				LOG(ERROR, "数据库存储:{}数据失败，原因:未能连接数据库", key);
 				return false;
 			}
 			
 			auto has_auth = _client.auth(_password);
 			if (has_auth.get().ko()) 
 			{
-				LOG(ERROR, "数据库获取:{}数据失败，原因:权限不足", key);
+				LOG(ERROR, "数据库存储:{}数据失败，原因:权限不足", key);
 				return false;
 			}
 		}
@@ -251,7 +251,7 @@ public:
 			_client.sync_commit(); //同步存储
 		}
 
-		LOG(INFO, "存储数据，Key:{} 数据:{}成功", key, value.ShortDebugString()); 
+		//LOG(INFO, "存储数据，Key:{} 数据:{}成功", key, value.ShortDebugString()); 
 
 		return true;
 	}
