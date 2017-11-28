@@ -703,9 +703,12 @@ public:
 		return 0;
 	}
 	
-	int32_t GetRoomHistory(int64_t room_id, Asset::RoomHistory history)
+	bool GetRoomHistory(int64_t room_id, Asset::RoomHistory& history)
 	{
-		return 0;
+		auto success = Get("room_history:" + std::to_string(room_id), history);
+		if (!success) return false;
+
+		return true;
 		/*
 		std::string command = "Get room_history:" + std::to_string(room_id);
 		redisReply* reply = (redisReply*)redisCommand(_client, command.c_str());

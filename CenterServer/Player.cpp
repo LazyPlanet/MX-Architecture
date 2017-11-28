@@ -990,32 +990,45 @@ void Player::BattleHistory(int32_t start_index, int32_t end_index)
 	if (end_index == 0) end_index = _stuff.room_history().size();
 	if (start_index == 0) start_index = end_index - historty_count;
 	
+	std::set<int64_t> room_list; //历史记录
+
+	if (_stuff.room_history().size() > 10) //历史战绩最多保留10条
+	{
+		std::vector<int32_t> room_history(_stuff.room_history().rbegin(), _stuff.room_history().rend());
+		_stuff.mutable_room_history()->Clear();
+
+		for (size_t i = room_history.size() - 1; i >= 0; --i) 
+		{
+			auto room_id = room_history[i];
+			if (room_list.find(room_id) != room_list.end()) continue;
+
+			if (room_list.size() >= 10) break; 
+
+			_stuff.mutable_room_history()->Add(room_id); 
+			room_list.insert(room_id);
+		}
+
+		SetDirty();
+	}
+
+	room_list.clear();
+
+	/*
 	cpp_redis::future_client client;
 	client.connect(ConfigInstance.GetString("Redis_ServerIP", "127.0.0.1"), ConfigInstance.GetInt("Redis_ServerPort", 6379));
 	if (!client.is_connected()) return;
 	
 	auto has_auth = client.auth(ConfigInstance.GetString("Redis_Password", "!QAZ%TGB&UJM9ol."));
 	if (has_auth.get().ko()) return;
-
-	if (_stuff.room_history().size() > 10) //玩家历史战绩最多保留10条
-	{
-		std::vector<int32_t> room_history(_stuff.room_history().begin(), _stuff.room_history().end());
-		_stuff.mutable_room_history()->Clear();
-
-		for (size_t i = room_history.size() - 10; i < room_history.size(); ++i) _stuff.mutable_room_history()->Add(room_history[i]); //保留最新10条数据
-
-		SetDirty();
-	}
-
-	std::set<int64_t> room_list; //历史记录
+	*/
 
 	for (int32_t i = end_index - 1; i >= start_index; --i)
 	{
 		if (i < 0 || i >= _stuff.room_history().size()) continue; //安全检查
 
 		Asset::RoomHistory history;
-
 		auto room_id = _stuff.room_history(i);
+		/*
 		auto get = client.get("room_history:" + std::to_string(room_id));
 		cpp_redis::reply reply = get.get();
 		client.commit();
@@ -1024,8 +1037,12 @@ void Player::BattleHistory(int32_t start_index, int32_t end_index)
 
 		auto success = history.ParseFromString(reply.as_string());
 		if (!success) continue;
+		*/
 
-		if (room_list.find(room_id) != room_list.end()) continue; //防止玩家历史战绩重复
+		auto redis_cli = make_unique<Redis>();
+		if (!redis_cli->GetRoomHistory(room_id, history)) continue;
+
+		if (room_list.find(room_id) != room_list.end()) continue; //防止历史战绩冗余
 		room_list.insert(room_id);
 
 		for (int32_t j = 0; j < history.list().size(); ++j)
@@ -1051,7 +1068,6 @@ void Player::BattleHistory(int32_t start_index, int32_t end_index)
 	}
 
 	if (message.history_list().size() == 0) return;
-
 	if (message.history_list().size()) SendProtocol(message);
 }
 	
