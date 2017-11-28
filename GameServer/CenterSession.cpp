@@ -52,7 +52,8 @@ bool CenterSession::OnMessageProcess(const Asset::Meta& meta)
 		if (!result) return false;
 
 		auto player = GetPlayer(meta.player_id());
-		if (!player) player = std::make_shared<Player>(meta.player_id());
+		if (!player) { player = std::make_shared<Player>(meta.player_id()); }
+		else { player->Load(); } //进入房间加载数据，防止数据错误，可能丢房卡情况
 		AddPlayer(meta.player_id(), player);
 
 		if (player->OnLogin()) 
