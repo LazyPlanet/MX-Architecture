@@ -3971,7 +3971,7 @@ int32_t Player::OnFaPai(std::vector<int32_t>& cards)
 		_zhuapai = card;
 		++_fapai_count; //发牌数量
 		
-		_game->SetCurrPlayerIndexByPlayer(_player_id); //设置游戏当前玩家
+		//_game->SetCurrPlayerIndexByPlayer(_player_id); //设置游戏当前玩家
 
 		notify.set_data_type(Asset::PaiNotify_CARDS_DATA_TYPE_CARDS_DATA_TYPE_FAPAI); //操作类型:发牌
 		notify.mutable_pai()->set_card_type(card.card_type());
