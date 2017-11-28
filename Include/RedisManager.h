@@ -116,12 +116,9 @@ public:
 		auto get = _client.get(key);
 		cpp_redis::reply reply = get.get();
 		
-		if (async)	
-		{
+		if (async) {
 			_client.commit(); //异步存储
-		}
-		else 
-		{
+		} else {
 			_client.sync_commit(); //同步存储
 		}
 	
@@ -158,16 +155,17 @@ public:
 
 		auto set = _client.set(key, value);
 
-		if (async)	
-		{
+		if (async) {
 			_client.commit(); //异步存储
-		}
-		else 
-		{
+		} else {
 			_client.sync_commit(); //同步存储
 		}
 
-		//LOG(INFO, "存储数据，Key:{} 数据:{}成功", key, value); 
+		auto get = set.get();
+		std::string result;
+		if (get.is_string()) result = get.as_string();
+		
+		LOG(INFO, "存储数据，结果:{} Key:{}", result, key); 
 
 		return true;
 	}
@@ -195,12 +193,9 @@ public:
 		auto get = _client.get(key);
 		cpp_redis::reply reply = get.get();
 		
-		if (async)	
-		{
+		if (async) {
 			_client.commit(); //异步存储
-		}
-		else 
-		{
+		} else {
 			_client.sync_commit(); //同步存储
 		}
 	
@@ -242,16 +237,17 @@ public:
 
 		auto set = _client.set(key, value.SerializeAsString());
 
-		if (async)	
-		{
+		if (async) {
 			_client.commit(); //异步存储
-		}
-		else 
-		{
+		} else {
 			_client.sync_commit(); //同步存储
 		}
 
-		//LOG(INFO, "存储数据，Key:{} 数据:{}成功", key, value.ShortDebugString()); 
+		auto get = set.get();
+		std::string result;
+		if (get.is_string()) result = get.as_string();
+		
+		LOG(INFO, "存储数据，结果:{} Key:{} 数据:{}", result, key, value.ShortDebugString()); 
 
 		return true;
 	}
