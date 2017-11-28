@@ -121,6 +121,7 @@ public:
 	bool SanJiaBi(int64_t hupai_player_id); //三家闭门
 
 	void SetCurrPlayerIndex(int64_t curr_player_index) { _curr_player_index = curr_player_index; } //设置当前可操作的玩家
+	void SetCurrPlayerIndexByPlayer(int64_t player_id) { _curr_player_index = GetPlayerOrder(player_id); } //设置当前玩家索引//主要用于玩家发牌后操作
 	int32_t GetCurrPlayerIndex() { return _curr_player_index; }
 
 	void SavePlayBack(); //回放存储
