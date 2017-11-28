@@ -768,8 +768,6 @@ public:
 		auto success = Save("room_history:" + std::to_string(room_id), history);
 		if (!success) return false;
 
-		LOG(INFO, "保存历史战绩数据，房间:{} 数据:{}", room_id, history.ShortDebugString());
-
 		return true;
 	}
 };

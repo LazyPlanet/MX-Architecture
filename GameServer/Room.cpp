@@ -593,6 +593,7 @@ void Room::AddGameRecord(const Asset::GameRecord& record)
 
 	_history.mutable_list()->Add()->CopyFrom(record);
 
+	/*
 	int64_t room_id = GetID();
 	auto record_string = record.ShortDebugString();
 	auto history_string = _history.ShortDebugString();
@@ -616,8 +617,12 @@ void Room::AddGameRecord(const Asset::GameRecord& record)
 
 	auto set = client.set("room_history:" + std::to_string(room_id), _history.SerializeAsString());
 	client.commit();
+	*/
+	
+	auto redis_cli = make_unique<Redis>();
+	redis_cli->SaveRoomHistory(_stuff.room_id(), _history);
 
-	LOG(INFO, "房间:{} 结果:{} 存储战绩信息:{} 当前历史战绩信息:{}", room_id, set.get(), record_string, history_string);
+	LOG(INFO, "存储房间:{}历史战绩:{}", _stuff.room_id(), _history.ShortDebugString());
 }
 
 void Room::BroadCast(pb::Message* message, int64_t exclude_player_id)
