@@ -3935,7 +3935,7 @@ int32_t Player::OnFaPai(std::vector<int32_t>& cards)
 			}
 			
 			//
-			//明杠和暗杠检查
+			//明杠和暗杠检查(开始只可能是暗杠)
 			//
 			::google::protobuf::RepeatedField<Asset::PaiOperationAlert_AlertElement> gang_list;
 			if (CheckAllGangPai(gang_list)) 
@@ -3944,14 +3944,20 @@ int32_t Player::OnFaPai(std::vector<int32_t>& cards)
 				{
 					auto pai_perator = alert.mutable_pais()->Add();
 					pai_perator->CopyFrom(gang);
+				
+					_game->SetPaiOperation(_player_id, _player_id, gang.pai(), Asset::PAI_OPER_TYPE_ANGANGPAI); //多个暗杠只提示最后一个
 				}
 			}
 			
+			//
 			//是否旋风杠
+			//
 			for (auto gang : _xf_gang)
 			{
 				auto pai_perator = alert.mutable_pais()->Add();
 				pai_perator->mutable_oper_list()->Add(Asset::PAI_OPER_TYPE(gang));
+		
+				_game->SetPaiOperation(_player_id, _player_id, Asset::PaiElement(), gang);
 			}
 
 			if (alert.pais().size()) SendProtocol(alert); //上来即有旋风杠或者胡牌
