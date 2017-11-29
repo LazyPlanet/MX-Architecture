@@ -1040,7 +1040,12 @@ void Player::BattleHistory(int32_t start_index, int32_t end_index)
 		*/
 
 		auto redis_cli = make_unique<Redis>();
-		if (!redis_cli->GetRoomHistory(room_id, history)) continue;
+		if (!redis_cli->GetRoomHistory(room_id, history)) 
+		{
+			auto record = message.mutable_history_list()->Add();
+			record->set_room_id(room_id); //尚未存盘成功的战绩，只发房间ID
+			continue;
+		}
 
 		if (room_list.find(room_id) != room_list.end()) continue; //防止历史战绩冗余
 		room_list.insert(room_id);

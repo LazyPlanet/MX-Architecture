@@ -1678,8 +1678,9 @@ bool Player::AddRoomRecord(int64_t room_id)
 	message.mutable_room_list()->Add(room_id);
 	SendProtocol(message);
 
-	auto message_string = message.ShortDebugString();
-	
+	auto it = std::find(_stuff.room_history().begin(), _stuff.room_history().end(), room_id);
+	if (it != _stuff.room_history().end()) return false; //已经存在记录
+
 	_stuff.mutable_room_history()->Add(room_id); 
 	_dirty = true; 
 	
