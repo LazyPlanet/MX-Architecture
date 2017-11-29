@@ -698,10 +698,11 @@ void Player::SyncCommonLimit()
 
 Asset::ERROR_CODE Player::DeliverReward(int64_t global_id)
 {
-	auto delivered = CommonRewardInstance.DeliverReward(shared_from_this(), global_id);
-	if (delivered == Asset::ERROR_SUCCESS) SyncCommonReward(global_id);
-	
-	return delivered;
+	auto ret_code = CommonRewardInstance.DeliverReward(shared_from_this(), global_id);
+	if (ret_code != Asset::ERROR_SUCCESS) AlertMessage(ret_code);
+		
+	SyncCommonReward(global_id);
+	return ret_code;
 }
 
 void Player::SyncCommonReward(int64_t common_reward_id)
@@ -763,7 +764,7 @@ int32_t Player::CmdGetReward(pb::Message* message)
 
 		default:
 		{
-
+			DeliverReward(reward_id);
 		}
 		break;
 	}
