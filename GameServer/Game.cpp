@@ -1542,12 +1542,18 @@ void Game::Calculate(int64_t hupai_player_id/*胡牌玩家*/, int64_t dianpao_pl
 	//
 	//最大番数
 	//
+	std::sort(record->mutable_details()->begin(), record->mutable_details()->end(), 
+			[&](const Asset::GameRecord_GameElement_DetailElement& detail1, const Asset::GameRecord_GameElement_DetailElement& detail2){
+				return detail1.fan_type() < detail2.fan_type();	
+			});
+	message.set_max_fan_type(record->details().begin()->fan_type());
+	/*
 	auto max_fan_it = std::max_element(record->details().begin(), record->details().end(), 
 			[&](const Asset::GameRecord_GameElement_DetailElement& detail1, const Asset::GameRecord_GameElement_DetailElement& detail2){
 				return get_multiple(detail1.fan_type()) < get_multiple(detail2.fan_type()) ;
 			});
 	if (max_fan_it != record->details().end()) message.set_max_fan_type(max_fan_it->fan_type());
-
+	*/
 	//
 	//好友房//匹配房记录消耗
 	//
