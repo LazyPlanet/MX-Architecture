@@ -482,7 +482,7 @@ int32_t Player::CmdCreateRoom(pb::Message* message)
 
 				if (!CheckRoomCard(consume_count)) 
 				{
-					AlertMessage(Asset::ERROR_DIAMOND_NOT_ENOUGH); //钻石不足
+					AlertMessage(Asset::ERROR_ROOM_CARD_NOT_ENOUGH); //房卡不足
 					return 6;
 				}
 			}
@@ -988,7 +988,7 @@ int32_t Player::CmdEnterRoom(pb::Message* message)
 					int32_t consume_count = locate_room->GetOpenRands() / room_card->rounds() / MAX_PLAYER_COUNT;
 					if (consume_count <= 0 || !CheckRoomCard(consume_count))
 					{
-						AlertMessage(Asset::ERROR_ROOM_CARD_NOT_ENOUGH); //房卡不足
+						//AlertMessage(Asset::ERROR_ROOM_CARD_NOT_ENOUGH); //房卡不足
 
 						enter_room->set_error_code(Asset::ERROR_ROOM_CARD_NOT_ENOUGH); //房卡不足
 						SendProtocol(enter_room);
