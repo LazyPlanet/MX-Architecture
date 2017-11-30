@@ -989,30 +989,29 @@ void Player::BattleHistory(int32_t start_index, int32_t end_index)
 	if (end_index - start_index > historty_count) return;
 
 	if (end_index == 0) end_index = historty_count; //_stuff.room_history().size();
-	if (start_index == 0) start_index = 0; //end_index - historty_count;
+	if (start_index == 0) start_index = 1; //end_index - historty_count;
 	
 	std::set<int64_t> room_list; //历史记录
 
 	if (_stuff.room_history().size() > 10) //历史战绩最多保留10条
 	{
-		std::vector<int32_t> room_history(_stuff.room_history().rbegin(), _stuff.room_history().rend());
-		_stuff.mutable_room_history()->Clear();
+		std::vector<int32_t> room_history;
 
-		for (size_t i = room_history.size() - 1; i >= 0; --i) 
+		for (int32_t i = 0; i < _stuff.room_history().size(); ++i) 
 		{
-			auto room_id = room_history[i];
-			if (room_list.find(room_id) != room_list.end()) continue;
+			auto room_id = _stuff.room_history(_stuff.room_history().size() - 1 - i);
+			room_history.push_back(room_id);
 
-			if (room_list.size() >= 10) break; 
-
-			_stuff.mutable_room_history()->Add(room_id); 
-			room_list.insert(room_id);
+			if (room_history.size() >= 10) break; 
 		}
+
+		_stuff.mutable_room_history()->Clear();
+		for (auto it = room_history.rbegin(); it != room_history.rend(); ++it) _stuff.mutable_room_history()->Add(*it); 
 
 		SetDirty();
 	}
 
-	room_list.clear();
+	room_list.clear(); 
 
 	/*
 	cpp_redis::future_client client;
@@ -1023,7 +1022,7 @@ void Player::BattleHistory(int32_t start_index, int32_t end_index)
 	if (has_auth.get().ko()) return;
 	*/
 
-	for (int32_t i = end_index - 1; i >= start_index; --i)
+	for (int32_t i = start_index - 1; i < end_index; ++i)
 	{
 		if (i < 0 || i >= _stuff.room_history().size()) continue; //安全检查
 
@@ -1072,6 +1071,8 @@ void Player::BattleHistory(int32_t start_index, int32_t end_index)
 		auto record = message.mutable_history_list()->Add();
 		record->CopyFrom(history);
 	}
+
+	DEBUG("获取玩家:{}历史战绩，索引区间:{}~{} 数据:{}", _player_id, start_index, end_index, message.ShortDebugString());
 
 	if (message.history_list().size() == 0) return;
 	if (message.history_list().size()) SendProtocol(message);
