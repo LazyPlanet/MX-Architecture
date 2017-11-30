@@ -86,6 +86,7 @@ public:
 	std::shared_ptr<Player> GetPlayerByOrder(int32_t player_index);
 	int32_t GetPlayerOrder(int32_t player_id); //获取玩家的顺序
 	void SetRoom(std::shared_ptr<Room> room) {	_room = room; } //设置房间
+	int64_t GetID() { return _game_id; } //局数
 	bool IsBanker(int64_t player_id); //是否庄家
 
 	void BroadCast(pb::Message* message, int64_t exclude_player_id = 0);
