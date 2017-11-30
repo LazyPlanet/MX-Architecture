@@ -988,8 +988,8 @@ void Player::BattleHistory(int32_t start_index, int32_t end_index)
 	
 	if (end_index - start_index > historty_count) return;
 
-	if (end_index == 0) end_index = _stuff.room_history().size();
-	if (start_index == 0) start_index = end_index - historty_count;
+	if (end_index == 0) end_index = historty_count; //_stuff.room_history().size();
+	if (start_index == 0) start_index = 0; //end_index - historty_count;
 	
 	std::set<int64_t> room_list; //历史记录
 
