@@ -1000,8 +1000,11 @@ void Player::BattleHistory(int32_t start_index, int32_t end_index)
 		for (int32_t i = 0; i < _stuff.room_history().size(); ++i) 
 		{
 			auto room_id = _stuff.room_history(_stuff.room_history().size() - 1 - i);
-			room_history.push_back(room_id);
 
+			auto it = std::find(room_history.begin(), room_history.end(), room_id);
+			if (it != room_history.end()) continue;
+
+			room_history.push_back(room_id);
 			if (room_history.size() >= 10) break; 
 		}
 

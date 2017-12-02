@@ -1679,10 +1679,13 @@ bool Player::AddRoomRecord(int64_t room_id)
 	SendProtocol(message);
 
 	auto it = std::find(_stuff.room_history().begin(), _stuff.room_history().end(), room_id);
-	if (it != _stuff.room_history().end()) return false; //已经存在记录
-
-	_stuff.mutable_room_history()->Add(room_id); 
-	_dirty = true; 
+	if (it == _stuff.room_history().end()) 
+	{
+		_stuff.mutable_room_history()->Add(room_id); 
+		_dirty = true; 
+		
+		DEBUG("玩家:{}增加房间:{}历史战绩", _player_id, room_id);
+	}
 	
 	OnGameOver(); 
 

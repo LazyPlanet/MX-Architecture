@@ -838,7 +838,7 @@ bool Room::CanStarGame()
 
 						if (!player->CheckRoomCard(consume_count)) 
 						{
-							player->AlertMessage(Asset::ERROR_DIAMOND_NOT_ENOUGH); //理论上一定会过，玩家进入AA付卡已经前置检查
+							player->AlertMessage(Asset::ERROR_ROOM_CARD_NOT_ENOUGH); //理论上一定会过，玩家进入AA付卡已经前置检查
 							return false;
 						}
 					}
