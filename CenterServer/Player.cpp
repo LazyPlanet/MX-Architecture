@@ -784,7 +784,7 @@ int32_t Player::CmdBuySomething(pb::Message* message)
 	some_thing->set_result(ret);
 	SendProtocol(some_thing); //返回给Client
 
-	if (ret) AlertMessage(ret);
+	if (ret) AlertMessage(ret, Asset::ERROR_TYPE_NORMAL, Asset::ERROR_SHOW_TYPE_MESSAGE_BOX);
 
 	return 0;
 }
