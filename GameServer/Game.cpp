@@ -231,9 +231,6 @@ void Game::OnPlayerReEnter(std::shared_ptr<Player> player)
 	if (!CanPaiOperate(player)) return; //尚未轮到该玩家操作
 
 	auto player_index = GetPlayerOrder(player->GetID());
-	//
-	//如果轮到玩家的是胡//杠//碰则直接放弃
-	//
 	if (_curr_player_index != player_index && _oper_cache.player_id() == player->GetID() && (_oper_cache.oper_list().size() > 0))
 	{
 		auto oper_string = _oper_cache.ShortDebugString();
@@ -268,11 +265,6 @@ void Game::OnPlayerReEnter(std::shared_ptr<Player> player)
 	}
 
 	//
-	//玩家手里如果不是[ 13 10 7 4 1 ]数量的牌，则认为须打牌
-	//
-	if (!player->CheckCardsInhand()) return;
-
-	//
 	//如果缓存其他玩家操作，则认为没轮到自己操作
 	//
 	//比如，上家打牌，下家碰，打牌之后下家有吃碰操作的时候回来还会多一张牌出来
@@ -282,7 +274,10 @@ void Game::OnPlayerReEnter(std::shared_ptr<Player> player)
 	auto cards = FaPai(1); 
 	auto card = GameInstance.GetCard(cards[0]); //玩家待抓的牌
 	
-	player->OnFaPai(cards); //放入玩家牌里面
+	//
+	//玩家手里如果不是[ 13 10 7 4 1 ]数量的牌，则认为须打牌
+	//
+	if (player->ShouldZhuaPai()) player->OnFaPai(cards); //放入玩家牌里面
 		
 	auto card_string = card.ShortDebugString();
 	auto oper_string = _oper_cache.ShortDebugString();
@@ -479,6 +474,7 @@ void Game::OnPaiOperate(std::shared_ptr<Player> player, pb::Message* message)
 					pai_perator->mutable_pai()->CopyFrom(card);
 					pai_perator->mutable_oper_list()->Add(Asset::PAI_OPER_TYPE_HUPAI);
 					
+					_oper_cache.set_player_id(player_next->GetID());
 					_oper_cache.mutable_oper_list()->Add(Asset::PAI_OPER_TYPE_HUPAI);
 					_oper_cache.mutable_pai()->CopyFrom(card);
 				}
@@ -489,6 +485,7 @@ void Game::OnPaiOperate(std::shared_ptr<Player> player, pb::Message* message)
 				std::vector<Asset::PaiElement> ting_list;
 				if (player_next->CheckTingPai(ting_list))
 				{
+					_oper_cache.set_player_id(player_next->GetID());
 					_oper_cache.mutable_oper_list()->Add(Asset::PAI_OPER_TYPE_TINGPAI);
 
 					for (auto pai : ting_list) 
@@ -507,6 +504,8 @@ void Game::OnPaiOperate(std::shared_ptr<Player> player, pb::Message* message)
 				::google::protobuf::RepeatedField<Asset::PaiOperationAlert_AlertElement> gang_list;
 				if (player_next->CheckAllGangPai(gang_list)) 
 				{
+					_oper_cache.set_player_id(player_next->GetID());
+
 					for (auto gang : gang_list) 
 					{
 						auto pai_perator = alert.mutable_pais()->Add();
@@ -523,6 +522,8 @@ void Game::OnPaiOperate(std::shared_ptr<Player> player, pb::Message* message)
 				auto xf_gang = player_next->CheckXuanFeng();
 				if (xf_gang)
 				{
+					_oper_cache.set_player_id(player_next->GetID());
+
 					auto pai_perator = alert.mutable_pais()->Add();
 					pai_perator->mutable_oper_list()->Add((Asset::PAI_OPER_TYPE)xf_gang);
 						
@@ -556,6 +557,7 @@ void Game::OnPaiOperate(std::shared_ptr<Player> player, pb::Message* message)
 				{
 					fan_list.emplace(Asset::FAN_TYPE_JIN_BAO);
 
+					_oper_cache.set_player_id(player->GetID()); //当前可操作玩家
 					_oper_cache.set_source_player_id(player->GetID());
 					_oper_cache.mutable_oper_list()->Add(Asset::PAI_OPER_TYPE_HUPAI);
 					_oper_cache.mutable_pai()->CopyFrom(pai);
@@ -584,6 +586,7 @@ void Game::OnPaiOperate(std::shared_ptr<Player> player, pb::Message* message)
 
 				fan_list.emplace(Asset::FAN_TYPE_LOU_BAO); 
 					
+				_oper_cache.set_player_id(player->GetID()); //当前可操作玩家
 				_oper_cache.set_source_player_id(player->GetID());
 				_oper_cache.mutable_oper_list()->Add(Asset::PAI_OPER_TYPE_HUPAI);
 				_oper_cache.mutable_pai()->CopyFrom(_baopai);
@@ -734,6 +737,7 @@ void Game::OnPaiOperate(std::shared_ptr<Player> player, pb::Message* message)
 				if (player->CheckTingPai(pais)) 
 				{
 					_oper_cache.mutable_oper_list()->Add(Asset::PAI_OPER_TYPE_TINGPAI);
+					_oper_cache.set_player_id(player->GetID());
 
 					for (auto pai : pais) 
 					{
@@ -753,6 +757,7 @@ void Game::OnPaiOperate(std::shared_ptr<Player> player, pb::Message* message)
 					auto pai_perator = alert.mutable_pais()->Add();
 					pai_perator->mutable_oper_list()->Add((Asset::PAI_OPER_TYPE)xuanfeng_gang);
 					
+					_oper_cache.set_player_id(player->GetID());
 					_oper_cache.mutable_oper_list()->Add((Asset::PAI_OPER_TYPE)xuanfeng_gang);
 				}
 				//
@@ -763,6 +768,8 @@ void Game::OnPaiOperate(std::shared_ptr<Player> player, pb::Message* message)
 				RepeatedField<Asset::PaiOperationAlert_AlertElement> gang_list;
 				if (player->CheckAllGangPai(gang_list)) 
 				{
+					_oper_cache.set_player_id(player->GetID());
+
 					for (auto gang : gang_list) 
 					{
 						if (gang.pai().card_type() == pai.card_type() && gang.pai().card_value() == pai.card_value()) continue;
@@ -804,6 +811,7 @@ void Game::OnPaiOperate(std::shared_ptr<Player> player, pb::Message* message)
 				std::vector<Asset::PaiElement> pais;
 				if (player->CheckTingPai(pais)) 
 				{
+					_oper_cache.set_player_id(player->GetID());
 					_oper_cache.mutable_oper_list()->Add(Asset::PAI_OPER_TYPE_TINGPAI);
 
 					for (auto pai : pais) 
@@ -824,6 +832,7 @@ void Game::OnPaiOperate(std::shared_ptr<Player> player, pb::Message* message)
 					auto pai_perator = alert.mutable_pais()->Add();
 					pai_perator->mutable_oper_list()->Add((Asset::PAI_OPER_TYPE)xuanfeng_gang);
 					
+					_oper_cache.set_player_id(player->GetID());
 					_oper_cache.mutable_oper_list()->Add((Asset::PAI_OPER_TYPE)xuanfeng_gang);
 				}
 				//
@@ -834,6 +843,8 @@ void Game::OnPaiOperate(std::shared_ptr<Player> player, pb::Message* message)
 				RepeatedField<Asset::PaiOperationAlert_AlertElement> gang_list;
 				if (player->CheckAllGangPai(gang_list)) 
 				{
+					_oper_cache.set_player_id(player->GetID());
+
 					for (auto gang : gang_list) 
 					{
 						if (gang.pai().card_type() == pai.card_type() && gang.pai().card_value() == pai.card_value()) continue;
@@ -885,6 +896,8 @@ void Game::OnPaiOperate(std::shared_ptr<Player> player, pb::Message* message)
 				RepeatedField<Asset::PaiOperationAlert_AlertElement> gang_list;
 				if (player->CheckAllGangPai(gang_list)) 
 				{
+					_oper_cache.set_player_id(player->GetID());
+
 					for (auto gang : gang_list) 
 					{
 						if (gang.pai().card_type() == pai.card_type() && gang.pai().card_value() == pai.card_value()) continue;
@@ -998,6 +1011,7 @@ void Game::OnPaiOperate(std::shared_ptr<Player> player, pb::Message* message)
 			std::vector<Asset::PaiElement> ting_list;
 			if (player_next->CheckTingPai(ting_list)) 
 			{
+				_oper_cache.set_player_id(player_next->GetID());
 				_oper_cache.mutable_oper_list()->Add(Asset::PAI_OPER_TYPE_TINGPAI);
 
 				for (auto pai : ting_list) 
@@ -1015,6 +1029,8 @@ void Game::OnPaiOperate(std::shared_ptr<Player> player, pb::Message* message)
 			::google::protobuf::RepeatedField<Asset::PaiOperationAlert_AlertElement> gang_list;
 			if (player_next->CheckAllGangPai(gang_list)) 
 			{
+				_oper_cache.set_player_id(player_next->GetID());
+
 				for (auto gang : gang_list) 
 				{
 					auto pai_perator = alert.mutable_pais()->Add();
@@ -1035,6 +1051,7 @@ void Game::OnPaiOperate(std::shared_ptr<Player> player, pb::Message* message)
 				auto pai_perator = alert.mutable_pais()->Add();
 				pai_perator->mutable_oper_list()->Add((Asset::PAI_OPER_TYPE)xf_gang);
 					
+				_oper_cache.set_player_id(player_next->GetID());
 				_oper_cache.mutable_oper_list()->Add((Asset::PAI_OPER_TYPE)xf_gang);
 			}
 			//
@@ -1235,7 +1252,7 @@ void Game::Calculate(int64_t hupai_player_id/*胡牌玩家*/, int64_t dianpao_pl
 
 			//DEBUG("player_id:{} fan:{} score:{}", player_id, fan, -score);
 		}
-		
+	
 		//
 		//操作和玩家牌状态分值计算
 		//
@@ -1542,18 +1559,12 @@ void Game::Calculate(int64_t hupai_player_id/*胡牌玩家*/, int64_t dianpao_pl
 	//
 	//最大番数
 	//
-	std::sort(record->mutable_details()->begin(), record->mutable_details()->end(), 
-			[&](const Asset::GameRecord_GameElement_DetailElement& detail1, const Asset::GameRecord_GameElement_DetailElement& detail2){
-				return detail1.fan_type() > detail2.fan_type();	
-			});
-	message.set_max_fan_type(record->details().begin()->fan_type());
-	/*
 	auto max_fan_it = std::max_element(record->details().begin(), record->details().end(), 
 			[&](const Asset::GameRecord_GameElement_DetailElement& detail1, const Asset::GameRecord_GameElement_DetailElement& detail2){
 				return get_multiple(detail1.fan_type()) < get_multiple(detail2.fan_type()) ;
 			});
 	if (max_fan_it != record->details().end()) message.set_max_fan_type(max_fan_it->fan_type());
-	*/
+
 	//
 	//好友房//匹配房记录消耗
 	//
