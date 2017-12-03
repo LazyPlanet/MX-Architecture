@@ -2870,7 +2870,7 @@ bool Player::CheckGangPai(const Asset::PaiElement& pai, int64_t source_player_id
 
 	if (_tuoguan_server) return false;
 	
-	if (ShouldDaPai()) return false;
+	//if (ShouldDaPai()) return false;
 
 	auto cards_inhand = _cards_inhand; //玩家手里牌
 	auto cards_outhand = _cards_outhand; //玩家墙外牌
