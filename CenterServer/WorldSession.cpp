@@ -357,6 +357,10 @@ void WorldSession::OnProcessMessage(const Asset::Meta& meta)
 					return;
 				}
 			}
+			else
+			{
+				if (!_player->IsCenterServer()) _player->Load();  
+			}
 				
 			SetRoleType(Asset::ROLE_TYPE_PLAYER, _player->GetID());
 			WorldSessionInstance.AddPlayer(connect->player_id(), shared_from_this()); //在线玩家，获取网络会话
