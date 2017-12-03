@@ -43,6 +43,8 @@ public:
 			element->set_count(1);
 		}
 
+		player->SyncCommonLimit(); //同步数据
+
 		return true;
 	}
 

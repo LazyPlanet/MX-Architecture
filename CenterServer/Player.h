@@ -197,7 +197,7 @@ public:
 	void SyncCommonLimit();
 	//通用奖励
 	Asset::ERROR_CODE DeliverReward(int64_t global_id);
-	void SyncCommonReward(int64_t common_reward_id);
+	void SyncCommonReward(int64_t common_reward_id, int32_t error_code);
 	//历史战绩
 	void BattleHistory(int32_t start_index = 0, int32_t end_index = 0);
 	//踢人

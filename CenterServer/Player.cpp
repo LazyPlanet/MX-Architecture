@@ -702,14 +702,15 @@ Asset::ERROR_CODE Player::DeliverReward(int64_t global_id)
 	auto ret_code = CommonRewardInstance.DeliverReward(shared_from_this(), global_id);
 	if (ret_code != Asset::ERROR_SUCCESS) AlertMessage(ret_code);
 		
-	SyncCommonReward(global_id);
+	SyncCommonReward(global_id, ret_code);
 	return ret_code;
 }
 
-void Player::SyncCommonReward(int64_t common_reward_id)
+void Player::SyncCommonReward(int64_t common_reward_id, int32_t error_code)
 {
 	Asset::SyncCommonReward proto;
 	proto.set_common_reward_id(common_reward_id);
+	proto.set_error_code(error_code);
 
 	SendProtocol(proto);
 }
