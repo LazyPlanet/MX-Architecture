@@ -987,7 +987,7 @@ void WorldSessionManager::AddPlayer(int64_t player_id, std::shared_ptr<WorldSess
 	std::lock_guard<std::mutex> lock(_client_mutex);
 
 	auto it = _client_list.find(player_id);
-	if (it != _client_list.end() && it->second && session != it->second) 
+	if (it != _client_list.end() && it->second/* && session != it->second*/) 
 	{
 		//it->second->Close(); //断线后进行连接，导致之前网络连接释放KickOutPlayer被调用删除玩家
 		it->second.reset();
