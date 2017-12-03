@@ -53,6 +53,11 @@ public:
 				}
 				break;
 				
+				case Asset::CommonReward_REWARD_TYPE_REWARD_TYPE_ROOM_CARD:
+				{
+					player->GainRoomCard(Asset::ROOM_CARD_CHANGED_TYPE_GENERAL_REWARD, count);
+				}
+				
 				/*
 				case Asset::CommonReward_REWARD_TYPE_REWARD_TYPE_ITEM:
 				{
