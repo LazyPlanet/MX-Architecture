@@ -33,7 +33,7 @@ public:
 		if (common_limit_id && player->IsCommonLimit(common_limit_id)) return Asset::ERROR_COMMON_REWARD_HAS_GOT; //该奖励已经超过领取限制
 		
 		int64_t activity_id = common_reward->activity_id();
-		if (activity_id && ActivityInstance.IsOpen(activity_id)) return Asset::ERROR_ACTIVITY_NOT_OPEN; //活动尚未开启
+		if (activity_id && !ActivityInstance.IsOpen(activity_id)) return Asset::ERROR_ACTIVITY_NOT_OPEN; //活动尚未开启
 
 		for (const auto& reward : common_reward->rewards())
 		{
