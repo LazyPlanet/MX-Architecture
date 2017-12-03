@@ -164,7 +164,7 @@ int32_t Player::OnLogout()
 
 int32_t Player::OnEnterGame(bool is_login) 
 {
-	DEBUG("玩家:{}进入游戏，是否已经加载数据:{}", _player_id, _loaded);
+	DEBUG("玩家:{}进入游戏，是否登陆:{} 是否已经加载数据:{}", _player_id, is_login, _loaded);
 
 	if (!_loaded)
 	{
@@ -515,12 +515,12 @@ bool Player::SendProtocol2GameServer(const pb::Message* message)
 	return true;
 }
 
-void Player::SendGmtProtocol(const pb::Message* message)
+void Player::SendGmtProtocol(const pb::Message* message, int64_t session_id)
 {
-	SendGmtProtocol(*message);
+	SendGmtProtocol(*message, session_id);
 }
 
-void Player::SendGmtProtocol(const pb::Message& message)
+void Player::SendGmtProtocol(const pb::Message& message, int64_t session_id)
 {
 	const pb::FieldDescriptor* field = message.GetDescriptor()->FindFieldByName("type_t");
 	if (!field) return;
@@ -532,6 +532,7 @@ void Player::SendGmtProtocol(const pb::Message& message)
 	
 	Asset::InnerMeta meta;
 	meta.set_type_t((Asset::INNER_TYPE)type_t);
+	meta.set_session_id(session_id);
 	meta.set_stuff(stuff);
 
 	auto inner_meta = meta.SerializeAsString();

@@ -104,8 +104,8 @@ public:
 	virtual bool SendProtocol2GameServer(const pb::Message& message);
 	virtual bool SendProtocol2GameServer(const pb::Message* message);
 
-	virtual void SendGmtProtocol(const pb::Message* message);
-	virtual void SendGmtProtocol(const pb::Message& message);
+	virtual void SendGmtProtocol(const pb::Message* message, int64_t session_id);
+	virtual void SendGmtProtocol(const pb::Message& message, int64_t session_id);
 
 	Asset::ERROR_CODE CommonCheck(int32_t type_t);
 	//玩家登出
