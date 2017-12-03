@@ -2714,6 +2714,8 @@ bool Player::CheckChiPai(const Asset::PaiElement& pai)
 
 	if (_has_ting || _tuoguan_server) return false; //已经听牌，不再提示
 
+	if (ShouldDaPai()) return false;
+
 	if (!CheckMingPiao(Asset::PAI_OPER_TYPE_CHIPAI)) return false; //明飘检查
 
 	auto it = _cards_inhand.find(pai.card_type());
@@ -2818,6 +2820,8 @@ bool Player::CheckPengPai(const Asset::PaiElement& pai)
 
 	if (_has_ting || _tuoguan_server) return false; //已经听牌，不再提示
 	
+	if (ShouldDaPai()) return false;
+	
 	if (!CheckMingPiao(Asset::PAI_OPER_TYPE_PENGPAI)) return false; //明飘检查
 
 	auto it = _cards_inhand.find(pai.card_type());
@@ -2865,6 +2869,8 @@ bool Player::CheckGangPai(const Asset::PaiElement& pai, int64_t source_player_id
 	if (!_room || !_game) return false;
 
 	if (_tuoguan_server) return false;
+	
+	if (ShouldDaPai()) return false;
 
 	auto cards_inhand = _cards_inhand; //玩家手里牌
 	auto cards_outhand = _cards_outhand; //玩家墙外牌
