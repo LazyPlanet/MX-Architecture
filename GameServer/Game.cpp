@@ -233,10 +233,8 @@ void Game::OnPlayerReEnter(std::shared_ptr<Player> player)
 	auto player_index = GetPlayerOrder(player->GetID());
 	if (_curr_player_index != player_index && _oper_cache.player_id() == player->GetID() && (_oper_cache.oper_list().size() > 0))
 	{
-		auto oper_string = _oper_cache.ShortDebugString();
 		auto player_id = player->GetID();
-
-		DEBUG("玩家:{}由于房间内断线重入房间，操作重新推送:{} 当前玩家索引:{} 操作玩家索引:{}", player_id, oper_string, _curr_player_index, player_index);
+		DEBUG("玩家:{}由于房间内断线重入房间，操作重新推送:{} 当前玩家索引:{} 操作玩家索引:{}", player_id, _oper_cache.ShortDebugString(), _curr_player_index, player_index);
 		
 		Asset::PaiOperationAlert alert;
 
@@ -274,15 +272,9 @@ void Game::OnPlayerReEnter(std::shared_ptr<Player> player)
 	auto cards = FaPai(1); 
 	auto card = GameInstance.GetCard(cards[0]); //玩家待抓的牌
 	
-	//
-	//玩家手里如果不是[ 13 10 7 4 1 ]数量的牌，则认为须打牌
-	//
-	if (player->ShouldZhuaPai()) player->OnFaPai(cards); //放入玩家牌里面
+	if (player->ShouldZhuaPai()) player->OnFaPai(cards); //是否应该抓牌
 		
-	auto card_string = card.ShortDebugString();
-	auto oper_string = _oper_cache.ShortDebugString();
-
-	DEBUG("玩家:{}由于断线重入房间，进行发牌:{} 缓存操作:{} 当前索引:{} 玩家索引:{}", player->GetID(), card_string, oper_string, _curr_player_index, player_index);
+	DEBUG("玩家:{}由于断线重入房间，进行发牌:{} 缓存操作:{} 当前索引:{} 玩家索引:{}", player->GetID(), card.ShortDebugString(), _oper_cache.ShortDebugString(), _curr_player_index, player_index);
 
 	Asset::PaiOperationAlert alert;
 
@@ -294,7 +286,7 @@ void Game::OnPlayerReEnter(std::shared_ptr<Player> player)
 	if (player->CheckZiMo()) //自摸检查
 	{
 		auto pai_perator = alert.mutable_pais()->Add();
-		pai_perator->mutable_pai()->CopyFrom(card);
+		pai_perator->mutable_pai()->CopyFrom(player->GetZhuaPai());
 		pai_perator->mutable_oper_list()->Add(Asset::PAI_OPER_TYPE_HUPAI);
 					
 		SetZiMoCache(player, card); //自摸胡牌缓存
@@ -302,10 +294,10 @@ void Game::OnPlayerReEnter(std::shared_ptr<Player> player)
 	//
 	//玩家摸宝之后进行抓牌正好抓到宝胡
 	//
-	else if (/*player->CheckZiMo(card) || */player->CheckBaoHu(card)/* || player->CheckHuPai(card)*/) //宝胡
+	else if (player->HasPai(_baopai) && player->CheckBaoHu(card)) //宝胡
 	{
 		auto pai_perator = alert.mutable_pais()->Add();
-		pai_perator->mutable_pai()->CopyFrom(card);
+		pai_perator->mutable_pai()->CopyFrom(_baopai);
 		pai_perator->mutable_oper_list()->Add(Asset::PAI_OPER_TYPE_HUPAI);
 		
 		SetZiMoCache(player, card); //自摸胡牌缓存
