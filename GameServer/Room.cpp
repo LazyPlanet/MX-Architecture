@@ -692,9 +692,8 @@ void Room::DoDisMiss()
 
 	_is_dismiss = true;
 					
-	if (_game) _game->OnGameOver(0); //通知当前局数结束
-
-	OnGameOver();
+	if (_game) _game->OnGameOver(0); //当前局数结束
+	else OnGameOver();
 }
 	
 void Room::KickOutPlayer(int64_t player_id)
