@@ -871,7 +871,7 @@ void Game::OnPaiOperate(std::shared_ptr<Player> player, pb::Message* message)
 				auto player = GetPlayer(_oper_cache.source_player_id());
 				if (!player) return;
 
-				player->OnGangPai(pai, _oper_cache.source_player_id());
+				ClearOperation(); //缓存清理
 
 				auto cards = TailPai(1); //从后楼给玩家取一张牌
 				if (cards.size() == 0) return;
@@ -938,8 +938,6 @@ void Game::OnPaiOperate(std::shared_ptr<Player> player, pb::Message* message)
 				if (alert.pais().size()) player->SendProtocol(alert); //提示Client
 
 				_curr_player_index = GetPlayerOrder(player->GetID()); //设置当前玩家索引
-				
-				ClearOperation(); //清理缓存以及等待玩家操作的状态
 				return;
 			}
 			else if (SendCheckRtn()) 
