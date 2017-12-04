@@ -70,7 +70,8 @@ void World::Update(int32_t diff)
 {
 	++_heart_count;
 
-	ActivityInstance.Update(diff);
+	if (_heart_count % 60 == 0) ActivityInstance.Update(diff);
+
 	PlayerInstance.Update(diff);
 
 	g_gmt_client->Update();
