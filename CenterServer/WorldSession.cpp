@@ -824,9 +824,9 @@ void WorldSession::OnHeartBeat1s()
 {
 	auto duration_pass = TimerInstance.GetTime() - _hi_time;
 
-	if (duration_pass > 60 && _expire_time == 0) 
+	if (duration_pass > 30 && _expire_time == 0) 
 	{
-		_expire_time = TimerInstance.GetTime() + 60 * 3; //3分钟之内没有上线(进行网络收发)，则删除
+		_expire_time = TimerInstance.GetTime() + 30 * 1; //30s之内没有上线(进行网络收发)，则删除
 	}
 }
 
