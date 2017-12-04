@@ -26,7 +26,7 @@ using namespace std::chrono;
 
 Player::~Player()
 {
-	WorldSessionInstance.RemovePlayer(_player_id); //网络会话数据
+	//WorldSessionInstance.RemovePlayer(_player_id); //网络会话数据
 }
 
 Player::Player()
