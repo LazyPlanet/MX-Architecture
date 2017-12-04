@@ -4199,7 +4199,7 @@ Asset::GAME_OPER_TYPE Player::GetOperState()
 	
 void Player::SetOffline(bool offline)
 { 
-	if (!_room || !_game) return;
+	if (!_room/* || !_game*/) return; //房间状态
 
 	if (offline == _player_prop.offline()) return; //状态尚未发生变化
 	
