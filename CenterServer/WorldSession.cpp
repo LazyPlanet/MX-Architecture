@@ -524,8 +524,9 @@ void WorldSession::OnProcessMessage(const Asset::Meta& meta)
 				}
 			}
 				
-			auto curr_server = WorldSessionInstance.GetGameServerSession(_player->GetID());
-			if (curr_server && curr_server->GetID() != server_id) //不是当前游戏逻辑服务器
+			//auto curr_server = WorldSessionInstance.GetGameServerSession(_player->GetID());
+			//if (curr_server && curr_server->GetID() != server_id) //不是当前游戏逻辑服务器
+			if (!_player->IsCenterServer() && _player->GetLocalServer() != server_id)
 			{
 				//
 				//通知当前游戏逻辑服务器下线

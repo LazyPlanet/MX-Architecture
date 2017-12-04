@@ -126,8 +126,8 @@ public:
 	std::shared_ptr<WorldSession> GetServerSession(int64_t server_id);
 
 	//玩家逻辑服务器会话
-	void SetGameServerSession(int64_t player_id, std::shared_ptr<WorldSession> session) { _player_gs[player_id] = session; }
-	std::shared_ptr<WorldSession> GetGameServerSession(int64_t player_id) { return _player_gs[player_id]; }
+	//void SetGameServerSession(int64_t player_id, std::shared_ptr<WorldSession> session) { _player_gs[player_id] = session; }
+	//std::shared_ptr<WorldSession> GetGameServerSession(int64_t player_id) { return _player_gs[player_id]; }
 
 	int64_t RandomServer(); //随机选择游戏逻辑服务器
 	
