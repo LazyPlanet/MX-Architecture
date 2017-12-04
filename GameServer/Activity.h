@@ -2,9 +2,11 @@
 
 #include <memory>
 #include <functional>
+#include <mutex>
 
 #include "boost/date_time/posix_time/posix_time.hpp"
 #include "boost/date_time/posix_time/conversion.hpp"
+#include "boost/date_time/gregorian/gregorian.hpp"
 
 #include "Timer.h"
 #include "P_Header.h"
@@ -19,6 +21,7 @@ class Activity : public std::enable_shared_from_this<Activity>
 {
 private:
 	int32_t _heart_count = 0;
+	std::mutex _mutex;
 	std::unordered_map<int64_t/*global_id*/, Asset::Activity*> _activity; //可以通过GMT命令进行修改
 	std::unordered_map<int64_t/*global_id*/, bool/*opened*/> _state;
 public:
@@ -46,6 +49,8 @@ public:
 	
 	bool IsOpen(int64_t global_id)
 	{
+		std::lock_guard<std::mutex> lock(_mutex);
+
 		auto it = _state.find(global_id);
 		if (it == _state.end()) return true; //如果没有，则认为不限制，是开启状态
 
@@ -54,6 +59,8 @@ public:
 	
 	void Update(int32_t diff)
 	{
+		std::lock_guard<std::mutex> lock(_mutex);
+
 		++_heart_count;
 
 		bool has_changed = false;
@@ -181,6 +188,8 @@ public:
 
 	void OnPlayerLogin(std::shared_ptr<Player> player)
 	{
+		std::lock_guard<std::mutex> lock(_mutex);
+
 		if (!player) return;
 
 		Asset::SyncActivity message; //数据变化
@@ -199,11 +208,27 @@ public:
 	//
 	Asset::COMMAND_ERROR_CODE OnActivityControl(const Asset::ActivityControl& command)
 	{
+		std::lock_guard<std::mutex> lock(_mutex);
+
 		auto it = _activity.find(command.activity_id());
 		if (it == _activity.end()) return Asset::COMMAND_ERROR_CODE_PARA;
 
-		it->second->set_start_time(command.start_time());
-		it->second->set_stop_time(command.stop_time());
+		try {
+
+			boost::posix_time::ptime start_date(boost::posix_time::time_from_string(command.start_time()));
+			boost::posix_time::ptime stop_date(boost::posix_time::time_from_string(command.stop_time()));
+
+			it->second->set_start_date(boost::gregorian::to_simple_string(start_date.date()));
+			it->second->set_start_time(boost::posix_time::to_simple_string(start_date.time_of_day()));
+			
+			it->second->set_stop_date(boost::gregorian::to_simple_string(stop_date.date()));
+			it->second->set_stop_time(boost::posix_time::to_simple_string(stop_date.time_of_day()));
+		}
+		catch (std::exception& e)
+		{
+			LOG(ERROR, "GMT修改活动:{}时间:{}失败", command.activity_id(), command.ShortDebugString());
+			return Asset::COMMAND_ERROR_CODE_PARA;
+		}
 
 		return Asset::COMMAND_ERROR_CODE_SUCCESS;
 	}
