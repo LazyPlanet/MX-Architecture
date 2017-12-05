@@ -314,6 +314,7 @@ public:
 	bool LookAtBaopai(bool has_saizi);
 	void ResetBaopai();
 	void ResetLookAtBaopai();
+	int32_t GetFaPaiCount() { return _fapai_count; }
 
 	bool IsJinbao() { return _jinbao; }
 	void Jinbao() { _jinbao = true; }

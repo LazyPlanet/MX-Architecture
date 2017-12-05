@@ -320,7 +320,7 @@ void Game::OnPlayerReEnter(std::shared_ptr<Player> player)
 			_oper_cache.mutable_ting_pais()->Add()->CopyFrom(pai);
 		}
 	}
-	
+
 	//
 	//明杠和暗杠检查
 	//
@@ -340,6 +340,9 @@ void Game::OnPlayerReEnter(std::shared_ptr<Player> player)
 	//
 	//旋风杠检查
 	//
+	
+	if (player->GetFaPaiCount() == 1) player->CheckXuanFengGang(); //庄家多次断线旋风杠丢失
+	
 	auto xf_gang = player->CheckXuanFeng();
 	if (xf_gang)
 	{

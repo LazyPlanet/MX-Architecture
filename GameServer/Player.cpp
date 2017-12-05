@@ -3841,12 +3841,13 @@ int32_t Player::OnFaPai(std::vector<int32_t>& cards)
 		_minggang.push_back(gang);
 		*/
 	}
-	else if (false && _player_id == 262147 && _cards_inhand.size() == 0)
+	else if (true && _player_id == 262147 && _cards_inhand.size() == 0)
 	{
 		_cards_inhand = {
 			{ 1, {2, 2, 2, 7, 7, 7} },
 			{ 2, {2, 3} },
-			{ 3, {1, 1, 9, 9, 9} },
+			{ 3, {1, 9} },
+			{ 4, {1, 2, 3, 4} },
 		};
 	}
 	else if (false && _player_id == 265892 && _cards_inhand.size() == 0)
