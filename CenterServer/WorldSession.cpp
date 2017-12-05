@@ -841,6 +841,8 @@ void WorldSession::OnHeartBeat1m()
 
 bool WorldSession::IsExpire()
 {
+	if (_role_type == Asset::ROLE_TYPE_GAME_SERVER) return false;
+
 	if (_expire_time == 0) return false;
 
 	return _expire_time < TimerInstance.GetTime();
