@@ -3142,6 +3142,11 @@ void Player::OnBeenQiangGang(const Asset::PaiElement& pai, int64_t source_player
 					
 	for (int32_t i = 0; i < count; ++i) _game->Add2CardsPool(pai); //加入牌池
 }
+	
+void Player::OnBeenQiangGangWithGivingUp(const Asset::PaiElement& pai)
+{
+	_minggang.push_back(pai); //明杠
+}
 
 bool Player::CheckFengGangPai() 
 { 

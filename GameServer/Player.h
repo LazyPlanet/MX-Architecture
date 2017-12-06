@@ -356,6 +356,7 @@ public:
 
 	void OnGangPai(const Asset::PaiElement& pai, int64_t source_player_id); //杠牌
 	void OnBeenQiangGang(const Asset::PaiElement& pai, int64_t source_player_id); //杠牌
+	void OnBeenQiangGangWithGivingUp(const Asset::PaiElement& pai); //被抢杠放弃
 	
 	bool CheckFengGangPai(std::map<int32_t/*麻将牌类型*/, std::vector<int32_t>/*牌值*/>& cards); //是否有旋风杠
 	bool CheckJianGangPai(std::map<int32_t/*麻将牌类型*/, std::vector<int32_t>/*牌值*/>& cards); //是否有箭杠

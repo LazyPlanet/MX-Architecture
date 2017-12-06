@@ -868,6 +868,8 @@ void Game::OnPaiOperate(std::shared_ptr<Player> player, pb::Message* message)
 
 				ClearOperation(); //缓存清理
 
+				player->OnBeenQiangGangWithGivingUp(_oper_cache.pai());
+
 				auto cards = TailPai(1); //从后楼给玩家取一张牌
 				if (cards.size() == 0) return;
 
