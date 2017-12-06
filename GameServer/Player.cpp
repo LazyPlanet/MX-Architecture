@@ -1150,7 +1150,7 @@ bool Player::Update()
 		if (_dirty) Save(); //触发存盘
 	}
 	
-	if (_heart_count % 5 == 0) //3秒检查一次
+	if (_heart_count % 3 == 0) //3s检查一次，采用检查周期较短，然后间隔较长的策略
 	{
 		OnlineCheck(); //逻辑服务器不进行心跳检查，只进行断线逻辑检查
 	}

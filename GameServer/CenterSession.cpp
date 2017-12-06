@@ -252,7 +252,7 @@ bool CenterSession::Update()
 	
 	std::lock_guard<std::mutex> lock(_player_lock);
 	
-	if (_heart_count % 60 == 0) //3s
+	if (_heart_count % 20 == 0) //1秒
 	{
 		for (auto it = _players.begin(); it != _players.end();)
 		{
