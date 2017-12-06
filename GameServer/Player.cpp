@@ -3783,7 +3783,7 @@ int32_t Player::OnFaPai(std::vector<int32_t>& cards)
 
 	if (!ShouldZhuaPai()) 
 	{
-		LOG(ERROR, "玩家:{}在房间:{}第:{}局中不能抓牌，当前手中牌数量:{}", _player_id, GetCardCount(), _room->GetID(), _game->GetID());
+		LOG(ERROR, "玩家:{}在房间:{}第:{}局中不能抓牌，当前手中牌数量:{}", _player_id, _room->GetID(), _game->GetID(), GetCardCount());
 		return 12;
 	}
 
