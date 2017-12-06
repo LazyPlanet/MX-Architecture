@@ -1252,5 +1252,15 @@ void PlayerManager::Update(int32_t diff)
 		}
 	}
 }
+	
+bool PlayerManager::BeenMaxPlayer()
+{
+	std::lock_guard<std::mutex> lock(_mutex);
+
+	int32_t max_online_player = ConfigInstance.GetInt("MaxOnlinePlayer", 600);
+	int32_t online_player = _players.size();
+
+	return max_online_player < online_player; //当前在线玩家数量超过最大限制
+}
 
 }

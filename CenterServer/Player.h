@@ -223,6 +223,7 @@ public:
 	}
 
 	void Update(int32_t diff);
+	bool BeenMaxPlayer(); //最大玩家上限
 
 	void Remove(int64_t player_id);
 	void Remove(std::shared_ptr<Player> player);

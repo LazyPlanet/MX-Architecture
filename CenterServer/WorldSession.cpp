@@ -193,8 +193,19 @@ void WorldSession::OnProcessMessage(const Asset::Meta& meta)
 			int32_t limit_version = g_const->limit_version();
 			if (limit_version > 0 && _user.client_info().version() < limit_version)
 			{
-				AlertMessage(Asset::ERROR_VERSION_LIMIT, Asset::ERROR_TYPE_NORMAL, Asset::ERROR_SHOW_TYPE_MESSAGE_BOX); //Client版本低
+				AlertMessage(Asset::ERROR_VERSION_LIMIT, Asset::ERROR_TYPE_NORMAL, Asset::ERROR_SHOW_TYPE_MESSAGE_BOX); //版本低
 				LOG(ERROR, "Client版本不满足条件，最低版本要求:{}，Client版本:{}", limit_version, _user.client_info().version());
+				return;
+			}
+
+			//
+			//3.同时在线玩家限制
+			//
+			if (PlayerInstance.BeenMaxPlayer())
+			{
+				AlertMessage(Asset::ERROR_ONLINE_PLAYERS_LIMIT, Asset::ERROR_TYPE_NORMAL, Asset::ERROR_SHOW_TYPE_MESSAGE_BOX); 
+
+				Close(); //关闭网络
 				return;
 			}
 			
