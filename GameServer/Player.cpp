@@ -1150,7 +1150,7 @@ bool Player::Update()
 		if (_dirty) Save(); //触发存盘
 	}
 	
-	if (_heart_count % 3 == 0) //3s检查一次，采用检查周期较短，然后间隔较长的策略
+	if (_heart_count % 5 == 0) //5s
 	{
 		OnlineCheck(); //逻辑服务器不进行心跳检查，只进行断线逻辑检查
 	}
@@ -1166,14 +1166,12 @@ int32_t Player::DefaultMethod(pb::Message* message)
 	const pb::FieldDescriptor* field = message->GetDescriptor()->FindFieldByName("type_t");
 	if (!field) 
 	{
-		std::cout << __func__ << ":Could not found type_t of received message." << std::endl;
+		ERROR("玩家:{}尚未存在协议:{}的协议类型", _player_id, message->ShortDebugString());
 		return 1;
 	}
-	const pb::EnumValueDescriptor* enum_value = message->GetReflection()->GetEnum(*message, field);
-	if (!enum_value) return 2;
+		
+	WARN("玩家:{}尚未存在协议:{}的处理回调", _player_id, message->ShortDebugString());
 
-	const std::string& enum_name = enum_value->name();
-	std::cout << __func__ << ":Could not found call back, message type is: " << enum_name.c_str() << std::endl;
 	return 0;
 }
 
@@ -3841,7 +3839,7 @@ int32_t Player::OnFaPai(std::vector<int32_t>& cards)
 		_minggang.push_back(gang);
 		*/
 	}
-	else if (true && _player_id == 262147 && _cards_inhand.size() == 0)
+	else if (false && _player_id == 262147 && _cards_inhand.size() == 0)
 	{
 		_cards_inhand = {
 			{ 1, {2, 2, 2, 7, 7, 7} },
