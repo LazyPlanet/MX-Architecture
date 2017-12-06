@@ -507,8 +507,10 @@ bool Player::SendProtocol2GameServer(const pb::Message& message)
 
 bool Player::SendProtocol2GameServer(const pb::Message* message)
 {
-	auto _gs_session = WorldSessionInstance.GetServerSession(GetLocalServer());
-	if (!_gs_session || !message) return false;
+	if (!message) return false;
+
+	//auto _gs_session = WorldSessionInstance.GetServerSession(GetLocalServer());
+	//if (!_gs_session || !message) return false;
 
 	SendProtocol2GameServer(*message); 
 	
@@ -608,44 +610,39 @@ bool Player::HandleProtocol(int32_t type_t, pb::Message* message)
 {
 	if (!message) return false;
 
-	auto debug_string = message->ShortDebugString();
-	DEBUG("当前玩家{}所在服务器:{} 接收协议数据:{}", _player_id, _stuff.server_id(), debug_string);
+	DEBUG("当前玩家{}所在服务器:{} 接收协议数据:{}", _player_id, _stuff.server_id(), message->ShortDebugString());
 	//
 	//如果中心服务器没有协议处理回调，则发往游戏服务器进行处理
 	//
 	//如果玩家已经在游戏逻辑服务器，则直接发往游戏逻辑服务器，防止数据覆盖
 	//
-	auto it = _callbacks.find(type_t);
-	if (it == _callbacks.end() && IsCenterServer()) //还在中心服
+	auto result = CommonCheck(type_t); //通用限制检查
+	if (result)
 	{
-		auto result = CommonCheck(type_t); //通用限制检查
-		if (result)
-		{
-			AlertMessage(result, Asset::ERROR_TYPE_NORMAL, Asset::ERROR_SHOW_TYPE_MESSAGE_BOX); //通用错误码
-			return false;
-		}
-
-		if (IsCenterServer())
-		{
-			int64_t server_id = WorldSessionInstance.RandomServer(); //随机一个逻辑服务器
-			if (server_id == 0) return false;
-
-			SetLocalServer(server_id);
-		}
-		
-		SendProtocol2GameServer(message); //转发给游戏逻辑服务器进行处理
+		AlertMessage(result, Asset::ERROR_TYPE_NORMAL, Asset::ERROR_SHOW_TYPE_MESSAGE_BOX); //通用错误码
+		return false;
 	}
-	else if (!IsCenterServer())
+	
+	auto it = _callbacks.find(type_t);
+	if (it != _callbacks.end()) //中心服有处理逻辑，则直接在中心服处理
 	{
-		SendProtocol2GameServer(message); //转发给游戏逻辑服务器进行处理
+		if (type_t == Asset::META_TYPE_SHARE_SAY_HI)
+		{
+			if (IsCenterServer())
+				CmdSayHi(message);
+			else
+				SendProtocol2GameServer(message); //中心服没有处理逻辑，转发给游戏逻辑服务器进行处理
+		}
+		else
+		{
+			CallBack& callback = GetMethod(type_t); 
+			callback(std::forward<pb::Message*>(message));	
+		}
 	}
 	else
 	{
-		CallBack& callback = GetMethod(type_t); 
-		callback(std::forward<pb::Message*>(message));	
+		SendProtocol2GameServer(message); //转发给游戏逻辑服务器进行处理
 	}
-
-	//if (_expire_time > 0) _expire_time = 0;
 
 	return true;
 }
