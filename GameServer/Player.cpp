@@ -980,7 +980,7 @@ int32_t Player::CmdEnterRoom(pb::Message* message)
 			}
 			else
 			{
-				if (locate_room->GetOptions().pay_type() == Asset::ROOM_PAY_TYPE_AA) //AA付卡
+				if (locate_room->GetOptions().pay_type() == Asset::ROOM_PAY_TYPE_AA && !ActivityInstance.IsOpen(g_const->room_card_limit_free_activity_id())) //AA付卡
 				{
 					const Asset::Item_RoomCard* room_card = dynamic_cast<const Asset::Item_RoomCard*>(AssetInstance.Get(g_const->room_card_id()));
 					if (!room_card || room_card->rounds() <= 0) return Asset::ERROR_INNER;
