@@ -544,6 +544,11 @@ void Game::OnPaiOperate(std::shared_ptr<Player> player, pb::Message* message)
 		case Asset::PAI_OPER_TYPE_HUPAI: //胡牌
 		case Asset::PAI_OPER_TYPE_QIANGGANG: //抢杠胡
 		{
+			if (player->GetID() != _oper_cache.player_id())
+			{
+				LOG(ERROR, "玩家:{} 胡牌:{}，与服务器缓存:{}不一致，怀疑外挂行为，请关注", player->GetID(), pai.ShortDebugString(), _oper_cache.ShortDebugString());
+			}
+
 			if (player->CheckCardsInhand() && player->CheckHuPai(pai)) //玩家点炮
 			{
 				auto fan_list = player->GetFanList();
