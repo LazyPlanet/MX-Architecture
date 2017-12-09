@@ -204,6 +204,7 @@ void WorldSession::OnProcessMessage(const Asset::Meta& meta)
 			if (PlayerInstance.BeenMaxPlayer())
 			{
 				AlertMessage(Asset::ERROR_ONLINE_PLAYERS_LIMIT, Asset::ERROR_TYPE_NORMAL, Asset::ERROR_SHOW_TYPE_MESSAGE_BOX); 
+				LOG(ERROR, "玩家达到最大在线数量，不能继续登陆");
 
 				Close(); //关闭网络
 				return;
