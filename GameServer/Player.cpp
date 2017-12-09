@@ -616,12 +616,11 @@ int32_t Player::CmdPaiOperate(pb::Message* message)
 	Asset::PaiOperation* pai_operate = dynamic_cast<Asset::PaiOperation*>(message);
 	if (!pai_operate) return 1; 
 	
-	auto debug_string = pai_operate->DebugString();
-
 	if (!_room || !_game) return 2; //还没加入房间或者还没开始游戏
 
 	if (!pai_operate->position()) pai_operate->set_position(GetPosition()); //设置玩家座位
 			
+	auto debug_string = pai_operate->ShortDebugString();
 	const auto& pai = pai_operate->pai(); 
 	
 	//进行操作
@@ -1492,7 +1491,7 @@ int32_t Player::CmdGetRoomData(pb::Message* message)
 	auto get_data = dynamic_cast<Asset::GetRoomData*>(message);
 	if (!get_data) return 1;
 
-	DEBUG("玩家:{}由于房间内断线，重新获取数据数据:{}", _player_id, _stuff.ShortDebugString())
+	DEBUG("玩家:{}由于房间:{}内断线，获取数据:{}", _player_id, message->ShortDebugString(), _stuff.ShortDebugString())
 
 	if (!_room || _room->HasDisMiss() || _room->GetID() != get_data->room_id() || _stuff.room_id() == 0)
 	{
