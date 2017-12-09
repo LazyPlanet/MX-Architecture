@@ -215,7 +215,7 @@ int32_t Player::OnLogin(bool is_login)
 {
 	ActivityInstance.OnPlayerLogin(shared_from_this()); //活动数据
 
-	if (is_login) BattleHistory(); //历史对战表
+	//if (is_login) BattleHistory(); //历史对战表
 	if (is_login) MultiplyRoomCard(); //房卡翻倍
 
 	return 0;
@@ -1074,7 +1074,7 @@ void Player::BattleHistory(int32_t start_index, int32_t end_index)
 		record->CopyFrom(history);
 	}
 
-	DEBUG("获取玩家:{}历史战绩，索引区间:{}~{} 数据:{}", _player_id, start_index, end_index, message.ShortDebugString());
+	//DEBUG("获取玩家:{}历史战绩，索引区间:{}~{} 数据:{}", _player_id, start_index, end_index, message.ShortDebugString());
 
 	if (message.history_list().size() == 0) return;
 	if (message.history_list().size()) SendProtocol(message);
