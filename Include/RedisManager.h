@@ -119,7 +119,7 @@ public:
 		if (async) {
 			_client.commit(); //异步存储
 		} else {
-			_client.sync_commit(); //同步存储
+			_client.sync_commit(std::chrono::milliseconds(100)); //同步存储
 		}
 	
 		if (!reply.is_string()) 
@@ -158,7 +158,7 @@ public:
 		if (async) {
 			_client.commit(); //异步存储
 		} else {
-			_client.sync_commit(); //同步存储
+			_client.sync_commit(std::chrono::milliseconds(100)); //同步存储
 		}
 
 		auto get = set.get();
@@ -196,7 +196,7 @@ public:
 		if (async) {
 			_client.commit(); //异步存储
 		} else {
-			_client.sync_commit(); //同步存储
+			_client.sync_commit(std::chrono::milliseconds(100)); //同步存储
 		}
 	
 		if (!reply.is_string()) 
@@ -240,7 +240,7 @@ public:
 		if (async) {
 			_client.commit(); //异步存储
 		} else {
-			_client.sync_commit(); //同步存储
+			_client.sync_commit(std::chrono::milliseconds(100)); //同步存储
 		}
 
 		auto get = set.get();
@@ -601,7 +601,7 @@ public:
 		}
 
 		auto incrby = _client.incrby("guest_counter", 1);
-		_client.sync_commit();
+		_client.sync_commit(std::chrono::milliseconds(100));
 
 		int64_t guest_id = 0;
 
