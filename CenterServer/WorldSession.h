@@ -119,6 +119,7 @@ public:
 	void AddPlayer(int64_t player_id, std::shared_ptr<WorldSession> session);
 	void RemovePlayer(int64_t player_id);
 	std::shared_ptr<WorldSession> GetPlayerSession(int64_t player_id);
+	int32_t GetOnlinePlayerCount(); //获取在线玩家数量//真正数量
 
 	//逻辑服务器会话
 	void AddServer(int64_t server_id, std::shared_ptr<WorldSession> session);

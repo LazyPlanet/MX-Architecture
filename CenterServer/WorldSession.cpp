@@ -547,6 +547,8 @@ void WorldSession::OnProcessMessage(const Asset::Meta& meta)
 				kickout_player.set_player_id(_player->GetID());
 				kickout_player.set_reason(Asset::KICK_OUT_REASON_CHANGE_SERVER);
 
+				DEBUG("玩家:{}进入服务器:{}和当前缓存服务器:{}不同，发往原服踢出:{}", _player->GetID(), server_id, _player->GetLocalServer(), kickout_player.ShortDebugString());
+
 				_player->SendProtocol2GameServer(kickout_player); 
 			}
 	
@@ -1035,6 +1037,13 @@ std::shared_ptr<WorldSession> WorldSessionManager::GetPlayerSession(int64_t play
 	if (it == _client_list.end()) return nullptr;
 
 	return it->second;
+}
+
+int32_t WorldSessionManager::GetOnlinePlayerCount()
+{
+	std::lock_guard<std::mutex> lock(_client_mutex);
+
+	return _client_list.size();
 }
 
 void WorldSessionManager::AddServer(int64_t server_id, std::shared_ptr<WorldSession> session) 

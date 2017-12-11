@@ -208,6 +208,9 @@ int32_t Player::OnEnterCenter()
 	
 	DEBUG("玩家:{}退出游戏逻辑服务器进入游戏大厅，数据内容:{}", _player_id, _stuff.ShortDebugString());
 
+	auto session = WorldSessionInstance.GetPlayerSession(_player_id);
+	if (!session || !session->IsConnect()) OnLogout(); //玩家管理//分享界面退出
+
 	return 0;
 }
 	
@@ -1235,7 +1238,9 @@ void PlayerManager::Update(int32_t diff)
 	
 	if (_heart_count % (20 * 60 * 30) == 0) 
 	{
-		LOG(INFO, "当前在线玩家数量:{}", _players.size()); //30分钟查询一次
+		int32_t player_count = WorldSessionInstance.GetOnlinePlayerCount();
+
+		LOG(INFO, "在线玩家数量:{} 网络连接数量:{}", _players.size(), player_count); //30分钟查询一次
 	}
 
 	for (auto it = _players.begin(); it != _players.end();)
@@ -1260,7 +1265,14 @@ bool PlayerManager::BeenMaxPlayer()
 	int32_t max_online_player = ConfigInstance.GetInt("MaxOnlinePlayer", 600);
 	int32_t online_player = _players.size();
 
-	return max_online_player < online_player; //当前在线玩家数量超过最大限制
+	return max_online_player < online_player; //在线玩家数量超过最大限制
+}
+	
+int32_t PlayerManager::GetOnlinePlayerCount()
+{
+	std::lock_guard<std::mutex> lock(_mutex);
+
+	return  _players.size();    
 }
 
 }
