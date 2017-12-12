@@ -114,13 +114,14 @@ public:
 		}
 
 		auto get = _client.get(key);
-		cpp_redis::reply reply = get.get();
 		
 		if (async) {
 			_client.commit(); //异步存储
 		} else {
 			_client.sync_commit(std::chrono::milliseconds(100)); //同步存储
 		}
+		
+		cpp_redis::reply reply = get.get();
 	
 		if (!reply.is_string()) 
 		{
@@ -191,13 +192,14 @@ public:
 		}
 
 		auto get = _client.get(key);
-		cpp_redis::reply reply = get.get();
 		
 		if (async) {
 			_client.commit(); //异步存储
 		} else {
 			_client.sync_commit(std::chrono::milliseconds(100)); //同步存储
 		}
+		
+		cpp_redis::reply reply = get.get();
 	
 		if (!reply.is_string()) 
 		{
