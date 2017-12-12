@@ -100,6 +100,11 @@ void WorldSession::OnProcessMessage(const Asset::Meta& meta)
 	}
 
 	auto message = msg->New();
+
+	defer {
+		delete message;
+		message = nullptr;
+	};
 	
 	auto result = message->ParseFromArray(meta.stuff().c_str(), meta.stuff().size());
 	if (!result) 
@@ -115,11 +120,8 @@ void WorldSession::OnProcessMessage(const Asset::Meta& meta)
 	const pb::EnumValueDescriptor* enum_value = message->GetReflection()->GetEnum(*message, field);
 	if (!enum_value) return;
 
-	auto message_string = message->ShortDebugString();
-	//auto meta_string = meta.ShortDebugString();
-
 	if (Asset::META_TYPE_SHARE_SAY_HI != meta.type_t())
-		DEBUG("中心服务器接收数据, 玩家:{} 全局ID:{} 协议ID:{} 协议名称:{} 内容:{}", meta.player_id(), _global_id, meta.type_t(), enum_value->name(), message_string);
+		DEBUG("中心服务器接收数据, 玩家:{} 全局ID:{} 协议ID:{} 协议名称:{} 内容:{}", meta.player_id(), _global_id, meta.type_t(), enum_value->name(), message->ShortDebugString());
 
 	//
 	// C2S协议可能存在两种情况：
@@ -585,11 +587,6 @@ void WorldSession::OnProcessMessage(const Asset::Meta& meta)
 			//协议处理
 			_player->HandleProtocol(meta.type_t(), message);
 		}
-
-		defer {
-			delete message;
-			message = nullptr;
-		};
 	}
 }
 
