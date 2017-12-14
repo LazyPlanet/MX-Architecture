@@ -159,6 +159,7 @@ void Game::SavePlayBack()
 {
 	if (!_room) return;
 
+	/*
 	cpp_redis::future_client client;
 	client.connect(ConfigInstance.GetString("Redis_ServerIP", "127.0.0.1"), ConfigInstance.GetInt("Redis_ServerPort", 6379));
 	if (!client.is_connected()) return;
@@ -172,12 +173,13 @@ void Game::SavePlayBack()
 	auto get = set.get();
 	std::string result;
 	if (get.is_string()) result = get.as_string(); 
+	*/
 
-	//auto redis_cli = make_unique<Redis>();
-	//std::string key = "playback:" + std::to_string(_room_id) + "_" + std::to_string(_game_id);
-	//redis_cli->Save(key, _playback);
+	auto redis_cli = make_unique<Redis>();
+	std::string key = "playback:" + std::to_string(_room_id) + "_" + std::to_string(_game_id);
+	redis_cli->Save(key, _playback);
 
-	LOG(INFO, "房间:{} 局数:{} 结论:{} 存储回放信息:{}", _room_id, _game_id, /*_playback.ShortDebugString()*/result, result); 
+	//LOG(INFO, "房间:{} 局数:{} 结论:{} 存储回放信息:{}", _room_id, _game_id, /*_playback.ShortDebugString()*/result, result); 
 }
 	
 void Game::ClearState()

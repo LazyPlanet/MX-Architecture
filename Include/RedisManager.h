@@ -95,24 +95,17 @@ public:
 	
 	bool Get(const std::string& key, std::string& value, bool async = true)
 	{
-		if (!_client.is_connected()) 
-		{
+		if (!_client.is_connected()) {
+
 			_client.connect(_hostname, _port);
 
-			if (!_client.is_connected()) 
-			{
+			if (!_client.is_connected()) {
 				LOG(ERROR, "数据库获取:{}数据失败，原因:未能连接数据库", key);
-				return false;
-			}
-			
-			auto has_auth = _client.auth(_password);
-			if (has_auth.get().ko()) 
-			{
-				LOG(ERROR, "数据库获取:{}数据失败，原因:权限不足", key);
 				return false;
 			}
 		}
 
+		auto has_auth = _client.auth(_password);
 		auto get = _client.get(key);
 		
 		if (async) {
@@ -121,10 +114,14 @@ public:
 			_client.sync_commit(std::chrono::milliseconds(100)); //同步存储
 		}
 		
-		cpp_redis::reply reply = get.get();
+		if (has_auth.get().ko()) {
+			LOG(ERROR, "数据库获取:{}数据失败，原因:权限不足", key);
+			return false;
+		}
+		
+		auto reply = get.get();
 	
-		if (!reply.is_string()) 
-		{
+		if (!reply.is_string()) {
 			LOG(ERROR, "数据库获取:{}数据失败，原因:没有数据", key);
 			return false;
 		}
@@ -136,24 +133,17 @@ public:
 	
 	bool Save(const std::string& key, const std::string& value, bool async = true)
 	{
-		if (!_client.is_connected()) 
-		{
+		if (!_client.is_connected()) {
+
 			_client.connect(_hostname, _port);
 
-			if (!_client.is_connected()) 
-			{
+			if (!_client.is_connected()) {
 				LOG(ERROR, "数据库获取:{}数据失败，原因:未能连接数据库", key);
-				return false;
-			}
-			
-			auto has_auth = _client.auth(_password);
-			if (has_auth.get().ko()) 
-			{
-				LOG(ERROR, "数据库获取:{}数据失败，原因:权限不足", key);
 				return false;
 			}
 		}
 
+		auto has_auth = _client.auth(_password);
 		auto set = _client.set(key, value);
 
 		if (async) {
@@ -161,9 +151,14 @@ public:
 		} else {
 			_client.sync_commit(std::chrono::milliseconds(100)); //同步存储
 		}
+		
+		if (has_auth.get().ko()) {
+			LOG(ERROR, "数据库获取:{}数据失败，原因:权限不足", key);
+			return false;
+		}
 
 		auto get = set.get();
-		std::string result;
+		std::string result = "ERROR";
 		if (get.is_string()) result = get.as_string();
 		
 		LOG(INFO, "存储数据，结果:{} Key:{}", result, key); 
@@ -173,24 +168,18 @@ public:
 	
 	bool Get(const std::string& key, google::protobuf::Message& value, bool async = true)
 	{
-		if (!_client.is_connected()) 
-		{
+		if (!_client.is_connected()) {
+
 			_client.connect(_hostname, _port);
 
-			if (!_client.is_connected()) 
-			{
+			if (!_client.is_connected()) {
 				LOG(ERROR, "数据库获取:{}数据失败，原因:未能连接数据库", key);
 				return false;
 			}
 			
-			auto has_auth = _client.auth(_password);
-			if (has_auth.get().ko()) 
-			{
-				LOG(ERROR, "数据库获取:{}数据失败，原因:权限不足", key);
-				return false;
-			}
 		}
 
+		auto has_auth = _client.auth(_password);
 		auto get = _client.get(key);
 		
 		if (async) {
@@ -199,10 +188,13 @@ public:
 			_client.sync_commit(std::chrono::milliseconds(100)); //同步存储
 		}
 		
-		cpp_redis::reply reply = get.get();
+		if (has_auth.get().ko()) {
+			LOG(ERROR, "数据库获取:{}数据失败，原因:权限不足", key);
+			return false;
+		}
 	
-		if (!reply.is_string()) 
-		{
+		auto reply = get.get();
+		if (!reply.is_string()) {
 			LOG(ERROR, "数据库获取:{}数据失败，原因:没有数据", key);
 			return false;
 		}
@@ -219,24 +211,17 @@ public:
 	
 	bool Save(const std::string& key, const google::protobuf::Message& value, bool async = true)
 	{
-		if (!_client.is_connected()) 
-		{
+		if (!_client.is_connected()) {
+
 			_client.connect(_hostname, _port);
 
-			if (!_client.is_connected()) 
-			{
+			if (!_client.is_connected()) {
 				LOG(ERROR, "数据库存储:{}数据失败，原因:未能连接数据库", key);
-				return false;
-			}
-			
-			auto has_auth = _client.auth(_password);
-			if (has_auth.get().ko()) 
-			{
-				LOG(ERROR, "数据库存储:{}数据失败，原因:权限不足", key);
 				return false;
 			}
 		}
 
+		auto has_auth = _client.auth(_password);
 		auto set = _client.set(key, value.SerializeAsString());
 
 		if (async) {
@@ -244,9 +229,14 @@ public:
 		} else {
 			_client.sync_commit(std::chrono::milliseconds(100)); //同步存储
 		}
+		
+		if (has_auth.get().ko()) {
+			LOG(ERROR, "数据库存储:{}数据失败，原因:权限不足", key);
+			return false;
+		}
 
 		auto get = set.get();
-		std::string result;
+		std::string result = "ERROR";
 		if (get.is_string()) result = get.as_string();
 		
 		LOG(INFO, "存储数据，结果:{} Key:{} 数据:{}", result, key, value.ShortDebugString()); 
@@ -267,27 +257,24 @@ public:
 		}
 		*/
 		
-		if (!_client.is_connected()) 
-		{
+		if (!_client.is_connected()) {
+
 			_client.connect(_hostname, _port);
 
-			if (!_client.is_connected()) 
-			{
+			if (!_client.is_connected()) {
 				LOG(ERROR, "数据库连接失败，原因:未能连接数据库");
 				return false;
 			}
-			
-			auto has_auth = _client.auth(_password);
-			if (has_auth.get().ko()) 
-			{
-				LOG(ERROR, "数据库验证失败，原因:权限不足");
-				return false;
-			}
-
 		}
 
+		auto has_auth = _client.auth(_password);
 		auto incrby = _client.incrby("player_counter", 1);
 		_client.commit();
+
+		if (has_auth.get().ko()) {
+			LOG(ERROR, "数据库验证失败，原因:权限不足");
+			return false;
+		}
 
 		int64_t player_id = 0;
 
@@ -451,21 +438,19 @@ public:
 		
 		_client.connect(_hostname, _port);
 
-		if (!_client.is_connected()) 
-		{
+		if (!_client.is_connected()) {
 			LOG(ERROR, "数据库连接失败，原因:未能连接数据库");
 			return false;
 		}
 		
 		auto has_auth = _client.auth(_password);
-		if (has_auth.get().ko()) 
-		{
+		auto incrby = _client.incrby("room_counter", 1);
+		_client.commit();
+
+		if (has_auth.get().ko()) {
 			LOG(ERROR, "数据库验证失败，原因:权限不足");
 			return false;
 		}
-
-		auto incrby = _client.incrby("room_counter", 1);
-		_client.commit();
 
 		int64_t room_id = 0;
 
@@ -589,21 +574,19 @@ public:
 	{
 		_client.connect(_hostname, _port);
 
-		if (!_client.is_connected()) 
-		{
+		if (!_client.is_connected()) {
 			LOG(ERROR, "数据库连接失败，原因:未能连接数据库");
 			return false;
 		}
 		
 		auto has_auth = _client.auth(_password);
-		if (has_auth.get().ko()) 
-		{
+		auto incrby = _client.incrby("guest_counter", 1);
+		_client.sync_commit(std::chrono::milliseconds(100));
+		
+		if (has_auth.get().ko()) {
 			LOG(ERROR, "数据库验证失败，原因:权限不足");
 			return false;
 		}
-
-		auto incrby = _client.incrby("guest_counter", 1);
-		_client.sync_commit(std::chrono::milliseconds(100));
 
 		int64_t guest_id = 0;
 
