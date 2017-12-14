@@ -114,10 +114,12 @@ public:
 			_client.sync_commit(std::chrono::milliseconds(100)); //同步存储
 		}
 		
+		/*
 		if (has_auth.get().ko()) {
 			LOG(ERROR, "数据库获取:{}数据失败，原因:权限不足", key);
 			return false;
 		}
+		*/
 		
 		auto reply = get.get();
 	
@@ -152,10 +154,12 @@ public:
 			_client.sync_commit(std::chrono::milliseconds(100)); //同步存储
 		}
 		
+		/*
 		if (has_auth.get().ko()) {
 			LOG(ERROR, "数据库获取:{}数据失败，原因:权限不足", key);
 			return false;
 		}
+		*/
 
 		auto get = set.get();
 		std::string result = "ERROR";
@@ -188,10 +192,12 @@ public:
 			_client.sync_commit(std::chrono::milliseconds(100)); //同步存储
 		}
 		
+		/*
 		if (has_auth.get().ko()) {
 			LOG(ERROR, "数据库获取:{}数据失败，原因:权限不足", key);
 			return false;
 		}
+		*/
 	
 		auto reply = get.get();
 		if (!reply.is_string()) {
@@ -230,10 +236,12 @@ public:
 			_client.sync_commit(std::chrono::milliseconds(100)); //同步存储
 		}
 		
+		/*
 		if (has_auth.get().ko()) {
 			LOG(ERROR, "数据库存储:{}数据失败，原因:权限不足", key);
 			return false;
 		}
+		*/
 
 		auto get = set.get();
 		std::string result = "ERROR";
@@ -271,10 +279,12 @@ public:
 		auto incrby = _client.incrby("player_counter", 1);
 		_client.commit();
 
+		/*
 		if (has_auth.get().ko()) {
 			LOG(ERROR, "数据库验证失败，原因:权限不足");
 			return false;
 		}
+		*/
 
 		int64_t player_id = 0;
 
@@ -447,10 +457,12 @@ public:
 		auto incrby = _client.incrby("room_counter", 1);
 		_client.commit();
 
+		/*
 		if (has_auth.get().ko()) {
 			LOG(ERROR, "数据库验证失败，原因:权限不足");
 			return false;
 		}
+		*/
 
 		int64_t room_id = 0;
 
@@ -583,10 +595,12 @@ public:
 		auto incrby = _client.incrby("guest_counter", 1);
 		_client.sync_commit(std::chrono::milliseconds(100));
 		
+		/*
 		if (has_auth.get().ko()) {
 			LOG(ERROR, "数据库验证失败，原因:权限不足");
 			return false;
 		}
+		*/
 
 		int64_t guest_id = 0;
 

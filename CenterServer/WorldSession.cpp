@@ -236,8 +236,8 @@ void WorldSession::OnProcessMessage(const Asset::Meta& meta)
 			if (!success) return;
 			*/
 
-			auto redis_cli = make_unique<Redis>();
-			auto success = redis_cli->GetUser(login->account().username(), _user);
+			//auto redis_cli = make_unique<Redis>();
+			auto success = Redis().GetUser(login->account().username(), _user);
 			if (!success) return;
 
 			//
@@ -257,7 +257,7 @@ void WorldSession::OnProcessMessage(const Asset::Meta& meta)
 			if (_user.player_list().size() == 0)
 			{
 				//auto redis = make_unique<Redis>();
-				int64_t player_id = redis_cli->CreatePlayer(); //如果账号下没有角色，创建一个给Client
+				int64_t player_id = Redis().CreatePlayer(); //如果账号下没有角色，创建一个给Client
 				if (player_id == 0) return;
 				
 				_player = std::make_shared<Player>(player_id);
@@ -287,7 +287,7 @@ void WorldSession::OnProcessMessage(const Asset::Meta& meta)
 			auto set = client.set("user:" + login->account().username(), _user.SerializeAsString());
 			client.sync_commit();
 			*/
-			redis_cli->SaveUser(login->account().username(), _user);
+			Redis().SaveUser(login->account().username(), _user);
 
 			LOG_BI("account", _user); //账号查询
 			
@@ -319,7 +319,7 @@ void WorldSession::OnProcessMessage(const Asset::Meta& meta)
 			if (!login) return; 
 			
 			std::string account;
-			auto redis_cli = make_unique<Redis>();
+			//auto redis_cli = make_unique<Redis>();
 
 			if (_user.client_info().has_imei() && !_user.client_info().imei().empty()) //直接获取IEMI对应的游客账号，防止刷卡
 			{
@@ -332,7 +332,7 @@ void WorldSession::OnProcessMessage(const Asset::Meta& meta)
 			}
 			else
 			{
-				if (redis_cli->GetGuestAccount(account)) 
+				if (Redis().GetGuestAccount(account)) 
 				{
 					login->set_account(account);
 
@@ -340,13 +340,13 @@ void WorldSession::OnProcessMessage(const Asset::Meta& meta)
 					_account.set_username(login->account()); //账号信息
 				}
 				
-				redis_cli->Save(_user.client_info().imei(), account); //存储IMEI和账号对应关系
+				Redis().Save(_user.client_info().imei(), account); //存储IMEI和账号对应关系
 			}
 
 			_user.mutable_account()->CopyFrom(_account);
 			_user.set_created_time(CommonTimerInstance.GetTime()); //创建时间
 
-			redis_cli->SaveUser(account, _user); //存盘
+			Redis().SaveUser(account, _user); //存盘
 
 			SendProtocol(login); 
 		}
@@ -798,15 +798,12 @@ int32_t WorldSession::OnWechatLogin(const pb::Message* message)
 	}
 	*/
 	
-	auto client_cli = make_unique<Redis>();
+	//auto client_cli = make_unique<Redis>();
 	auto key = "user:" + _user.wechat().openid();
-	auto success = client_cli->Get(key, _user);
+	auto success = Redis().Get(key, _user);
 
-	if (!success)
-	{
-		_user.set_created_time(CommonTimerInstance.GetTime()); //创建时间
-		if (_user.wechat().has_openid()) client_cli->SaveUser(_user.wechat().openid(), _user); //账号数据存盘
-	}
+	if (!success) _user.set_created_time(CommonTimerInstance.GetTime()); //创建时间
+	if (_user.wechat().has_openid()) Redis().SaveUser(_user.wechat().openid(), _user); //账号数据存盘//每次都更新防止玩家修改了个人信息
 
 	return 0;
 }
