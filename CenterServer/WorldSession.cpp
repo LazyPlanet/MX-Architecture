@@ -214,29 +214,6 @@ void WorldSession::OnProcessMessage(const Asset::Meta& meta)
 			
 			_account.CopyFrom(login->account()); //账号信息
 
-			/*
-			cpp_redis::future_client client;
-			client.connect(ConfigInstance.GetString("Redis_ServerIP", "127.0.0.1"), ConfigInstance.GetInt("Redis_ServerPort", 6379));
-			if (!client.is_connected()) return;
-
-			auto has_auth = client.auth(ConfigInstance.GetString("Redis_Password", "!QAZ%TGB&UJM9ol."));
-			if (has_auth.get().ko()) return;
-
-			auto get = client.get("user:" + login->account().username());
-			cpp_redis::reply reply = get.get();
-			client.commit();
-
-			if (!reply.is_string()) 
-			{
-				LOG(ERROR, "未能找到玩家账号数据:{}", login->account().username());
-				return;
-			}
-	
-			auto success = _user.ParseFromString(reply.as_string());
-			if (!success) return;
-			*/
-
-			//auto redis_cli = make_unique<Redis>();
 			auto success = Redis().GetUser(login->account().username(), _user);
 			if (!success) return;
 
@@ -256,7 +233,6 @@ void WorldSession::OnProcessMessage(const Asset::Meta& meta)
 			//
 			if (_user.player_list().size() == 0)
 			{
-				//auto redis = make_unique<Redis>();
 				int64_t player_id = Redis().CreatePlayer(); //如果账号下没有角色，创建一个给Client
 				if (player_id == 0) return;
 				
@@ -283,10 +259,6 @@ void WorldSession::OnProcessMessage(const Asset::Meta& meta)
 			//
 			//账号数据存储
 			//
-			/*
-			auto set = client.set("user:" + login->account().username(), _user.SerializeAsString());
-			client.sync_commit();
-			*/
 			Redis().SaveUser(login->account().username(), _user);
 
 			LOG_BI("account", _user); //账号查询
@@ -319,7 +291,6 @@ void WorldSession::OnProcessMessage(const Asset::Meta& meta)
 			if (!login) return; 
 			
 			std::string account;
-			//auto redis_cli = make_unique<Redis>();
 
 			if (_user.client_info().has_imei() && !_user.client_info().imei().empty()) //直接获取IEMI对应的游客账号，防止刷卡
 			{
@@ -483,7 +454,6 @@ void WorldSession::OnProcessMessage(const Asset::Meta& meta)
 
 			if (!_player || _player->GetID() != switch_account->player_id()) return;
 
-			//auto redis = make_unique<Redis>();
 			Redis().SaveUser(_account.username(), _user); //存盘退出
 
 			_player->Save(true);
@@ -629,181 +599,18 @@ int32_t WorldSession::OnWechatLogin(const pb::Message* message)
 	const Asset::WechatLogin* login = dynamic_cast<const Asset::WechatLogin*>(message);
 	if (!login) return 1; 
 
-	_user.mutable_wechat()->CopyFrom(login->wechat()); //微信数据
-
-	/*const auto& access_code = login->access_code();
-
-	CkHttp http;
-	std::string err;
-
-	bool success = http.UnlockComponent("ARKTOSHttp_decCLPWFQXmU");
-	if (success != true) {
-		ERROR("使用开源库获取HTTP服务失败:{}", http.lastErrorText());
-		return 2;
-	}
-
-	//
-	//1.通过code获取access_token
-	//
-	std::string request = "https://api.weixin.qq.com/sns/oauth2/access_token?appid=wx5763b38a2613f9fb&secret=f9128ba451c51ce44fdd3bddf2fa45e7&code=" + access_code +"&grant_type=authorization_code";
-	const char *html = http.quickGetStr(request.c_str());
-
-	std::string response(html);
-
-	if (response.find("access_token") != std::string::npos)
-	{
-		int ret = pbjson::json2pb(html, &_access_token, err);
-		if (ret)
-		{
-			LOG(ERROR, "json2pb ret:{} error:{} html:{}", ret, err, html);
-			return ret;
-		}
-
-		auto access_token_string = _access_token.ShortDebugString();
-		LOG(INFO, "微信: html:{} access_token:{}", html, access_token_string);
-
-		auto expires_in = _access_token.expires_in();
-
-		if (expires_in) //尚未过期
-		{
-			//
-			//3.获取用户个人信息（UnionID机制）
-			//
-			request = "https://api.weixin.qq.com/sns/userinfo?access_token=" + _access_token.access_token() + "&openid=" + _access_token.openid() + "&lang=en";
-			html = http.quickGetStr(request.c_str());
-				
-			ret = pbjson::json2pb(html, &_wechat, err);
-			if (ret)
-			{
-				LOG(ERROR, "json2pb ret:{} error:{} html:{}", ret, err, html);
-				return ret;
-			}
-
-			auto wechat_string = _wechat.ShortDebugString();
-			LOG(INFO, "微信: html:{} union_info:{} response:{}", html, wechat_string, response);
-
-			Asset::WeChatInfo proto;
-			proto.mutable_wechat()->CopyFrom(_wechat);
-			SendProtocol(proto); //同步Client
-		}
-		else
-		{
-			//
-			//2.刷新或续期access_token使用
-			//
-			auto refresh_token = _access_token.refresh_token();
-			request = "https://api.weixin.qq.com/sns/oauth2/refresh_token?appid=wx5763b38a2613f9fb&grant_type=refresh_token&refresh_token=" + refresh_token;
-			html = http.quickGetStr(request.c_str());
-			std::string response(html);
-
-			int ret = pbjson::json2pb(html, &_access_token, err);
-			if (ret)
-			{
-				LOG(ERROR, "json2pb ret:{} error:{} html:{}", ret, err, html);
-				return ret;
-			}
-	
-			if (response.find("errcode") != std::string::npos) //刷新失败
-			{
-				Asset::WechatError wechat_error;
-				int ret = pbjson::json2pb(html, &wechat_error, err);
-				if (ret)
-				{
-					LOG(ERROR, "json2pb ret:{} error:{} html:{}", ret, err, html);
-					return ret;
-				}
-				Asset::WeChatInfo proto;
-				proto.mutable_wechat_error()->CopyFrom(wechat_error);
-				SendProtocol(proto); //同步Client
-			}
-			else //刷新成功
-			{
-				//
-				//3.获取用户个人信息（UnionID机制）
-				//
-				auto openid = _access_token.openid();
-				auto refresh_token = _access_token.refresh_token();
-
-				request = "https://api.weixin.qq.com/sns/userinfo?access_token=" + refresh_token + "&openid=" + openid + "&lang=en";
-				html = http.quickGetStr(request.c_str());
-
-				ret = pbjson::json2pb(html, &_wechat, err);
-				if (ret)
-				{
-					LOG(ERROR, "json2pb ret:{} error:{} html:{}", ret, err, html);
-					return ret;
-				}
-
-				auto wechat_string = _wechat.ShortDebugString();
-				LOG(INFO, "微信: html:{} _wechat:{} response:{}", html, wechat_string, response);
-
-				Asset::WeChatInfo proto;
-				proto.mutable_wechat()->CopyFrom(_wechat);
-				SendProtocol(proto); //同步Client
-			}
-				
-			auto access_token_string = _access_token.ShortDebugString();
-			LOG(INFO, "微信: html:{} refresh:{}", html, access_token_string);
-		}
-	}
-	else if (response.find("errcode") != std::string::npos)
-	{
-		Asset::WechatError wechat_error;
-		int ret = pbjson::json2pb(html, &wechat_error, err);
-		if (ret)
-		{
-			LOG(ERROR, "json2pb ret:{} error:{} html:{}", ret, err, html);
-			return ret;
-		}
-		Asset::WeChatInfo proto;
-		proto.mutable_wechat_error()->CopyFrom(wechat_error);
-		SendProtocol(proto); //同步Client
-	}
-	*/
-			
-	//
-	//1.必须先进行数据加载，初始化_user数据，防止已经存在玩家数据覆盖
-	//
-	//2.微信登陆之后，直接进行存盘，防止玩家此时退出
-	//
-	
-	/*
-	cpp_redis::future_client client;
-	client.connect(ConfigInstance.GetString("Redis_ServerIP", "127.0.0.1"), ConfigInstance.GetInt("Redis_ServerPort", 6379));
-	if (!client.is_connected()) return 1;
-
-	auto has_auth = client.auth(ConfigInstance.GetString("Redis_Password", "!QAZ%TGB&UJM9ol."));
-
-	if (has_auth.get().ko()) 
-	{
-		LOG(ERROR, "Redis数据库密码错误");
-		return 2;
-	}
-
-	auto get = client.get("user:" + _user.wechat().openid());
-	cpp_redis::reply reply = get.get();
-	client.commit();
-
-	if (reply.is_string()) 
-	{
-		auto success = _user.ParseFromString(reply.as_string()); //现有账号的数据加载
-		if (!success) return 3;
-	}
-	else
-	{
-		_user.set_created_time(CommonTimerInstance.GetTime()); //创建时间
-
-		auto redis = make_unique<Redis>();
-		if (_user.wechat().has_openid()) redis->SaveUser(_user.wechat().openid(), _user); //账号数据存盘
-	}
-	*/
-	
-	//auto client_cli = make_unique<Redis>();
-	auto key = "user:" + _user.wechat().openid();
+	auto key = "user:" + login->wechat().openid();
 	auto success = Redis().Get(key, _user);
 
 	if (!success) _user.set_created_time(CommonTimerInstance.GetTime()); //创建时间
-	if (_user.wechat().has_openid()) Redis().SaveUser(_user.wechat().openid(), _user); //账号数据存盘//每次都更新防止玩家修改了个人信息
+
+	if (!login->wechat().openid().empty()) 
+	{
+		_user.mutable_wechat()->CopyFrom(login->wechat()); //微信数据
+		Redis().SaveUser(_user.wechat().openid(), _user); //账号数据存盘//每次都更新防止玩家修改了个人信息
+	}
+
+	//DEBUG("微信登陆数据:{} 缓存数据:{}", login->ShortDebugString(), _user.ShortDebugString());
 
 	return 0;
 }
