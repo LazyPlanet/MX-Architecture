@@ -309,7 +309,7 @@ public:
 	bool GetPlayer(int64_t player_id, Asset::Player& player)
 	{
 		std::string key = "player:" + std::to_string(player_id);
-		auto success = Get(key, player, false);
+		auto success = Get(key, player, true);
 		return success;
 
 		/*
@@ -379,7 +379,7 @@ public:
 	bool SavePlayer(int64_t player_id, const Asset::Player& player)
 	{
 		std::string key = "player:" + std::to_string(player_id);
-		auto success = Save(key, player, false);
+		auto success = Save(key, player, true);
 		return success;
 		
 		/*
@@ -553,7 +553,7 @@ public:
 	{
 		std::string key = "user:" + username;
 
-		auto success = Save(key, user, false);
+		auto success = Save(key, user, true);
 		if (!success) return false;
 
 		LOG(INFO, "保存账号数据，username:{} user:{}", username, user.ShortDebugString());
