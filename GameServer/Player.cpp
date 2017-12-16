@@ -630,6 +630,8 @@ int32_t Player::CmdPaiOperate(pb::Message* message)
 		{
 			if (!ShouldDaPai()) 
 			{
+				PrintPai();
+
 				LOG(ERROR, "玩家:{}在房间:{}第:{}局中不能打牌，当前牌数量:{} 无法进行操作:{}", _player_id, _room->GetID(), _game->GetID(), GetCardCount(), debug_string);
 				return 3;
 			}
@@ -4451,6 +4453,8 @@ void Player::AddRoomScore(int32_t score)
 //
 void PlayerManager::Update(int32_t diff)
 {
+	std::lock_guard<std::mutex> lock(_player_lock);
+
 	++_heart_count;
 
 	if (_heart_count % 20 == 0) //1s
@@ -4473,7 +4477,6 @@ void PlayerManager::Update(int32_t diff)
 	if (_heart_count % 3600 == 0) //30mins
 	{
 		int32_t server_id = ConfigInstance.GetInt("ServerID", 1);
-
 		DEBUG("游戏逻辑服务器:{}在线玩家数量:{}", server_id, _players.size());
 	}
 }
