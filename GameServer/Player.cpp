@@ -4446,6 +4446,9 @@ void Player::AddRoomScore(int32_t score)
 	_dirty = true;
 }
 
+//
+//当前周期为50MS.
+//
 void PlayerManager::Update(int32_t diff)
 {
 	++_heart_count;
@@ -4465,6 +4468,13 @@ void PlayerManager::Update(int32_t diff)
 				++it;
 			}
 		}
+	}
+	
+	if (_heart_count % 3600 == 0) //30mins
+	{
+		int32_t server_id = ConfigInstance.GetInt("ServerID", 1);
+
+		DEBUG("游戏逻辑服务器:{}在线玩家数量:{}", server_id, _players.size());
 	}
 }
 
