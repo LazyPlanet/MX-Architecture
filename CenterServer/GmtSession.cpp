@@ -31,6 +31,8 @@ void GmtSession::OnConnected()
 {
 	DEBUG("连接GMT服务器:{} {}成功.", _ip_address, _remote_endpoint.port());
 
+	ClientSocket::OnConnected();
+
 	Asset::Register message;
 	message.set_server_type(Asset::SERVER_TYPE_CENTER);
 	message.set_server_id(ConfigInstance.GetInt("ServerID", 1)); //服务器ID，全球唯一

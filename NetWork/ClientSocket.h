@@ -17,26 +17,29 @@
 namespace Adoter 
 {
 
+enum CONNECTION_STATUS {
+
+	CONNECTION_STATUS_NIL = 1,
+	CONNECTION_STATUS_CONNECTING = 2,
+	CONNECTION_STATUS_CONNECTED = 3
+};
+
 class ClientSocket : public std::enable_shared_from_this<ClientSocket>
 {
 public:
 	ClientSocket(boost::asio::io_service& io_service, const boost::asio::ip::tcp::endpoint& endpoint) : 
 		_timer(io_service), _socket(io_service), _remote_endpoint(endpoint), _closed(false), _closing(false)
 	{
-
+		_ip_address = _remote_endpoint.address().to_string();
+		_port = _remote_endpoint.port();
 	}
 	
 	virtual bool Update() 
 	{
 		if (_closed) return false;
-		
 		std::lock_guard<std::mutex> lock(_send_lock);
 
-		//发送可以放到消息队列里面处理
-		if (_is_writing_async || (_write_queue.empty() && !_closing)) 
-		{
-			return true;
-		}
+		if (_is_writing_async || (_write_queue.empty() && !_closing)) return true; //发送可以放到消息队列里面处理
 
 		for (; HandleQueue(); ) {}
 
@@ -46,21 +49,31 @@ public:
     virtual void AsyncConnect()
     {
         _socket.async_connect(_remote_endpoint, std::bind(&ClientSocket::OnConnect, shared_from_this(), std::placeholders::_1));
+		_conn_status = CONNECTION_STATUS_CONNECTING;
 
         if (_connect_timeout > 0) 
         {
-            _timer.expires_from_now(boost::posix_time::milliseconds(_connect_timeout));
-            _timer.async_wait(std::bind(&ClientSocket::OnConnectTimeout, shared_from_this(), std::placeholders::_1));
+            _timer.expires_from_now(boost::posix_time::seconds(_connect_timeout));
+            _timer.async_wait(std::bind(&ClientSocket::OnConnectTimeOut, shared_from_this(), std::placeholders::_1));
         }
     }
     
-	virtual void OnConnectTimeout(const boost::system::error_code& error) 
+	virtual void OnConnectTimeOut(const boost::system::error_code& error) 
     {
         if (error == boost::asio::error::operation_aborted) return;
+		if (error) ERROR("服务器内部连接超时失败，必须处理解决，错误码:{}", error.message());
+            
+        if (_connect_timeout > 0) 
+        {
+			_timer.expires_from_now(boost::posix_time::seconds(_connect_timeout));
+			_timer.async_wait(std::bind(&ClientSocket::OnConnectTimeOut, shared_from_this(), std::placeholders::_1));
+		}
 
-		ERROR("服务器内部连接超时失败，必须处理解决，错误码:{}", error.message());
-		
-        //Close("超时");
+		if (CONNECTION_STATUS_CONNECTED != _conn_status) 
+		{
+			WARN("网络正在连接...连接服务器:{}，端口:{} 状态:{}", _ip_address, _port, _conn_status);
+			AsyncConnect();
+		}
     }
     
     void Close(const std::string& reason)
@@ -89,7 +102,7 @@ public:
 		unsigned short body_size = content.size();
 		if (body_size >= MAX_DATA_SIZE) 
 		{
-			LOG(ERROR, "protocol has extend max size:{}", body_size);
+			LOG(ERROR, "协议已经超过最大限制，包长:{}", body_size);
 			return;
 		}
 
@@ -147,48 +160,34 @@ public:
 		boost::system::error_code error;
 		std::size_t bytes_sent = _socket.write_some(boost::asio::buffer(meta.c_str(), bytes_to_send), error);
 
-		/*
-		std::stringstream str;
-		const char* c = meta.c_str();
-		for (std::size_t i = 0; i < bytes_to_send; ++i)
-		{
-			str << (int)c[i] << " ";
-		}
-		DEBUG("游戏逻辑服务器发送数据:{}", str.str());
-		*/
-
 		if (error == boost::asio::error::would_block || error == boost::asio::error::try_again)
 		{
-			ERROR("bytes_to_send:{} bytes_sent:{}", bytes_to_send, bytes_sent);
+			ERROR("待发送数据长度:{} 实际发送数据长度:{}", bytes_to_send, bytes_sent);
 			return AsyncProcessQueue();
 
 			_write_queue.pop();
-
 			if (_closing && _write_queue.empty()) Close("关闭");
 
 			return false;
 		}
 		else if (bytes_sent == 0)
 		{
-			ERROR("bytes_to_send:{} bytes_sent:{} error:{}", bytes_to_send, bytes_sent, error.message());
+			ERROR("待发送数据长度:{} 实际发送数据长度:{} 错误码:{}", bytes_to_send, bytes_sent, error.message());
 
 			_write_queue.pop();
-
 			if (_closing && _write_queue.empty()) Close("关闭");
 
 			return false;
 		}
 		else if (bytes_sent < bytes_to_send) //一般不会出现这个情况，重新发送，记个ERROR
 		{
-			ERROR("bytes_to_send:{} bytes_sent:{}", bytes_to_send, bytes_sent);
+			ERROR("待发送数据长度:{} 实际发送数据长度:{}", bytes_to_send, bytes_sent);
 			return AsyncProcessQueue();
 		}
 
-		//DEBUG("client bytes_to_send:{} bytes_sent:{}", bytes_to_send, bytes_sent);
 		_write_queue.pop();
 
 		if (_closing && _write_queue.empty()) Close("关闭");
-
 		return !_write_queue.empty();
 	}
 
@@ -197,8 +196,12 @@ public:
 	virtual bool IsOpen() const { return !_closed && !_closing; }
 	virtual bool IsClosed() const { return _closed || _closing; }
 
-    virtual void OnClose() { }
-    virtual void OnConnected() { }
+    virtual void OnClose() { 
+		_conn_status = CONNECTION_STATUS_NIL;
+	}
+    virtual void OnConnected() { 
+		_conn_status = CONNECTION_STATUS_CONNECTED;
+	}
 
     virtual void OnReadSome(const boost::system::error_code& error, std::size_t bytes_transferred) { }
 	virtual void OnWriteSome(const boost::system::error_code& error, std::size_t bytes_transferred) { }
@@ -208,19 +211,22 @@ protected:
 	boost::asio::ip::tcp::socket _socket; 
 	boost::asio::ip::tcp::endpoint _local_endpoint;
 	boost::asio::ip::tcp::endpoint _remote_endpoint;
+
+	std::string _ip_address;
+	int32_t _port = 0;
+
     volatile int64_t _ticks = 0;
     volatile int64_t _last_rw_ticks = 0;
+    int64_t _connect_timeout = 5;
 	
 	//接收缓存
 	std::array<unsigned char, MAX_DATA_SIZE> _buffer;
     
-    int64_t _connect_timeout = 10;
-
 	virtual void OnConnect(const boost::system::error_code& error)
     {
         if (error)
         {
-            Close("init stream failed: " + error.message());
+            Close("连接失败，错误信息: " + error.message());
             return;
         }
 
@@ -229,7 +235,7 @@ protected:
 
         if (ec)
         {
-            Close("init stream failed: " + ec.message());
+            Close("连接失败，错误信息: " + ec.message());
             return;
         }
 
@@ -237,13 +243,13 @@ protected:
 
         if (ec)
         {
-            Close("init stream failed: " + ec.message());
+            Close("连接失败，错误信息: " + ec.message());
             return;
         }
 
-        _timer.cancel();
+        //_timer.cancel();
 
-		OnConnected();
+		OnConnected(); //连接成功
 
         StartReceive(); //开始接收数据
         StartSend(); //开始发送数据
@@ -257,6 +263,7 @@ private:
 	bool _is_writing_async = false;
 	std::queue<std::string> _write_queue;
 	std::mutex _send_lock;
+	CONNECTION_STATUS _conn_status = CONNECTION_STATUS_NIL;
 };	
 
 }
