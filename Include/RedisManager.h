@@ -51,7 +51,7 @@ public:
 
 		_client.connect(_hostname, _port, [this](const std::string& host, std::size_t port, cpp_redis::client::connect_state status) {
 				if (status == cpp_redis::client::connect_state::dropped) {
-					LOG(ERROR, "数据库地址:{}，端口:{}连接失败，原因:未能连接数据库", _hostname, _port);
+					std::cout << "数据库连接失败..." << std::endl;
 				}
 			});
 		if (!_client.is_connected()) 
