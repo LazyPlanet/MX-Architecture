@@ -30,6 +30,7 @@ private:
 	cpp_redis::client _client;
 public:
 	~Redis() { 
+		_client.disconnect();
 	}
 
 	Redis() 
@@ -42,7 +43,7 @@ public:
 		if (!hostname.empty()) _hostname = hostname;
 		if (!password.empty()) _password = password;
 
-		cpp_redis::active_logger = std::unique_ptr<cpp_redis::logger>(new cpp_redis::logger);
+		//cpp_redis::active_logger = std::unique_ptr<cpp_redis::logger>(new cpp_redis::logger);
 	}
 
 	bool Connect()

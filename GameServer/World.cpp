@@ -1,3 +1,5 @@
+#include <cpp_redis/cpp_redis>
+
 #include "World.h"
 #include "Protocol.h"
 #include "Room.h"
@@ -16,6 +18,8 @@ std::shared_ptr<CenterSession> g_center_session = nullptr;
 
 bool World::Load()
 {
+	tacopie::get_default_io_service()->set_nb_workers(2);
+
 	//
 	//协议初始化：必须最先初始化
 	//
