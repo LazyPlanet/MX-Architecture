@@ -62,7 +62,7 @@ public:
     
 	virtual void OnConnectTimeOut(const boost::system::error_code& error) 
     {
-		DEBUG("超时检查...连接服务器:{}，端口:{} 状态:{}", _ip_address, _port, _conn_status);
+		//DEBUG("超时检查...连接服务器:{}，端口:{} 状态:{}", _ip_address, _port, _conn_status);
 
         if (error == boost::asio::error::operation_aborted) return;
 		if (error) ERROR("服务器内部连接超时失败，必须处理解决，错误码:{}", error.message());
