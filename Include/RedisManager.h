@@ -30,7 +30,7 @@ private:
 	cpp_redis::client _client;
 public:
 	~Redis() { 
-		_client.disconnect();
+		//_client.disconnect();
 	}
 
 	Redis() 
