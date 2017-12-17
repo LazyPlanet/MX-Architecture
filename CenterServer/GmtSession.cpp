@@ -29,8 +29,6 @@ GmtSession::GmtSession(boost::asio::io_service& io_service, const boost::asio::i
 	
 void GmtSession::OnConnected()
 {
-	DEBUG("中心服务器连接GMT服务器:{} {}成功.", _ip_address, _remote_endpoint.port());
-
 	ClientSocket::OnConnected();
 
 	Asset::Register message;
