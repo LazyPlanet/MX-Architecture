@@ -22,6 +22,8 @@ ServerSession::ServerSession(boost::asio::ip::tcp::socket&& socket) : Socket(std
 {
 	_remote_endpoint = _socket.remote_endpoint();
 	_ip_address = _remote_endpoint.address().to_string();
+
+	DEBUG("接收连接，地址:{}，端口:{}", _ip_address, _remote_endpoint.port());
 }
 
 void ServerSession::InitializeHandler(const boost::system::error_code error, const std::size_t bytes_transferred)
@@ -644,7 +646,7 @@ void ServerSessionManager::Add(int64_t server_id, std::shared_ptr<ServerSession>
 {
 	std::lock_guard<std::mutex> lock(_server_mutex);
 
-	_sessions.emplace(server_id, session);
+	_sessions[server_id] = session;
 }	
 	
 void ServerSessionManager::Remove(int64_t server_id)

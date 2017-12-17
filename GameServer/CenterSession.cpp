@@ -20,8 +20,6 @@ CenterSession::CenterSession(boost::asio::io_service& io_service, const boost::a
 	
 void CenterSession::OnConnected()
 {
-	ClientSocket::OnConnected();
-
 	Asset::RegisterServer message;
 	message.set_role_type(Asset::ROLE_TYPE_GAME_SERVER);
 	message.set_global_id(ConfigInstance.GetInt("ServerID", 1)); //全球唯一

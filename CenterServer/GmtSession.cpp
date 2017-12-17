@@ -29,9 +29,7 @@ GmtSession::GmtSession(boost::asio::io_service& io_service, const boost::asio::i
 	
 void GmtSession::OnConnected()
 {
-	DEBUG("连接GMT服务器:{} {}成功.", _ip_address, _remote_endpoint.port());
-
-	ClientSocket::OnConnected();
+	DEBUG("中心服务器连接GMT服务器:{} {}成功.", _ip_address, _remote_endpoint.port());
 
 	Asset::Register message;
 	message.set_server_type(Asset::SERVER_TYPE_CENTER);
@@ -51,7 +49,9 @@ bool GmtSession::OnInnerProcess(const Asset::InnerMeta& meta)
 	{
 		case Asset::INNER_TYPE_REGISTER: //注册服务器成功
 		{
-			TRACE("逻辑服务器注册到GMT服务器成功.");
+			//_register = true;
+
+			DEBUG("逻辑服务器注册到GMT服务器成功.");
 		}
 		break;
 
@@ -266,6 +266,8 @@ Asset::COMMAND_ERROR_CODE GmtSession::OnCommandProcess(const Asset::Command& com
 
 Asset::COMMAND_ERROR_CODE GmtSession::OnSystemBroadcast(const Asset::SystemBroadcast& command)
 {
+	if (!IsConnected()) return Asset::COMMAND_ERROR_CODE_PARA;
+
 	Asset::SystemBroadcasting message;
 	message.set_broad_cast_type(Asset::SYSTEM_BROADCAST_TYPE_SCROLL);
 	message.set_content(command.content());
@@ -277,6 +279,8 @@ Asset::COMMAND_ERROR_CODE GmtSession::OnSystemBroadcast(const Asset::SystemBroad
 	
 void GmtSession::SendInnerMeta(const Asset::InnerMeta& meta)
 {
+	if (!IsConnected()) return;
+
 	std::string content = meta.SerializeAsString();
 	if (content.empty()) return;
 
@@ -291,6 +295,8 @@ void GmtSession::SendProtocol(pb::Message* message)
 
 void GmtSession::SendProtocol(pb::Message& message)
 {
+	if (!IsConnected()) return;
+
 	const pb::FieldDescriptor* field = message.GetDescriptor()->FindFieldByName("type_t");
 	if (!field) return;
 	
@@ -318,6 +324,8 @@ void GmtSession::SendProtocol(pb::Message& message)
 
 bool GmtSession::StartSend()
 {
+	//std::lock_guard<std::mutex> lock(_send_lock);
+
 	bool started = false;
 
 	while (IsConnected())
@@ -407,6 +415,8 @@ void GmtSession::OnReadSome(const boost::system::error_code& error, std::size_t 
 bool GmtSession::Update() 
 {
 	ClientSocket::Update();
+
+	//if (!_register) OnConnected();	
 
 	return true;
 }

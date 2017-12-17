@@ -28,8 +28,9 @@ class ClientSocket : public std::enable_shared_from_this<ClientSocket>
 {
 public:
 	ClientSocket(boost::asio::io_service& io_service, const boost::asio::ip::tcp::endpoint& endpoint) : 
-		_timer(io_service), _socket(io_service), _remote_endpoint(endpoint), _closed(false), _closing(false)
+		_timer(io_service), _remote_endpoint(endpoint), _closed(false), _closing(false)
 	{
+		_io_service = &io_service;
 		_ip_address = _remote_endpoint.address().to_string();
 		_port = _remote_endpoint.port();
 	}
@@ -48,8 +49,9 @@ public:
 
     virtual void AsyncConnect()
     {
-        _socket.async_connect(_remote_endpoint, std::bind(&ClientSocket::OnConnect, shared_from_this(), std::placeholders::_1));
 		_conn_status = CONNECTION_STATUS_CONNECTING;
+		_socket.reset(new boost::asio::ip::tcp::socket(*_io_service));
+        _socket->async_connect(_remote_endpoint, std::bind(&ClientSocket::OnConnect, shared_from_this(), std::placeholders::_1));
 
         if (_connect_timeout > 0) 
         {
@@ -60,6 +62,8 @@ public:
     
 	virtual void OnConnectTimeOut(const boost::system::error_code& error) 
     {
+		DEBUG("超时检查...连接服务器:{}，端口:{} 状态:{}", _ip_address, _port, _conn_status);
+
         if (error == boost::asio::error::operation_aborted) return;
 		if (error) ERROR("服务器内部连接超时失败，必须处理解决，错误码:{}", error.message());
             
@@ -72,23 +76,30 @@ public:
 		if (CONNECTION_STATUS_CONNECTED != _conn_status) 
 		{
 			WARN("网络正在连接...连接服务器:{}，端口:{} 状态:{}", _ip_address, _port, _conn_status);
-			AsyncConnect();
+
+			_conn_status = CONNECTION_STATUS_CONNECTING;
+			_socket.reset(new boost::asio::ip::tcp::socket(*_io_service));
+			_socket->async_connect(_remote_endpoint, std::bind(&ClientSocket::OnConnect, shared_from_this(), std::placeholders::_1));
 		}
     }
     
     void Close(const std::string& reason)
     {
-		boost::system::error_code error;
-		_socket.shutdown(boost::asio::ip::tcp::socket::shutdown_both, error);
+		if (_closed.exchange(true)) return;
 
-		ERROR("服务器内部连接超时失败，必须处理解决，错误码:{} 原因:{}", error.message(), reason);
+		boost::system::error_code error;
+		_socket->shutdown(boost::asio::ip::tcp::socket::shutdown_both, error);
+		_socket->close(error);
+		_socket.reset();
+
+		ERROR("服务器关闭网络连接，错误码:{} 原因:{}", error.message(), reason);
 
 		OnClose();
     }
 
     void AsynyReadSome()
     {
-        _socket.async_read_some(boost::asio::buffer(_buffer), std::bind(&ClientSocket::OnReadSome, shared_from_this(), std::placeholders::_1, std::placeholders::_2));
+        _socket->async_read_some(boost::asio::buffer(_buffer), std::bind(&ClientSocket::OnReadSome, shared_from_this(), std::placeholders::_1, std::placeholders::_2));
     }
 
 	void EnterQueue(std::string&& meta)
@@ -140,13 +151,13 @@ public:
 		if (_is_writing_async) return false;
 		_is_writing_async = true;
 
-		_socket.async_write_some(boost::asio::null_buffers(), std::bind(&ClientSocket::OnWriteSome, shared_from_this(), std::placeholders::_1, std::placeholders::_2));
+		_socket->async_write_some(boost::asio::null_buffers(), std::bind(&ClientSocket::OnWriteSome, shared_from_this(), std::placeholders::_1, std::placeholders::_2));
 		return false;
 	}
 
 	bool HandleQueue()
 	{
-		if (!_socket.is_open()) 
+		if (!IsConnected()) 
 		{
 			ERROR("网络已断开连接.");
 			return false;
@@ -158,7 +169,7 @@ public:
 		std::size_t bytes_to_send = meta.size();
 
 		boost::system::error_code error;
-		std::size_t bytes_sent = _socket.write_some(boost::asio::buffer(meta.c_str(), bytes_to_send), error);
+		std::size_t bytes_sent = _socket->write_some(boost::asio::buffer(meta.c_str(), bytes_to_send), error);
 
 		if (error == boost::asio::error::would_block || error == boost::asio::error::try_again)
 		{
@@ -192,7 +203,7 @@ public:
 	}
 
 	virtual void DelayedClose() { _closing = true; } //发送队列为空时再进行关闭
-	virtual bool IsConnected() { return _socket.is_open(); }
+	virtual bool IsConnected() { return _socket && _socket->is_open(); }
 	virtual bool IsOpen() const { return !_closed && !_closing; }
 	virtual bool IsClosed() const { return _closed || _closing; }
 
@@ -207,8 +218,9 @@ public:
 	virtual void OnWriteSome(const boost::system::error_code& error, std::size_t bytes_transferred) { }
 
 protected:
+	boost::asio::io_service* _io_service = nullptr;
 	boost::asio::deadline_timer _timer;
-	boost::asio::ip::tcp::socket _socket; 
+	std::shared_ptr<boost::asio::ip::tcp::socket> _socket; 
 	boost::asio::ip::tcp::endpoint _local_endpoint;
 	boost::asio::ip::tcp::endpoint _remote_endpoint;
 
@@ -224,6 +236,10 @@ protected:
     
 	virtual void OnConnect(const boost::system::error_code& error)
     {
+		DEBUG("网络连接中，当前状态:{}，错误信息:{}...", _conn_status, error.message());
+
+		if (_conn_status != CONNECTION_STATUS_CONNECTING) return;
+
         if (error)
         {
             Close("连接失败，错误信息: " + error.message());
@@ -231,7 +247,7 @@ protected:
         }
 
         boost::system::error_code ec;
-        _socket.set_option(boost::asio::ip::tcp::no_delay(true), ec);
+        _socket->set_option(boost::asio::ip::tcp::no_delay(true), ec);
 
         if (ec)
         {
@@ -239,7 +255,7 @@ protected:
             return;
         }
 
-        _local_endpoint = _socket.local_endpoint(ec);
+        _local_endpoint = _socket->local_endpoint(ec);
 
         if (ec)
         {
@@ -247,7 +263,7 @@ protected:
             return;
         }
 
-        //_timer.cancel();
+		_conn_status = CONNECTION_STATUS_CONNECTED;
 
 		OnConnected(); //连接成功
 
@@ -261,8 +277,8 @@ private:
 	std::atomic<bool> _closed;    
 	std::atomic<bool> _closing;
 	bool _is_writing_async = false;
-	std::queue<std::string> _write_queue;
 	std::mutex _send_lock;
+	std::queue<std::string> _write_queue;
 	CONNECTION_STATUS _conn_status = CONNECTION_STATUS_NIL;
 };	
 
