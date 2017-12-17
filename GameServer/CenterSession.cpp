@@ -272,9 +272,12 @@ bool CenterSession::Update()
 		}
 	}
 
-	if (_heart_count % 1200 == 0) //60s
+	if (_heart_count % 1200 == 0) SayHi(); //心跳(60s)
+	
+	if (_heart_count % 36000 == 0) //30mins
 	{
-		SayHi(); //心跳
+		int32_t server_id = ConfigInstance.GetInt("ServerID", 1);
+		DEBUG("游戏逻辑服务器:{}在线玩家数量:{}", server_id, _players.size());
 	}
 
 	return true;

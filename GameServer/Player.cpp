@@ -4451,6 +4451,9 @@ void Player::AddRoomScore(int32_t score)
 //
 //当前周期为50MS.
 //
+//CenterSession::Update()  调用
+//
+/*
 void PlayerManager::Update(int32_t diff)
 {
 	std::lock_guard<std::mutex> lock(_player_lock);
@@ -4480,6 +4483,7 @@ void PlayerManager::Update(int32_t diff)
 		DEBUG("游戏逻辑服务器:{}在线玩家数量:{}", server_id, _players.size());
 	}
 }
+*/
 
 int32_t Player::CmdRecharge(pb::Message* message)
 {
