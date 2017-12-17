@@ -30,6 +30,8 @@ void ServerSession::InitializeHandler(const boost::system::error_code error, con
 {
 	try
 	{
+		//DEBUG("接收数据:{}，地址:{}，端口:{}", bytes_transferred, _ip_address, _remote_endpoint.port());
+
 		if (error)
 		{
 			ERROR("远程断开与GMT服务器:{}连接, 地址:{} 端口:{}，错误码:{} 错误描述:{}", _server_id, _ip_address, _remote_endpoint.port(), error.value(), error.message());

@@ -57,7 +57,6 @@ private:
 	std::string _ip_address;
 	std::mutex _gmt_lock; 
 	int64_t _session_id = 0; //操作会话
-	bool _register = false; //是否注册成功
 };
 
 }

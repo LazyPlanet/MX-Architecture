@@ -31,6 +31,8 @@ void GmtSession::OnConnected()
 {
 	DEBUG("中心服务器连接GMT服务器:{} {}成功.", _ip_address, _remote_endpoint.port());
 
+	ClientSocket::OnConnected();
+
 	Asset::Register message;
 	message.set_server_type(Asset::SERVER_TYPE_CENTER);
 	message.set_server_id(ConfigInstance.GetInt("ServerID", 1)); //服务器ID，全球唯一
@@ -49,8 +51,6 @@ bool GmtSession::OnInnerProcess(const Asset::InnerMeta& meta)
 	{
 		case Asset::INNER_TYPE_REGISTER: //注册服务器成功
 		{
-			//_register = true;
-
 			DEBUG("逻辑服务器注册到GMT服务器成功.");
 		}
 		break;
@@ -415,8 +415,6 @@ void GmtSession::OnReadSome(const boost::system::error_code& error, std::size_t 
 bool GmtSession::Update() 
 {
 	ClientSocket::Update();
-
-	//if (!_register) OnConnected();	
 
 	return true;
 }

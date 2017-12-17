@@ -196,6 +196,7 @@ public:
 			return AsyncProcessQueue();
 		}
 
+		//DEBUG("待发送数据长度:{} 实际发送数据长度:{} 错误码:{}", bytes_to_send, bytes_sent, error.message());
 		_write_queue.pop();
 
 		if (_closing && _write_queue.empty()) Close("关闭");
@@ -211,6 +212,7 @@ public:
 		_conn_status = CONNECTION_STATUS_NIL;
 	}
     virtual void OnConnected() { 
+		_closed = _closing = false;
 		_conn_status = CONNECTION_STATUS_CONNECTED;
 	}
 
@@ -262,8 +264,6 @@ protected:
             Close("连接失败，错误信息: " + ec.message());
             return;
         }
-
-		_conn_status = CONNECTION_STATUS_CONNECTED;
 
 		OnConnected(); //连接成功
 
