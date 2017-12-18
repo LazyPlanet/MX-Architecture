@@ -48,16 +48,24 @@ public:
 
 	bool Connect()
 	{
-		if (_client.is_connected()) return true;
-
-		_client.connect(_hostname, _port, [this](const std::string& host, std::size_t port, cpp_redis::client::connect_state status) {
-				if (status == cpp_redis::client::connect_state::dropped) {
-					std::cout << "数据库连接失败..." << std::endl;
-				}
-			});
-		if (!_client.is_connected()) 
+		try 
 		{
-			LOG(ERROR, "数据库地址:{}，端口:{}连接失败，原因:未能连接数据库", _hostname, _port);
+			if (_client.is_connected()) return true;
+
+			_client.connect(_hostname, _port, [this](const std::string& host, std::size_t port, cpp_redis::client::connect_state status) {
+					if (status == cpp_redis::client::connect_state::dropped) {
+						std::cout << "数据库连接失败..." << std::endl;
+					}
+				});
+			if (!_client.is_connected()) 
+			{
+				LOG(ERROR, "数据库地址:{}，端口:{}连接失败，原因:未能连接数据库", _hostname, _port);
+				return false;
+			}
+		}
+		catch (std::exception& e)
+		{
+			std::cout << "数据库异常:" << e.what() << std::endl;
 			return false;
 		}
 		return true;
