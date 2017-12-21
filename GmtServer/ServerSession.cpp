@@ -245,10 +245,10 @@ bool ServerSession::OnInnerProcess(const Asset::InnerMeta& meta)
 			auto result = message.ParseFromString(meta.stuff());
 			if (!result) return false;
 	
-			auto redis = make_unique<Redis>();
+			//auto redis = make_unique<Redis>();
 
 			Asset::Player player; //玩家数据
-			auto success = redis->GetPlayer(message.player_id(), player);
+			auto success = Redis().GetPlayer(message.player_id(), player);
 			if (!success) message.set_error_code(Asset::COMMAND_ERROR_CODE_NO_PLAYER);
 			else message.set_common_prop(player.common_prop().SerializeAsString());
 
@@ -276,7 +276,7 @@ Asset::COMMAND_ERROR_CODE ServerSession::OnActivityControl(const Asset::Activity
 			
 Asset::COMMAND_ERROR_CODE ServerSession::OnCommandProcess(const Asset::Command& command)
 {
-	auto redis = make_unique<Redis>();
+	//auto redis = make_unique<Redis>();
 
 	/*
 	Asset::User user; //账号数据
@@ -304,7 +304,7 @@ Asset::COMMAND_ERROR_CODE ServerSession::OnCommandProcess(const Asset::Command& 
 
 	Asset::Player player; //玩家数据
 
-	auto success = redis->GetPlayer(player_id, player);
+	auto success = Redis().GetPlayer(player_id, player);
 	if (!success)
 	{
 		RETURN(Asset::COMMAND_ERROR_CODE_NO_PLAYER); //没有角色数据
@@ -456,7 +456,7 @@ Asset::COMMAND_ERROR_CODE ServerSession::OnCommandProcess(const Asset::Command& 
 	}
 
 	//存盘
-	redis->SavePlayer(player_id, player);
+	Redis().SavePlayer(player_id, player);
 
 	RETURN(Asset::COMMAND_ERROR_CODE_SUCCESS); //成功执行
 }
@@ -469,8 +469,8 @@ Asset::COMMAND_ERROR_CODE ServerSession::OnSendMail(const Asset::SendMail& comma
 	{
 		Asset::Player player; //玩家数据
 
-		auto redis = make_unique<Redis>();
-		auto success = redis->GetPlayer(player_id, player);
+		///auto redis = make_unique<Redis>();
+		auto success = Redis().GetPlayer(player_id, player);
 		if (!success)
 		{
 			RETURN(Asset::COMMAND_ERROR_CODE_NO_PLAYER); //数据错误
@@ -522,7 +522,7 @@ Asset::COMMAND_ERROR_CODE ServerSession::OnSendMail(const Asset::SendMail& comma
 			}
 
 			//存盘
-			redis->SavePlayer(player_id, player);
+			Redis().SavePlayer(player_id, player);
 		}
 	}
 	else //全服邮件
