@@ -1732,22 +1732,22 @@ std::vector<Asset::PAI_OPER_TYPE> Player::CheckPai(const Asset::PaiElement& pai,
 
 	if (CheckHuPai(pai)) 
 	{
-		DEBUG("玩家{}可以胡来自玩家:{}牌:{}", _player_id, source_player_id, pai.ShortDebugString());
+		DEBUG("玩家{} 可以胡来自玩家:{} 牌数据:{}", _player_id, source_player_id, pai.ShortDebugString());
 		rtn_check.push_back(Asset::PAI_OPER_TYPE_HUPAI);
 	}
 	if (CheckGangPai(pai, source_player_id)) 
 	{
-		DEBUG("玩家{}可以杠来自玩家:{}牌:{}", _player_id, source_player_id, pai.ShortDebugString());
+		DEBUG("玩家{} 可以杠来自玩家:{} 牌数据:{}", _player_id, source_player_id, pai.ShortDebugString());
 		rtn_check.push_back(Asset::PAI_OPER_TYPE_GANGPAI);
 	}
 	if (CheckPengPai(pai)) 
 	{
-		DEBUG("玩家{}可以碰来自玩家:{}牌:{}", _player_id, source_player_id, pai.ShortDebugString());
+		DEBUG("玩家{} 可以碰来自玩家:{} 牌数据:{}", _player_id, source_player_id, pai.ShortDebugString());
 		rtn_check.push_back(Asset::PAI_OPER_TYPE_PENGPAI);
 	}
 	if (CheckChiPai(pai)) 
 	{
-		DEBUG("玩家{}可以吃来自玩家:{}牌:{}", _player_id, source_player_id, pai.ShortDebugString());
+		DEBUG("玩家{} 可以吃来自玩家:{} 牌数据:{}", _player_id, source_player_id, pai.ShortDebugString());
 		rtn_check.push_back(Asset::PAI_OPER_TYPE_CHIPAI);
 	}
 		
