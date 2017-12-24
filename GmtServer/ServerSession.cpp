@@ -22,12 +22,16 @@ ServerSession::ServerSession(boost::asio::ip::tcp::socket&& socket) : Socket(std
 {
 	_remote_endpoint = _socket.remote_endpoint();
 	_ip_address = _remote_endpoint.address().to_string();
+
+	DEBUG("接收连接，地址:{}，端口:{}", _ip_address, _remote_endpoint.port());
 }
 
 void ServerSession::InitializeHandler(const boost::system::error_code error, const std::size_t bytes_transferred)
 {
 	try
 	{
+		//DEBUG("接收数据:{}，地址:{}，端口:{}", bytes_transferred, _ip_address, _remote_endpoint.port());
+
 		if (error)
 		{
 			ERROR("远程断开与GMT服务器:{}连接, 地址:{} 端口:{}，错误码:{} 错误描述:{}", _server_id, _ip_address, _remote_endpoint.port(), error.value(), error.message());
@@ -241,10 +245,10 @@ bool ServerSession::OnInnerProcess(const Asset::InnerMeta& meta)
 			auto result = message.ParseFromString(meta.stuff());
 			if (!result) return false;
 	
-			auto redis = make_unique<Redis>();
+			//auto redis = make_unique<Redis>();
 
 			Asset::Player player; //玩家数据
-			auto success = redis->GetPlayer(message.player_id(), player);
+			auto success = RedisInstance.GetPlayer(message.player_id(), player);
 			if (!success) message.set_error_code(Asset::COMMAND_ERROR_CODE_NO_PLAYER);
 			else message.set_common_prop(player.common_prop().SerializeAsString());
 
@@ -272,7 +276,7 @@ Asset::COMMAND_ERROR_CODE ServerSession::OnActivityControl(const Asset::Activity
 			
 Asset::COMMAND_ERROR_CODE ServerSession::OnCommandProcess(const Asset::Command& command)
 {
-	auto redis = make_unique<Redis>();
+	//auto redis = make_unique<Redis>();
 
 	/*
 	Asset::User user; //账号数据
@@ -300,7 +304,7 @@ Asset::COMMAND_ERROR_CODE ServerSession::OnCommandProcess(const Asset::Command& 
 
 	Asset::Player player; //玩家数据
 
-	auto success = redis->GetPlayer(player_id, player);
+	auto success = RedisInstance.GetPlayer(player_id, player);
 	if (!success)
 	{
 		RETURN(Asset::COMMAND_ERROR_CODE_NO_PLAYER); //没有角色数据
@@ -452,7 +456,7 @@ Asset::COMMAND_ERROR_CODE ServerSession::OnCommandProcess(const Asset::Command& 
 	}
 
 	//存盘
-	redis->SavePlayer(player_id, player);
+	RedisInstance.SavePlayer(player_id, player);
 
 	RETURN(Asset::COMMAND_ERROR_CODE_SUCCESS); //成功执行
 }
@@ -465,8 +469,8 @@ Asset::COMMAND_ERROR_CODE ServerSession::OnSendMail(const Asset::SendMail& comma
 	{
 		Asset::Player player; //玩家数据
 
-		auto redis = make_unique<Redis>();
-		auto success = redis->GetPlayer(player_id, player);
+		///auto redis = make_unique<Redis>();
+		auto success = RedisInstance.GetPlayer(player_id, player);
 		if (!success)
 		{
 			RETURN(Asset::COMMAND_ERROR_CODE_NO_PLAYER); //数据错误
@@ -518,7 +522,7 @@ Asset::COMMAND_ERROR_CODE ServerSession::OnSendMail(const Asset::SendMail& comma
 			}
 
 			//存盘
-			redis->SavePlayer(player_id, player);
+			RedisInstance.SavePlayer(player_id, player);
 		}
 	}
 	else //全服邮件
@@ -644,7 +648,7 @@ void ServerSessionManager::Add(int64_t server_id, std::shared_ptr<ServerSession>
 {
 	std::lock_guard<std::mutex> lock(_server_mutex);
 
-	_sessions.emplace(server_id, session);
+	_sessions[server_id] = session;
 }	
 	
 void ServerSessionManager::Remove(int64_t server_id)

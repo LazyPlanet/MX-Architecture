@@ -175,9 +175,9 @@ void Game::SavePlayBack()
 	if (get.is_string()) result = get.as_string(); 
 	*/
 
-	auto redis_cli = make_unique<Redis>();
+	//auto redis_cli = make_unique<Redis>();
 	std::string key = "playback:" + std::to_string(_room_id) + "_" + std::to_string(_game_id);
-	redis_cli->Save(key, _playback);
+	RedisInstance.Save(key, _playback);
 
 	//LOG(INFO, "房间:{} 局数:{} 结论:{} 存储回放信息:{}", _room_id, _game_id, /*_playback.ShortDebugString()*/result, result); 
 }

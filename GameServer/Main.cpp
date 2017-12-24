@@ -12,6 +12,7 @@
 
 #include <boost/asio.hpp>
 #include <boost/bind.hpp>
+#include <cpp_redis/cpp_redis>
 
 #include "Timer.h"
 #include "World.h"
@@ -83,7 +84,7 @@ int main(int argc, const char* argv[])
 	try 
 	{
 		std::srand(std::time(0)); //random_shuffle不是真随机：http://stackoverflow.com/questions/13459953/random-shuffle-not-really-random
-
+	
 		//
 		//系统配置读取
 		//
@@ -128,6 +129,9 @@ int main(int argc, const char* argv[])
 		
 		int32_t thread_count = ConfigInstance.GetInt("ThreadCount", 5);
 		if (thread_count <= 0) return 6;
+
+		int32_t redis_work_count = ConfigInstance.GetInt("Redis_WorkCount", 5);
+		tacopie::get_default_io_service()->set_nb_workers(redis_work_count);
 
 		//
 		//连接中心服

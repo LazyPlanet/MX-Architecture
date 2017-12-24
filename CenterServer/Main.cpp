@@ -124,6 +124,9 @@ int main(int argc, const char* argv[])
 		int32_t thread_count = ConfigInstance.GetInt("ThreadCount", 5);
 		if (thread_count <= 0) return 6;
 
+		int32_t redis_work_count = ConfigInstance.GetInt("Redis_WorkCount", 5);
+		tacopie::get_default_io_service()->set_nb_workers(redis_work_count);
+
 		WorldSessionInstance.StartNetwork(_io_service, server_ip, server_port, thread_count);
 
 		//

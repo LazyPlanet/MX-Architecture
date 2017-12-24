@@ -69,7 +69,7 @@ int32_t Player::Load()
 {
 	//加载数据库
 	//auto redis = make_unique<Redis>();
-	auto success = Redis().GetPlayer(_player_id, _stuff);
+	auto success = RedisInstance.GetPlayer(_player_id, _stuff);
 	if (!success) return 1;
 		
 	//初始化包裹
@@ -102,7 +102,7 @@ int32_t Player::Save(bool force)
 
 	if (!force && !IsDirty()) return 1;
 
-	auto success = Redis().SavePlayer(_player_id, _stuff);
+	auto success = RedisInstance.SavePlayer(_player_id, _stuff);
 	if (!success) 
 	{
 		LOG(ERROR, "保存玩家:{}数据:{}失败", _player_id, _stuff.ShortDebugString());
@@ -1717,7 +1717,7 @@ const std::string Player::GetIpAddress()
 	//if (!_user.has_client_info() || !_user.client_info().has_client_ip())
 	//{
 		//auto redis = make_unique<Redis>();
-		Redis().GetUser(_stuff.account(), _user);
+		RedisInstance.GetUser(_stuff.account(), _user);
 	//}
 
 	return _user.client_info().ip_address();
@@ -4375,7 +4375,7 @@ const Asset::WechatUnion Player::GetWechat()
 	if (!_user.has_wechat())
 	{
 		//auto redis = make_unique<Redis>();
-		Redis().GetUser(_stuff.account(), _user);
+		RedisInstance.GetUser(_stuff.account(), _user);
 	}
 
 	return _user.wechat();
@@ -4451,6 +4451,9 @@ void Player::AddRoomScore(int32_t score)
 //
 //当前周期为50MS.
 //
+//CenterSession::Update()  调用
+//
+/*
 void PlayerManager::Update(int32_t diff)
 {
 	std::lock_guard<std::mutex> lock(_player_lock);
@@ -4480,6 +4483,7 @@ void PlayerManager::Update(int32_t diff)
 		DEBUG("游戏逻辑服务器:{}在线玩家数量:{}", server_id, _players.size());
 	}
 }
+*/
 
 int32_t Player::CmdRecharge(pb::Message* message)
 {

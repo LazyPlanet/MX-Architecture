@@ -87,7 +87,7 @@ int32_t Player::Load()
 	*/
 
 	auto key = "player:" + std::to_string(_player_id);
-	auto loaded = Redis().Get(key, _stuff);
+	auto loaded = RedisInstance.Get(key, _stuff);
 	if (!loaded) return 2;
 
 	_loaded = true;
@@ -112,8 +112,8 @@ int32_t Player::Save(bool force)
 
 	if (!IsCenterServer()) return 2; 
 
-	auto redis = make_unique<Redis>();
-	auto success = redis->SavePlayer(_player_id, _stuff); 
+	//auto redis = make_unique<Redis>();
+	auto success = RedisInstance.SavePlayer(_player_id, _stuff); 
 	if (!success) return 3;
 
 	_dirty = false;
@@ -956,7 +956,7 @@ int32_t Player::CmdPlayBack(pb::Message* message)
 	*/
 	
 	Asset::PlayBack playback;
-	auto has_record = Redis().Get(key, playback);
+	auto has_record = RedisInstance.Get(key, playback);
 	if (!has_record)
 	{
 		AlertMessage(Asset::ERROR_ROOM_PLAYBACK_NO_RECORD, Asset::ERROR_TYPE_NORMAL, Asset::ERROR_SHOW_TYPE_MESSAGE_BOX);
@@ -1044,8 +1044,8 @@ void Player::BattleHistory(int32_t start_index, int32_t end_index)
 		if (!success) continue;
 		*/
 
-		auto redis_cli = make_unique<Redis>();
-		if (!redis_cli->GetRoomHistory(room_id, history)) 
+		//auto redis_cli = make_unique<Redis>();
+		if (!RedisInstance.GetRoomHistory(room_id, history)) 
 		{
 			auto record = message.mutable_history_list()->Add();
 			record->set_room_id(room_id); //尚未存盘成功的战绩，只发房间ID

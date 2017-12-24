@@ -618,8 +618,8 @@ void Room::AddGameRecord(const Asset::GameRecord& record)
 	client.commit();
 	*/
 	
-	auto redis_cli = make_unique<Redis>();
-	redis_cli->SaveRoomHistory(_stuff.room_id(), _history);
+	//auto redis_cli = make_unique<Redis>();
+	RedisInstance.SaveRoomHistory(_stuff.room_id(), _history);
 
 	LOG(INFO, "存储房间:{}历史战绩:{}", _stuff.room_id(), _history.ShortDebugString());
 }
@@ -718,7 +718,7 @@ void Room::SyncRoom()
 	Asset::RoomInformation message;
 	message.set_sync_type(Asset::ROOM_SYNC_TYPE_NORMAL);
 			
-	auto redis = make_unique<Redis>();
+	//auto redis = make_unique<Redis>();
 
 	for (auto player : _players)
 	{
@@ -739,7 +739,7 @@ void Room::SyncRoom()
 			auto dis_element = p->mutable_dis_list()->Add();
 			dis_element->set_position(dis_player->GetPosition());
 
-			auto distance = redis->GetDistance(dis_player->GetID(), player->GetID());
+			auto distance = RedisInstance.GetDistance(dis_player->GetID(), player->GetID());
 			dis_element->set_distance(distance);
 
 			//DEBUG("获取玩家{}和玩家{}之间的距离:{}", dis_player->GetID(), player->GetID(), distance);
@@ -983,8 +983,8 @@ bool RoomManager::CheckPassword(int64_t room_id, std::string password)
 
 int64_t RoomManager::AllocRoom()
 {
-	auto redis = make_unique<Redis>();
-	return redis->CreateRoom();
+	//auto redis = make_unique<Redis>();
+	return RedisInstance.CreateRoom();
 }
 	
 std::shared_ptr<Room> RoomManager::CreateRoom(const Asset::Room& room)
