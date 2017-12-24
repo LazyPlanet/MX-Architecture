@@ -214,7 +214,7 @@ void WorldSession::OnProcessMessage(const Asset::Meta& meta)
 			
 			_account.CopyFrom(login->account()); //账号信息
 
-			auto success = Redis().GetUser(login->account().username(), _user);
+			auto success = RedisInstance.GetUser(login->account().username(), _user);
 			if (!success) return;
 
 			//
@@ -233,7 +233,7 @@ void WorldSession::OnProcessMessage(const Asset::Meta& meta)
 			//
 			if (_user.player_list().size() == 0)
 			{
-				int64_t player_id = Redis().CreatePlayer(); //如果账号下没有角色，创建一个给Client
+				int64_t player_id = RedisInstance.CreatePlayer(); //如果账号下没有角色，创建一个给Client
 				if (player_id == 0) return;
 				
 				_player = std::make_shared<Player>(player_id);
@@ -259,7 +259,7 @@ void WorldSession::OnProcessMessage(const Asset::Meta& meta)
 			//
 			//账号数据存储
 			//
-			Redis().SaveUser(login->account().username(), _user);
+			RedisInstance.SaveUser(login->account().username(), _user);
 
 			LOG_BI("account", _user); //账号查询
 			
@@ -294,7 +294,7 @@ void WorldSession::OnProcessMessage(const Asset::Meta& meta)
 
 			if (_user.client_info().has_imei() && !_user.client_info().imei().empty()) //直接获取IEMI对应的游客账号，防止刷卡
 			{
-				auto has_key = Redis().Get(_user.client_info().imei(), account);
+				auto has_key = RedisInstance.Get(_user.client_info().imei(), account);
 				if (!has_key) 
 				{
 					LOG(ERROR, "玩家账号游客登录错误，手机唯一识别码:{}已经存在游客账号,不能再次游客登录，防止刷卡.", _user.client_info().imei());
@@ -303,7 +303,7 @@ void WorldSession::OnProcessMessage(const Asset::Meta& meta)
 			}
 			else
 			{
-				if (Redis().GetGuestAccount(account)) 
+				if (RedisInstance.GetGuestAccount(account)) 
 				{
 					login->set_account(account);
 
@@ -311,13 +311,13 @@ void WorldSession::OnProcessMessage(const Asset::Meta& meta)
 					_account.set_username(login->account()); //账号信息
 				}
 				
-				Redis().Save(_user.client_info().imei(), account); //存储IMEI和账号对应关系
+				RedisInstance.Save(_user.client_info().imei(), account); //存储IMEI和账号对应关系
 			}
 
 			_user.mutable_account()->CopyFrom(_account);
 			_user.set_created_time(CommonTimerInstance.GetTime()); //创建时间
 
-			Redis().SaveUser(account, _user); //存盘
+			RedisInstance.SaveUser(account, _user); //存盘
 
 			SendProtocol(login); 
 		}
@@ -454,7 +454,7 @@ void WorldSession::OnProcessMessage(const Asset::Meta& meta)
 
 			if (!_player || _player->GetID() != switch_account->player_id()) return;
 
-			Redis().SaveUser(_account.username(), _user); //存盘退出
+			RedisInstance.SaveUser(_account.username(), _user); //存盘退出
 
 			_player->Save(true);
 			_player.reset();
@@ -538,7 +538,7 @@ void WorldSession::OnProcessMessage(const Asset::Meta& meta)
 			_user.mutable_client_info()->mutable_location()->CopyFrom(client_data->client_info().location());
 				
 			//auto redis = make_unique<Redis>();
-			Redis().SetLocation(_player->GetID(), client_data->client_info().location()); //位置信息
+			RedisInstance.SetLocation(_player->GetID(), client_data->client_info().location()); //位置信息
 
 			client_data->mutable_client_info()->CopyFrom(_user.client_info());
 			SendProtocol(message);
@@ -600,14 +600,14 @@ int32_t WorldSession::OnWechatLogin(const pb::Message* message)
 	if (!login) return 1; 
 
 	auto key = "user:" + login->wechat().openid();
-	auto success = Redis().Get(key, _user);
+	auto success = RedisInstance.Get(key, _user);
 
 	if (!success) _user.set_created_time(CommonTimerInstance.GetTime()); //创建时间
 
 	if (!login->wechat().openid().empty()) 
 	{
 		_user.mutable_wechat()->CopyFrom(login->wechat()); //微信数据
-		Redis().SaveUser(_user.wechat().openid(), _user); //账号数据存盘//每次都更新防止玩家修改了个人信息
+		RedisInstance.SaveUser(_user.wechat().openid(), _user); //账号数据存盘//每次都更新防止玩家修改了个人信息
 	}
 
 	//DEBUG("微信登陆数据:{} 缓存数据:{}", login->ShortDebugString(), _user.ShortDebugString());
