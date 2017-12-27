@@ -1888,13 +1888,13 @@ bool Player::CheckBaoHu(const Asset::PaiElement& pai/*宝牌数据*/)
 	{
 		if (card.card_type() == max_fan_card.card_type() && card.card_value() == max_fan_card.card_value()) continue; //减少后续检查
 
-		hupai = CheckHuPai(card, false); //能否胡牌，理论上一定可以胡牌
+		hupai = CheckHuPai(card, false); //能否胡牌，理论上一定可以胡牌//杠后可能换听，现有的胡牌可能已经不胡了//再次检查
 		if (!hupai) continue;
 		
 		int32_t score_base = 1;
 		for (const auto fan : _fan_list) score_base *= get_multiple(fan); //番数
 
-		if (score_base > max_fan_score)
+		if (score_base >= max_fan_score)
 		{
 			max_fan_score = score_base;
 			max_fan_card = card;
@@ -2099,6 +2099,11 @@ bool Player::CheckHuPai(const std::map<int32_t, std::vector<int32_t>>& cards_inh
 		return false;
 	}
 	
+	//胡牌时至少有一刻子或杠，或有中发白其中一对
+	bool has_ke = false;
+			
+	if (HasKeOutHand()) has_ke = true;
+	
 	//
 	//防止出现玩家已经碰了6饼，但是牌内含有2、3、4、5、6万，7、8饼
 	//
@@ -2119,21 +2124,23 @@ bool Player::CheckHuPai(const std::map<int32_t, std::vector<int32_t>>& cards_inh
 			for (auto value : crds.second)
 				card_list.push_back(Card_t(crds.first, value));
 		}
+
+		_hu_result.clear();
+
 		bool can_hu = CanHuPai(card_list);	
 		if (!can_hu) return false;
+
+		if (!has_ke)
+		{
+			int32_t ke_count = 0; //刻数量:一般最多4个，即12张
+			for (auto r : _hu_result)
+			{
+				 bool is_ke = std::get<1>(r);
+				 if (is_ke) ++ke_count;
+			}
+			if (ke_count) has_ke = true; //牌内刻数量
+		}
 	}
-
-	//胡牌时至少有一刻子或杠，或有中发白其中一对
-	bool has_ke = false;
-	int32_t ke_count = 0; //刻数量，一般最多4个，即12张
-
-	for (auto r : _hu_result)
-	{
-		 bool is_ke = std::get<1>(r);
-		 if (is_ke) ++ke_count;
-	}
-
-	if (ke_count) has_ke = true;
 
 	if (!has_ke && (/*cards[Asset::CARD_TYPE_FENG].size() //朝阳：两个风牌不顶横 || */cards[Asset::CARD_TYPE_JIAN].size())) has_ke = true;
 	
@@ -2365,18 +2372,21 @@ bool Player::CheckHuPai(const Asset::PaiElement& pai, bool check_zibo)
 	//胡牌时至少有刻子或杠，或有中发白
 	//
 	bool has_ke = false;
-	int32_t ke_count = 0, shunzi_count = 0; 
+
+	if (HasKeOutHand()) has_ke = true;
+
+	int32_t shunzi_count = 0; 
 
 	for (auto r : _hu_result)
 	{
-		 bool is_ke = std::get<1>(r);
-		 if (is_ke) ++ke_count;
+		 //bool is_ke = std::get<1>(r);
+		 //if (is_ke) ++ke_count;
 		 
 		 bool is_shunzi = std::get<2>(r);
 		 if (is_shunzi) ++shunzi_count;
 	}
 
-	if (ke_count) has_ke = true;
+	//if (ke_count) has_ke = true; //拼凑的刻
 
 	if (!has_ke && (/*cards[Asset::CARD_TYPE_FENG].size() //朝阳：两个风牌不顶横 || */cards[Asset::CARD_TYPE_JIAN].size())) has_ke = true;
 	
@@ -2417,8 +2427,22 @@ bool Player::CheckHuPai(const Asset::PaiElement& pai, bool check_zibo)
 			for (auto value : crds.second)
 				card_list.push_back(Card_t(crds.first, value));
 		}
+		
+		_hu_result.clear();
+
 		bool can_hu = CanHuPai(card_list);	
 		if (!can_hu) return false;
+		
+		if (!has_ke)
+		{
+			int32_t ke_count = 0; 
+			for (auto r : _hu_result)
+			{
+				 bool is_ke = std::get<1>(r);
+				 if (is_ke) ++ke_count;
+			}
+			if (ke_count == 0) return false; //防止玩家牌内和牌外总体有刻，比如，牌内:123，牌外:123，123
+		}
 	}
 	
 	//
@@ -2563,6 +2587,27 @@ bool Player::IsMingPiao()
 	auto curr_count = GetCardCount();
 
 	return curr_count == 1 || curr_count == 2;
+}
+
+bool Player::HasKeOutHand()
+{
+	const auto& cards_outhand = _cards_outhand;
+
+	for (auto cards : cards_outhand)
+	{
+		if (cards.second.size() == 0) continue;
+
+		if (cards.second.size() % 3 != 0) return false;
+
+		for (size_t i = 0; i < cards.second.size(); i = i + 3)
+		{
+			auto card_value = cards.second.at(i);
+
+			if ((card_value == cards.second.at(i + 1)) && (card_value == cards.second.at(i + 2))) return true; 
+		}
+	}
+
+	return false;
 }
 
 bool Player::IsPiao()
@@ -3820,20 +3865,17 @@ int32_t Player::OnFaPai(std::vector<int32_t>& cards)
 		}
 	}
 
-	if (false && _player_id == 264193 && _cards_inhand.size() == 0)
+	if (false && _player_id == 262271 && _cards_inhand.size() == 0)
 	{
 		_cards_inhand = {
-			{ 1, {2, 3, 4} },
-			{ 2, {4, 5, 6} },
-			{ 3, {7, 7, 7, 7} },
-			//{ 4, {1} },
-			{ 5, { 1, 2, 3} },
+			//{ 1, {7, 8, 9} },
+			{ 2, {2, 3, 5, 6, 7, 8,8 } },
 		};
 		
 		_cards_outhand = {
 			//{ 1, { 7, 7, 7, 6, 7, 8} },
-			//{ 2, { 5, 6, 7 } },
-			//{ 3, { 7, 7, 7 } },
+			{ 2, { 1, 2, 3, 1, 2, 3 } },
+			//{ 3, { 6, 6, 6 } },
 			//{ 4, { 3, 3, 3 } },
 		};
 

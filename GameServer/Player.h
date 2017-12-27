@@ -402,6 +402,7 @@ public:
 	bool IsSiGuiYi(); //是否四归一 
 	bool IsDanDiao(); //是否单调
 	bool IsPiao(); //是否飘
+	bool HasKeOutHand();
 
 	int32_t GetMingGangCount() { return _minggang.size(); } //明杠数量
 	int32_t GetAnGangCount() { return _angang.size(); } //暗杠数量
