@@ -221,8 +221,8 @@ bool Game::CanPaiOperate(std::shared_ptr<Player> player)
 		return true; //轮到该玩家
 	}
 	
-	LOG(ERROR, "curr_player_index:{} player_index:{} player_id:{} oper_limit_player_id:{}", _curr_player_index, player_index, 
-			player->GetID(), _oper_cache.player_id());
+	LOG(ERROR, "房间:{} 局数:{} 当前缓存玩家索引:{} 当前操作玩家索引:{} 当前操作玩家:{} 服务器缓存数据:{}", 
+			_room_id, _game_id, _curr_player_index, player_index, player->GetID(), _oper_cache.ShortDebugString());
 	return false;
 }
 	
