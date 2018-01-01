@@ -638,7 +638,11 @@ void Game::OnPaiOperate(std::shared_ptr<Player> player, pb::Message* message)
 			}
 			else
 			{
-				player->OnGangPai(pai, _oper_cache.source_player_id());
+				auto source_player_id = _oper_cache.source_player_id();
+
+				ClearOperation(); //删除状态
+
+				player->OnGangPai(pai, source_player_id);
 
 				auto cards = TailPai(1); //从后楼给玩家取一张牌
 				if (cards.size() == 0) return;
@@ -706,11 +710,9 @@ void Game::OnPaiOperate(std::shared_ptr<Player> player, pb::Message* message)
 				
 				if (Asset::PAI_OPER_TYPE_GANGPAI == pai_operate->oper_type()) //明杠删除牌池
 				{
-					auto source_player = GetPlayer(_oper_cache.source_player_id());
+					auto source_player = GetPlayer(source_player_id);
 					if (source_player) source_player->CardsPoolPop();
 				}
-
-				ClearOperation(); //清理缓存以及等待玩家操作的状态
 			}
 		}
 		break;
