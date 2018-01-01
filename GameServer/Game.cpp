@@ -1833,6 +1833,8 @@ void Game::SetZiMoCache(std::shared_ptr<Player> player, Asset::PaiElement pai)
 	_oper_cache.set_source_player_id(player->GetID()); 
 	_oper_cache.mutable_pai()->CopyFrom(pai);
 	_oper_cache.mutable_oper_list()->Add(Asset::PAI_OPER_TYPE_HUPAI);
+
+	DEBUG("房间:{} 局数:{} 玩家:{}自摸设置数据:{}", _room_id, _game_id, player->GetID(), _oper_cache.ShortDebugString());
 }
 
 std::vector<int32_t> Game::TailPai(size_t card_count)
