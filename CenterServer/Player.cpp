@@ -631,10 +631,8 @@ bool Player::HandleProtocol(int32_t type_t, pb::Message* message)
 	{
 		if (type_t == Asset::META_TYPE_SHARE_SAY_HI)
 		{
-			if (IsCenterServer())
-				CmdSayHi(message);
-			else
-				SendProtocol2GameServer(message); //中心服没有处理逻辑，转发给游戏逻辑服务器进行处理
+			if (IsCenterServer()) { CmdSayHi(message); }
+			else { SendProtocol2GameServer(message); } //中心服没有处理逻辑，转发给游戏逻辑服务器进行处理
 		}
 		else
 		{

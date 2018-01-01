@@ -60,7 +60,7 @@ bool WorldSession::OnInnerProcess(const Asset::Meta& meta)
 			auto player = PlayerInstance.Get(meta.player_id());
 			if (!player) return false;
 
-			player->OnEnterCenter(); //进入游戏，初始化数据
+			if (message.reason() == Asset::KICK_OUT_REASON_LOGOUT) player->OnEnterCenter(); //进入游戏，初始化数据//正常退出逻辑服务器
 		}
 		break;
 		

@@ -132,6 +132,8 @@ int32_t Player::OnLogin()
 
 int32_t Player::Logout(pb::Message* message)
 {
+	const auto kick_out = dynamic_cast<const Asset::KickOutPlayer*>(message);
+	if (!kick_out) return 1;
 	//
 	//如果玩家正在进行玩牌，则不允许立即退出
 	//
@@ -174,7 +176,7 @@ int32_t Player::Logout(pb::Message* message)
 			}
 			*/
 
-			return 1; //不能退出游戏
+			return 2; //不能退出游戏
 		}
 		else
 		{
@@ -193,17 +195,17 @@ int32_t Player::Logout(pb::Message* message)
 			{
 				_room->Remove(_player_id); //退出房间，回调会调用OnLogout接口，从而退出整个游戏逻辑服务器
 
-				return 2;
+				return 4;
 			}
 		}
 	}
 
-	OnLogout(); //否则房主不会退出
+	OnLogout(kick_out->reason()); //否则房主不会退出
 	
 	return 0;
 }
 	
-int32_t Player::OnLogout()
+int32_t Player::OnLogout(Asset::KICK_OUT_REASON reason)
 {
 	if (!_game && _room && (!_room->HasStarted() || _room->HasBeenOver() || _room->HasDisMiss())) 
 	{
@@ -222,7 +224,7 @@ int32_t Player::OnLogout()
 
 	Asset::KickOutPlayer kickout_player; //通知中心服务器退出
 	kickout_player.set_player_id(_player_id);
-	kickout_player.set_reason(Asset::KICK_OUT_REASON_LOGOUT);
+	kickout_player.set_reason(reason);
 	SendProtocol(kickout_player);
 	
 	return 0;
@@ -1331,7 +1333,7 @@ void Player::OnLeaveRoom(Asset::GAME_OPER_TYPE reason)
 	//
 	//逻辑服务器的退出房间，则退出
 	//
-	OnLogout();
+	OnLogout(Asset::KICK_OUT_REASON_LOGOUT);
 
 	//
 	//房间状态同步
@@ -4286,7 +4288,7 @@ void Player::OnGameOver()
 {
 	ClearCards();
 	
-	if (_tuoguan_server) OnLogout();
+	if (_tuoguan_server) OnLogout(Asset::KICK_OUT_REASON_LOGOUT);
 }
 
 int32_t Player::CmdSayHi(pb::Message* message)
@@ -4372,8 +4374,10 @@ int32_t Player::OnKickOut(pb::Message* message)
 {
 	const auto kick_out = dynamic_cast<const Asset::KickOutPlayer*>(message);
 	if (!kick_out) return 1;
+
+	DEBUG("玩家:{} 被踢出逻辑服务器:{} 踢出内容:{}", _player_id, _stuff.server_id(), kick_out->ShortDebugString());
 	
-	Logout(nullptr);
+	Logout(message);
 
 	return 0;
 }

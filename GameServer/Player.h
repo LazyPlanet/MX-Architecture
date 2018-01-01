@@ -142,7 +142,7 @@ public:
 	virtual int32_t OnLogin();
 	//玩家登出
 	virtual int32_t Logout(pb::Message* message);
-	virtual int32_t OnLogout();
+	virtual int32_t OnLogout(Asset::KICK_OUT_REASON reason);
 	//离开房间
 	virtual int32_t CmdLeaveRoom(pb::Message* message);
 	virtual void OnLeaveRoom(Asset::GAME_OPER_TYPE reason = Asset::GAME_OPER_TYPE_LEAVE);
