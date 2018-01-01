@@ -429,6 +429,14 @@ void Player::SendPlayer()
 
 int32_t Player::CmdCreateRoom(pb::Message* message)
 {
+	int32_t result = CreateRoom(message);
+	if (result) OnLogout(); //创建失败
+
+	return result;
+}
+
+int32_t Player::CreateRoom(pb::Message* message)
+{
 	Asset::CreateRoom* create_room = dynamic_cast<Asset::CreateRoom*>(message);
 	if (!create_room) return 1;
 	
@@ -877,6 +885,14 @@ void Player::SyncCommonProperty(Asset::SyncCommonProperty_SYNC_REASON_TYPE reaso
 
 int32_t Player::CmdEnterRoom(pb::Message* message) 
 {
+	int32_t result = EnterRoom(message);
+	if (result) OnLogout(); //进入失败
+
+	return result;
+}
+
+int32_t Player::EnterRoom(pb::Message* message) 
+{
 	Asset::EnterRoom* enter_room = dynamic_cast<Asset::EnterRoom*>(message);
 	if (!enter_room) return Asset::ERROR_INNER; 
 
@@ -929,7 +945,8 @@ int32_t Player::CmdEnterRoom(pb::Message* message)
 
 				SendRoomState();
 
-				return Asset::ERROR_ROOM_HAS_BEEN_IN;
+				//return Asset::ERROR_ROOM_HAS_BEEN_IN;
+				return Asset::ERROR_SUCCESS;
 			}
 		}
 	} while (false);
@@ -1043,7 +1060,7 @@ int32_t Player::CmdEnterRoom(pb::Message* message)
 
 		default:
 		{
-			return 1; //非法
+			return Asset::ERROR_INNER; //非法
 		}
 		break;
 	}

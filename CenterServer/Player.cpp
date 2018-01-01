@@ -556,7 +556,7 @@ bool Player::Update()
 {
 	++_heart_count; //心跳
 	
-	if (_heart_count % 60 == 0) //3s
+	if (_heart_count % 20 == 0) //1s
 	{
 		if (_dirty) Save(); //触发存盘
 

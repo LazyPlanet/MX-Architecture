@@ -133,16 +133,18 @@ public:
 	virtual int32_t OnEnterGame();
 	//创建房间
 	virtual int32_t CmdCreateRoom(pb::Message* message);
+	virtual int32_t CreateRoom(pb::Message* message);
 	virtual void OnCreateRoom(Asset::CreateRoom* create_room);
 	virtual void OnRoomRemoved();
 	//进入房间
 	virtual int32_t CmdEnterRoom(pb::Message* message);
+	virtual int32_t EnterRoom(pb::Message* message);
 	virtual bool OnEnterRoom(int64_t room_id = 0);
 	//玩家登录
 	virtual int32_t OnLogin();
 	//玩家登出
 	virtual int32_t Logout(pb::Message* message);
-	virtual int32_t OnLogout(Asset::KICK_OUT_REASON reason);
+	virtual int32_t OnLogout(Asset::KICK_OUT_REASON reason = Asset::KICK_OUT_REASON_LOGOUT);
 	//离开房间
 	virtual int32_t CmdLeaveRoom(pb::Message* message);
 	virtual void OnLeaveRoom(Asset::GAME_OPER_TYPE reason = Asset::GAME_OPER_TYPE_LEAVE);
