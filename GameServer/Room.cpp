@@ -417,6 +417,26 @@ int32_t Room::GetRemainCount()
 { 
 	return _stuff.options().open_rands() - _games.size(); 
 }
+	
+bool Room::HasAnbao()
+{
+	const auto& options = GetOptions();
+	
+	auto it = std::find(options.extend_type().begin(), options.extend_type().end(), Asset::ROOM_EXTEND_TYPE_ANBAO);
+	if (it == options.extend_type().end()) return false; 
+
+	return true;
+}
+
+bool Room::HasBaopai()
+{
+	const auto& options = GetOptions();
+	
+	auto it = std::find(options.extend_type().begin(), options.extend_type().end(), Asset::ROOM_EXTEND_TYPE_BAOPAI);
+	if (it == options.extend_type().end()) return false; 
+
+	return true;
+}
 
 bool Room::Remove(int64_t player_id, Asset::GAME_OPER_TYPE reason)
 {
