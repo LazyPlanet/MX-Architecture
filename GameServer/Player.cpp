@@ -4135,7 +4135,9 @@ bool Player::LookAtBaopai(bool has_saizi)
 		proto.set_reason_type(Asset::RandomSaizi_REASON_TYPE_REASON_TYPE_TINGPAI);
 		proto.mutable_random_result()->Add(_game->GetRandResult());
 		proto.mutable_pai()->CopyFrom(baopai);
-		SendProtocol(proto); //通知Client
+
+		if (_room->HasAnbao()) proto.mutable_pai()->Clear(); //暗宝不同步宝牌
+		SendProtocol(proto); //通知玩家
 
 		if (has_saizi) _game->OnPlayerLookAtBaopai(_player_id, proto);
 	}

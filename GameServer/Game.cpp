@@ -116,13 +116,11 @@ void Game::OnStart()
 
 	_room->SetBanker(_banker_player_id); //设置庄家
 
-	//游戏数据广播
-	Asset::GameInformation info;
+	Asset::GameInformation info; //游戏数据广播
 	info.set_banker_player_id(_banker_player_id);
 	BroadCast(info);
 	
-	//开局股子广播
-	Asset::RandomSaizi saizi;
+	Asset::RandomSaizi saizi; //开局股子广播
 	saizi.set_reason_type(Asset::RandomSaizi_REASON_TYPE_REASON_TYPE_START);
 
 	for (int i = 0; i < 2; ++i)
@@ -2075,12 +2073,12 @@ int32_t Game::GetRemainBaopai()
 //
 void Game::OnRefreshBaopai(int64_t player_id, int32_t random_result)
 {
+	if (!_room) return;
+
 	Asset::RandomSaizi proto;
 	proto.set_reason_type(Asset::RandomSaizi_REASON_TYPE_REASON_TYPE_TINGPAI);
 	proto.mutable_random_result()->Add(random_result);
 	proto.set_has_rand_saizi(true);
-
-	//DEBUG("刷新宝牌，玩家:{} 随机值:{}", player_id, random_result);
 
 	for (auto player : _players)
 	{
@@ -2088,8 +2086,7 @@ void Game::OnRefreshBaopai(int64_t player_id, int32_t random_result)
 
 		if (player->IsTingPai())
 		{
-			player->ResetLookAtBaopai(); //玩家可以重新查看宝牌
-
+			player->ResetLookAtBaopai(); //玩家查看宝牌
 			proto.mutable_pai()->CopyFrom(_baopai);
 		}
 		else
@@ -2097,6 +2094,7 @@ void Game::OnRefreshBaopai(int64_t player_id, int32_t random_result)
 			proto.mutable_pai()->Clear();
 		}
 
+		if (_room->HasAnbao()) proto.mutable_pai()->Clear(); //暗宝不同步宝牌
 		player->SendProtocol(proto); 
 	}
 }
@@ -2104,7 +2102,6 @@ void Game::OnRefreshBaopai(int64_t player_id, int32_t random_result)
 void Game::OnPlayerLookAtBaopai(int64_t player_id, Asset::RandomSaizi proto)
 {
 	proto.mutable_pai()->Clear();
-	
 	BroadCast(proto, player_id);
 }
 	
