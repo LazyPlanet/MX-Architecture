@@ -313,7 +313,8 @@ public:
 	std::vector<Asset::PAI_OPER_TYPE> CheckPai(const Asset::PaiElement& pai, int64_t source_player_id);
 
 	bool CheckBaoHu(const Asset::PaiElement& pai);
-	bool LookAtBaopai(bool has_saizi);
+	bool LookAtBaopai(bool has_saizi); //返回值：是否胡牌
+	bool LookAtBaopai(); //生成宝牌//返回值：是否胡牌
 	void ResetBaopai();
 	void ResetLookAtBaopai();
 	int32_t GetFaPaiCount() { return _fapai_count; }
@@ -398,7 +399,7 @@ public:
 	bool HasTingPai() { return _has_ting; } //是否听牌
 
 	void OnTingPai(); //听牌响应
-	void OnGameStart();
+	void OnGameStart(); //开局
 
 	bool IsMingPiao(); //是否明飘
 	bool IsSiGuiYi(); //是否四归一 

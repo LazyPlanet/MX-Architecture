@@ -57,6 +57,9 @@ public:
 	const Asset::RoomOptions& GetOptions() { return _stuff.options(); } //额外番型
 	void SetOption(const Asset::RoomOptions& options) {	_stuff.mutable_options()->CopyFrom(options);}
 
+	bool HasAnbao(); //明宝
+	bool HasBaopai(); //暗宝
+
 	bool IsVoiceOpen() { return _stuff.options().voice_open(); }
 
 	int32_t GetExpiredTime() { return _expired_time; } //获取过期时间

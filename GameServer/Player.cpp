@@ -1867,10 +1867,14 @@ bool Player::CheckBaoHu(const Asset::PaiElement& pai/*宝牌数据*/)
 	auto baopai = _game->GetBaoPai();
 	if (pai.card_type() != baopai.card_type() || pai.card_value() != baopai.card_value())  return false; //不是宝牌
 	
+	/*
 	auto options = _room->GetOptions();
 	
 	auto it_baohu = std::find(options.extend_type().begin(), options.extend_type().end(), Asset::ROOM_EXTEND_TYPE_BAOPAI);
 	if (it_baohu == options.extend_type().end()) return false; //不带宝胡
+	*/
+
+	if (!_room->HasAnbao() && !_room->HasBaopai()) return false;
 
 	if (_cards_hu.size() == 0) return false; //尚不能胡牌
 
@@ -3310,10 +3314,14 @@ bool Player::CanTingPai(const Asset::PaiElement& pai)
 {
 	if (!_room || !_game) return false;
 
+	/*
 	auto options = _room->GetOptions();
 	
 	auto it_baohu = std::find(options.extend_type().begin(), options.extend_type().end(), Asset::ROOM_EXTEND_TYPE_BAOPAI);
 	if (it_baohu == options.extend_type().end()) return false; //不带宝胡，绝对不可能听牌
+	*/
+
+	if (!_room->HasAnbao() && !_room->HasBaopai()) return false;
 	
 	std::vector<Asset::PaiElement> cards_hu;
 
@@ -3406,10 +3414,14 @@ bool Player::CanTingPai(std::map<int32_t, std::vector<int32_t>> cards_inhand, //
 {
 	if (!_room || !_game) return false;
 
+	/*
 	auto options = _room->GetOptions();
 	
 	auto it_baohu = std::find(options.extend_type().begin(), options.extend_type().end(), Asset::ROOM_EXTEND_TYPE_BAOPAI);
 	if (it_baohu == options.extend_type().end()) return false; //不带宝胡，绝对不可能听牌
+	*/
+
+	if (!_room->HasAnbao() && !_room->HasBaopai()) return false;
 
 	std::vector<Asset::PaiElement> cards_hu;
 
@@ -3486,10 +3498,14 @@ bool Player::CheckTingPai(std::vector<Asset::PaiElement>& pais)
 
 	if (_has_ting || _tuoguan_server) return false; //已经听牌，不再提示
 
+	/*
 	auto options = _room->GetOptions();
 	
 	auto it_baohu = std::find(options.extend_type().begin(), options.extend_type().end(), Asset::ROOM_EXTEND_TYPE_BAOPAI);
 	if (it_baohu == options.extend_type().end()) return false; //不带宝胡，绝对不可能听牌
+	*/
+
+	if (!_room->HasAnbao() && !_room->HasBaopai()) return false;
 
 	auto cards_inhand = _cards_inhand; //玩家手里牌
 	auto cards_outhand = _cards_outhand; //玩家墙外牌
@@ -3828,6 +3844,34 @@ void Player::OnGangJianPai()
 	
 	if (alert.pais().size()) SendProtocol(alert); //提示Client
 }
+
+bool Player::LookAtBaopai()
+{
+	if (!_room || !_game) return false;
+
+	if (!IsTingPai()) return false; 
+	
+	//听牌后第一次抓牌
+	//
+	//产生宝牌或查看宝牌
+	if (_game->HasBaopai() && _game->GetRemainBaopai() <= 0) ResetBaopai(); 
+
+	if (_oper_count_tingpai == 1) //听牌后第一次抓牌
+	{
+		if (!_game->HasBaopai())
+		{
+			_game->OnTingPai(shared_from_this()); //生成宝牌
+
+			if (LookAtBaopai(true)) return true;
+		}
+		else
+		{
+			if (LookAtBaopai(false)) return true;
+		}
+	}
+
+	return false;
+}
 	
 int32_t Player::OnFaPai(const Asset::PaiElement& pai)
 {
@@ -3857,32 +3901,7 @@ int32_t Player::OnFaPai(std::vector<int32_t>& cards)
 		return 12;
 	}
 
-	//
-	//听牌后第一次抓牌，产生宝牌或查看宝牌
-	//
-	if (IsTingPai())
-	{
-		//DEBUG("玩家:{}听牌之后，检查宝牌，当前次数:{}", _player_id, _oper_count_tingpai);
-			
-		if (_game->HasBaopai() && _game->GetRemainBaopai() <= 0) 
-		{
-			ResetBaopai(); 
-		}
-
-		if (_oper_count_tingpai == 1) //听牌后第一次抓牌
-		{
-			if (!_game->HasBaopai())
-			{
-				_game->OnTingPai(shared_from_this()); //生成宝牌
-
-				if (LookAtBaopai(true)) return 8;
-			}
-			else
-			{
-				if (LookAtBaopai(false)) return 9;
-			}
-		}
-	}
+	if (LookAtBaopai()) return 0; //生成宝牌，进宝检查
 
 	if (false && _player_id == 262271 && _cards_inhand.size() == 0)
 	{
@@ -3950,10 +3969,10 @@ int32_t Player::OnFaPai(std::vector<int32_t>& cards)
 		}
 	}
 
-	for (auto& cards : _cards_inhand) //整理牌
-	{
-		std::sort(cards.second.begin(), cards.second.end(), [](int x, int y){ return x < y; }); //由小到大
-	}
+	//for (auto& cards : _cards_inhand) //整理牌
+	//{
+	//	std::sort(cards.second.begin(), cards.second.end(), [](int x, int y){ return x < y; }); //由小到大
+	//}
 
 	for (auto& cards : _cards_inhand) //整理牌
 		std::sort(cards.second.begin(), cards.second.end(), [](int x, int y){ return x < y; }); //由小到大
@@ -4149,6 +4168,12 @@ void Player::OnTingPai()
 	_oper_count_tingpai = 1;
 
 	_game->AddTingPlayer(_player_id);
+	
+	if (_room->HasAnbao()) 
+	{
+		LookAtBaopai(); //暗宝直接看宝
+		++_oper_count_tingpai;
+	}
 }
 
 //
