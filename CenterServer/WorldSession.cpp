@@ -550,13 +550,13 @@ void WorldSession::OnProcessMessage(const Asset::Meta& meta)
 		}
 		else
 		{
-			if (!_player) 
+			if (!_player && meta.type_t() != Asset::META_TYPE_SHARE_SAY_HI) 
 			{
 				LOG(ERROR, "玩家尚未初始化，收到协议:{}", meta.type_t());
-				return; //尚未初始化
+				return; 
 			}
-			//协议处理
-			_player->HandleProtocol(meta.type_t(), message);
+
+			if (_player) _player->HandleProtocol(meta.type_t(), message); //协议处理
 		}
 	}
 }
