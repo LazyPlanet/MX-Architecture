@@ -805,7 +805,7 @@ int32_t Player::CmdPaiOperate(pb::Message* message)
 
 			Add2CardsPool(pai);
 
-			OnTingPai();
+			if (OnTingPai()) return 0; //进宝
 		}
 		break;
 
@@ -4164,9 +4164,9 @@ bool Player::LookAtBaopai(bool has_saizi)
 	return false;
 }
 
-void Player::OnTingPai()
+bool Player::OnTingPai()
 {
-	if (!_game || !_room) return;
+	if (!_game || !_room) return false;
 
 	_has_ting = true;
 	_oper_count_tingpai = 1;
@@ -4175,9 +4175,11 @@ void Player::OnTingPai()
 	
 	if (_room->HasAnbao()) 
 	{
-		LookAtBaopai(); //暗宝直接看宝
+		if (LookAtBaopai()) return true; //暗宝直接看宝
 		++_oper_count_tingpai;
 	}
+
+	return false;
 }
 
 //

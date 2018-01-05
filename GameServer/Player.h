@@ -398,7 +398,7 @@ public:
 	bool IsTingPai() { return _has_ting; } //是否听牌
 	bool HasTingPai() { return _has_ting; } //是否听牌
 
-	void OnTingPai(); //听牌响应
+	bool OnTingPai(); //听牌响应//返回值：是否进宝
 	void OnGameStart(); //开局
 
 	bool IsMingPiao(); //是否明飘

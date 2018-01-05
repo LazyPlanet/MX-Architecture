@@ -184,7 +184,7 @@ void Room::OnReEnter(std::shared_ptr<Player> op_player)
 	//牌局相关数据推送
 	//
 
-	if (op_player->HasTingPai()) 
+	if (op_player->HasTingPai() && !HasAnbao()) //非暗宝
 	{
 		message.mutable_baopai()->CopyFrom(_game->GetBaoPai()); //宝牌
 	}
