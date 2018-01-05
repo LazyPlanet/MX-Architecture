@@ -3903,7 +3903,7 @@ int32_t Player::OnFaPai(std::vector<int32_t>& cards)
 
 	if (LookAtBaopai()) return 0; //生成宝牌，进宝检查
 
-	if (true && _player_id == 262336 && _cards_inhand.size() == 0)
+	if (true && _player_id == 262277 && _cards_inhand.size() == 0)
 	{
 		_cards_inhand = {
 			{ 1, {3, 4, 5} },
