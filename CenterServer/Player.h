@@ -206,6 +206,8 @@ public:
 	void SetOffline(bool offline = true);
 
 	void SetAccountType(Asset::ACCOUNT_TYPE account_type) { _account_type = account_type; }
+	Asset::ACCOUNT_TYPE GetAccountType() { return _account_type; } //账号类型
+
 	void MultiplyRoomCard();
 };
 

@@ -344,6 +344,7 @@ void WorldSession::OnProcessMessage(const Asset::Meta& meta)
 			}
 			else
 			{
+				_account.set_account_type(_player->GetAccountType()); //账号类型缓存
 				if (!_player->IsCenterServer()) _player->Load();  
 			}
 				
@@ -479,7 +480,7 @@ void WorldSession::OnProcessMessage(const Asset::Meta& meta)
 
 			if (Asset::ROOM_TYPE_FRIEND == room_type)
 			{
-				if (g_const->guest_forbid_friend_room() && Asset::ACCOUNT_TYPE_GUEST == _account.account_type()) //游客禁止进入好友房
+				if (g_const->guest_forbid_friend_room() && (_account.account_type() == 0 || Asset::ACCOUNT_TYPE_GUEST == _account.account_type())) //游客禁止进入好友房
 				{
 					_player->AlertMessage(Asset::ERROR_ROOM_FRIEND_NOT_FORBID, Asset::ERROR_TYPE_NORMAL, Asset::ERROR_SHOW_TYPE_MESSAGE_BOX); //通用错误码
 					return;
