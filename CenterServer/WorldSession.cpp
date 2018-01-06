@@ -344,7 +344,8 @@ void WorldSession::OnProcessMessage(const Asset::Meta& meta)
 			}
 			else
 			{
-				_account.set_account_type(_player->GetAccountType()); //账号类型缓存
+				auto account_type = _player->GetAccountType();
+				if (Asset::ACCOUNT_TYPE_IsValid(account_type)) _account.set_account_type(account_type); //账号类型缓存
 				if (!_player->IsCenterServer()) _player->Load();  
 			}
 				
