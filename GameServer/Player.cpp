@@ -623,6 +623,8 @@ void Player::OnGameStart()
 
 int32_t Player::CmdPaiOperate(pb::Message* message)
 {
+	std::lock_guard<std::mutex> lock(_card_lock);
+
 	Asset::PaiOperation* pai_operate = dynamic_cast<Asset::PaiOperation*>(message);
 	if (!pai_operate) return 1; 
 	
@@ -1747,26 +1749,28 @@ const std::string Player::GetIpAddress()
 /////////////////////////////////////////////////////
 std::vector<Asset::PAI_OPER_TYPE> Player::CheckPai(const Asset::PaiElement& pai, int64_t source_player_id)
 {
+	std::lock_guard<std::mutex> lock(_card_lock);
+
 	std::vector<Asset::PAI_OPER_TYPE> rtn_check;
 
 	if (CheckHuPai(pai)) 
 	{
-		DEBUG("玩家{} 可以胡来自玩家:{} 牌数据:{}", _player_id, source_player_id, pai.ShortDebugString());
+		DEBUG("玩家:{} 可以胡来自玩家:{} 牌数据:{}", _player_id, source_player_id, pai.ShortDebugString());
 		rtn_check.push_back(Asset::PAI_OPER_TYPE_HUPAI);
 	}
 	if (CheckGangPai(pai, source_player_id)) 
 	{
-		DEBUG("玩家{} 可以杠来自玩家:{} 牌数据:{}", _player_id, source_player_id, pai.ShortDebugString());
+		DEBUG("玩家:{} 可以杠来自玩家:{} 牌数据:{}", _player_id, source_player_id, pai.ShortDebugString());
 		rtn_check.push_back(Asset::PAI_OPER_TYPE_GANGPAI);
 	}
 	if (CheckPengPai(pai)) 
 	{
-		DEBUG("玩家{} 可以碰来自玩家:{} 牌数据:{}", _player_id, source_player_id, pai.ShortDebugString());
+		DEBUG("玩家:{} 可以碰来自玩家:{} 牌数据:{}", _player_id, source_player_id, pai.ShortDebugString());
 		rtn_check.push_back(Asset::PAI_OPER_TYPE_PENGPAI);
 	}
 	if (CheckChiPai(pai)) 
 	{
-		DEBUG("玩家{} 可以吃来自玩家:{} 牌数据:{}", _player_id, source_player_id, pai.ShortDebugString());
+		DEBUG("玩家:{} 可以吃来自玩家:{} 牌数据:{}", _player_id, source_player_id, pai.ShortDebugString());
 		rtn_check.push_back(Asset::PAI_OPER_TYPE_CHIPAI);
 	}
 		
@@ -3875,6 +3879,8 @@ bool Player::LookAtBaopai()
 	
 int32_t Player::OnFaPai(const Asset::PaiElement& pai)
 {
+	std::lock_guard<std::mutex> lock(_card_lock);
+
 	if (!_room || !_game) return 1;
 
 	if (pai.card_type() == 0 || pai.card_value() == 0) return 2; //数据有误
@@ -3893,6 +3899,8 @@ int32_t Player::OnFaPai(const Asset::PaiElement& pai)
 
 int32_t Player::OnFaPai(std::vector<int32_t>& cards)
 {
+	std::lock_guard<std::mutex> lock(_card_lock);
+
 	if (!_room || !_game) return 1;
 
 	if (!ShouldZhuaPai()) 
