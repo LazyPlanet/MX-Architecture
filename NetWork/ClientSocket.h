@@ -225,6 +225,7 @@ protected:
 	std::shared_ptr<boost::asio::ip::tcp::socket> _socket; 
 	boost::asio::ip::tcp::endpoint _local_endpoint;
 	boost::asio::ip::tcp::endpoint _remote_endpoint;
+	std::mutex _send_lock;
 
 	std::string _ip_address;
 	int32_t _port = 0;
@@ -277,7 +278,6 @@ private:
 	std::atomic<bool> _closed;    
 	std::atomic<bool> _closing;
 	bool _is_writing_async = false;
-	std::mutex _send_lock;
 	std::queue<std::string> _write_queue;
 	CONNECTION_STATUS _conn_status = CONNECTION_STATUS_NIL;
 };	

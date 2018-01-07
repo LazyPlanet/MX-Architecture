@@ -5,6 +5,8 @@
 
 #include <boost/asio.hpp>
 
+#include "MXLog.h"
+
 using boost::asio::ip::tcp;
 
 class AsyncAcceptor
@@ -33,7 +35,7 @@ public:
 		}
 		catch (const boost::system::system_error& err)
 		{
-			spdlog::get("console")->warn("{0} Line:{1} error:{2}", __func__, __LINE__, err.what());
+			ERROR("关闭网络错误:{}", err.what());
 		}
 	}
 
@@ -51,6 +53,19 @@ private:
 template<class T> 
 void AsyncAcceptor::AsyncAccept()
 {
+	boost::system::error_code ec;
+	_acceptor.listen(4096, ec);
+	if (ec)
+	{
+		ERROR("启动服务器网络失败:{}", ec.message());
+		return;
+	}
+	_acceptor.set_option(tcp::acceptor::reuse_address(true), ec);
+	if (ec)
+	{
+		ERROR("启动服务器网络失败:{}", ec.message());
+		return;
+	}
    	_acceptor.async_accept(_socket, [this](boost::system::error_code error)
     	{
         	if (!error)
@@ -61,9 +76,14 @@ void AsyncAcceptor::AsyncAccept()
             		}
             		catch (const boost::system::system_error& err)
             		{
-						spdlog::get("console")->warn("{0} Line:{1} error:{2}", __func__, __LINE__, err.what());
+						ERROR("接收网络连接失败:{}", err.what());
             		}
         	}
+			else
+			{
+				ERROR("尚未建立网络连接，错误信息:{}", error.message());
+				//return;
+			}
 
         	if (!_closed) this->AsyncAccept<T>();
     	});
@@ -87,8 +107,14 @@ void AsyncAcceptor::AsyncAcceptWithCallback()
 			}
 			catch (const boost::system::system_error& err)
 			{
-				spdlog::get("console")->warn("{0} Line:{1} error:{2}", __func__, __LINE__, err.what());
+				ERROR("接收网络连接失败:{}", err.what());
+				//return;
 			}
+		}
+		else
+		{
+			ERROR("尚未建立网络连接，错误信息:{}", error.message());
+			//return;
 		}
 
 		if (!_closed) this->AsyncAcceptWithCallback<accept_callback>();

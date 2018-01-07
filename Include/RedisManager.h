@@ -249,7 +249,6 @@ public:
 	{
 		if (!Connect()) return false;
 		
-		//auto has_auth = _client.auth(_password);
 		auto incrby = _client.incrby("room_counter", 1);
 		_client.commit();
 

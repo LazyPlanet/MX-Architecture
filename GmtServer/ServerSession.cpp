@@ -549,13 +549,16 @@ void ServerSession::Start()
 	
 bool ServerSession::Update() 
 { 
+	if (!Socket::Update()) return false;
+
 	return true;
 }
 
 void ServerSession::OnClose()
 {
-	ERROR("关闭服务器:{} 会话:{}的连接", _server_id, _session_id);
+	Socket::OnClose();
 
+	ERROR("关闭服务器:{} 会话:{}的连接", _server_id, _session_id);
 	ServerSessionInstance.Remove(_server_id);
 }
 
@@ -658,6 +661,7 @@ void ServerSessionManager::Remove(int64_t server_id)
 	auto it = _sessions.find(server_id);
 	if (it == _sessions.end()) return;
 
+	if (it->second) it->second.reset();
 	_sessions.erase(it);
 }
 

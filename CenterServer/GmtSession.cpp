@@ -322,24 +322,18 @@ void GmtSession::SendProtocol(pb::Message& message)
 
 bool GmtSession::StartSend()
 {
-	//std::lock_guard<std::mutex> lock(_send_lock);
-
 	bool started = false;
 
-	while (IsConnected())
-	{
-		if (_send_list.size())
-		{
-			auto& message = _send_list.front();
-			AsyncWriteSome(message.c_str(), message.size());
-			_send_list.pop_front();
+	std::deque<std::string> send_list;
+	send_list.swap(_send_list);
 
-			started = true;
-		}
-		else
-		{
-			break;
-		}
+	while (IsConnected() && send_list.size())
+	{
+		auto& message = send_list.front();
+		AsyncWriteSome(message.c_str(), message.size());
+		send_list.pop_front();
+
+		started = true;
 	}
 	return started;
 }
@@ -349,6 +343,7 @@ void GmtSession::AsyncSendMessage(std::string message)
 {
 	if (IsClosed()) return;
 
+	std::lock_guard<std::mutex> lock(_data_lock);
 	_send_list.push_back(message);
 
 	StartSend();

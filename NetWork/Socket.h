@@ -42,10 +42,7 @@ public:
 		std::lock_guard<std::mutex> lock(_send_lock);
 
 		//发送可以放到消息队列里面处理
-		if (_is_writing_async || (_write_queue.empty() && !_closing)) 
-		{
-			return true;
-		}
+		if (_is_writing_async || (_write_queue.empty() && !_closing)) return true;
 
 		for (; HandleQueue(); ) {}
 
@@ -60,7 +57,8 @@ public:
 		if (_closed.exchange(true)) return;
 
 		boost::system::error_code error;
-		_socket.shutdown(boost::asio::socket_base::shutdown_send, error);
+		_socket.shutdown(boost::asio::ip::tcp::socket::shutdown_both, error);
+		_socket.close(error);
 
 		OnClose();
 	}
