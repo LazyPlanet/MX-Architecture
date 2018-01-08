@@ -218,7 +218,7 @@ int32_t Player::OnLogin(bool is_login)
 {
 	ActivityInstance.OnPlayerLogin(shared_from_this()); //活动数据
 
-	//if (is_login) BattleHistory(); //历史对战表
+	if (is_login) BattleHistory(); //历史对战表
 	if (is_login) MultiplyRoomCard(); //房卡翻倍
 
 	return 0;
@@ -501,7 +501,7 @@ bool Player::SendProtocol2GameServer(const pb::Message& message)
 	meta.set_stuff(message.SerializeAsString());
 	meta.set_player_id(_player_id); 
 
-	DEBUG("玩家:{}发送到游戏逻辑服务器:{}内容:{}", _player_id, _stuff.server_id(), debug_string);
+	DEBUG("玩家:{}发送到游戏逻辑服务器:{}，内容:{}", _player_id, _stuff.server_id(), debug_string);
 
 	_gs_session->SendMeta(meta); 
 
