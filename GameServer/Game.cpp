@@ -213,6 +213,7 @@ bool Game::CanPaiOperate(std::shared_ptr<Player> player)
 	}
 
 	auto player_index = GetPlayerOrder(player->GetID());
+	if (player_index < 0) return false;
 
 	if (_curr_player_index == player_index) 
 	{
@@ -231,6 +232,8 @@ void Game::OnPlayerReEnter(std::shared_ptr<Player> player)
 	if (!CanPaiOperate(player)) return; //尚未轮到该玩家操作
 
 	auto player_index = GetPlayerOrder(player->GetID());
+	if (player_index < 0) return;
+
 	if (_curr_player_index != player_index && _oper_cache.player_id() == player->GetID() && (_oper_cache.oper_list().size() > 0))
 	{
 		auto player_id = player->GetID();
@@ -377,7 +380,7 @@ void Game::OnPaiOperate(std::shared_ptr<Player> player, pb::Message* message)
 	auto pai_operate_string = pai_operate->ShortDebugString();
 	auto oper_limit_string = _oper_cache.ShortDebugString();
 
-	DEBUG("房间:{} 当前牌局:{} 当前操作玩家ID:{} 所在的位置索引:{} 进行的操作:{} 服务器记录的当前可操作玩家索引:{} 服务器缓存玩家操作:{}", _room_id, _game_id, curr_player_id, player_index, pai_operate_string, _curr_player_index, oper_limit_string);
+	DEBUG("房间:{} 当前牌局:{} 当前操作玩家ID:{} 位置索引:{} 进行的操作:{} 服务器记录的当前可操作玩家索引:{} 服务器缓存玩家操作:{}", _room_id, _game_id, curr_player_id, player_index, pai_operate_string, _curr_player_index, oper_limit_string);
 
 	if (!CanPaiOperate(player)) 
 	{
@@ -1183,8 +1186,9 @@ void Game::Calculate(int64_t hupai_player_id/*胡牌玩家*/, int64_t dianpao_pl
 	
 	const auto options = _room->GetOptions();
 	
-	const auto fan_asset = dynamic_cast<const Asset::RoomFan*>(AssetInstance.Get(g_const->fan_id()));
-	if (!fan_asset) return;
+	//const auto fan_asset = dynamic_cast<const Asset::RoomFan*>(AssetInstance.Get(g_const->fan_id()));
+	//if (!fan_asset) return;
+	const auto fan_asset = _room->GetFan();
 
 	auto get_multiple = [&](const int32_t fan_type)->int32_t {
 		auto it = std::find_if(fan_asset->fans().begin(), fan_asset->fans().end(), [fan_type](const Asset::RoomFan_FanElement& element){
@@ -2001,16 +2005,7 @@ int32_t Game::GetPlayerOrder(int32_t player_id)
 {
 	if (!_room) return -1;
 
-	for (int i = 0; i < MAX_PLAYER_COUNT; ++i)
-	{
-		auto player = _players[i];
-
-		if (!player) continue;
-
-		if (player->GetID() == player_id) return i; //序号
-	}
-
-	return -1;
+	return _room->GetPlayerOrder(player_id);
 }
 
 std::shared_ptr<Player> Game::GetPlayerByOrder(int32_t player_index)

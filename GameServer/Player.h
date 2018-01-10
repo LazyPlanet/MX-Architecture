@@ -254,7 +254,8 @@ private:
 	bool _debug_model = false;
 	bool _jinbao = false;
 	Asset::PaiElement _baopai; //宝牌
-	Asset::PaiElement _zhuapai; 
+	std::vector<Asset::PaiElement> _zhangs; //对儿//掌儿//可能是对倒，两对
+	Asset::PaiElement _zhuapai; //抓牌
 
 	//玩家牌数据
 	std::list<Asset::PaiElement> _cards_pool; //牌池//玩家已经打的牌缓存
@@ -311,6 +312,7 @@ public:
 	virtual int32_t OnFaPai(const Asset::PaiElement& pai); //纯粹发牌，没有逻辑
 
 	std::vector<Asset::PAI_OPER_TYPE> CheckPai(const Asset::PaiElement& pai, int64_t source_player_id);
+	void AddZhang(const Asset::PaiElement& zhang);
 
 	bool CheckBaoHu(const Asset::PaiElement& pai);
 	bool LookAtBaopai(bool has_saizi); //返回值：是否胡牌
@@ -332,14 +334,15 @@ public:
 	bool CanHuPai(std::vector<Card_t>& cards, bool use_pair = false);
 	bool CheckZiMo(); //胡牌检查-玩家手里现有牌检查
 	bool CheckZiMo(const Asset::PaiElement& pai); //胡牌检查-玩家手里现有牌检查
-	bool CheckHuPai(const Asset::PaiElement& pai, bool check_zibo = false); //胡牌//番数
+	bool CheckHuPai(const Asset::PaiElement& pai, bool check_zimo = false); //胡牌//番数
 	bool CheckHuPai(const std::map<int32_t, std::vector<int32_t>>& cards_inhand, //玩家手里的牌
 			const std::map<int32_t, std::vector<int32_t>>& cards_outhand, //玩家墙外牌
 			const std::vector<Asset::PaiElement>& minggang, //明杠
 			const std::vector<Asset::PaiElement>& angang, //暗杠
 			int32_t jiangang, //旋风杠，本质是明杠
 			int32_t fenggang, //旋风杠，本质是暗杠
-			const Asset::PaiElement& pai); //胡牌
+			const Asset::PaiElement& pai, //胡牌
+			bool check_zimo = false); //是否自摸
 
 	bool HasYaoJiu(const std::map<int32_t, std::vector<int32_t>>& cards_inhand, //玩家手里的牌
 			const std::map<int32_t, std::vector<int32_t>>& cards_outhand, //玩家墙外牌
@@ -406,6 +409,8 @@ public:
 	bool IsDanDiao(); //是否单调
 	bool IsPiao(); //是否飘
 	bool HasKeOutHand();
+
+	bool Is28Zhang(); //是否28作掌
 
 	int32_t GetMingGangCount() { return _minggang.size(); } //明杠数量
 	int32_t GetAnGangCount() { return _angang.size(); } //暗杠数量

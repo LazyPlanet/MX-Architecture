@@ -57,8 +57,12 @@ public:
 	const Asset::RoomOptions& GetOptions() { return _stuff.options(); } //额外番型
 	void SetOption(const Asset::RoomOptions& options) {	_stuff.mutable_options()->CopyFrom(options);}
 
+	const Asset::RoomFan* GetFan(); //获取番数数据
+	Asset::CITY_TYPE GetCity() { return _stuff.options().city_type(); } //城市玩法
+
 	bool HasAnbao(); //明宝
 	bool HasBaopai(); //暗宝
+	bool Zhang28(); //28是否可以做掌
 
 	bool IsVoiceOpen() { return _stuff.options().voice_open(); }
 
@@ -123,6 +127,7 @@ public:
 	int64_t GetBanker() { return _banker; } //获取庄家
 	int32_t GetBankerIndex() { return _banker_index; } //庄家索引
 	bool IsBanker(int64_t player_id){ return _banker == player_id; } //是否是庄家
+	int32_t GetPlayerOrder(int32_t player_id); //获取玩家的顺序
 
 	bool IsExpired(); //是否过期
 	bool IsTimeOut(); //是否超时

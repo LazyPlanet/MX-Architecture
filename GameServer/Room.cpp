@@ -438,6 +438,35 @@ bool Room::HasBaopai()
 	return true;
 }
 
+bool Room::Zhang28()
+{
+	const auto& options = GetOptions();
+	
+	auto it = std::find(options.extend_type().begin(), options.extend_type().end(), Asset::ROOM_EXTEND_TYPE_28ZUOZHANG);
+	if (it == options.extend_type().end()) return false; 
+
+	return true;
+}
+	
+const Asset::RoomFan* Room::GetFan()
+{
+	auto city_type = _stuff.options().city_type();
+
+	const auto& messages = AssetInstance.GetMessagesByType(Asset::ASSET_TYPE_ROOM_FAN);
+	auto it = std::find_if(messages.begin(), messages.end(), [city_type](pb::Message* message){
+				auto room_fan = dynamic_cast<Asset::RoomFan*>(message);
+				if (!room_fan) return false;
+
+				return room_fan->city_type() == city_type;
+			});
+	if (it == messages.end()) return nullptr;
+
+	const auto room_fan = dynamic_cast<const Asset::RoomFan*>(*it);
+	if (!room_fan) return nullptr;
+
+	return room_fan;
+}
+
 bool Room::Remove(int64_t player_id, Asset::GAME_OPER_TYPE reason)
 {
 	std::lock_guard<std::mutex> lock(_mutex);
@@ -532,7 +561,16 @@ void Room::OnGameOver(int64_t player_id)
 
 	if (player_id != 0 && _banker != player_id) 
 	{
-		_banker_index = (_banker_index + 1) % MAX_PLAYER_COUNT; //下庄
+		auto city_type = GetCity();
+
+		if (city_type == Asset::CITY_TYPE_CHAOYANG) //朝阳
+		{
+			_banker_index = (_banker_index + 1) % MAX_PLAYER_COUNT; //下庄
+		}
+		else if (city_type == Asset::CITY_TYPE_JIANPING) //建平
+		{
+			_banker_index = GetPlayerOrder(player_id); //谁胡下一局谁坐庄
+		}
 
 		auto player = GetPlayer(player_id);
 		if (player) player->SetStreakWins(_streak_wins[player_id]); //最高连胜
@@ -712,8 +750,8 @@ void Room::DoDisMiss()
 
 	_is_dismiss = true;
 					
-	if (_game) _game->OnGameOver(0); //当前局数结束
-	else OnGameOver();
+	if (_game) { _game->OnGameOver(0); } //当前局数结束
+	else { OnGameOver(); }
 }
 	
 void Room::KickOutPlayer(int64_t player_id)
@@ -1089,6 +1127,19 @@ void RoomManager::Remove(int64_t room_id)
 
 	it->second->OnRemove();
 	_rooms.erase(it);
+}
+
+int32_t Room::GetPlayerOrder(int32_t player_id)
+{
+	for (int i = 0; i < MAX_PLAYER_COUNT; ++i)
+	{
+		auto player = _players[i];
+		if (!player) continue;
+
+		if (player->GetID() == player_id) return i; //序号
+	}
+
+	return -1;
 }
 
 }

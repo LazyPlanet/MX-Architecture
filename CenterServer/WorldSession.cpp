@@ -121,7 +121,7 @@ void WorldSession::OnProcessMessage(const Asset::Meta& meta)
 	if (!enum_value) return;
 
 	if (Asset::META_TYPE_SHARE_SAY_HI != meta.type_t())
-		DEBUG("中心服务器接收数据, 玩家:{} 全局ID:{} 协议ID:{} 协议名称:{} 内容:{}", meta.player_id(), _global_id, meta.type_t(), enum_value->name(), message->ShortDebugString());
+		DEBUG("中心服务器接收数据, 玩家:{} 全局角色ID:{} 全局角色类型:{} 协议名称:{} 内容:{}", meta.player_id(), _global_id, _role_type, enum_value->name(), message->ShortDebugString());
 
 	//
 	// C2S协议可能存在两种情况：
