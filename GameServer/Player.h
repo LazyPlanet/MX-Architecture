@@ -409,6 +409,7 @@ public:
 	bool IsDanDiao(); //是否单调
 	bool IsPiao(); //是否飘
 	bool HasKeOutHand();
+	bool HasPengJianPai(); //是否碰了箭牌
 
 	bool Is28Zhang(); //是否28作掌
 

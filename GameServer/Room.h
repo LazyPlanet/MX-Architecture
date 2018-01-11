@@ -60,9 +60,21 @@ public:
 	const Asset::RoomFan* GetFan(); //获取番数数据
 	Asset::CITY_TYPE GetCity() { return _stuff.options().city_type(); } //城市玩法
 
-	bool HasAnbao(); //明宝
-	bool HasBaopai(); //暗宝
-	bool Zhang28(); //28是否可以做掌
+	bool HasLaw(Asset::ROOM_EXTEND_TYPE type); //支持玩法
+	bool HasAnbao(); //是否明宝
+	bool HasBaopai(); //是否暗宝
+	bool HasZhang28(); //28是否可以做掌
+	bool HasZhanLi(); //是否可以站立胡
+	bool HasJiaHu(); //是否可以夹胡
+	bool HasXuanFengGang(); //是否支持旋风杠
+	bool HasDuanMen(); //是否支持断门
+	bool HasQingYiSe(); //是否支持清一色
+	bool HasBaoSanJia(); //是否支持包三家
+	bool HasMingPiao(); //是否支持明飘
+	bool HasHuangZhuang(); //是否支持荒庄杠
+	bool HasYiBianGao(); //是否支持一边高
+	bool HasSiGuiYi(); //是否支持四归一
+	bool HasYiJiaFu(); //点炮一家付
 
 	bool IsVoiceOpen() { return _stuff.options().voice_open(); }
 

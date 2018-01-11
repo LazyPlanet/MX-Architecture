@@ -417,35 +417,90 @@ int32_t Room::GetRemainCount()
 { 
 	return _stuff.options().open_rands() - _games.size(); 
 }
+
+bool Room::HasLaw(Asset::ROOM_EXTEND_TYPE type)
+{
+	const auto& city_type = GetCity(); //房间归属城市
+
+	if (city_type == Asset::CITY_TYPE_CHAOYANG && (type == Asset::ROOM_EXTEND_TYPE_28ZUOZHANG || type == Asset::ROOM_EXTEND_TYPE_SIGUIYI)) 
+	{
+		return true; //朝阳支持
+	}
+
+	auto it = std::find(_stuff.options().extend_type().begin(), _stuff.options().extend_type().end(), type);
+	if (it == _stuff.options().extend_type().end()) return false; //常规规则检查
+
+	return true;
+}
 	
 bool Room::HasAnbao()
 {
-	const auto& options = GetOptions();
-	
-	auto it = std::find(options.extend_type().begin(), options.extend_type().end(), Asset::ROOM_EXTEND_TYPE_ANBAO);
-	if (it == options.extend_type().end()) return false; 
-
-	return true;
+	return HasLaw(Asset::ROOM_EXTEND_TYPE_ANBAO);
 }
 
 bool Room::HasBaopai()
 {
-	const auto& options = GetOptions();
-	
-	auto it = std::find(options.extend_type().begin(), options.extend_type().end(), Asset::ROOM_EXTEND_TYPE_BAOPAI);
-	if (it == options.extend_type().end()) return false; 
-
-	return true;
+	return HasLaw(Asset::ROOM_EXTEND_TYPE_BAOPAI);
 }
 
-bool Room::Zhang28()
+bool Room::HasZhang28()
 {
-	const auto& options = GetOptions();
-	
-	auto it = std::find(options.extend_type().begin(), options.extend_type().end(), Asset::ROOM_EXTEND_TYPE_28ZUOZHANG);
-	if (it == options.extend_type().end()) return false; 
+	return HasLaw(Asset::ROOM_EXTEND_TYPE_28ZUOZHANG);
+}
 
-	return true;
+bool Room::HasMingPiao()
+{
+	return HasLaw(Asset::ROOM_EXTEND_TYPE_MINGPIAO);
+}
+
+bool Room::HasHuangZhuang()
+{
+	return HasLaw(Asset::ROOM_EXTEND_TYPE_HUANGZHUANGHUANGGANG);
+}
+
+bool Room::HasSiGuiYi()
+{
+	return HasLaw(Asset::ROOM_EXTEND_TYPE_SIGUIYI);
+}
+
+bool Room::HasYiBianGao()
+{
+	return HasLaw(Asset::ROOM_EXTEND_TYPE_YIBIANGAO);
+}
+
+bool Room::HasZhanLi()
+{
+	return HasLaw(Asset::ROOM_EXTEND_TYPE_ZHANLIHU);
+}
+
+bool Room::HasJiaHu()
+{
+	return HasLaw(Asset::ROOM_EXTEND_TYPE_JIAHU);
+}
+
+bool Room::HasXuanFengGang()
+{
+	return HasLaw(Asset::ROOM_EXTEND_TYPE_XUANFENGGANG);
+}
+
+bool Room::HasDuanMen()
+{
+	return HasLaw(Asset::ROOM_EXTEND_TYPE_DUANMEN);
+}
+
+bool Room::HasQingYiSe()
+{
+	return HasLaw(Asset::ROOM_EXTEND_TYPE_QIYISE);
+}
+
+bool Room::HasYiJiaFu()
+{
+	return HasLaw(Asset::ROOM_EXTEND_TYPE_YIJIAFU);
+}
+
+bool Room::HasBaoSanJia()
+{
+	return HasLaw(Asset::ROOM_EXTEND_TYPE_BAOSANJIA);
 }
 	
 const Asset::RoomFan* Room::GetFan()
