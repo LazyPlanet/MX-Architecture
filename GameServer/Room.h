@@ -59,6 +59,8 @@ public:
 
 	const Asset::RoomFan* GetFan(); //获取番数数据
 	Asset::CITY_TYPE GetCity() { return _stuff.options().city_type(); } //城市玩法
+	bool IsChaoYang() { return _stuff.options().city_type() == Asset::CITY_TYPE_CHAOYANG; }
+	bool IsJianPing() { return _stuff.options().city_type() == Asset::CITY_TYPE_JIANPING; }
 
 	bool HasLaw(Asset::ROOM_EXTEND_TYPE type); //支持玩法
 	bool HasAnbao(); //是否明宝

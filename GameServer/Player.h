@@ -263,6 +263,7 @@ private:
 	std::map<int32_t/*麻将牌类型*/, std::vector<int32_t>/*牌值*/> _cards_inhand; //玩家手里的牌
 	std::map<int32_t/*麻将牌类型*/, std::vector<int32_t>/*牌值*/> _cards_outhand; //玩家墙外牌
 	std::vector<Asset::PaiElement> _minggang; //明杠
+	std::vector<int64_t> _source_players; //明杠来源
 	std::vector<Asset::PaiElement> _angang; //暗杠
 	int32_t _jiangang = 0; //旋风杠，本质是明杠
 	int32_t _fenggang = 0; //旋风杠，本质是暗杠
@@ -344,6 +345,7 @@ public:
 			const Asset::PaiElement& pai, //胡牌
 			bool check_zimo = false); //是否自摸
 
+	bool HasYaoJiu();
 	bool HasYaoJiu(const std::map<int32_t, std::vector<int32_t>>& cards_inhand, //玩家手里的牌
 			const std::map<int32_t, std::vector<int32_t>>& cards_outhand, //玩家墙外牌
 			const std::vector<Asset::PaiElement>& minggang, //明杠
@@ -362,7 +364,7 @@ public:
 
 	void OnGangPai(const Asset::PaiElement& pai, int64_t source_player_id); //杠牌
 	void OnBeenQiangGang(const Asset::PaiElement& pai, int64_t source_player_id); //杠牌
-	void OnBeenQiangGangWithGivingUp(const Asset::PaiElement& pai); //被抢杠放弃
+	void OnBeenQiangGangWithGivingUp(const Asset::PaiElement& pai, int64_t source_player_id); //被抢杠放弃
 	
 	bool CheckFengGangPai(std::map<int32_t/*麻将牌类型*/, std::vector<int32_t>/*牌值*/>& cards); //是否有旋风杠
 	bool CheckJianGangPai(std::map<int32_t/*麻将牌类型*/, std::vector<int32_t>/*牌值*/>& cards); //是否有箭杠
@@ -412,6 +414,7 @@ public:
 	bool HasPengJianPai(); //是否碰了箭牌
 
 	bool Is28Zhang(); //是否28作掌
+	bool IsDuiDao(); //是否对倒
 
 	int32_t GetMingGangCount() { return _minggang.size(); } //明杠数量
 	int32_t GetAnGangCount() { return _angang.size(); } //暗杠数量

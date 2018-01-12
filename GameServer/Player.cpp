@@ -1944,6 +1944,11 @@ bool Player::CheckBaoHu(const Asset::PaiElement& pai/*宝牌数据*/)
 	return hupai;
 }
 
+bool Player::HasYaoJiu()
+{
+	return HasYaoJiu(_cards_inhand, _cards_outhand, _minggang, _angang, _jiangang, _fenggang);
+}
+
 bool Player::HasYaoJiu(const std::map<int32_t, std::vector<int32_t>>& cards_inhand, //玩家手里的牌
 		const std::map<int32_t, std::vector<int32_t>>& cards_outhand, //玩家墙外牌
 		const std::vector<Asset::PaiElement>& minggang, //明杠
@@ -2232,7 +2237,9 @@ bool Player::CheckHuPai(const std::map<int32_t, std::vector<int32_t>>& cards_inh
 	//
 	//1.是否夹胡
 	//
-	{
+	do {
+		if (!_room->HasJiaHu()) break; //不支持夹胡
+
 		auto cards_inhand_check = _cards_inhand;
 			
 		for (auto& card : cards_inhand_check)
@@ -2315,51 +2322,24 @@ bool Player::CheckHuPai(const std::map<int32_t, std::vector<int32_t>>& cards_inh
 				it_big = std::find(card_list.begin(), card_list.end(), card_t_big);
 				card_list.erase(it_big);
 				
-				jiahu = CanHuPai(card_list);	
+				jiahu = CanHuPai(card_list); //夹胡
 			}
 		}
 
-		if (_room->HasJiaHu()) //支持夹胡
-		{
-			if (bianhu)
-			{
-				_fan_list.emplace(Asset::FAN_TYPE_JIA_HU_MIDDLE);
-			}
-			else if (jiahu)
-			{
-				_fan_list.emplace(Asset::FAN_TYPE_JIA_HU_NORMAL);
-			}
-		}
-	}
-	
-	if (zhanlihu) //站立胡
-	{
-		_fan_list.emplace(Asset::FAN_TYPE_ZHAN_LI);
-	}
-	if (duanmen) //断门
-	{
-		_fan_list.emplace(Asset::FAN_TYPE_DUAN_MEN);
-	}
-	if (yise) //清一色
-	{
-		_fan_list.emplace(Asset::FAN_TYPE_QING_YI_SE);
-	}
-	if (piao) //飘胡
-	{
-		_fan_list.emplace(Asset::FAN_TYPE_PIAO_HU);
-	}
-	if (_game->IsLiuJu()) //海底捞月
-	{
-		_fan_list.emplace(Asset::FAN_TYPE_HAI_DI_LAO);
-	}
-	if (IsMingPiao()) //明飘
-	{
-		_fan_list.emplace(Asset::FAN_TYPE_MING_PIAO);
-	}
-	if (IsDanDiao()) //单调
-	{
-		_fan_list.emplace(Asset::FAN_TYPE_JIA_HU_NORMAL);
-	}
+	} while(false);
+		
+	if (bianhu) _fan_list.emplace(Asset::FAN_TYPE_JIA_HU_MIDDLE); //边胡
+	if (jiahu) _fan_list.emplace(Asset::FAN_TYPE_JIA_HU_NORMAL); //夹胡
+	if (zhanlihu) _fan_list.emplace(Asset::FAN_TYPE_ZHAN_LI); //站立胡
+	if (duanmen) _fan_list.emplace(Asset::FAN_TYPE_DUAN_MEN);//断门
+	if (yise) _fan_list.emplace(Asset::FAN_TYPE_QING_YI_SE); //清一色
+	if (piao) _fan_list.emplace(Asset::FAN_TYPE_PIAO_HU); //飘胡
+	if (_game->IsLiuJu()) _fan_list.emplace(Asset::FAN_TYPE_HAI_DI_LAO); //海底捞月
+	if (IsMingPiao()) _fan_list.emplace(Asset::FAN_TYPE_MING_PIAO); //明飘
+
+	if (_room->IsJianPing() && IsDanDiao()) _fan_list.emplace(Asset::FAN_TYPE_JIA_HU_NORMAL); //单调//单粘//建平玩法
+	if (_room->IsJianPing() && !HasYaoJiu()) _fan_list.emplace(Asset::FAN_TYPE_JIA_HU_NORMAL); //缺19的时候死胡19
+	if (_room->IsJianPing() && Is28Zhang() && IsDuiDao()) _fan_list.emplace(Asset::FAN_TYPE_JIA_HU_NORMAL); //对儿倒其一为28的情况
 
 	return true;
 }
@@ -2481,20 +2461,21 @@ bool Player::IsSiGuiYi()
 }
 
 //
-//东西南北中发白单粘不算夹胡
+//是否单粘
 //
-//只算饼条万
-//
-//2017-8-9 23:10 功能注释
-//	
 bool Player::IsDanDiao() 
 { 
-	return false;
-
 	if (_cards_hu.size() != 1) return false;
 
-	auto pai = _cards_hu[0];
-	if (pai.card_type() == Asset::CARD_TYPE_FENG || pai.card_type() == Asset::CARD_TYPE_JIAN) return false;
+	return true;
+} 
+
+//
+//是否对倒
+//
+bool Player::IsDuiDao() 
+{ 
+	if (_zhangs.size() != 4) return false;
 
 	return true;
 } 
@@ -2760,6 +2741,8 @@ bool Player::CheckGangPai(const Asset::PaiElement& pai, int64_t source_player_id
 		}
 		else if (count == 4 && CheckMingPiao(Asset::PAI_OPER_TYPE_ANGANGPAI)) 
 		{
+			if (_room->IsJianPing() && IsBimen()) return false; //建平玩家：不开门不让扣暗杠
+
 			has_gang = true;  
 			angang.push_back(pai);
 		}
@@ -2864,6 +2847,8 @@ bool Player::CheckAllGangPai(::google::protobuf::RepeatedField<Asset::PaiOperati
 			auto count = std::count(cards.second.begin(), cards.second.end(), card_value);
 			if (count == 4 && CheckMingPiao(Asset::PAI_OPER_TYPE_ANGANGPAI)) 
 			{
+				if (_room->IsJianPing() && IsBimen()) continue; //建平玩家：不开门不让扣暗杠
+
 				Asset::PaiElement pai;
 				pai.set_card_type((Asset::CARD_TYPE)card_type);
 				pai.set_card_value(card_value);
@@ -2930,35 +2915,45 @@ void Player::OnGangPai(const Asset::PaiElement& pai, int64_t source_player_id)
 
 	if (!CheckGangPai(pai, source_player_id)) 
 	{
-		LOG(ERROR, "玩家:{}无法杠牌:{}, 牌来自:{}", _player_id, pai.ShortDebugString(), source_player_id);
+		LOG(ERROR, "玩家:{} 无法杠牌:{} 牌来自:{}", _player_id, pai.ShortDebugString(), source_player_id);
 		return; //理论上不会如此
 	}
 	
 	int32_t card_type = pai.card_type();
 	int32_t card_value = pai.card_value();
-
+		
 	//
-	//手里满足杠牌
+	//1.手里满足杠牌
 	//
 	auto it = _cards_inhand.find(card_type);
 	if (it == _cards_inhand.end()) 
 	{
-		LOG(ERROR, "玩家:{}无法杠牌:{}, 牌来自:{}", _player_id, pai.ShortDebugString(), source_player_id);
+		LOG(ERROR, "玩家:{} 无法杠牌:{} 牌来自:{}", _player_id, pai.ShortDebugString(), source_player_id);
 		return; //理论上不会如此
 	}
 	
 	auto count = std::count(it->second.begin(), it->second.end(), card_value); //玩家手里多少张牌
 
 	if (count == 3)
+	{
 		_minggang.push_back(pai); //明杠
+		_source_players.push_back(source_player_id);
+	}
 	else if (count == 4)
+	{
+		if (_room->IsJianPing() && IsBimen()) 
+		{
+			LOG(ERROR, "玩家:{} 尚未开门，无法杠牌:{} 牌来自:{}", _player_id, pai.ShortDebugString(), source_player_id);
+			return; //建平玩家：不开门不让扣暗杠
+		}
 		_angang.push_back(pai); //暗杠
+	}
 	
 	auto remove_it = std::remove(it->second.begin(), it->second.end(), card_value); //从玩家手里删除
 	it->second.erase(remove_it, it->second.end());
 	
 	//
-	//墙外满足杠牌
+	//2.墙外满足杠牌
 	//
 	auto iit = _cards_outhand.find(card_type);
 	if (iit != _cards_outhand.end()) 
@@ -2968,6 +2963,7 @@ void Player::OnGangPai(const Asset::PaiElement& pai, int64_t source_player_id)
 		if (count == 3)
 		{
 			_minggang.push_back(pai);
+			_source_players.push_back(source_player_id);
 			
 			auto remove_it = std::remove(iit->second.begin(), iit->second.end(), card_value); //从墙外删除
 			iit->second.erase(remove_it, iit->second.end());
@@ -3011,9 +3007,10 @@ void Player::OnBeenQiangGang(const Asset::PaiElement& pai, int64_t source_player
 	for (int32_t i = 0; i < count; ++i) _game->Add2CardsPool(pai); //加入牌池
 }
 	
-void Player::OnBeenQiangGangWithGivingUp(const Asset::PaiElement& pai)
+void Player::OnBeenQiangGangWithGivingUp(const Asset::PaiElement& pai, int64_t source_player_id)
 {
 	_minggang.push_back(pai); //明杠
+	_source_players.push_back(source_player_id);
 }
 
 bool Player::CheckFengGangPai() 
@@ -4094,6 +4091,7 @@ void Player::ClearCards()
 	_zhangs.clear(); //对儿数据
  
  	_minggang.clear(); //清理杠牌
+ 	_source_players.clear(); //清理杠牌
 	_angang.clear(); //清理杠牌
 
 	_jiangang = _fenggang = 0; //清理旋风杠

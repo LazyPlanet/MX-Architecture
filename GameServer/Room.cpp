@@ -701,40 +701,10 @@ void Room::OnGameOver(int64_t player_id)
 
 void Room::AddGameRecord(const Asset::GameRecord& record)
 {
-	//std::lock_guard<std::mutex> lock(_mutex);
-
 	_history.mutable_list()->Add()->CopyFrom(record);
-
-	/*
-	int64_t room_id = GetID();
-	auto record_string = record.ShortDebugString();
-	auto history_string = _history.ShortDebugString();
-	
-	cpp_redis::future_client client;
-	client.connect(ConfigInstance.GetString("Redis_ServerIP", "127.0.0.1"), ConfigInstance.GetInt("Redis_ServerPort", 6379));
-
-	if (!client.is_connected()) 
-	{
-		LOG(ERROR, "房间:{} 存储战绩信息:{} 当前历史战绩信息:{} 错误:未能建立连接", room_id, record_string, history_string);
-		return;
-	}
-	
-	auto has_auth = client.auth(ConfigInstance.GetString("Redis_Password", "!QAZ%TGB&UJM9ol."));
-
-	if (has_auth.get().ko()) 
-	{
-		LOG(ERROR, "房间:{} 存储战绩信息:{} 当前历史战绩信息:{} 错误:数据库密码错误", room_id, record_string, history_string);
-		return;
-	}
-
-	auto set = client.set("room_history:" + std::to_string(room_id), _history.SerializeAsString());
-	client.commit();
-	*/
-	
-	//auto redis_cli = make_unique<Redis>();
 	RedisInstance.SaveRoomHistory(_stuff.room_id(), _history);
 
-	LOG(INFO, "存储房间:{}历史战绩:{}", _stuff.room_id(), _history.ShortDebugString());
+	LOG(INFO, "存储房间:{} 历史战绩:{}", _stuff.room_id(), _history.ShortDebugString());
 }
 
 void Room::BroadCast(pb::Message* message, int64_t exclude_player_id)
