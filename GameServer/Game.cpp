@@ -1406,87 +1406,11 @@ void Game::Calculate(int64_t hupai_player_id/*胡牌玩家*/, int64_t dianpao_pl
 	}
 
 	record->set_score(total_score); //胡牌玩家赢的总积分
-	
+
 	//
 	//3.杠牌积分
 	//
-	for (int i = 0; i < MAX_PLAYER_COUNT; ++i)
-	{
-		auto player = _players[i];
-		if (!player) return;
-		
-		auto ming_count = player->GetMingGangCount(); 
-		auto ming_sources = player->GetMingGangSource();
-		auto an_count = player->GetAnGangCount(); 
-		auto xf_count = player->GetXuanFengCount(); 
-
-		int32_t ming_score = ming_count * get_multiple(Asset::FAN_TYPE_MING_GANG);
-		int32_t an_score = an_count * get_multiple(Asset::FAN_TYPE_AN_GANG);
-		int32_t xf_score = xf_count * get_multiple(Asset::FAN_TYPE_XUAN_FENG_GANG);
-
-		auto score = ming_score + an_score + xf_score; //玩家杠牌赢得其他单个玩家积分
-				
-		auto record = message.mutable_record()->mutable_list(i);
-		record->set_score(record->score() + score * (MAX_PLAYER_COUNT - 1)); //增加杠牌玩家总杠积分
-
-		//
-		//1.杠牌玩家赢得积分列表
-		//
-		if (ming_count)
-		{
-			auto detail = record->mutable_details()->Add();
-			detail->set_fan_type(Asset::FAN_TYPE_MING_GANG);
-			detail->set_score(ming_score * (MAX_PLAYER_COUNT - 1));
-		}
-
-		if (an_count)
-		{
-			auto detail = record->mutable_details()->Add();
-			detail->set_fan_type(Asset::FAN_TYPE_AN_GANG);
-			detail->set_score(an_score * (MAX_PLAYER_COUNT - 1));
-		}
-		
-		if (xf_count)
-		{
-			auto detail = record->mutable_details()->Add();
-			detail->set_fan_type(Asset::FAN_TYPE_XUAN_FENG_GANG);
-			detail->set_score(xf_score * (MAX_PLAYER_COUNT - 1));
-		}
-
-		//
-		//2.其他玩家所输积分
-		//
-		for (int index = 0; index < MAX_PLAYER_COUNT; ++index)
-		{
-			if (index == i) continue;
-
-			auto record = message.mutable_record()->mutable_list(index);
-			record->set_score(record->score() - score); //扣除杠分
-
-			//非杠牌玩家所输积分列表
-
-			if (ming_count)
-			{
-				auto detail = record->mutable_details()->Add();
-				detail->set_fan_type(Asset::FAN_TYPE_MING_GANG);
-				detail->set_score(-ming_score);
-			}
-
-			if (an_count)
-			{
-				auto detail = record->mutable_details()->Add();
-				detail->set_fan_type(Asset::FAN_TYPE_AN_GANG);
-				detail->set_score(-an_score);
-			}
-
-			if (xf_count)
-			{
-				auto detail = record->mutable_details()->Add();
-				detail->set_fan_type(Asset::FAN_TYPE_XUAN_FENG_GANG);
-				detail->set_score(-xf_score);
-			}
-		}
-	}
+	CalculateGangScore(message);
 	
 	//
 	//4.点炮包三家
@@ -1915,16 +1839,15 @@ bool Game::CheckLiuJu()
 	
 	BroadCast(message);
 
-	if (!_room->HasHuangZhuang()) return true; //荒庄杠：流局杠分依然算
-	
-	//
-	//2.杠牌积分
-	//
-	Asset::GameCalculate game_calculate;
-	game_calculate.set_calculte_type(Asset::CALCULATE_TYPE_LIUJU);
+	return true;
+}
+
+void Game::CalculateGangScore(Asset::GameCalculate& game_calculate)
+{
+	if (!_room) return;
 
 	auto fan_asset = _room->GetFan();
-	if (!fan_asset) return true;
+	if (!fan_asset) return;
 
 	auto get_multiple = [&](const int32_t fan_type)->int32_t {
 		auto it = std::find_if(fan_asset->fans().begin(), fan_asset->fans().end(), [fan_type](const Asset::RoomFan_FanElement& element){
@@ -1945,7 +1868,7 @@ bool Game::CheckLiuJu()
 	for (int i = 0; i < MAX_PLAYER_COUNT; ++i)
 	{
 		auto player = _players[i];
-		if (!player) return false;
+		if (!player) return;
 		
 		auto record = game_calculate.mutable_record()->mutable_list()->Add();
 		record->set_player_id(player->GetID());
@@ -1995,7 +1918,7 @@ bool Game::CheckLiuJu()
 			if (index == i) continue;
 
 			auto player = _players[index];
-			if (!player) return false;
+			if (!player) return;
 			
 			Asset::GameRecord_GameElement* record = nullptr;
 
@@ -2039,13 +1962,6 @@ bool Game::CheckLiuJu()
 			}
 		}
 	}
-
-	_room->AddGameRecord(game_calculate.record()); //本局记录
-	BroadCast(game_calculate);
-
-	LOG(INFO, "房间:{} 局数:{} 流局结算:{}", _room_id, _game_id, game_calculate.ShortDebugString());
-
-	return true;
 }
 	
 void Game::OnLiuJu()
@@ -2065,28 +1981,31 @@ void Game::OnLiuJu()
 	game_calculate.set_calculte_type(Asset::CALCULATE_TYPE_LIUJU);
 	game_calculate.mutable_baopai()->CopyFrom(_baopai);
 
+
 	for (auto player : _players)
 	{
 		if (!player) continue;
-		
-		auto record = game_calculate.mutable_record()->mutable_list()->Add();
-		record->set_player_id(player->GetID());
-		record->set_nickname(player->GetNickName());
-		record->set_headimgurl(player->GetHeadImag()); //理论上这种不用存盘，读取发给CLIENT的时候重新获取
+		               
+        auto record = game_calculate.mutable_record()->mutable_list()->Add();
+        record->set_player_id(player->GetID());
+        record->set_nickname(player->GetNickName());
+        record->set_headimgurl(player->GetHeadImag()); //理论上这种不用存盘，读取发给CLIENT的时候重新获取
 	}
 
+	//
+	//杠牌积分
+	//
+	if (_room->HasHuangZhuang()) CalculateGangScore(game_calculate); //荒庄杠：流局杠分依然算
+	
 	BroadCast(game_calculate);
 	
 	_room->AddGameRecord(game_calculate.record()); //本局记录
 	
 	OnGameOver(0); 
 
-	auto room_id = _room->GetID();
-	auto curr_count = _room->GetGamesCount();
 	auto open_rands = _room->GetOpenRands();
 
-	auto game_calculate_string = game_calculate.ShortDebugString();
-	LOG(INFO, "房间:{}第:{}/{}局结束，胡牌玩家:{} 点炮玩家:{}, 流局结算:{}", room_id, curr_count, open_rands, 0, 0, game_calculate_string);
+	LOG(INFO, "房间:{}第:{}/{}局结束，胡牌玩家:{} 点炮玩家:{}, 流局结算:{}", _room_id, _game_id, open_rands, 0, 0, game_calculate.ShortDebugString());
 }
 
 std::vector<int32_t> Game::FaPai(size_t card_count)
