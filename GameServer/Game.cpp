@@ -1186,8 +1186,6 @@ void Game::Calculate(int64_t hupai_player_id/*胡牌玩家*/, int64_t dianpao_pl
 	
 	const auto options = _room->GetOptions();
 	
-	//const auto fan_asset = dynamic_cast<const Asset::RoomFan*>(AssetInstance.Get(g_const->fan_id()));
-	//if (!fan_asset) return;
 	const auto fan_asset = _room->GetFan();
 
 	auto get_multiple = [&](const int32_t fan_type)->int32_t {
@@ -1410,7 +1408,7 @@ void Game::Calculate(int64_t hupai_player_id/*胡牌玩家*/, int64_t dianpao_pl
 	record->set_score(total_score); //胡牌玩家赢的总积分
 	
 	//
-	//3.杠牌积分，一个部分
+	//3.杠牌积分
 	//
 	for (int i = 0; i < MAX_PLAYER_COUNT; ++i)
 	{
@@ -1418,6 +1416,7 @@ void Game::Calculate(int64_t hupai_player_id/*胡牌玩家*/, int64_t dianpao_pl
 		if (!player) return;
 		
 		auto ming_count = player->GetMingGangCount(); 
+		auto ming_sources = player->GetMingGangSource();
 		auto an_count = player->GetAnGangCount(); 
 		auto xf_count = player->GetXuanFengCount(); 
 
@@ -1427,8 +1426,6 @@ void Game::Calculate(int64_t hupai_player_id/*胡牌玩家*/, int64_t dianpao_pl
 
 		auto score = ming_score + an_score + xf_score; //玩家杠牌赢得其他单个玩家积分
 				
-		//DEBUG("player_id:{}, ming_count:{}, an_count:{}, score:{}", player->GetID(), ming_count, an_count, score);
-
 		auto record = message.mutable_record()->mutable_list(i);
 		record->set_score(record->score() + score * (MAX_PLAYER_COUNT - 1)); //增加杠牌玩家总杠积分
 
