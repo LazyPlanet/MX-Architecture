@@ -421,7 +421,6 @@ public:
 	int32_t GetXuanFengCount() { return _jiangang + _fenggang; } //旋风杠数量
 	
 	const std::vector<Asset::PaiElement>& GetMingGang() { return _minggang; } //明杠
-	const std::vector<int64_t>& GetMingGangSource() { return  _source_players; } //明杠来源
 	const std::vector<Asset::PaiElement>& GetAnGang() { return _angang; } //暗杠
 	int32_t GetJianGang() { return _jiangang; } //旋风杠，本质是明杠
 	int32_t GetFengGang() { return _fenggang; } //旋风杠，本质是暗杠

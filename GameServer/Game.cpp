@@ -1974,28 +1974,28 @@ void Game::OnLiuJu()
 	PaiPushDown();
 	
 	//
-	//记录本次积分
+	//记录本次杠牌积分
 	//
-
 	Asset::GameCalculate game_calculate;
 	game_calculate.set_calculte_type(Asset::CALCULATE_TYPE_LIUJU);
 	game_calculate.mutable_baopai()->CopyFrom(_baopai);
 
-
-	for (auto player : _players)
+	if (_room->IsChaoYang())
 	{
-		if (!player) continue;
-		               
-        auto record = game_calculate.mutable_record()->mutable_list()->Add();
-        record->set_player_id(player->GetID());
-        record->set_nickname(player->GetNickName());
-        record->set_headimgurl(player->GetHeadImag()); //理论上这种不用存盘，读取发给CLIENT的时候重新获取
+		for (auto player : _players)
+		{
+			if (!player) continue;
+						   
+			auto record = game_calculate.mutable_record()->mutable_list()->Add();
+			record->set_player_id(player->GetID());
+			record->set_nickname(player->GetNickName());
+			record->set_headimgurl(player->GetHeadImag()); //理论上这种不用存盘，读取发给CLIENT的时候重新获取
+		}
 	}
-
-	//
-	//杠牌积分
-	//
-	if (_room->HasHuangZhuang()) CalculateGangScore(game_calculate); //荒庄杠：流局杠分依然算
+	else
+	{
+		if (_room->HasHuangZhuang()) CalculateGangScore(game_calculate); //荒庄杠：流局杠分依然算
+	}
 	
 	BroadCast(game_calculate);
 	
@@ -2003,9 +2003,7 @@ void Game::OnLiuJu()
 	
 	OnGameOver(0); 
 
-	auto open_rands = _room->GetOpenRands();
-
-	LOG(INFO, "房间:{}第:{}/{}局结束，胡牌玩家:{} 点炮玩家:{}, 流局结算:{}", _room_id, _game_id, open_rands, 0, 0, game_calculate.ShortDebugString());
+	LOG(INFO, "房间:{}第:{}/{}局结束，胡牌玩家:{} 点炮玩家:{}, 流局结算:{}", _room_id, _game_id, _room->GetOpenRands(), 0, 0, game_calculate.ShortDebugString());
 }
 
 std::vector<int32_t> Game::FaPai(size_t card_count)

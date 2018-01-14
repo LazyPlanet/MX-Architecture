@@ -2936,8 +2936,10 @@ void Player::OnGangPai(const Asset::PaiElement& pai, int64_t source_player_id)
 
 	if (count == 3)
 	{
-		_minggang.push_back(pai); //明杠
-		_source_players.push_back(source_player_id);
+		auto ming_gang = pai;
+		ming_gang.set_source_player_id(source_player_id);
+
+		_minggang.push_back(ming_gang); //明杠
 	}
 	else if (count == 4)
 	{
@@ -2962,8 +2964,10 @@ void Player::OnGangPai(const Asset::PaiElement& pai, int64_t source_player_id)
 
 		if (count == 3)
 		{
-			_minggang.push_back(pai);
-			_source_players.push_back(source_player_id);
+			auto ming_gang = pai;
+			ming_gang.set_source_player_id(source_player_id);
+
+			_minggang.push_back(ming_gang);
 			
 			auto remove_it = std::remove(iit->second.begin(), iit->second.end(), card_value); //从墙外删除
 			iit->second.erase(remove_it, iit->second.end());
@@ -3009,8 +3013,10 @@ void Player::OnBeenQiangGang(const Asset::PaiElement& pai, int64_t source_player
 	
 void Player::OnBeenQiangGangWithGivingUp(const Asset::PaiElement& pai, int64_t source_player_id)
 {
-	_minggang.push_back(pai); //明杠
-	_source_players.push_back(source_player_id);
+	auto ming_gang = pai;
+	ming_gang.set_source_player_id(source_player_id);
+
+	_minggang.push_back(ming_gang); //明杠
 }
 
 bool Player::CheckFengGangPai() 
@@ -4091,7 +4097,6 @@ void Player::ClearCards()
 	_zhangs.clear(); //对儿数据
  
  	_minggang.clear(); //清理杠牌
- 	_source_players.clear(); //清理杠牌
 	_angang.clear(); //清理杠牌
 
 	_jiangang = _fenggang = 0; //清理旋风杠
