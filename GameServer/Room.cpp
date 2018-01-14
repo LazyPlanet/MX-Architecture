@@ -503,6 +503,19 @@ bool Room::HasBaoSanJia()
 	return HasLaw(Asset::ROOM_EXTEND_TYPE_BAOSANJIA);
 }
 	
+int32_t Room::GetMultiple(int32_t fan_type)
+{
+	const auto fan_asset = GetFan();
+	if (!fan_asset) return 0;
+
+	auto it = std::find_if(fan_asset->fans().begin(), fan_asset->fans().end(), [fan_type](const Asset::RoomFan_FanElement& element){
+			return fan_type == element.fan_type();
+	});
+	if (it == fan_asset->fans().end()) return 0;
+
+	return pow(2, it->multiple());
+}
+	
 const Asset::RoomFan* Room::GetFan()
 {
 	auto city_type = _stuff.options().city_type();

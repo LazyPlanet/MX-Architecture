@@ -92,6 +92,7 @@ public:
 	void BroadCast(pb::Message* message, int64_t exclude_player_id = 0);
 	void BroadCast(pb::Message& message, int64_t exclude_player_id = 0);
 
+	int32_t GetMultiple(int32_t fan_type);
 	void CalculateGangScore(Asset::GameCalculate& game_calculate);
 	void Calculate(int64_t hupai_player_id/*胡牌玩家*/, int64_t dianpao_player_id/*点炮玩家*/, std::unordered_set<int32_t>& fan_list/*基础分*/);
 	void PaiPushDown();

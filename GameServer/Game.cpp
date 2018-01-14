@@ -1184,18 +1184,6 @@ void Game::Calculate(int64_t hupai_player_id/*胡牌玩家*/, int64_t dianpao_pl
 	//
 	if (hupai_player_id != dianpao_player_id) _room->AddDianpao(dianpao_player_id); //不是自摸
 	
-	const auto options = _room->GetOptions();
-	
-	const auto fan_asset = _room->GetFan();
-
-	auto get_multiple = [&](const int32_t fan_type)->int32_t {
-		auto it = std::find_if(fan_asset->fans().begin(), fan_asset->fans().end(), [fan_type](const Asset::RoomFan_FanElement& element){
-			return fan_type == element.fan_type();
-		});
-		if (it == fan_asset->fans().end()) return 0;
-		return pow(2, it->multiple());
-	};
-
 	int32_t base_score = 1;
 
 	//
@@ -1226,7 +1214,7 @@ void Game::Calculate(int64_t hupai_player_id/*胡牌玩家*/, int64_t dianpao_pl
 	//1.各个玩家输牌积分
 	//
 	
-	int32_t top_mutiple = options.top_mutiple(); //封顶番数
+	int32_t top_mutiple = _room->MaxFan(); //封顶番数
 
 	for (int i = 0; i < MAX_PLAYER_COUNT; ++i)
 	{
@@ -1249,7 +1237,7 @@ void Game::Calculate(int64_t hupai_player_id/*胡牌玩家*/, int64_t dianpao_pl
 		//
 		for (const auto& fan : fan_list)
 		{
-			score *= get_multiple(fan);
+			score *= GetMultiple(fan);
 			
 			auto detail = record->mutable_details()->Add();
 			detail->set_fan_type((Asset::FAN_TYPE)fan);
@@ -1266,7 +1254,7 @@ void Game::Calculate(int64_t hupai_player_id/*胡牌玩家*/, int64_t dianpao_pl
 			
 		if (dianpao_player_id == hupai_player_id)
 		{
-			score *= get_multiple(Asset::FAN_TYPE_ZI_MO); //自摸
+			score *= GetMultiple(Asset::FAN_TYPE_ZI_MO); //自摸
 			
 			auto detail = record->mutable_details()->Add();
 			detail->set_fan_type(Asset::FAN_TYPE_ZI_MO);
@@ -1277,7 +1265,7 @@ void Game::Calculate(int64_t hupai_player_id/*胡牌玩家*/, int64_t dianpao_pl
 
 		if (dianpao_player_id != hupai_player_id && player_id == dianpao_player_id) 
 		{
-			score *= get_multiple(Asset::FAN_TYPE_DIAN_PAO); 
+			score *= GetMultiple(Asset::FAN_TYPE_DIAN_PAO); 
 			
 			auto detail = record->mutable_details()->Add();
 			detail->set_fan_type(Asset::FAN_TYPE_DIAN_PAO);
@@ -1290,7 +1278,7 @@ void Game::Calculate(int64_t hupai_player_id/*胡牌玩家*/, int64_t dianpao_pl
 			//
 			if (player->IsGangOperation()) //流泪
 			{
-				score *= get_multiple(Asset::FAN_TYPE_LIU_LEI); 
+				score *= GetMultiple(Asset::FAN_TYPE_LIU_LEI); 
 				
 				auto detail = record->mutable_details()->Add();
 				detail->set_fan_type(Asset::FAN_TYPE_LIU_LEI);
@@ -1305,7 +1293,7 @@ void Game::Calculate(int64_t hupai_player_id/*胡牌玩家*/, int64_t dianpao_pl
 		//
 		if (IsBanker(player_id)) 
 		{
-			score *= get_multiple(Asset::FAN_TYPE_ZHUANG); 
+			score *= GetMultiple(Asset::FAN_TYPE_ZHUANG); 
 			
 			auto detail = record->mutable_details()->Add();
 			detail->set_fan_type(Asset::FAN_TYPE_ZHUANG);
@@ -1314,7 +1302,7 @@ void Game::Calculate(int64_t hupai_player_id/*胡牌玩家*/, int64_t dianpao_pl
 
 		if (player->IsBimen()) 
 		{
-			score *= get_multiple(Asset::FAN_TYPE_BIMEN); //闭门翻番
+			score *= GetMultiple(Asset::FAN_TYPE_BIMEN); //闭门翻番
 			
 			auto detail = record->mutable_details()->Add();
 			detail->set_fan_type(Asset::FAN_TYPE_BIMEN);
@@ -1325,7 +1313,7 @@ void Game::Calculate(int64_t hupai_player_id/*胡牌玩家*/, int64_t dianpao_pl
 		
 		if (player->IsMingPiao()) 
 		{
-			score *= get_multiple(Asset::FAN_TYPE_PIAO_WEIHU); //明飘未胡
+			score *= GetMultiple(Asset::FAN_TYPE_PIAO_WEIHU); //明飘未胡
 			
 			auto detail = record->mutable_details()->Add();
 			detail->set_fan_type(Asset::FAN_TYPE_PIAO_WEIHU);
@@ -1336,7 +1324,7 @@ void Game::Calculate(int64_t hupai_player_id/*胡牌玩家*/, int64_t dianpao_pl
 		
 		if (SanJiaBi(hupai_player_id)) 
 		{
-			score *= get_multiple(Asset::FAN_TYPE_SAN_JIA_BI_MEN); //三家闭门
+			score *= GetMultiple(Asset::FAN_TYPE_SAN_JIA_BI_MEN); //三家闭门
 			
 			auto detail = record->mutable_details()->Add();
 			detail->set_fan_type(Asset::FAN_TYPE_SAN_JIA_BI_MEN);
@@ -1409,6 +1397,8 @@ void Game::Calculate(int64_t hupai_player_id/*胡牌玩家*/, int64_t dianpao_pl
 	//
 	//3.杠牌积分
 	//
+	CalculateGangScore(message);
+	/*
 	for (int i = 0; i < MAX_PLAYER_COUNT; ++i)
 	{
 		auto player = _players[i];
@@ -1419,9 +1409,9 @@ void Game::Calculate(int64_t hupai_player_id/*胡牌玩家*/, int64_t dianpao_pl
 		auto an_count = player->GetAnGangCount(); 
 		auto xf_count = player->GetXuanFengCount(); 
 		
-		int32_t ming_score = ming_count * get_multiple(Asset::FAN_TYPE_MING_GANG);
-		int32_t an_score = an_count * get_multiple(Asset::FAN_TYPE_AN_GANG);
-		int32_t xf_score = xf_count * get_multiple(Asset::FAN_TYPE_XUAN_FENG_GANG);
+		int32_t ming_score = ming_count * GetMultiple(Asset::FAN_TYPE_MING_GANG);
+		int32_t an_score = an_count * GetMultiple(Asset::FAN_TYPE_AN_GANG);
+		int32_t xf_score = xf_count * GetMultiple(Asset::FAN_TYPE_XUAN_FENG_GANG);
 
 		int32_t score = ming_score + an_score + xf_score; //玩家杠牌赢得其他单个玩家积分
 
@@ -1458,7 +1448,7 @@ void Game::Calculate(int64_t hupai_player_id/*胡牌玩家*/, int64_t dianpao_pl
 		{
 			if (index == i) continue;
 
-			auto record = message.mutable_record()->mutable_list(i);
+			auto record = message.mutable_record()->mutable_list(index);
 			record->set_score(record->score() - score); //扣除杠分
 
 			//非杠牌玩家所输积分列表
@@ -1468,7 +1458,7 @@ void Game::Calculate(int64_t hupai_player_id/*胡牌玩家*/, int64_t dianpao_pl
 				auto detail = record->mutable_details()->Add();
 				detail->set_fan_type(Asset::FAN_TYPE_MING_GANG);
 
-				int32_t single_score = get_multiple(Asset::FAN_TYPE_MING_GANG);
+				int32_t single_score = GetMultiple(Asset::FAN_TYPE_MING_GANG);
 
 				for (auto gang : minggang)
 				{
@@ -1498,6 +1488,7 @@ void Game::Calculate(int64_t hupai_player_id/*胡牌玩家*/, int64_t dianpao_pl
 			}
 		} 
 	} 
+	*/
 	
 	//
 	//4.点炮赔付
@@ -1578,7 +1569,7 @@ void Game::Calculate(int64_t hupai_player_id/*胡牌玩家*/, int64_t dianpao_pl
 	//
 	auto max_fan_it = std::max_element(record->details().begin(), record->details().end(), 
 			[&](const Asset::GameRecord_GameElement_DetailElement& detail1, const Asset::GameRecord_GameElement_DetailElement& detail2){
-				return get_multiple(detail1.fan_type()) < get_multiple(detail2.fan_type()) ;
+				return GetMultiple(detail1.fan_type()) < GetMultiple(detail2.fan_type()) ;
 			});
 	if (max_fan_it != record->details().end()) message.set_max_fan_type(max_fan_it->fan_type());
 
@@ -1936,6 +1927,95 @@ bool Game::CheckLiuJu()
 
 void Game::CalculateGangScore(Asset::GameCalculate& game_calculate)
 {
+	for (int i = 0; i < MAX_PLAYER_COUNT; ++i)
+	{
+		auto player = _players[i];
+		if (!player) return;
+
+		auto minggang = player->GetMingGang();
+		auto ming_count = player->GetMingGangCount(); 
+		auto an_count = player->GetAnGangCount(); 
+		auto xf_count = player->GetXuanFengCount(); 
+		
+		int32_t ming_score = ming_count * GetMultiple(Asset::FAN_TYPE_MING_GANG);
+		int32_t an_score = an_count * GetMultiple(Asset::FAN_TYPE_AN_GANG);
+		int32_t xf_score = xf_count * GetMultiple(Asset::FAN_TYPE_XUAN_FENG_GANG);
+
+		int32_t score = ming_score + an_score + xf_score; //玩家杠牌赢得其他单个玩家积分
+
+		auto record = game_calculate.mutable_record()->mutable_list(i);
+		record->set_score(record->score() + score * (MAX_PLAYER_COUNT - 1)); //增加杠牌玩家总杠积分
+
+		//
+		//1.杠牌玩家赢得积分列表
+		//
+		if (ming_count)
+		{
+			auto detail = record->mutable_details()->Add();
+			detail->set_fan_type(Asset::FAN_TYPE_MING_GANG);
+			detail->set_score(ming_score * (MAX_PLAYER_COUNT - 1));
+		}
+
+		if (an_count)
+		{
+			auto detail = record->mutable_details()->Add();
+			detail->set_fan_type(Asset::FAN_TYPE_AN_GANG);
+			detail->set_score(an_score * (MAX_PLAYER_COUNT - 1));
+		}
+		
+		if (xf_count)
+		{
+			auto detail = record->mutable_details()->Add();
+			detail->set_fan_type(Asset::FAN_TYPE_XUAN_FENG_GANG);
+			detail->set_score(xf_score * (MAX_PLAYER_COUNT - 1));
+		}
+		//
+		//2.其他玩家所输积分
+		//
+		for (int index = 0; index < MAX_PLAYER_COUNT; ++index)
+		{
+			if (index == i) continue;
+
+			auto record = game_calculate.mutable_record()->mutable_list(index);
+			record->set_score(record->score() - score); //扣除杠分
+
+			//非杠牌玩家所输积分列表
+
+			if (ming_count) //明杠，根据点杠玩家不同
+			{
+				auto detail = record->mutable_details()->Add();
+				detail->set_fan_type(Asset::FAN_TYPE_MING_GANG);
+
+				int32_t single_score = GetMultiple(Asset::FAN_TYPE_MING_GANG);
+
+				for (auto gang : minggang)
+				{
+					if (_room->IsJianPing() && player->GetID() == gang.source_player_id()) //点杠：建平玩法
+					{ 
+						detail->set_score(detail->score() - single_score * (MAX_PLAYER_COUNT - 1)); //点杠的那个人出3分
+					}
+					else 
+					{ 
+						detail->set_score(detail->score() - single_score); 
+					}
+				}
+			}
+
+			if (an_count)
+			{
+				auto detail = record->mutable_details()->Add();
+				detail->set_fan_type(Asset::FAN_TYPE_AN_GANG);
+				detail->set_score(-an_score);
+			}
+
+			if (xf_count)
+			{
+				auto detail = record->mutable_details()->Add();
+				detail->set_fan_type(Asset::FAN_TYPE_XUAN_FENG_GANG);
+				detail->set_score(-xf_score);
+			}
+		} 
+	} 
 }
 	
 void Game::OnLiuJu()
@@ -1954,22 +2034,17 @@ void Game::OnLiuJu()
 	game_calculate.set_calculte_type(Asset::CALCULATE_TYPE_LIUJU);
 	game_calculate.mutable_baopai()->CopyFrom(_baopai);
 
-	if (_room->IsChaoYang())
+	for (auto player : _players)
 	{
-		for (auto player : _players)
-		{
-			if (!player) continue;
-						   
-			auto record = game_calculate.mutable_record()->mutable_list()->Add();
-			record->set_player_id(player->GetID());
-			record->set_nickname(player->GetNickName());
-			record->set_headimgurl(player->GetHeadImag()); //理论上这种不用存盘，读取发给CLIENT的时候重新获取
-		}
+		if (!player) continue;
+					   
+		auto record = game_calculate.mutable_record()->mutable_list()->Add();
+		record->set_player_id(player->GetID());
+		record->set_nickname(player->GetNickName());
+		record->set_headimgurl(player->GetHeadImag()); //理论上这种不用存盘，读取发给CLIENT的时候重新获取
 	}
-	else
-	{
-		if (_room->HasHuangZhuang()) CalculateGangScore(game_calculate); //荒庄杠：流局杠分依然算
-	}
+
+	if (_room->HasHuangZhuang()) CalculateGangScore(game_calculate); //荒庄杠：流局杠分依然算
 	
 	BroadCast(game_calculate);
 	
@@ -2117,6 +2192,13 @@ void Game::OnTingPai(std::shared_ptr<Player> player)
 		_random_result = CommonUtil::Random(1, 6);
 		_baopai = GetBaoPai(_random_result);
 	} while(GetRemainBaopai() <= 0); //直到产生还有剩余的宝牌
+}
+	
+int32_t Game::GetMultiple(int32_t fan_type)
+{
+	if (!_room) return 0;
+	
+	return _room->GetMultiple(fan_type);
 }
 
 //
