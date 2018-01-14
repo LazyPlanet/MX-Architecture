@@ -1873,6 +1873,11 @@ void Player::AddZhang(const Asset::PaiElement& zhang)
 {
 	if (!_game || !_room) return;
 
+	auto it = std::find_if(_zhangs.begin(), _zhangs.end(), [zhang](const Asset::PaiElement& pai){
+				return zhang.card_type() == pai.card_type() && zhang.card_value() == pai.card_value();	
+			});
+	if (it != _zhangs.end()) return; //已经存在
+
 	_zhangs.push_back(zhang); //对儿
 
 	DEBUG("玩家:{} 在房间:{} 局数:{} 中胡牌对儿数量:{}，本次增加:{}", _player_id, _room->GetID(), _game->GetID(), _zhangs.size(), zhang.ShortDebugString());
@@ -2475,7 +2480,7 @@ bool Player::IsDanDiao()
 //
 bool Player::IsDuiDao() 
 { 
-	if (_zhangs.size() != 4) return false;
+	if (_zhangs.size() != 2) return false;
 
 	return true;
 } 
