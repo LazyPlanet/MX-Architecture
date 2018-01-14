@@ -1426,7 +1426,7 @@ void Game::Calculate(int64_t hupai_player_id/*胡牌玩家*/, int64_t dianpao_pl
 		int32_t score = ming_score + an_score + xf_score; //玩家杠牌赢得其他单个玩家积分
 
 		auto record = message.mutable_record()->mutable_list(i);
-		record->set_score(score * (MAX_PLAYER_COUNT - 1)); //增加杠牌玩家总杠积分
+		record->set_score(record->score() + score * (MAX_PLAYER_COUNT - 1)); //增加杠牌玩家总杠积分
 
 		//
 		//1.杠牌玩家赢得积分列表
@@ -1458,11 +1458,8 @@ void Game::Calculate(int64_t hupai_player_id/*胡牌玩家*/, int64_t dianpao_pl
 		{
 			if (index == i) continue;
 
-			auto player = _players[index];
-			if (!player) return;
-
 			auto record = message.mutable_record()->mutable_list(i);
-			record->set_score(record->score() + score * (MAX_PLAYER_COUNT - 1)); //增加杠牌玩家总杠积分
+			record->set_score(record->score() - score); //扣除杠分
 
 			//非杠牌玩家所输积分列表
 
@@ -1542,7 +1539,7 @@ void Game::Calculate(int64_t hupai_player_id/*胡牌玩家*/, int64_t dianpao_pl
 
 		it_dianpao->set_score(-baofen_total + it_dianpao->score()); //总积分
 	}
-
+	
 	//
 	//如果仅仅是平胡，则显示
 	//
@@ -1629,7 +1626,6 @@ void Game::Calculate(int64_t hupai_player_id/*胡牌玩家*/, int64_t dianpao_pl
 	}
 	
 	BroadCast(message);
-				
 	OnGameOver(hupai_player_id); //结算之后才是真正结束
 	
 	auto room_id = _room->GetID();
