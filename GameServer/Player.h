@@ -255,6 +255,7 @@ private:
 	bool _jinbao = false;
 	Asset::PaiElement _baopai; //宝牌
 	std::vector<Asset::PaiElement> _zhangs; //对儿//掌儿//可能是对倒，两对
+	std::vector<Asset::ShunZi> _shunzis; //顺子
 	Asset::PaiElement _zhuapai; //抓牌
 
 	//玩家牌数据
@@ -314,6 +315,7 @@ public:
 
 	std::vector<Asset::PAI_OPER_TYPE> CheckPai(const Asset::PaiElement& pai, int64_t source_player_id);
 	void AddZhang(const Asset::PaiElement& zhang);
+	void AddShunZi(const Asset::ShunZi& shunzi);
 
 	bool CheckBaoHu(const Asset::PaiElement& pai);
 	bool LookAtBaopai(bool has_saizi); //返回值：是否胡牌
@@ -408,6 +410,7 @@ public:
 
 	bool IsMingPiao(); //是否明飘
 	bool IsSiGuiYi(); //是否四归一 
+	bool IsSiGuiYi(const Asset::PaiElement& pai); //是否四归一 
 	bool IsDanDiao(); //是否单调
 	bool IsPiao(); //是否飘
 	bool HasKeOutHand();

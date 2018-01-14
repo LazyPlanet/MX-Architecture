@@ -1861,6 +1861,25 @@ bool Player::CanHuPai(std::vector<Card_t>& cards, bool use_pair)
 
 			//顺子
 			straight = CanHuPai(cards, use_pair);
+
+			if (straight)
+			{
+				Asset::ShunZi shunzi;
+
+				auto pai = shunzi.mutable_pai()->Add();
+				pai->set_card_type((Asset::CARD_TYPE)first._type);
+				pai->set_card_value(first._value);
+				
+				pai = shunzi.mutable_pai()->Add();
+				pai->set_card_type((Asset::CARD_TYPE)second._type);
+				pai->set_card_value(second._value);
+				
+				pai = shunzi.mutable_pai()->Add();
+				pai->set_card_type((Asset::CARD_TYPE)third._type);
+				pai->set_card_value(third._value);
+
+				AddShunZi(shunzi);
+			}
 		}
 	}
 	
@@ -1881,6 +1900,15 @@ void Player::AddZhang(const Asset::PaiElement& zhang)
 	_zhangs.push_back(zhang); //对儿
 
 	DEBUG("玩家:{} 在房间:{} 局数:{} 中胡牌对儿数量:{}，本次增加:{}", _player_id, _room->GetID(), _game->GetID(), _zhangs.size(), zhang.ShortDebugString());
+}
+	
+void Player::AddShunZi(const Asset::ShunZi& shunzi)
+{
+	if (!_game || !_room) return;
+
+	_shunzis.push_back(shunzi);
+
+	DEBUG("玩家:{} 在房间:{} 局数:{} 中胡牌顺子数量:{}，本次增加:{}", _player_id, _room->GetID(), _game->GetID(), _shunzis.size(), shunzi.ShortDebugString());
 }
 	
 bool Player::CheckBaoHu(const Asset::PaiElement& pai/*宝牌数据*/)
@@ -2010,6 +2038,7 @@ bool Player::CheckHuPai(const std::map<int32_t, std::vector<int32_t>>& cards_inh
 	_fan_list.clear(); //番型数据
 	_hu_result.clear(); //胡牌数据
 	_zhangs.clear(); //对儿数据
+	_shunzis.clear(); //顺子数据
 
 	auto cards = cards_inhand;
 
@@ -2175,7 +2204,7 @@ bool Player::CheckHuPai(const std::map<int32_t, std::vector<int32_t>>& cards_inh
 	//
 	//依赖牌型检查
 	//
-	if (!_room->HasZhang28() && Is28Zhang()) return false; //28不能作掌
+	if (_room->IsJianPing() && !_room->HasZhang28() && Is28Zhang()) return false; //建平玩法：28不能作掌
 	
 	//6.飘胡检查，严重依赖上面的刻的数量
 	//
@@ -2184,7 +2213,7 @@ bool Player::CheckHuPai(const std::map<int32_t, std::vector<int32_t>>& cards_inh
 		piao = true; 
 		if (!IsPiao()) piao = false; //尝试处理：玩家吃了三套副一样的，如[7 7 7 8 8 8 9 9 9]牌型
 
-		if (!piao && _room->HasMingPiao() && HasPengJianPai()) return false; //建平：中发白其中之一只要碰就算明飘，本局必须胡飘，不勾选则正常
+		if (_room->IsJianPing() && !piao && _room->HasMingPiao() && HasPengJianPai()) return false; //建平玩法：中发白其中之一只要碰就算明飘，本局必须胡飘，不勾选则正常
 	}
 	
 	//
@@ -2213,6 +2242,7 @@ bool Player::CheckHuPai(const std::map<int32_t, std::vector<int32_t>>& cards_inh
 		}
 
 		_hu_result.clear();
+		_shunzis.clear();
 
 		bool can_hu = CanHuPai(card_list);	
 		if (!can_hu) return false;
@@ -2232,6 +2262,41 @@ bool Player::CheckHuPai(const std::map<int32_t, std::vector<int32_t>>& cards_inh
 	}
 
 	if (!has_ke) return false;
+
+	//
+	//8.建平玩法：四归一不允许胡牌
+	//
+	do {
+		if (!_room->IsJianPing()) break;
+
+		if (!check_zimo && IsSiGuiYi(pai)) return false;
+		if (check_zimo && IsSiGuiYi()) return false;
+
+	} while(false);
+	
+	//
+	//.建平玩法：一边高不允许胡牌
+	//
+	do {
+		if (!_room->IsJianPing()) break;
+		
+		for (auto shunzi : _shunzis)
+		{
+			if (shunzi.pai().size() != 3) continue;
+
+			auto count = std::count_if(_shunzis.begin(), _shunzis.end(), [shunzi](const Asset::ShunZi& shunzi_element){
+						if (shunzi_element.pai().size() != 3) return false;
+
+						for (int32_t i = 0; i < 3; ++i)
+							if (shunzi.pai(i).card_type() != shunzi_element.pai(i).card_type()) return false;
+
+						return true;
+					});
+			if (count > 1) return false;
+		}
+
+	} while(false);
+	
 	
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //
@@ -2452,6 +2517,26 @@ bool Player::IsSiGuiYi()
 	auto cards = _cards_inhand;
 	for (const auto& crds : _cards_outhand) 
 		cards[crds.first].insert(cards[crds.first].end(), crds.second.begin(), crds.second.end());
+
+	for (const auto& crds : cards)
+	{
+		for (auto card_value : crds.second)
+		{
+			auto count = std::count(crds.second.begin(), crds.second.end(), card_value);
+			if (count == 4) return true;
+		}
+	}
+
+	return false;
+}
+
+bool Player::IsSiGuiYi(const Asset::PaiElement& pai)
+{
+	auto cards = _cards_inhand;
+	for (const auto& crds : _cards_outhand) 
+		cards[crds.first].insert(cards[crds.first].end(), crds.second.begin(), crds.second.end());
+
+	cards[pai.card_type()].push_back(pai.card_value());
 
 	for (const auto& crds : cards)
 	{
