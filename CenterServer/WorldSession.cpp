@@ -213,14 +213,10 @@ void WorldSession::OnProcessMessage(const Asset::Meta& meta)
 			}
 			
 			_account.CopyFrom(login->account()); //账号信息
-
 			auto success = RedisInstance.GetUser(login->account().username(), _user);
 			if (!success) return;
 
-			//
-			//Client数据
-			//
-			_user.mutable_client_info()->set_ip_address(_ip_address);
+			_user.mutable_client_info()->set_ip_address(_ip_address); //Client数据
 
 			Asset::UpdateClientData client_data;
 			client_data.mutable_client_info()->CopyFrom(_user.client_info());
@@ -330,24 +326,21 @@ void WorldSession::OnProcessMessage(const Asset::Meta& meta)
 
 			if (!_player) 
 			{
-				//
-				//新增用户，必须首先进行数据加载
-				//
 				_player = std::make_shared<Player>(connect->player_id()); //服务器已经没有缓存
 
 				auto load_success = _player->Load();
-				if (load_success)
-				{
-					ERROR("玩家断线重连，角色ID:{} 加载数据失败，原因:{}", connect->player_id(), load_success);
-					return;
-				}
+				if (load_success) return;
 			}
 			else
 			{
-				auto account_type = _player->GetAccountType();
-				if (Asset::ACCOUNT_TYPE_IsValid(account_type)) _account.set_account_type(account_type); //账号类型缓存
 				if (!_player->IsCenterServer()) _player->Load();  
 			}
+			
+			_account.CopyFrom(connect->account()); //账号信息
+			_player->SetAccount(_account.username(), _account.account_type());
+				
+			auto success = RedisInstance.GetUser(_account.username(), _user);
+			if (!success) return;
 				
 			SetRoleType(Asset::ROLE_TYPE_PLAYER, _player->GetID());
 			WorldSessionInstance.AddPlayer(connect->player_id(), shared_from_this()); //在线玩家，获取网络会话

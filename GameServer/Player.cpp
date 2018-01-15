@@ -2275,7 +2275,7 @@ bool Player::CheckHuPai(const std::map<int32_t, std::vector<int32_t>>& cards_inh
 	} while(false);
 	
 	//
-	//.建平玩法：一边高不允许胡牌
+	//9.建平玩法：一边高不允许胡牌
 	//
 	do {
 		if (!_room->IsJianPing()) break;
