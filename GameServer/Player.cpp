@@ -811,9 +811,15 @@ int32_t Player::CmdPaiOperate(pb::Message* message)
 		}
 		break;
 
+		case Asset::PAI_OPER_TYPE_CANCEL:
+		{
+			return 0;
+		}
+		break;
+
 		default:
 		{
-
+			//return 0; //下面还要进行操作
 		}
 		break;
 	}
@@ -1899,7 +1905,7 @@ void Player::AddZhang(const Asset::PaiElement& zhang)
 
 	_zhangs.push_back(zhang); //对儿
 
-	DEBUG("玩家:{} 在房间:{} 局数:{} 中胡牌对儿数量:{}，本次增加:{}", _player_id, _room->GetID(), _game->GetID(), _zhangs.size(), zhang.ShortDebugString());
+	//DEBUG("玩家:{} 在房间:{} 局数:{} 中胡牌对儿数量:{}，本次增加:{}", _player_id, _room->GetID(), _game->GetID(), _zhangs.size(), zhang.ShortDebugString());
 }
 	
 void Player::AddShunZi(const Asset::ShunZi& shunzi)
@@ -1908,7 +1914,7 @@ void Player::AddShunZi(const Asset::ShunZi& shunzi)
 
 	_shunzis.push_back(shunzi);
 
-	DEBUG("玩家:{} 在房间:{} 局数:{} 中胡牌顺子数量:{}，本次增加:{}", _player_id, _room->GetID(), _game->GetID(), _shunzis.size(), shunzi.ShortDebugString());
+	//DEBUG("玩家:{} 在房间:{} 局数:{} 中胡牌顺子数量:{}，本次增加:{}", _player_id, _room->GetID(), _game->GetID(), _shunzis.size(), shunzi.ShortDebugString());
 }
 	
 bool Player::CheckBaoHu(const Asset::PaiElement& pai/*宝牌数据*/)
@@ -2115,7 +2121,7 @@ bool Player::CheckHuPai(const std::map<int32_t, std::vector<int32_t>>& cards_inh
 	{
 		if (_room->HasZhanLi()) //可以站立胡
 		{
-			if (_cards_outhand.size() == 0 && _minggang.size() == 0) zhanlihu = true;
+			if (cards_outhand.size() == 0 && minggang.size() == 0) zhanlihu = true;
 		}
 		else
 		{
@@ -2197,7 +2203,7 @@ bool Player::CheckHuPai(const std::map<int32_t, std::vector<int32_t>>& cards_inh
 
 	if (!has_ke && (/*cards[Asset::CARD_TYPE_FENG].size() //朝阳：两个风牌不顶横 || */cards[Asset::CARD_TYPE_JIAN].size())) has_ke = true;
 	
-	if (!has_ke && (_jiangang > 0 || _fenggang > 0 || _minggang.size() > 0 || _angang.size() > 0)) has_ke = true;
+	if (!has_ke && (jiangang > 0 || fenggang > 0 || minggang.size() > 0 || angang.size() > 0)) has_ke = true;
 	
 	if (!has_ke && ke_count == 0) return false;
 
@@ -3772,20 +3778,20 @@ int32_t Player::OnFaPai(std::vector<int32_t>& cards)
 
 	if (LookAtBaopai()) return 0; //生成宝牌，进宝检查
 
-	if (false && _player_id == 262277 && _cards_inhand.size() == 0)
+	if (false && _player_id == 262271 && _cards_inhand.size() == 0)
 	{
 		_cards_inhand = {
-			{ 1, {3, 4, 5} },
-			//{ 2, {5, 6, 7} },
-			{ 3, {1, 1, 5, 6} },
+			{ 1, {5, 6, 7, 8, 8} },
+			{ 2, {7, 8, 9, 9, 9} },
+			//{ 3, {1, 1, 5, 6} },
 			//{ 4, { 1, 2, 3, 4} },
 			//{ 5, { 1, 2, 3 } },
 		};
 		
 		_cards_outhand = {
 			//{ 1, { 7, 7, 7, 6, 7, 8} },
-			{ 2, { 2, 2, 2 } },
-			{ 3, { 9, 9, 9 } },
+			{ 2, { 1, 2, 3 } },
+			//{ 3, { 9, 9, 9 } },
 		};
 
 		/*
