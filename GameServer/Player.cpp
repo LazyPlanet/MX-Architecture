@@ -807,7 +807,14 @@ int32_t Player::CmdPaiOperate(pb::Message* message)
 
 			Add2CardsPool(pai);
 
-			if (OnTingPai()) return 0; //进宝
+			if (OnTingPai()) 
+			{
+				_game->AddPlayerOperation(*pai_operate);  //回放记录
+				_game->BroadCast(message); //操作
+				_game->Add2CardsPool(pai); //牌池
+
+				return 0; //进宝
+			}
 		}
 		break;
 

@@ -2136,6 +2136,8 @@ Asset::PaiElement Game::GetBaoPai(int32_t tail_index)
 	pai_operate.mutable_pai()->CopyFrom(baopai);
 	AddPlayerOperation(pai_operate); //牌局回放
 
+	DEBUG("房间:{} 局数:{} 生成宝牌:{}", _room_id, _game_id, baopai.ShortDebugString());
+
 	return baopai;
 }
 
