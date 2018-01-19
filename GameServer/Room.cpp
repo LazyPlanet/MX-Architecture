@@ -566,7 +566,7 @@ bool Room::Remove(int64_t player_id, Asset::GAME_OPER_TYPE reason)
 	
 void Room::OnPlayerStateChanged()
 {
-	std::lock_guard<std::mutex> lock(_mutex);
+	//std::lock_guard<std::mutex> lock(_mutex);
 
 	Asset::RoomInformation message;
 	message.set_sync_type(Asset::ROOM_SYNC_TYPE_STATE_CHANGED);
@@ -574,8 +574,6 @@ void Room::OnPlayerStateChanged()
 	for (auto player : _players)
 	{
 		if (!player) continue;
-
-		//if (!player->IsOffline()) continue;
 
 		auto p = message.mutable_player_list()->Add();
 		p->set_player_id(player->GetID());

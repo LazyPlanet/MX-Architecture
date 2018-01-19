@@ -253,22 +253,21 @@ bool CenterSession::Update()
 	
 	++_heart_count;
 	
-	std::lock_guard<std::mutex> lock(_player_lock);
+	if (_heart_count % 20 != 0) return true; //1秒
 	
-	if (_heart_count % 20 == 0) //1秒
+	std::lock_guard<std::mutex> lock(_player_lock);
+
+	for (auto it = _players.begin(); it != _players.end();)
 	{
-		for (auto it = _players.begin(); it != _players.end();)
+		if (!it->second) 
 		{
-			if (!it->second) 
-			{
-				it = _players.erase(it);
-				continue;
-			}
-			else
-			{
-				it->second->Update();
-				++it;
-			}
+			it = _players.erase(it);
+			continue;
+		}
+		else
+		{
+			it->second->Update();
+			++it;
 		}
 	}
 

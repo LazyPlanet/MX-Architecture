@@ -385,7 +385,7 @@ void Game::OnPaiOperate(std::shared_ptr<Player> player, pb::Message* message)
 	if (!CanPaiOperate(player)) 
 	{
 		player->AlertMessage(Asset::ERROR_GAME_NO_PERMISSION); //没有权限，没到玩家操作，防止外挂
-		return; //不允许操作
+		//return; //不允许操作
 	}
 
 	//if (CommonTimerInstance.GetTime() < _oper_cache.time_out()) ClearOperation(); //已经超时，清理缓存以及等待玩家操作的状态
@@ -549,7 +549,7 @@ void Game::OnPaiOperate(std::shared_ptr<Player> player, pb::Message* message)
 		{
 			if (player->GetID() != _oper_cache.player_id())
 			{
-				LOG(ERROR, "玩家:{} 在房间:{} 牌局:{} 胡牌:{}，与服务器缓存:{}不一致，怀疑外挂行为，请关注", _room_id, _game_id, player->GetID(), pai.ShortDebugString(), _oper_cache.ShortDebugString());
+				LOG(ERROR, "玩家:{} 在房间:{} 牌局:{} 胡牌:{}，与服务器缓存:{}不一致，怀疑外挂行为，请关注", player->GetID(), _room_id, _game_id, pai.ShortDebugString(), _oper_cache.ShortDebugString());
 			}
 
 			if (player->CheckCardsInhand() && player->CheckHuPai(pai)) //玩家点炮
