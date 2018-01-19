@@ -336,11 +336,14 @@ void WorldSession::OnProcessMessage(const Asset::Meta& meta)
 				if (!_player->IsCenterServer()) _player->Load();  
 			}
 			
-			_account.CopyFrom(connect->account()); //账号信息
-			_player->SetAccount(_account.username(), _account.account_type());
+			if (connect->has_account())
+			{
+				_account.CopyFrom(connect->account()); //账号信息
+				_player->SetAccount(_account.username(), _account.account_type());
+			}
 				
-			auto success = RedisInstance.GetUser(_account.username(), _user);
-			if (!success) return;
+			//auto success = RedisInstance.GetUser(_account.username(), _user);
+			//if (!success) return;
 				
 			SetRoleType(Asset::ROLE_TYPE_PLAYER, _player->GetID());
 			WorldSessionInstance.AddPlayer(connect->player_id(), shared_from_this()); //在线玩家，获取网络会话
