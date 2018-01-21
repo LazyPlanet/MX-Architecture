@@ -51,11 +51,7 @@ namespace Adoter
 		std::string json; \
 		pbjson::pb2json(&message, json); \
 		auto log = spdlog::get(log_name); \
-		if (log)  \
-		{ \
-			int32_t server_id = ConfigInstance.GetInt("ServerID", 1); \
-			log->info("server_id:{} json:{}", server_id, json); \
-		} \
+		if (log) log->info(json); \
 }\
 
 //通用日志
