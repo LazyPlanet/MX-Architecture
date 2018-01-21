@@ -342,8 +342,12 @@ void WorldSession::OnProcessMessage(const Asset::Meta& meta)
 				_player->SetAccount(_account.username(), _account.account_type());
 			}
 				
-			//auto success = RedisInstance.GetUser(_account.username(), _user);
-			//if (!success) return;
+			auto success = RedisInstance.GetUser(_account.username(), _user);
+			if (!success) 
+			{
+				AlertMessage(Asset::ERROR_LONGTIME_NO_OPERATION, Asset::ERROR_TYPE_NORMAL, Asset::ERROR_SHOW_TYPE_MESSAGE_BOX); 
+				return;
+			}
 				
 			SetRoleType(Asset::ROLE_TYPE_PLAYER, _player->GetID());
 			WorldSessionInstance.AddPlayer(connect->player_id(), shared_from_this()); //在线玩家，获取网络会话
@@ -452,7 +456,7 @@ void WorldSession::OnProcessMessage(const Asset::Meta& meta)
 
 			if (!_player || _player->GetID() != switch_account->player_id()) return;
 
-			RedisInstance.SaveUser(_account.username(), _user); //存盘退出
+			if (_user.player_list().size()) RedisInstance.SaveUser(_account.username(), _user); //存盘退出
 
 			_player->Save(true);
 			_player.reset();

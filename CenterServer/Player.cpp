@@ -595,7 +595,11 @@ Asset::ERROR_CODE Player::CommonCheck(int32_t type_t)
 	{
 		case Asset::META_TYPE_SHARE_CREATE_ROOM: //创建房间
 		{
-			if (g_const->guest_forbid_friend_room() && (_account_type == 0 || Asset::ACCOUNT_TYPE_GUEST == _account_type)) return Asset::ERROR_ROOM_FRIEND_NOT_FORBID; //游客禁止进入好友房
+			if (g_const->guest_forbid_friend_room() && (_account_type == 0 || Asset::ACCOUNT_TYPE_GUEST == _account_type)) 
+			{
+				LOG(ERROR, "玩家:{} 创建房间失败:{} 账号信息:{}", _player_id, _account_type, _stuff.account());
+				return Asset::ERROR_ROOM_FRIEND_NOT_FORBID; //游客禁止进入好友房
+			}
 		}
 		break;
 
