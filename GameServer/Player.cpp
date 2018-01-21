@@ -200,7 +200,7 @@ int32_t Player::Logout(pb::Message* message)
 		}
 	}
 
-	OnLogout(kick_out->reason()); //否则房主不会退出
+	OnLogout(Asset::KICK_OUT_REASON_LOGOUT); //否则房主不会退出//直接通知中心服务器退出
 	
 	return 0;
 }
