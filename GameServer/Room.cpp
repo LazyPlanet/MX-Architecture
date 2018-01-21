@@ -374,7 +374,7 @@ void Room::OnPlayerOperate(std::shared_ptr<Player> player, pb::Message* message)
 			}
 			*/
 
-			OnDisMiss();
+			OnDisMiss(player->GetID(), game_operate);
 
 			//
 			//如果房主发起解散房间，且此时尚未开局，则直接解散
@@ -400,7 +400,7 @@ void Room::OnPlayerOperate(std::shared_ptr<Player> player, pb::Message* message)
 
 		case Asset::GAME_OPER_TYPE_DISMISS_DISAGREE: //不解散
 		{
-			OnDisMiss();
+			OnDisMiss(player->GetID(), game_operate);
 
 			ClearDisMiss();
 		}
@@ -750,8 +750,10 @@ void Room::OnRemove()
 	}
 }
 
-void Room::OnDisMiss()
+void Room::OnDisMiss(int64_t player_id, pb::Message* message)
 {
+	if (!message) return;
+
 	if (IsGmtOpened() && (!HasStarted() || HasBeenOver())) return; //代开房没开局不允许解散
 
 	if (_dismiss_time == 0) 
@@ -775,7 +777,7 @@ void Room::OnDisMiss()
 		list->set_oper_type(player->GetOperState());
 	}
 
-	DEBUG("玩家发起解散房间:{}", _stuff.room_id());
+	DEBUG("玩家:{} 解散房间:{} 操作:{}", player_id, _stuff.room_id(), message->ShortDebugString());
 
 	BroadCast(proto); //投票状态
 }

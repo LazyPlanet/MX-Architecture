@@ -120,7 +120,7 @@ public:
 	void BroadCast(pb::Message& message, int64_t exclude_player_id = 0);
 	
 	void SyncRoom(); //房间数据
-	void OnDisMiss(); //解散房间
+	void OnDisMiss(int64_t player_id, pb::Message* message); //解散房间
 	void DoDisMiss(); //解散房间
 
 	//获取房主
