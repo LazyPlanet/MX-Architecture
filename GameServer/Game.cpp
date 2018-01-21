@@ -1343,11 +1343,18 @@ void Game::Calculate(int64_t hupai_player_id/*胡牌玩家*/, int64_t dianpao_pl
 	auto total_score = 0;
 	std::unordered_map<int64_t, int32_t> player_score; //各个玩家输积分//不包括杠
 
-	for (const auto& list_element : message.record().list())
+	for (int32_t i = 0; i < message.record().list().size(); ++i)
 	{
+		const auto& list_element = message.record().list(i);
+
 		if (list_element.player_id() == hupai_player_id) continue;
 
-		if (_room->HasYiJiaFu() && dianpao_player_id != 0 && dianpao_player_id != list_element.player_id()) continue; //点炮一家付
+		if (_room->HasYiJiaFu() && dianpao_player_id != 0 && dianpao_player_id != list_element.player_id()) 
+		{
+			message.mutable_record()->mutable_list(i)->set_score(0); //点炮一家付//其他两家不必付钱
+			message.mutable_record()->mutable_list(i)->mutable_details()->Clear();
+			continue; 
+		}
 
 		total_score -= list_element.score();
 		player_score.emplace(list_element.player_id(), -list_element.score());
@@ -1374,11 +1381,12 @@ void Game::Calculate(int64_t hupai_player_id/*胡牌玩家*/, int64_t dianpao_pl
 	}
 
 	record->set_score(total_score); //胡牌玩家赢的总积分
-
+	
 	//
 	//3.杠牌积分
 	//
 	CalculateGangScore(message);
+	
 	/*
 	for (int i = 0; i < MAX_PLAYER_COUNT; ++i)
 	{
@@ -1537,14 +1545,14 @@ void Game::Calculate(int64_t hupai_player_id/*胡牌玩家*/, int64_t dianpao_pl
 			}
 		}
 
-		if (is_pinghu)
+		if (is_pinghu && !_room->HasYiJiaFu()) //一家付不显示任何番数
 		{
 			auto pinghu = message.mutable_record()->mutable_list(i)->mutable_details()->Add();
 			pinghu->set_score(1);
 			pinghu->set_fan_type(Asset::FAN_TYPE_PINGHU); 
 		}
 	}
-
+	
 	//
 	//最大番数
 	//
@@ -1958,6 +1966,7 @@ void Game::CalculateGangScore(Asset::GameCalculate& game_calculate)
 			if (index == i) continue;
 
 			auto record = game_calculate.mutable_record()->mutable_list(index);
+			auto player_id = record->player_id();
 			record->set_score(record->score() - score); //扣除杠分
 
 			//非杠牌玩家所输积分列表
@@ -1971,7 +1980,7 @@ void Game::CalculateGangScore(Asset::GameCalculate& game_calculate)
 
 				for (auto gang : minggang)
 				{
-					if (_room->IsJianPing() && player->GetID() == gang.source_player_id()) //点杠：建平玩法
+					if (_room->IsJianPing() && player_id == gang.source_player_id()) //点杠：建平玩法
 					{ 
 						detail->set_score(detail->score() - single_score * (MAX_PLAYER_COUNT - 1)); //点杠的那个人出3分
 					}
@@ -2025,7 +2034,7 @@ void Game::OnLiuJu()
 		record->set_headimgurl(player->GetHeadImag()); //理论上这种不用存盘，读取发给CLIENT的时候重新获取
 	}
 
-	if (_room->HasHuangZhuang()) CalculateGangScore(game_calculate); //荒庄杠：流局杠分依然算
+	if (!_room->HasHuangZhuang()) CalculateGangScore(game_calculate); //荒庄杠：流局杠分依然算
 	
 	BroadCast(game_calculate);
 	

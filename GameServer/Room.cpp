@@ -422,9 +422,15 @@ bool Room::HasLaw(Asset::ROOM_EXTEND_TYPE type)
 {
 	const auto& city_type = GetCity(); //房间归属城市
 
-	if (city_type == Asset::CITY_TYPE_CHAOYANG && (type == Asset::ROOM_EXTEND_TYPE_28ZUOZHANG || type == Asset::ROOM_EXTEND_TYPE_SIGUIYI)) 
+	if (city_type == Asset::CITY_TYPE_CHAOYANG && (type == Asset::ROOM_EXTEND_TYPE_28ZUOZHANG || type == Asset::ROOM_EXTEND_TYPE_SIGUIYI || 
+			type == Asset::ROOM_EXTEND_TYPE_HUANGZHUANGHUANGGANG/*朝阳流局直接荒庄荒杠*/))
 	{
 		return true; //朝阳支持
+	}
+
+	if (city_type == Asset::CITY_TYPE_JIANPING && type == Asset::ROOM_EXTEND_TYPE_JIAHU)
+	{
+		return true; //建平支持
 	}
 
 	auto it = std::find(_stuff.options().extend_type().begin(), _stuff.options().extend_type().end(), type);
@@ -448,16 +454,27 @@ bool Room::HasZhang28()
 	return HasLaw(Asset::ROOM_EXTEND_TYPE_28ZUOZHANG);
 }
 
+//
+//中发白其中之一只要碰就算明飘
+//
+//本局必须胡飘，不勾选则正常
+//
 bool Room::HasMingPiao()
 {
 	return HasLaw(Asset::ROOM_EXTEND_TYPE_MINGPIAO);
 }
 
+//
+//流局杠分依然算
+//
 bool Room::HasHuangZhuang()
 {
 	return HasLaw(Asset::ROOM_EXTEND_TYPE_HUANGZHUANGHUANGGANG);
 }
 
+//
+//手里有4张一样的不可上听胡牌，杠除外
+//
 bool Room::HasSiGuiYi()
 {
 	return HasLaw(Asset::ROOM_EXTEND_TYPE_SIGUIYI);
@@ -493,6 +510,11 @@ bool Room::HasQingYiSe()
 	return HasLaw(Asset::ROOM_EXTEND_TYPE_QIYISE);
 }
 
+//
+//谁点谁给自己的点炮钱（不用帮其他两家给）
+//
+//其他两家不掏钱（别人杠要帮付，点杠不帮付）
+//
 bool Room::HasYiJiaFu()
 {
 	return HasLaw(Asset::ROOM_EXTEND_TYPE_YIJIAFU);
