@@ -2464,9 +2464,7 @@ bool Player::IsMingPiao()
 
 bool Player::HasKeOutHand()
 {
-	const auto& cards_outhand = _cards_outhand;
-
-	for (auto cards : cards_outhand)
+	for (const auto& cards : _cards_outhand)
 	{
 		if (cards.second.size() == 0) continue;
 		if (cards.second.size() % 3 != 0) return false;
@@ -2475,6 +2473,23 @@ bool Player::HasKeOutHand()
 		{
 			auto card_value = cards.second.at(i);
 			if ((card_value == cards.second.at(i + 1)) && (card_value == cards.second.at(i + 2))) return true; 
+		}
+	}
+
+	return false;
+}
+
+bool Player::HasChiPaiOutHand()
+{
+	for (const auto& cards : _cards_outhand)
+	{
+		if (cards.second.size() == 0) continue;
+		if (cards.second.size() % 3 != 0) return false;
+
+		for (size_t i = 0; i < cards.second.size(); i = i + 3)
+		{
+			auto card_value = cards.second.at(i);
+			if ((card_value != cards.second.at(i + 1)) || (card_value != cards.second.at(i + 2))) return true; 
 		}
 	}
 
@@ -2769,6 +2784,8 @@ bool Player::CheckPengPai(const Asset::PaiElement& pai)
 	
 	if (!CheckMingPiao(Asset::PAI_OPER_TYPE_PENGPAI)) return false; //明飘检查
 
+	if (_room->IsJianPing() && pai.card_type() == Asset::CARD_TYPE_JIAN && HasChiPaiOutHand()) return false; //建平玩法：碰完必须明飘，吃了就不让碰了
+
 	auto it = _cards_inhand.find(pai.card_type());
 	if (it == _cards_inhand.end()) return false;
 
@@ -2839,7 +2856,7 @@ bool Player::CheckGangPai(const Asset::PaiElement& pai, int64_t source_player_id
 		}
 		else if (count == 4 && CheckMingPiao(Asset::PAI_OPER_TYPE_ANGANGPAI)) 
 		{
-			if (_room->IsJianPing() && IsBimen()) return false; //建平玩家：不开门不让扣暗杠
+			if (_room->IsJianPing() && IsBimen()) return false; //建平玩法：不开门不让扣暗杠
 
 			has_gang = true;  
 			angang.push_back(pai);
@@ -2945,7 +2962,7 @@ bool Player::CheckAllGangPai(::google::protobuf::RepeatedField<Asset::PaiOperati
 			auto count = std::count(cards.second.begin(), cards.second.end(), card_value);
 			if (count == 4 && CheckMingPiao(Asset::PAI_OPER_TYPE_ANGANGPAI)) 
 			{
-				if (_room->IsJianPing() && IsBimen()) continue; //建平玩家：不开门不让扣暗杠
+				if (_room->IsJianPing() && IsBimen()) continue; //建平玩法：不开门不让扣暗杠
 
 				Asset::PaiElement pai;
 				pai.set_card_type((Asset::CARD_TYPE)card_type);
@@ -3044,7 +3061,7 @@ void Player::OnGangPai(const Asset::PaiElement& pai, int64_t source_player_id)
 		if (_room->IsJianPing() && IsBimen()) 
 		{
 			LOG(ERROR, "玩家:{} 尚未开门，无法杠牌:{} 牌来自:{}", _player_id, pai.ShortDebugString(), source_player_id);
-			return; //建平玩家：不开门不让扣暗杠
+			return; //建平玩法：不开门不让扣暗杠
 		}
 		_angang.push_back(pai); //暗杠
 	}
