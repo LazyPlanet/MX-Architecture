@@ -1905,14 +1905,9 @@ void Player::AddZhang(const Asset::PaiElement& zhang)
 {
 	if (!_game || !_room) return;
 
-	auto it = std::find_if(_zhangs.begin(), _zhangs.end(), [zhang](const Asset::PaiElement& pai){
-				return zhang.card_type() == pai.card_type() && zhang.card_value() == pai.card_value();	
-			});
-	if (it != _zhangs.end()) return; //已经存在
+	_zhang = zhang; //对儿
 
-	_zhangs.push_back(zhang); //对儿
-
-	//DEBUG("玩家:{} 在房间:{} 局数:{} 中胡牌对儿数量:{}，本次增加:{}", _player_id, _room->GetID(), _game->GetID(), _zhangs.size(), zhang.ShortDebugString());
+	DEBUG("玩家:{} 在房间:{} 局数:{} 中胡牌对儿:{}", _player_id, _room->GetID(), _game->GetID(), _zhang.ShortDebugString());
 }
 	
 void Player::AddShunZi(const Asset::ShunZi& shunzi)
@@ -1921,7 +1916,7 @@ void Player::AddShunZi(const Asset::ShunZi& shunzi)
 
 	_shunzis.push_back(shunzi);
 
-	//DEBUG("玩家:{} 在房间:{} 局数:{} 中胡牌顺子数量:{}，本次增加:{}", _player_id, _room->GetID(), _game->GetID(), _shunzis.size(), shunzi.ShortDebugString());
+	DEBUG("玩家:{} 在房间:{} 局数:{} 中胡牌顺子数量:{}，本次增加:{}", _player_id, _room->GetID(), _game->GetID(), _shunzis.size(), shunzi.ShortDebugString());
 }
 	
 bool Player::CheckBaoHu(const Asset::PaiElement& pai/*宝牌数据*/)
@@ -2050,7 +2045,6 @@ bool Player::CheckHuPai(const std::map<int32_t, std::vector<int32_t>>& cards_inh
 	
 	_fan_list.clear(); //番型数据
 	_hu_result.clear(); //胡牌数据
-	_zhangs.clear(); //对儿数据
 	_shunzis.clear(); //顺子数据
 
 	auto cards = cards_inhand;
@@ -2301,7 +2295,10 @@ bool Player::CheckHuPai(const std::map<int32_t, std::vector<int32_t>>& cards_inh
 						if (shunzi_element.pai().size() != 3) return false;
 
 						for (int32_t i = 0; i < 3; ++i)
+						{
 							if (shunzi.pai(i).card_type() != shunzi_element.pai(i).card_type()) return false;
+							if (shunzi.pai(i).card_value() != shunzi_element.pai(i).card_value()) return false;
+						}
 
 						return true;
 					});
@@ -2574,12 +2571,10 @@ bool Player::IsDanDiao()
 } 
 
 //
-//是否对倒
+//是否对倒//胡牌两对
 //
 bool Player::IsDuiDao() 
 { 
-	if (_zhangs.size() != 2) return false;
-
 	return true;
 } 
 	
@@ -3785,19 +3780,19 @@ int32_t Player::OnFaPai(std::vector<int32_t>& cards)
 
 	if (LookAtBaopai()) return 0; //生成宝牌，进宝检查
 
-	if (false && _player_id == 262271 && _cards_inhand.size() == 0)
+	if (true && _player_id == 262560 && _cards_inhand.size() == 0)
 	{
 		_cards_inhand = {
-			{ 1, {5, 6, 7, 8, 8} },
-			{ 2, {7, 8, 9, 9, 9} },
-			//{ 3, {1, 1, 5, 6} },
+			{ 1, {1, 1, 4, 6, 7, 8, 9} },
+			//{ 2, {7, 8, 9, 9, 9} },
+			{ 3, {5, 5, 5} },
 			//{ 4, { 1, 2, 3, 4} },
 			//{ 5, { 1, 2, 3 } },
 		};
 		
 		_cards_outhand = {
 			//{ 1, { 7, 7, 7, 6, 7, 8} },
-			{ 2, { 1, 2, 3 } },
+			{ 2, { 3, 4, 5 } },
 			//{ 3, { 9, 9, 9 } },
 		};
 
@@ -4197,7 +4192,6 @@ void Player::ClearCards()
 	_cards_pool.clear(); //牌池
 	_cards_hu.clear(); //胡牌
 	_hu_result.clear(); //胡牌数据
-	_zhangs.clear(); //对儿数据
  
  	_minggang.clear(); //清理杠牌
 	_angang.clear(); //清理杠牌
@@ -4487,10 +4481,8 @@ int32_t Player::CmdRecharge(pb::Message* message)
 
 bool Player::Is28Zhang()
 {
-	for (auto zhang : _zhangs)
-	{
-		if (zhang.card_value() == 2 || zhang.card_value() == 8) return true;
-	}
+	if (_zhang.card_value() == 2 || _zhang.card_value() == 8) return true;
+
 	return false;
 }
 

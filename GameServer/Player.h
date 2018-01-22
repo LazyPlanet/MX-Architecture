@@ -254,7 +254,7 @@ private:
 	bool _debug_model = false;
 	bool _jinbao = false;
 	Asset::PaiElement _baopai; //宝牌
-	std::vector<Asset::PaiElement> _zhangs; //对儿//掌儿//可能是对倒，两对
+	Asset::PaiElement _zhang; //对儿//掌儿
 	std::vector<Asset::ShunZi> _shunzis; //顺子
 	Asset::PaiElement _zhuapai; //抓牌
 
