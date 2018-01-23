@@ -809,6 +809,9 @@ int32_t Player::CmdPaiOperate(pb::Message* message)
 
 			if (OnTingPai()) 
 			{
+				_last_oper_type = _oper_type; //记录上次牌操作
+				_oper_type = pai_operate->oper_type(); 
+
 				_game->AddPlayerOperation(*pai_operate);  //回放记录
 				_game->BroadCast(message); //操作
 				_game->Add2CardsPool(pai); //牌池
@@ -838,8 +841,8 @@ int32_t Player::CmdPaiOperate(pb::Message* message)
 	//
 	//玩家抓到杠之后，进行打牌，记录上次牌状态
 	//
-	_last_oper_type = _oper_type;
-	_oper_type = pai_operate->oper_type(); //记录上次牌操作
+	_last_oper_type = _oper_type; //记录上次牌操作
+	_oper_type = pai_operate->oper_type(); 
 	
 	_game->OnPaiOperate(shared_from_this(), message);
 
