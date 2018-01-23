@@ -418,7 +418,7 @@ public:
 	bool HasPengJianPai(); //是否碰了箭牌
 
 	bool Is28Zhang(); //是否28作掌
-	bool IsDuiDao(); //是否对倒
+	bool IsDuiDao(const Asset::PaiElement& pai, bool check_zimo); //是否对倒
 
 	int32_t GetMingGangCount() { return _minggang.size(); } //明杠数量
 	int32_t GetAnGangCount() { return _angang.size(); } //暗杠数量

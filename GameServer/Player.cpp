@@ -2422,7 +2422,7 @@ bool Player::CheckHuPai(const std::map<int32_t, std::vector<int32_t>>& cards_inh
 
 	if (_room->IsJianPing() && IsDanDiao()) _fan_list.emplace(Asset::FAN_TYPE_JIA_HU_NORMAL); //单调//单粘//建平玩法
 	if (_room->IsJianPing() && !HasYaoJiu()) _fan_list.emplace(Asset::FAN_TYPE_JIA_HU_NORMAL); //缺19的时候死胡19
-	if (_room->IsJianPing() && Is28Zhang() && IsDuiDao()) _fan_list.emplace(Asset::FAN_TYPE_JIA_HU_NORMAL); //对儿倒其一为28的情况
+	if (_room->IsJianPing() && Is28Zhang() && IsDuiDao(pai, check_zimo)) _fan_list.emplace(Asset::FAN_TYPE_JIA_HU_NORMAL); //对儿倒其一为28的情况
 
 	return true;
 }
@@ -2591,8 +2591,56 @@ bool Player::IsDanDiao()
 //
 //是否对倒//胡牌两对
 //
-bool Player::IsDuiDao() 
+//方法：掌儿作为胡牌牌值，pai作为掌儿，检查是否依然能够胡牌
+//
+bool Player::IsDuiDao(const Asset::PaiElement& pai, bool check_zimo) 
 { 
+	auto cards_inhand_check = _cards_inhand;
+	if (!check_zimo && pai.card_type() && pai.card_value()) cards_inhand_check[pai.card_type()].push_back(pai.card_value()); //放入可以操作的牌
+		
+	for (auto& card : cards_inhand_check)
+		std::sort(card.second.begin(), card.second.end(), [](int x, int y){ return x < y; }); //由小到大，排序
+
+	std::vector<Card_t> card_list;
+	for (auto crds : cards_inhand_check) //胡牌逻辑检查
+	{
+		for (auto value : crds.second)
+			card_list.push_back(Card_t(crds.first, value));
+	}
+
+	bool can_hu = CanHuPai(card_list); //生成掌儿，赋值_zhang	
+	if (!can_hu) return false;
+		
+	cards_inhand_check = _cards_inhand; //再次检查胡牌，获取掌儿
+
+	if (check_zimo)
+	{
+		auto it = std::find_if(cards_inhand_check[pai.card_type()].begin(), cards_inhand_check[pai.card_type()].end(), [pai](int32_t value){
+					return pai.card_value() == value;
+				});
+		if (it == cards_inhand_check[pai.card_type()].end()) return false;
+
+		cards_inhand_check[pai.card_type()].erase(it); //删除这张牌
+	}
+
+	cards_inhand_check[_zhang.card_type()].push_back(_zhang.card_value()); //放入掌儿，如果还能胡牌，且掌儿是胡牌牌值
+
+	for (auto& card : cards_inhand_check)
+		std::sort(card.second.begin(), card.second.end(), [](int x, int y){ return x < y; }); //由小到大，排序
+
+	card_list.clear();
+
+	for (auto crds : cards_inhand_check) //胡牌逻辑检查
+	{
+		for (auto value : crds.second)
+			card_list.push_back(Card_t(crds.first, value));
+	}
+
+	can_hu = CanHuPai(card_list); //生成掌儿，赋值_zhang
+	if (!can_hu) return false;
+
+	if (pai.card_type() != _zhang.card_type() || pai.card_value() != _zhang.card_value()) return false;
+
 	return true;
 } 
 	
