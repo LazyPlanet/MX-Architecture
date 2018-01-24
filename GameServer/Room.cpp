@@ -831,13 +831,11 @@ void Room::KickOutPlayer(int64_t player_id)
 	
 void Room::SyncRoom()
 {
-	//std::lock_guard<std::mutex> lock(_mutex);
+	//std::lock_guard<std::mutex> lock(_mutex); //防止死锁
 	
 	Asset::RoomInformation message;
 	message.set_sync_type(Asset::ROOM_SYNC_TYPE_NORMAL);
 			
-	//auto redis = make_unique<Redis>();
-
 	for (auto player : _players)
 	{
 		if (!player) continue;

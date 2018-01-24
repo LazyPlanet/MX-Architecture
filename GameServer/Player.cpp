@@ -1530,15 +1530,48 @@ int32_t Player::CmdGetRoomData(pb::Message* message)
 	auto get_data = dynamic_cast<Asset::GetRoomData*>(message);
 	if (!get_data) return 1;
 
-	DEBUG("玩家:{}由于房间:{}内断线，获取数据:{}", _player_id, message->ShortDebugString(), _stuff.ShortDebugString())
-
-	if (!_room || _room->HasDisMiss() || _room->GetID() != get_data->room_id() || _stuff.room_id() == 0)
+	if (get_data->reason() == Asset::ROOM_SYNC_TYPE_QUERY)
 	{
-		SendRoomState(); //估计房间已经解散
+		auto room = RoomInstance.Get(get_data->room_id());
+		if (!room)
+		{
+			AlertMessage(Asset::ERROR_ROOM_QUERY_NOT_FORBID);
+			return 2;
+		}
+
+		Asset::RoomInformation room_information;
+		room_information.set_sync_type(Asset::ROOM_SYNC_TYPE_QUERY); //外服查询房间信息
+				
+		const auto players = room->GetPlayers();
+		for (const auto player : players)
+		{
+			if (!player) continue;
+
+			auto p = room_information.mutable_player_list()->Add();
+			p->set_position(player->GetPosition());
+			p->set_oper_type(player->GetOperState());
+			p->mutable_common_prop()->CopyFrom(player->CommonProp());
+			p->mutable_wechat()->CopyFrom(player->GetWechat());
+			p->set_ip_address(player->GetIpAddress());
+			p->set_voice_member_id(player->GetVoiceMemberID());
+		}
+
+		Asset::RoomQueryResult proto;
+		proto.set_room_id(room->GetID());
+		proto.set_create_time(room->GetCreateTime());
+		proto.mutable_options()->CopyFrom(room->GetOptions());
+		proto.mutable_information()->CopyFrom(room_information);
+
+		SendProtocol(proto);
+	
+		OnLogout(Asset::KICK_OUT_REASON_LOGOUT); //查询之后退出
 	}
 	else
 	{
-		_room->OnReEnter(shared_from_this());
+		DEBUG("玩家:{}由于房间:{}内断线，获取数据:{}", _player_id, message->ShortDebugString(), _stuff.ShortDebugString())
+
+		if (!_room || _room->HasDisMiss() || _room->GetID() != get_data->room_id() || _stuff.room_id() == 0) { SendRoomState(); } //估计房间已经解散
+		else { _room->OnReEnter(shared_from_this()); } //再次进入
 	}
 
 	return 0;

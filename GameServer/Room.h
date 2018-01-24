@@ -47,6 +47,9 @@ public:
 	void SetGmtOpened() { _gmt_opened = true; }
 	bool IsGmtOpened() { return _gmt_opened; }
 
+	const std::vector<std::shared_ptr<Player>> GetPlayers() { return _players; } 
+	int32_t GetCreateTime() { return _created_time; } //创建时间
+
 	virtual int64_t GetID() { return _stuff.room_id(); }
 	virtual void SetID(int64_t room_id) { return _stuff.set_room_id(room_id); }
 
