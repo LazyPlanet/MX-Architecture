@@ -414,11 +414,9 @@ void WorldSession::OnProcessMessage(const Asset::Meta& meta)
 			//
 			//账号未能存储成功在角色数据，则重新存储
 			//
-			if (_player->GetAccount().empty()) 
-			{
-				_player->SetAccount(_account.username(), _account.account_type());
-				_player->Save(true); //存盘，防止数据库无数据
-			}
+			if (_player->GetAccount().empty()) _player->Save(true); //存盘，防止数据库无数据
+				
+			_player->SetAccount(_account.username(), _account.account_type());
 
 			//
 			//已经在线玩家检查
