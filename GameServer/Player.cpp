@@ -1859,7 +1859,19 @@ bool Player::CanHuPai(std::vector<Card_t>& cards, bool use_pair)
 	if (size <= 2) 
 	{
 		if (size == 1) return false;	
-		return size == 0 || cards[0] == cards[1]; 
+
+		if (size == 0) return true;
+
+		if (size == 2 && cards[0] == cards[1])
+		{
+			Asset::PaiElement zhang;
+			zhang.set_card_type((Asset::CARD_TYPE)cards[0]._type);
+			zhang.set_card_value(cards[0]._value);
+
+			AddZhang(zhang); //对儿牌
+
+			return true;
+		}
 	}
 
 	bool pair = false; //对子，如果要胡牌，必须只有一个对子
@@ -2453,7 +2465,7 @@ bool Player::CheckHuPai(const std::map<int32_t, std::vector<int32_t>>& cards_inh
 	if (_game->IsLiuJu()) _fan_list.emplace(Asset::FAN_TYPE_HAI_DI_LAO); //海底捞月
 	if (IsMingPiao()) _fan_list.emplace(Asset::FAN_TYPE_MING_PIAO); //明飘
 
-	if (_room->IsJianPing() && IsDanDiao()) _fan_list.emplace(Asset::FAN_TYPE_JIA_HU_NORMAL); //单调//单粘//建平玩法
+	if (_room->IsJianPing() && IsDanDiao(pai)) _fan_list.emplace(Asset::FAN_TYPE_JIA_HU_NORMAL); //单调//单粘//建平玩法
 	if (_room->IsJianPing() && !HasYaoJiu()) _fan_list.emplace(Asset::FAN_TYPE_JIA_HU_NORMAL); //缺19的时候死胡19
 	if (_room->IsJianPing() && Is28Zhang() && IsDuiDao(pai, check_zimo)) _fan_list.emplace(Asset::FAN_TYPE_JIA_HU_NORMAL); //对儿倒其一为28的情况
 
@@ -2614,11 +2626,15 @@ bool Player::IsSiGuiYi(const Asset::PaiElement& pai)
 //
 //是否单粘
 //
-bool Player::IsDanDiao() 
+//胡牌恰巧是掌儿
+//
+bool Player::IsDanDiao(const Asset::PaiElement& pai) 
 { 
-	if (_cards_hu.size() != 1) return false;
+	if (_cards_hu.size() == 1) return true;
 
-	return true;
+	if (_zhang.card_type() == pai.card_type() && _zhang.card_value() == pai.card_value()) return true;
+
+	return false;
 } 
 
 //
@@ -3886,7 +3902,7 @@ int32_t Player::OnFaPai(std::vector<int32_t>& cards)
 		_cards_inhand = {
 			{ 1, {1, 1, 4, 6, 7, 8, 9} },
 			//{ 2, {7, 8, 9, 9, 9} },
-			{ 3, {5, 5, 5} },
+			{ 3, {5, 5, 3, 3} },
 			//{ 4, { 1, 2, 3, 4} },
 			//{ 5, { 1, 2, 3 } },
 		};
@@ -3905,13 +3921,13 @@ int32_t Player::OnFaPai(std::vector<int32_t>& cards)
 		_minggang.push_back(gang);
 		*/
 	}
-	else if (false && _player_id == 262147 && _cards_inhand.size() == 0)
+	else if (true && _player_id == 262553 && _cards_inhand.size() == 0)
 	{
 		_cards_inhand = {
-			{ 1, {2, 2, 2, 7, 7, 7} },
-			{ 2, {2, 3} },
-			{ 3, {1, 9} },
-			{ 4, {1, 2, 3, 4} },
+			{ 1, {3, 4, 5} },
+			{ 2, {2, 2, 2, 4, 5, 6} },
+			{ 3, {1, 1, 1, 3} },
+			//{ 4, {1, 2, 3, 4} },
 		};
 	}
 	else if (false && _player_id == 265892 && _cards_inhand.size() == 0)

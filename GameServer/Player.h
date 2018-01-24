@@ -411,7 +411,7 @@ public:
 	bool IsMingPiao(); //是否明飘
 	bool IsSiGuiYi(); //是否四归一 
 	bool IsSiGuiYi(const Asset::PaiElement& pai); //是否四归一 
-	bool IsDanDiao(); //是否单调
+	bool IsDanDiao(const Asset::PaiElement& pai); //是否单调
 	bool IsPiao(); //是否飘
 	bool HasKeOutHand();
 	bool HasChiPaiOutHand();
