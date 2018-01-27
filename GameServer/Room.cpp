@@ -842,6 +842,7 @@ void Room::SyncRoom()
 
 		auto p = message.mutable_player_list()->Add();
 		p->set_position(player->GetPosition());
+		p->set_player_id(player->GetID());
 		p->set_oper_type(player->GetOperState());
 		p->mutable_common_prop()->CopyFrom(player->CommonProp());
 		p->mutable_wechat()->CopyFrom(player->GetWechat());

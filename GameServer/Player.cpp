@@ -1549,6 +1549,7 @@ int32_t Player::CmdGetRoomData(pb::Message* message)
 
 			auto p = room_information.mutable_player_list()->Add();
 			p->set_position(player->GetPosition());
+			p->set_player_id(player->GetID());
 			p->set_oper_type(player->GetOperState());
 			p->mutable_common_prop()->CopyFrom(player->CommonProp());
 			p->mutable_wechat()->CopyFrom(player->GetWechat());
@@ -1862,7 +1863,7 @@ bool Player::CanHuPai(std::vector<Card_t>& cards, bool use_pair)
 
 		if (size == 0) return true;
 
-		if (size == 2 && cards[0] == cards[1])
+		if (cards[0] == cards[1])
 		{
 			Asset::PaiElement zhang;
 			zhang.set_card_type((Asset::CARD_TYPE)cards[0]._type);
