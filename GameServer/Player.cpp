@@ -1872,6 +1872,10 @@ bool Player::CanHuPai(std::vector<Card_t>& cards, bool use_pair)
 
 			return true;
 		}
+		else
+		{
+			return false;
+		}
 	}
 
 	bool pair = false; //对子，如果要胡牌，必须只有一个对子
