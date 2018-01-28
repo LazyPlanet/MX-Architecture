@@ -857,7 +857,7 @@ void Game::OnPaiOperate(std::shared_ptr<Player> player, pb::Message* message)
 				auto player = GetPlayer(_oper_cache.source_player_id());
 				if (!player) return;
 
-				player->OnBeenQiangGangWithGivingUp(_oper_cache.pai(), _oper_cache.source_player_id());
+				player->OnBeenQiangGangWithGivingUp(_oper_cache.pai(), _oper_cache.source_player_id()); //TODO: 建平抢杠胡点过，点杠会转成过杠，_oper_cache.source_player_id() 不是打出杠牌的玩家，而是杠牌玩家
 				
 				ClearOperation(); //缓存清理
 
