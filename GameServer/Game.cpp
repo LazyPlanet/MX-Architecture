@@ -1097,7 +1097,7 @@ void Game::OnPaiOperate(std::shared_ptr<Player> player, pb::Message* message)
 
 void Game::ClearOperation()
 {
-	DEBUG("清理缓存状态:{}", _oper_cache.ShortDebugString());
+	DEBUG("房间:{} 牌局:{} 清理缓存状态:{}", _room_id, _game_id, _oper_cache.ShortDebugString());
 
 	_oper_cache.Clear(); //清理状态
 }
