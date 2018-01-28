@@ -857,9 +857,9 @@ void Game::OnPaiOperate(std::shared_ptr<Player> player, pb::Message* message)
 				auto player = GetPlayer(_oper_cache.source_player_id());
 				if (!player) return;
 
-				ClearOperation(); //缓存清理
-
 				player->OnBeenQiangGangWithGivingUp(_oper_cache.pai(), _oper_cache.source_player_id());
+				
+				ClearOperation(); //缓存清理
 
 				auto cards = TailPai(1); //从后楼给玩家取一张牌
 				if (cards.size() == 0) return;
@@ -1988,8 +1988,11 @@ void Game::CalculateGangScore(Asset::GameCalculate& game_calculate)
 			{
 				auto ming_real = 0; //明杠分数
 
-				for (auto gang : minggang)
+				for (const auto& gang : minggang)
 				{
+					DEBUG("玩家:{} 当前玩家:{} 点杠玩家:{} 杠牌:{}", player->GetID(), player_id, gang.source_player_id(), gang.ShortDebugString());
+
+
 					if (_room->IsJianPing())
 					{
 						if (player_id == gang.source_player_id()) //点杠：建平玩法
@@ -1999,6 +2002,14 @@ void Game::CalculateGangScore(Asset::GameCalculate& game_calculate)
 							detail->set_score(detail->score() - ming_score_each * (MAX_PLAYER_COUNT - 1)); //点杠的那个人出3分
 
 							ming_real += ming_score_each * (MAX_PLAYER_COUNT - 1);
+						}
+						else if (player->GetID() == gang.source_player_id()) //玩家过杠：每个人单独计分
+						{
+							auto detail = record->mutable_details()->Add();
+							detail->set_fan_type(Asset::FAN_TYPE_MING_GANG);
+							detail->set_score(detail->score() - ming_score_each); 
+
+							ming_real += ming_score_each;
 						}
 					}
 					else 
@@ -2012,6 +2023,8 @@ void Game::CalculateGangScore(Asset::GameCalculate& game_calculate)
 				}
 			
 				record->set_score(record->score() + ming_score - ming_real); //扣除杠分
+					
+				DEBUG("玩家:{} 当前玩家:{} 付分:{} 分数:{}", player->GetID(), player_id, ming_real, record->ShortDebugString());
 			}
 
 			if (an_count)
