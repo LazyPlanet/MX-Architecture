@@ -1323,6 +1323,8 @@ void Game::Calculate(int64_t hupai_player_id/*胡牌玩家*/, int64_t dianpao_pl
 			
 		//DEBUG("玩家:{} 因为牌型和位置输所有积分:{}", player_id, -score);
 	}
+
+	DEBUG("胡牌测试:{}", message.ShortDebugString());
 	
 	//
 	//2.胡牌玩家积分
@@ -1382,10 +1384,14 @@ void Game::Calculate(int64_t hupai_player_id/*胡牌玩家*/, int64_t dianpao_pl
 
 	record->set_score(total_score); //胡牌玩家赢的总积分
 	
+	DEBUG("胡牌测试:{}", message.ShortDebugString());
+	
 	//
 	//3.杠牌积分
 	//
 	CalculateGangScore(message);
+	
+	DEBUG("胡牌测试:{}", message.ShortDebugString());
 	
 	/*
 	for (int i = 0; i < MAX_PLAYER_COUNT; ++i)
@@ -1520,6 +1526,8 @@ void Game::Calculate(int64_t hupai_player_id/*胡牌玩家*/, int64_t dianpao_pl
 		it_dianpao->set_score(-baofen_total + it_dianpao->score()); //总积分
 	}
 	
+	DEBUG("胡牌测试:{}", message.ShortDebugString());
+	
 	//
 	//如果仅仅是平胡，则显示
 	//
@@ -1604,6 +1612,8 @@ void Game::Calculate(int64_t hupai_player_id/*胡牌玩家*/, int64_t dianpao_pl
 			if (consume_count != consume_real) continue;
 		}
 	}
+	
+	DEBUG("胡牌测试:{}", message.ShortDebugString());
 	
 	BroadCast(message);
 	OnGameOver(hupai_player_id); //结算之后才是真正结束
@@ -1926,7 +1936,9 @@ void Game::CalculateGangScore(Asset::GameCalculate& game_calculate)
 		auto an_count = player->GetAnGangCount(); 
 		auto xf_count = player->GetXuanFengCount(); 
 		
-		int32_t ming_score = ming_count * GetMultiple(Asset::FAN_TYPE_MING_GANG);
+		int32_t ming_score_each = GetMultiple(Asset::FAN_TYPE_MING_GANG);
+		int32_t ming_score = ming_count * ming_score_each;
+
 		int32_t an_score = an_count * GetMultiple(Asset::FAN_TYPE_AN_GANG);
 		int32_t xf_score = xf_count * GetMultiple(Asset::FAN_TYPE_XUAN_FENG_GANG);
 
@@ -1967,28 +1979,39 @@ void Game::CalculateGangScore(Asset::GameCalculate& game_calculate)
 
 			auto record = game_calculate.mutable_record()->mutable_list(index);
 			auto player_id = record->player_id();
+
 			record->set_score(record->score() - score); //扣除杠分
 
 			//非杠牌玩家所输积分列表
 
 			if (ming_count) //明杠，根据点杠玩家不同
 			{
-				auto detail = record->mutable_details()->Add();
-				detail->set_fan_type(Asset::FAN_TYPE_MING_GANG);
-
-				int32_t single_score = GetMultiple(Asset::FAN_TYPE_MING_GANG);
+				auto ming_real = 0; //明杠分数
 
 				for (auto gang : minggang)
 				{
-					if (_room->IsJianPing() && player_id == gang.source_player_id()) //点杠：建平玩法
-					{ 
-						detail->set_score(detail->score() - single_score * (MAX_PLAYER_COUNT - 1)); //点杠的那个人出3分
+					if (_room->IsJianPing())
+					{
+						if (player_id == gang.source_player_id()) //点杠：建平玩法
+						{
+							auto detail = record->mutable_details()->Add();
+							detail->set_fan_type(Asset::FAN_TYPE_MING_GANG);
+							detail->set_score(detail->score() - ming_score_each * (MAX_PLAYER_COUNT - 1)); //点杠的那个人出3分
+
+							ming_real += ming_score_each * (MAX_PLAYER_COUNT - 1);
+						}
 					}
 					else 
 					{ 
-						detail->set_score(detail->score() - single_score); 
+						auto detail = record->mutable_details()->Add();
+						detail->set_fan_type(Asset::FAN_TYPE_MING_GANG);
+						detail->set_score(detail->score() - ming_score_each); 
+
+						ming_real += ming_score_each;
 					}
 				}
+			
+				record->set_score(record->score() + ming_score - ming_real); //扣除杠分
 			}
 
 			if (an_count)
