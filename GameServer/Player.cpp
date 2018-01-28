@@ -2472,7 +2472,7 @@ bool Player::CheckHuPai(const std::map<int32_t, std::vector<int32_t>>& cards_inh
 
 	if (_room->IsJianPing() && IsDanDiao(pai)) _fan_list.emplace(Asset::FAN_TYPE_JIA_HU_NORMAL); //单调//单粘//建平玩法
 	if (_room->IsJianPing() && !HasYaoJiu()) _fan_list.emplace(Asset::FAN_TYPE_JIA_HU_NORMAL); //缺19的时候死胡19
-	if (_room->IsJianPing() && Is28Zhang() && IsDuiDao(pai, check_zimo)) _fan_list.emplace(Asset::FAN_TYPE_JIA_HU_NORMAL); //对儿倒其一为28的情况
+	if (_room->IsJianPing() && !_room->HasZhang28() && Is28Pai(pai) && IsDuiDao(pai, check_zimo)) _fan_list.emplace(Asset::FAN_TYPE_JIA_HU_NORMAL); //对儿倒其一为28的情况且不能28作掌儿
 
 	return true;
 }
@@ -3907,9 +3907,8 @@ int32_t Player::OnFaPai(std::vector<int32_t>& cards)
 	if (true && _player_id == 262560 && _cards_inhand.size() == 0)
 	{
 		_cards_inhand = {
-			{ 1, {1, 1, 1, 5, 6, 7, 8} },
-			//{ 2, {7, 8, 9, 9, 9} },
-			{ 3, {5, 5, 3, 3} },
+			{ 1, {1, 1, 1, 7, 7, 7, 8} },
+			{ 2, {2, 2, 9, 9} },
 			//{ 4, { 1, 2, 3, 4} },
 			//{ 5, { 1, 2, 3 } },
 		};
@@ -3931,9 +3930,9 @@ int32_t Player::OnFaPai(std::vector<int32_t>& cards)
 	else if (true && _player_id == 262553 && _cards_inhand.size() == 0)
 	{
 		_cards_inhand = {
-			{ 1, {3, 4, 5} },
-			{ 2, {2, 2, 2, 4, 5, 6} },
-			{ 3, {3} },
+			{ 1, {7, 7} },
+			{ 2, {2, 2, 4, 5, 6} },
+			{ 3, {6, 6, 6} },
 			//{ 4, {1, 2, 3, 4} },
 		};
 		
@@ -4611,6 +4610,13 @@ int32_t Player::CmdRecharge(pb::Message* message)
 bool Player::Is28Zhang()
 {
 	if (_zhang.card_value() == 2 || _zhang.card_value() == 8) return true;
+
+	return false;
+}
+	
+bool Player::Is28Pai(const Asset::PaiElement& pai)
+{
+	if (pai.card_value() == 2 || pai.card_value() == 8) return true;
 
 	return false;
 }
