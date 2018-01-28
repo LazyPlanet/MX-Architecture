@@ -3922,8 +3922,8 @@ int32_t Player::OnFaPai(std::vector<int32_t>& cards)
 		
 		_cards_outhand = {
 			//{ 1, { 7, 7, 7, 6, 7, 8} },
-			{ 2, { 3, 4, 5 } },
-			//{ 5, { 3, 3, 3 } },
+			//{ 2, { 3, 4, 5 } },
+			{ 3, { 3, 3, 3 } },
 		};
 
 		/*
@@ -3937,15 +3937,15 @@ int32_t Player::OnFaPai(std::vector<int32_t>& cards)
 	else if (true && _player_id == 262553 && _cards_inhand.size() == 0)
 	{
 		_cards_inhand = {
-			{ 1, {7, 7} },
-			{ 2, {2, 2, 4, 5, 6} },
-			{ 3, {6, 6, 6} },
-			//{ 4, {1, 2, 3, 4} },
+			//{ 1, {7, 7} },
+			{ 2, {2, 2} },
+			{ 3, {2, 2, 2} },
+			{ 5, {2, 2} },
 		};
 		
 		_cards_outhand = {
-			//{ 1, { 7, 7, 7, 6, 7, 8} },
-			{ 5, { 3, 3, 3 } },
+			{ 1, { 3, 4, 5} },
+			{ 2, { 6, 7, 8 } },
 		};
 	}
 	else if (false && _player_id == 265892 && _cards_inhand.size() == 0)
@@ -4616,6 +4616,8 @@ int32_t Player::CmdRecharge(pb::Message* message)
 
 bool Player::Is28Zhang()
 {
+	if (_zhang.card_type() == Asset::CARD_TYPE_FENG || _zhang.card_type() == Asset::CARD_TYPE_JIAN) return false; //东南西北中发白
+
 	if (_zhang.card_value() == 2 || _zhang.card_value() == 8) return true;
 
 	return false;
@@ -4623,6 +4625,8 @@ bool Player::Is28Zhang()
 	
 bool Player::Is28Pai(const Asset::PaiElement& pai)
 {
+	if (_zhang.card_type() == Asset::CARD_TYPE_FENG || _zhang.card_type() == Asset::CARD_TYPE_JIAN) return false; //东南西北中发白
+
 	if (pai.card_value() == 2 || pai.card_value() == 8) return true;
 
 	return false;
