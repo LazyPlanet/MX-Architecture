@@ -2783,6 +2783,8 @@ bool Player::CheckChiPai(const Asset::PaiElement& pai)
 
 	if (!CheckMingPiao(Asset::PAI_OPER_TYPE_CHIPAI)) return false; //明飘检查
 
+	if (_room->IsJianPing() && HasPengJianPai()) return false; //建平玩法：碰完必须明飘，吃了就不让碰了
+
 	auto it = _cards_inhand.find(pai.card_type());
 	if (it == _cards_inhand.end()) return false;
 
@@ -3905,7 +3907,7 @@ int32_t Player::OnFaPai(std::vector<int32_t>& cards)
 	if (true && _player_id == 262560 && _cards_inhand.size() == 0)
 	{
 		_cards_inhand = {
-			{ 1, {1, 1, 4, 6, 7, 8, 9} },
+			{ 1, {1, 1, 1, 5, 6, 7, 8} },
 			//{ 2, {7, 8, 9, 9, 9} },
 			{ 3, {5, 5, 3, 3} },
 			//{ 4, { 1, 2, 3, 4} },
@@ -3915,7 +3917,7 @@ int32_t Player::OnFaPai(std::vector<int32_t>& cards)
 		_cards_outhand = {
 			//{ 1, { 7, 7, 7, 6, 7, 8} },
 			{ 2, { 3, 4, 5 } },
-			//{ 3, { 9, 9, 9 } },
+			//{ 5, { 3, 3, 3 } },
 		};
 
 		/*
@@ -3931,8 +3933,13 @@ int32_t Player::OnFaPai(std::vector<int32_t>& cards)
 		_cards_inhand = {
 			{ 1, {3, 4, 5} },
 			{ 2, {2, 2, 2, 4, 5, 6} },
-			{ 3, {1, 1, 1, 3} },
+			{ 3, {3} },
 			//{ 4, {1, 2, 3, 4} },
+		};
+		
+		_cards_outhand = {
+			//{ 1, { 7, 7, 7, 6, 7, 8} },
+			{ 5, { 3, 3, 3 } },
 		};
 	}
 	else if (false && _player_id == 265892 && _cards_inhand.size() == 0)
