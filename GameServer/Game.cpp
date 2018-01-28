@@ -1351,7 +1351,7 @@ void Game::Calculate(int64_t hupai_player_id/*胡牌玩家*/, int64_t dianpao_pl
 
 		if (list_element.player_id() == hupai_player_id) continue;
 
-		if (_room->HasYiJiaFu() && dianpao_player_id != 0 && dianpao_player_id != list_element.player_id()) 
+		if (_room->HasYiJiaFu() && dianpao_player_id != 0 && dianpao_player_id != hupai_player_id && dianpao_player_id != list_element.player_id()) 
 		{
 			message.mutable_record()->mutable_list(i)->set_score(0); //点炮一家付//其他两家不必付钱
 			message.mutable_record()->mutable_list(i)->mutable_details()->Clear();
