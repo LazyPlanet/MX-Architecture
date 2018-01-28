@@ -2271,9 +2271,12 @@ bool Player::CheckHuPai(const std::map<int32_t, std::vector<int32_t>>& cards_inh
 	if (shunzi_count == 0) 
 	{
 		piao = true; 
-		if (!IsPiao()) piao = false; //尝试处理：玩家吃了三套副一样的，如[7 7 7 8 8 8 9 9 9]牌型
 
-		if (_room->IsJianPing() && !piao && _room->HasMingPiao() && HasPengJianPai()) return false; //建平玩法：中发白其中之一只要碰就算明飘，本局必须胡飘，不勾选则正常
+		if (!IsPiao()) piao = false; //尝试处理：玩家吃了三套副一样的，如[7 7 7 8 8 8 9 9 9]牌型
+	}
+	else if (_room->IsJianPing() && !piao && _room->HasMingPiao() && HasPengJianPai()) 
+	{
+		return false; //建平玩法：中发白其中之一只要碰就算明飘，本局必须胡飘，不勾选则正常
 	}
 	
 	//
