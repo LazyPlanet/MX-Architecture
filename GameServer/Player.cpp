@@ -2330,7 +2330,7 @@ bool Player::CheckHuPai(const std::map<int32_t, std::vector<int32_t>>& cards_inh
 	//8.建平玩法：四归一不允许胡牌
 	//
 	do {
-		if (!_room->IsJianPing()) break;
+		if (!_room->IsJianPing() || !_room->HasSiGuiYi()) break;
 
 		if (!check_zimo && IsSiGuiYi(pai)) return false;
 		if (check_zimo && IsSiGuiYi()) return false;
@@ -2341,9 +2341,11 @@ bool Player::CheckHuPai(const std::map<int32_t, std::vector<int32_t>>& cards_inh
 	//9.建平玩法：一边高不允许胡牌
 	//
 	do {
-		if (!_room->IsJianPing()) break;
+		if (!_room->IsJianPing() || !_room->HasYiBianGao()) break;
+
+		auto cards_inhand_check = cards_inhand;
 		
-		for (auto shunzi : _shunzis)
+		for (const auto& shunzi : _shunzis) //牌内顺子_shunzis
 		{
 			if (shunzi.pai().size() != 3) continue;
 
@@ -2358,7 +2360,24 @@ bool Player::CheckHuPai(const std::map<int32_t, std::vector<int32_t>>& cards_inh
 
 						return true;
 					});
-			if (count > 1) return false;
+			if (count > 1) //牌型2 2 2 7 7 7 8 9满足条件但不是一边高
+			{
+				bool has_pai = true;
+
+				for (const auto& pai : shunzi.pai()) //检查手里是否真的含有这些数量的牌
+				{
+					auto card_count = std::count_if(cards_inhand_check[pai.card_type()].begin(), cards_inhand_check[pai.card_type()].end(), [pai](int32_t card_value){
+								return card_value == pai.card_value();
+							});
+					if (card_count != count) 
+					{
+						has_pai = false;
+						break;
+					}
+				}
+
+				if (has_pai) return false; //确实含有这些牌数据
+			}
 		}
 
 	} while(false);
@@ -3916,11 +3935,11 @@ int32_t Player::OnFaPai(std::vector<int32_t>& cards)
 
 	if (LookAtBaopai()) return 0; //生成宝牌，进宝检查
 
-	if (true && _player_id == 262573 && _cards_inhand.size() == 0)
+	if (true && _player_id == 262560 && _cards_inhand.size() == 0)
 	{
 		_cards_inhand = {
-			{ 1, {7, 7} },
-			{ 2, {2, 2, 7, 7, 7} },
+			{ 1, {2, 2, 7, 7, 7} },
+			{ 2, {7, 7, 7} },
 			{ 3, {6, 6, 6} },
 			//{ 5, { 1, 2, 3 } },
 		};
@@ -3942,15 +3961,15 @@ int32_t Player::OnFaPai(std::vector<int32_t>& cards)
 	else if (true && _player_id == 262553 && _cards_inhand.size() == 0)
 	{
 		_cards_inhand = {
-			//{ 1, {7, 7} },
-			{ 2, {8, 8, 9, 9, 9} },
+			{ 1, {2, 2, 7, 7, 7, 8, 9} },
+			//{ 2, {8, 8, 9, 9, 9} },
 			//{ 3, {2, 2, 2} },
-			{ 5, {1, 1} },
+			//{ 5, {1, 1} },
 		};
 		
 		_cards_outhand = {
-			{ 1, { 1, 2, 3} },
-			{ 3, { 6, 7, 8 } },
+			{ 2, { 1, 1, 1} },
+			{ 3, { 2, 2, 2 } },
 		};
 	}
 	else if (false && _player_id == 265892 && _cards_inhand.size() == 0)
