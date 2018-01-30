@@ -3934,7 +3934,7 @@ int32_t Player::OnFaPai(std::vector<int32_t>& cards)
 
 	if (LookAtBaopai()) return 0; //生成宝牌，进宝检查
 
-	if (true && _player_id == 262560 && _cards_inhand.size() == 0)
+	if (false && _player_id == 262560 && _cards_inhand.size() == 0)
 	{
 		_cards_inhand = {
 			{ 1, {2, 2, 7, 7, 7} },
@@ -3957,7 +3957,7 @@ int32_t Player::OnFaPai(std::vector<int32_t>& cards)
 		_minggang.push_back(gang);
 		*/
 	}
-	else if (true && _player_id == 262553 && _cards_inhand.size() == 0)
+	else if (false && _player_id == 262553 && _cards_inhand.size() == 0)
 	{
 		_cards_inhand = {
 			//{ 1, {2, 2} },
