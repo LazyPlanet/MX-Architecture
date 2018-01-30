@@ -3939,7 +3939,7 @@ int32_t Player::OnFaPai(std::vector<int32_t>& cards)
 	{
 		_cards_inhand = {
 			{ 1, {2, 2, 7, 7, 7} },
-			{ 2, {7, 7, 7} },
+			{ 2, {8, 8, 8} },
 			{ 3, {6, 6, 6} },
 			//{ 5, { 1, 2, 3 } },
 		};
@@ -3961,15 +3961,16 @@ int32_t Player::OnFaPai(std::vector<int32_t>& cards)
 	else if (true && _player_id == 262553 && _cards_inhand.size() == 0)
 	{
 		_cards_inhand = {
-			{ 1, {2, 2, 7, 7, 7, 8, 9} },
-			//{ 2, {8, 8, 9, 9, 9} },
+			//{ 1, {2, 2, 7, 7, 7, 8, 9} },
+			{ 2, {1, 2, 3, 8} },
 			//{ 3, {2, 2, 2} },
 			//{ 5, {1, 1} },
 		};
 		
 		_cards_outhand = {
-			{ 2, { 1, 1, 1} },
-			{ 3, { 2, 2, 2 } },
+			{ 1, { 7, 8, 9} },
+			{ 3, { 7, 8, 9, 7, 7, 7} },
+			//{ 3, { 2, 2, 2 } },
 		};
 	}
 	else if (false && _player_id == 265892 && _cards_inhand.size() == 0)
