@@ -2790,7 +2790,7 @@ bool Player::CheckChiPai(const Asset::PaiElement& pai)
 
 	if (!CheckMingPiao(Asset::PAI_OPER_TYPE_CHIPAI)) return false; //明飘检查
 
-	if (_room->IsJianPing() && HasPengJianPai()) return false; //建平玩法：碰完必须明飘，吃了就不让碰了
+	if (_room->HasMingPiao() && HasPengJianPai()) return false; //建平玩法：碰完必须明飘，吃了就不让碰了
 
 	auto it = _cards_inhand.find(pai.card_type());
 	if (it == _cards_inhand.end()) return false;
@@ -2898,7 +2898,7 @@ bool Player::CheckPengPai(const Asset::PaiElement& pai)
 	
 	if (!CheckMingPiao(Asset::PAI_OPER_TYPE_PENGPAI)) return false; //明飘检查
 
-	if (_room->IsJianPing() && pai.card_type() == Asset::CARD_TYPE_JIAN && HasChiPaiOutHand()) return false; //建平玩法：碰完必须明飘，吃了就不让碰了
+	if (_room->HasMingPiao() && pai.card_type() == Asset::CARD_TYPE_JIAN && HasChiPaiOutHand()) return false; //建平玩法：碰完必须明飘，吃了就不让碰了
 
 	auto it = _cards_inhand.find(pai.card_type());
 	if (it == _cards_inhand.end()) return false;
