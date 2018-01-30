@@ -2471,15 +2471,20 @@ bool Player::CheckHuPai(const std::map<int32_t, std::vector<int32_t>>& cards_inh
 	if (yise) _fan_list.emplace(Asset::FAN_TYPE_QING_YI_SE); //清一色
 	if (piao) _fan_list.emplace(Asset::FAN_TYPE_PIAO_HU); //飘胡
 	if (_game->IsLiuJu()) _fan_list.emplace(Asset::FAN_TYPE_HAI_DI_LAO); //海底捞月
-	if (IsMingPiao()) 
-	{
-		_fan_list.emplace(Asset::FAN_TYPE_MING_PIAO); //明飘
-		if (_room->IsJianPing()) _fan_list.erase(Asset::FAN_TYPE_PIAO_HU); //建平玩法：明飘不带飘胡番数
-	}
 
 	if (_room->IsJianPing() && IsDanDiao(pai)) _fan_list.emplace(Asset::FAN_TYPE_JIA_HU_NORMAL); //单调//单粘//建平玩法
 	if (_room->IsJianPing() && !HasYaoJiu()) _fan_list.emplace(Asset::FAN_TYPE_JIA_HU_NORMAL); //缺19的时候死胡19
 	if (_room->IsJianPing() && !_room->HasZhang28() && Is28Pai(pai) && IsDuiDao(pai, check_zimo)) _fan_list.emplace(Asset::FAN_TYPE_JIA_HU_NORMAL); //对儿倒其一为28的情况且不能28作掌儿
+	
+	if (IsMingPiao()) 
+	{
+		_fan_list.emplace(Asset::FAN_TYPE_MING_PIAO); //明飘
+		if (_room->IsJianPing()) 
+		{
+			_fan_list.erase(Asset::FAN_TYPE_PIAO_HU); //建平玩法：明飘不带飘胡番数
+			_fan_list.erase(Asset::FAN_TYPE_JIA_HU_NORMAL); //建平玩法：明飘不带夹胡番数
+		}
+	}
 
 	return true;
 }
