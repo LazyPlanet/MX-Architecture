@@ -1960,7 +1960,7 @@ void Player::AddZhang(const Asset::PaiElement& zhang)
 
 	_zhang = zhang; //对儿
 
-	DEBUG("玩家:{} 在房间:{} 局数:{} 中胡牌对儿:{}", _player_id, _room->GetID(), _game->GetID(), _zhang.ShortDebugString());
+	//DEBUG("玩家:{} 在房间:{} 局数:{} 中胡牌对儿:{}", _player_id, _room->GetID(), _game->GetID(), _zhang.ShortDebugString());
 }
 	
 void Player::AddShunZi(const Asset::ShunZi& shunzi)
@@ -1969,7 +1969,7 @@ void Player::AddShunZi(const Asset::ShunZi& shunzi)
 
 	_shunzis.push_back(shunzi);
 
-	DEBUG("玩家:{} 在房间:{} 局数:{} 中胡牌顺子数量:{}，本次增加:{}", _player_id, _room->GetID(), _game->GetID(), _shunzis.size(), shunzi.ShortDebugString());
+	//DEBUG("玩家:{} 在房间:{} 局数:{} 中胡牌顺子数量:{}，本次增加:{}", _player_id, _room->GetID(), _game->GetID(), _shunzis.size(), shunzi.ShortDebugString());
 }
 	
 bool Player::CheckBaoHu(const Asset::PaiElement& pai/*宝牌数据*/)
@@ -2490,7 +2490,7 @@ bool Player::CheckHuPai(const std::map<int32_t, std::vector<int32_t>>& cards_inh
 	if (piao) _fan_list.emplace(Asset::FAN_TYPE_PIAO_HU); //飘胡
 	if (_game->IsLiuJu()) _fan_list.emplace(Asset::FAN_TYPE_HAI_DI_LAO); //海底捞月
 
-	if (_room->IsJianPing() && IsDanDiao(pai)) _fan_list.emplace(Asset::FAN_TYPE_JIA_HU_NORMAL); //单调//单粘//建平玩法
+	if (_room->IsJianPing() && IsDanDiao(pai, check_zimo)) _fan_list.emplace(Asset::FAN_TYPE_JIA_HU_NORMAL); //单调//单粘//建平玩法
 	if (_room->IsJianPing() && !HasYaoJiu()) _fan_list.emplace(Asset::FAN_TYPE_JIA_HU_NORMAL); //缺19的时候死胡19
 	if (_room->IsJianPing() && !_room->HasZhang28() && Is28Pai(pai) && IsDuiDao(pai, check_zimo)) _fan_list.emplace(Asset::FAN_TYPE_JIA_HU_NORMAL); //对儿倒其一为28的情况且不能28作掌儿
 	
@@ -2661,15 +2661,43 @@ bool Player::IsSiGuiYi(const Asset::PaiElement& pai)
 //
 //是否单粘
 //
-//胡牌恰巧是掌儿
+//胡牌只能是这一张
 //
-bool Player::IsDanDiao(const Asset::PaiElement& pai) 
+bool Player::IsDanDiao(const Asset::PaiElement& pai, bool check_zimo) 
 { 
 	if (_cards_hu.size() == 1) return true;
 
-	if (_zhang.card_type() == pai.card_type() && _zhang.card_value() == pai.card_value()) return true;
+	auto cards_inhand = _cards_inhand; //玩家手里牌
+	auto cards_outhand = _cards_outhand; //玩家墙外牌
+	auto minggang = _minggang; //明杠
+	auto angang = _angang; //暗杠
+	auto jiangang = _jiangang; //旋风杠，本质是明杠
+	auto fenggang = _fenggang; //旋风杠，本质是暗杠
 
-	return false;
+	if (check_zimo) 
+	{
+		auto it = std::find_if(cards_inhand[pai.card_type()].begin(), cards_inhand[pai.card_type()].end(), [pai](int32_t card_value){
+					return pai.card_value() == card_value;
+				});
+		if (it == cards_inhand[pai.card_type()].end()) return false;
+
+		cards_inhand[pai.card_type()].erase(it); //如果是自摸胡牌，则删除检查其他牌是否能胡
+	}
+
+	const auto& cards = GameInstance.GetCards();
+
+	for (auto card : cards)
+	{
+		const auto& hu_pai = card.second;
+		if (hu_pai.card_type() == pai.card_type() && hu_pai.card_type() == pai.card_type()) continue;
+
+		auto can_hupai = CheckHuPai(cards_inhand, cards_outhand, minggang, angang, jiangang, fenggang, hu_pai, false);
+		if (!can_hupai) continue;
+
+		if (hu_pai.card_type() != pai.card_type() || hu_pai.card_type() != pai.card_type()) return false;
+	}
+
+	return true;
 } 
 
 //
@@ -3934,11 +3962,11 @@ int32_t Player::OnFaPai(std::vector<int32_t>& cards)
 
 	if (LookAtBaopai()) return 0; //生成宝牌，进宝检查
 
-	if (false && _player_id == 262560 && _cards_inhand.size() == 0)
+	if (true && _player_id == 262560 && _cards_inhand.size() == 0)
 	{
 		_cards_inhand = {
 			{ 1, {2, 2, 7, 7, 7} },
-			{ 2, {8, 8, 8} },
+			{ 2, {6, 6, 6} },
 			{ 3, {3, 3, 5} },
 			//{ 5, { 1, 2, 3 } },
 		};
@@ -3957,18 +3985,18 @@ int32_t Player::OnFaPai(std::vector<int32_t>& cards)
 		_minggang.push_back(gang);
 		*/
 	}
-	else if (false && _player_id == 262553 && _cards_inhand.size() == 0)
+	else if (true && _player_id == 262553 && _cards_inhand.size() == 0)
 	{
 		_cards_inhand = {
-			//{ 1, {2, 2} },
-			//{ 2, {1, 1} },
-			{ 3, {3, 3, 5, 5, 9, 9, 9} },
+			//{ 1, {7, 8, 9} },
+			{ 2, {6, 6} },
+			{ 3, {2, 3, 3, 3, 4} },
 			//{ 5, {1, 1} },
 		};
 		
 		_cards_outhand = {
-			//{ 1, { 7, 8, 9} },
-			{ 3, { 2, 2, 2, 4, 4, 4} },
+			{ 1, { 9, 9, 9} },
+			{ 2, { 4, 4, 4} },
 			//{ 3, { 2, 2, 2 } },
 		};
 	}

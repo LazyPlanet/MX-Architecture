@@ -138,6 +138,7 @@ class GameManager
 {
 private:
 	std::unordered_map<int32_t/*牌索引*/, Asset::PaiElement/*牌值*/> _cards;
+	std::vector<Asset::PaiElement> _pais; //牌值
 	std::vector<std::shared_ptr<Game>> _games;
 public:
 	static GameManager& Instance()
@@ -154,6 +155,9 @@ public:
 		if (it != _cards.end()) return it->second; 
 		return {};
 	}
+	
+	const std::unordered_map<int32_t, Asset::PaiElement>& GetCards() { return _cards; }
+	const std::vector<Asset::PaiElement>& GetPais() { return _pais; } 
 	
 	void OnCreateGame(std::shared_ptr<Game> game);
 };
