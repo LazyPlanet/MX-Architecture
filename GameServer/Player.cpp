@@ -2684,17 +2684,14 @@ bool Player::IsDanDiao(const Asset::PaiElement& pai, bool check_zimo)
 		cards_inhand[pai.card_type()].erase(it); //如果是自摸胡牌，则删除检查其他牌是否能胡
 	}
 
-	const auto& cards = GameInstance.GetCards();
+	const auto& cards = GameInstance.GetPais();
 
-	for (auto card : cards)
+	for (const auto& card : cards)
 	{
-		const auto& hu_pai = card.second;
-		if (hu_pai.card_type() == pai.card_type() && hu_pai.card_type() == pai.card_type()) continue;
+		if (card.card_type() == pai.card_type() && card.card_type() == pai.card_type()) continue;
 
-		auto can_hupai = CheckHuPai(cards_inhand, cards_outhand, minggang, angang, jiangang, fenggang, hu_pai, false);
-		if (!can_hupai) continue;
-
-		if (hu_pai.card_type() != pai.card_type() || hu_pai.card_type() != pai.card_type()) return false;
+		auto can_hupai = CheckHuPai(cards_inhand, cards_outhand, minggang, angang, jiangang, fenggang, card, false);
+		if (can_hupai) return false;
 	}
 
 	return true;
@@ -3962,7 +3959,7 @@ int32_t Player::OnFaPai(std::vector<int32_t>& cards)
 
 	if (LookAtBaopai()) return 0; //生成宝牌，进宝检查
 
-	if (true && _player_id == 262560 && _cards_inhand.size() == 0)
+	if (false && _player_id == 262560 && _cards_inhand.size() == 0)
 	{
 		_cards_inhand = {
 			{ 1, {2, 2, 7, 7, 7} },
@@ -3985,7 +3982,7 @@ int32_t Player::OnFaPai(std::vector<int32_t>& cards)
 		_minggang.push_back(gang);
 		*/
 	}
-	else if (true && _player_id == 262553 && _cards_inhand.size() == 0)
+	else if (false && _player_id == 262553 && _cards_inhand.size() == 0)
 	{
 		_cards_inhand = {
 			//{ 1, {7, 8, 9} },

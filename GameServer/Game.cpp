@@ -2241,7 +2241,7 @@ bool GameManager::Load()
 		Asset::MJCard* asset_card = dynamic_cast<Asset::MJCard*>(message); 
 		if (!asset_card) return false;
 		
-		for (int k = 0; k < asset_card->group_count(); ++k)
+		for (int k = 0; k < asset_card->group_count(); ++k) //4组，麻将每张牌有4张
 		{
 			int32_t cards_count = std::min(asset_card->cards_count(), asset_card->cards_size());
 
@@ -2251,8 +2251,8 @@ bool GameManager::Load()
 				card.set_card_type(asset_card->card_type());
 				card.set_card_value(asset_card->cards(i).value());
 
+				if (k == 0) _pais.push_back(card); //每张牌存一个
 				_cards.emplace(_cards.size() + 1, card); //从1开始的索引
-
 			}
 		}
 	}

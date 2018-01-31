@@ -156,7 +156,7 @@ public:
 		return {};
 	}
 	
-	const std::unordered_map<int32_t, Asset::PaiElement>& GetCards() { return _cards; }
+	const std::unordered_map<int32_t, Asset::PaiElement>& GetAllCards() { return _cards; }
 	const std::vector<Asset::PaiElement>& GetPais() { return _pais; } 
 	
 	void OnCreateGame(std::shared_ptr<Game> game);
