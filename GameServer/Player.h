@@ -345,7 +345,8 @@ public:
 			int32_t jiangang, //旋风杠，本质是明杠
 			int32_t fenggang, //旋风杠，本质是暗杠
 			const Asset::PaiElement& pai, //胡牌
-			bool check_zimo = false); //是否自摸
+			bool check_zimo = false, //是否自摸
+			bool calculate = true); //是否结算
 
 	bool HasYaoJiu();
 	bool HasYaoJiu(const std::map<int32_t, std::vector<int32_t>>& cards_inhand, //玩家手里的牌

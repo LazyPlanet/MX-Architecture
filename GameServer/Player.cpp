@@ -2092,7 +2092,8 @@ bool Player::CheckHuPai(const std::map<int32_t, std::vector<int32_t>>& cards_inh
 		int32_t jiangang, //旋风杠，本质是明杠
 		int32_t fenggang, //旋风杠，本质是暗杠
 		const Asset::PaiElement& pai, //胡牌
-		bool check_zimo) //是否自摸
+		bool check_zimo, //是否自摸
+		bool calculate) //是否结算
 {
 	if (!_room || !_game) return false;
 	
@@ -2380,7 +2381,8 @@ bool Player::CheckHuPai(const std::map<int32_t, std::vector<int32_t>>& cards_inh
 		}
 
 	} while(false);
-	
+
+	if (!calculate) return true;
 	
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //
@@ -2690,7 +2692,7 @@ bool Player::IsDanDiao(const Asset::PaiElement& pai, bool check_zimo)
 	{
 		if (card.card_type() == pai.card_type() && card.card_type() == pai.card_type()) continue;
 
-		auto can_hupai = CheckHuPai(cards_inhand, cards_outhand, minggang, angang, jiangang, fenggang, card, false);
+		auto can_hupai = CheckHuPai(cards_inhand, cards_outhand, minggang, angang, jiangang, fenggang, card, false, false);
 		if (can_hupai) return false;
 	}
 
