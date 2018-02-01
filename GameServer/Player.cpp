@@ -2097,7 +2097,8 @@ bool Player::CheckHuPai(const std::map<int32_t, std::vector<int32_t>>& cards_inh
 {
 	if (!_room || !_game) return false;
 	
-	_fan_list.clear(); //番型数据
+	if (calculate) _fan_list.clear(); //番型数据
+
 	_hu_result.clear(); //胡牌数据
 	_shunzis.clear(); //顺子数据
 
@@ -4001,7 +4002,7 @@ int32_t Player::OnFaPai(std::vector<int32_t>& cards)
 		_cards_inhand = {
 			{ 1, {2, 2, 7, 7, 7} },
 			{ 2, {6, 6, 6} },
-			{ 3, {3, 3, 5} },
+			{ 3, {3, 3, 4} },
 			//{ 5, { 1, 2, 3 } },
 		};
 		
@@ -4023,15 +4024,15 @@ int32_t Player::OnFaPai(std::vector<int32_t>& cards)
 	{
 		_cards_inhand = {
 			//{ 1, {7, 8, 9} },
-			{ 2, {6, 6} },
-			{ 3, {2, 3, 3, 3, 4} },
+			{ 2, {5, 5, 5} },
+			{ 3, {3, 3, 4, 4} },
 			//{ 5, {1, 1} },
 		};
 		
 		_cards_outhand = {
-			{ 1, { 9, 9, 9} },
-			{ 2, { 4, 4, 4} },
-			//{ 3, { 2, 2, 2 } },
+			{ 1, { 1, 1, 1} },
+			//{ 2, { 4, 4, 4} },
+			{ 3, { 8, 8, 8 } },
 		};
 	}
 	else if (false && _player_id == 265892 && _cards_inhand.size() == 0)
