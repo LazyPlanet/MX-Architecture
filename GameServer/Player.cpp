@@ -2690,7 +2690,7 @@ bool Player::IsDanDiao(const Asset::PaiElement& pai, bool check_zimo)
 
 	for (const auto& card : cards)
 	{
-		if (card.card_type() == pai.card_type() && card.card_type() == pai.card_type()) continue;
+		if (card.card_type() == pai.card_type() && card.card_value() == pai.card_value()) continue;
 
 		auto can_hupai = CheckHuPai(cards_inhand, cards_outhand, minggang, angang, jiangang, fenggang, card, false, false);
 		if (can_hupai) return false;
@@ -3415,6 +3415,7 @@ bool Player::CanTingPai(const Asset::PaiElement& pai)
 			
 	cards_inhand[pai.card_type()].erase(find_it); //删除这张牌
 
+	/*
 	//能否胡万饼条
 	for (int card_type = Asset::CARD_TYPE_WANZI; card_type <= Asset::CARD_TYPE_TIAOZI; ++card_type)
 	{
@@ -3449,6 +3450,13 @@ bool Player::CanTingPai(const Asset::PaiElement& pai)
 
 		if (CheckHuPai(cards_inhand, cards_outhand, minggang, angang, jiangang, fenggang, pai)) 
 			cards_hu.push_back(pai);
+	}
+	*/
+	const auto& cards = GameInstance.GetPais();
+
+	for (const auto& pai : cards)
+	{
+		if (CheckHuPai(cards_inhand, cards_outhand, minggang, angang, jiangang, fenggang, pai, false, false)) cards_hu.push_back(pai);
 	}
 
 	if (_cards_hu.size() > 0 && cards_hu.size() > 0)
@@ -3492,6 +3500,7 @@ bool Player::CanTingPai(std::map<int32_t, std::vector<int32_t>> cards_inhand, //
 
 	std::vector<Asset::PaiElement> cards_hu;
 
+	/*
 	//能否胡万饼条
 	for (int card_type = Asset::CARD_TYPE_WANZI; card_type <= Asset::CARD_TYPE_TIAOZI; ++card_type)
 	{
@@ -3527,6 +3536,17 @@ bool Player::CanTingPai(std::map<int32_t, std::vector<int32_t>> cards_inhand, //
 		if (CheckHuPai(cards_inhand, cards_outhand, minggang, angang, jiangang, fenggang, pai)) 
 			cards_hu.push_back(pai);
 	}
+	
+	*/
+
+	const auto& cards = GameInstance.GetPais();
+
+	for (const auto& pai : cards)
+	{
+		if (CheckHuPai(cards_inhand, cards_outhand, minggang, angang, jiangang, fenggang, pai, false, false)) cards_hu.push_back(pai);
+	}
+
+	if (_cards_hu.size() > 0 && cards_hu.size() > 0)
 	
 	if (_cards_hu.size() > 0 && cards_hu.size() > 0)
 	{
@@ -3575,6 +3595,8 @@ bool Player::CheckTingPai(std::vector<Asset::PaiElement>& pais)
 	auto fenggang = _fenggang; //旋风杠，本质是暗杠
 	
 	auto card_list = cards_inhand; //复制当前牌
+			
+	const auto& cards = GameInstance.GetPais();
 
 	for (auto it = card_list.begin(); it != card_list.end(); ++it)
 	{
@@ -3594,7 +3616,19 @@ bool Player::CheckTingPai(std::vector<Asset::PaiElement>& pais)
 			//
 			//玩家能否胡牌
 			//
+			for (const auto& pai : cards)
+			{
+				if (CheckHuPai(cards_inhand, cards_outhand, minggang, angang, jiangang, fenggang, pai, false, false)) 
+				{
+					Asset::PaiElement pai; //即：打出这张后才可能听牌
+					pai.set_card_type((Asset::CARD_TYPE)it->first);
+					pai.set_card_value(value);
 
+					pais.push_back(pai); //缓存
+				}
+			}
+
+			/*
 			//能否胡万饼条
 			for (int card_type = Asset::CARD_TYPE_WANZI; card_type <= Asset::CARD_TYPE_TIAOZI; ++card_type)
 			{
@@ -3648,6 +3682,7 @@ bool Player::CheckTingPai(std::vector<Asset::PaiElement>& pais)
 					pais.push_back(pai); //缓存
 				}
 			}
+			*/
 			
 			//
 			//下一轮检查
