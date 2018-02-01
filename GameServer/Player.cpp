@@ -2112,7 +2112,7 @@ bool Player::CheckHuPai(const std::map<int32_t, std::vector<int32_t>>& cards_inh
 	for (auto& card : cards)
 		std::sort(card.second.begin(), card.second.end(), [](int x, int y){ return x < y; }); //由小到大，排序
 	
-	bool zhanlihu = false, jiahu = false, bianhu = false, duanmen = false, yise = false, piao = false; //积分
+	bool zhanlihu = false, /*jiahu = false, bianhu = false, */duanmen = false, yise = false, piao = false; //积分
 
 	//
 	//1.是否可以缺门、清一色
@@ -2394,6 +2394,7 @@ bool Player::CheckHuPai(const std::map<int32_t, std::vector<int32_t>>& cards_inh
 	//
 	//1.是否夹胡
 	//
+	/*
 	do {
 		if (!_room->HasJiaHu()) break; //不支持夹胡
 
@@ -2484,16 +2485,17 @@ bool Player::CheckHuPai(const std::map<int32_t, std::vector<int32_t>>& cards_inh
 		}
 
 	} while(false);
-		
-	if (bianhu) _fan_list.emplace(Asset::FAN_TYPE_JIA_HU_MIDDLE); //边胡
-	if (jiahu) _fan_list.emplace(Asset::FAN_TYPE_JIA_HU_NORMAL); //夹胡
+	*/
+
+	//if (bianhu) _fan_list.emplace(Asset::FAN_TYPE_JIA_HU_NORMAL); //边胡
+	//if (jiahu) _fan_list.emplace(Asset::FAN_TYPE_JIA_HU_NORMAL); //夹胡
 	if (zhanlihu) _fan_list.emplace(Asset::FAN_TYPE_ZHAN_LI); //站立胡
 	if (duanmen) _fan_list.emplace(Asset::FAN_TYPE_DUAN_MEN);//断门
 	if (yise) _fan_list.emplace(Asset::FAN_TYPE_QING_YI_SE); //清一色
 	if (piao) _fan_list.emplace(Asset::FAN_TYPE_PIAO_HU); //飘胡
 	if (_game->IsLiuJu()) _fan_list.emplace(Asset::FAN_TYPE_HAI_DI_LAO); //海底捞月
 
-	if (_room->IsJianPing() && IsDanDiao(pai, check_zimo)) _fan_list.emplace(Asset::FAN_TYPE_JIA_HU_NORMAL); //单调//单粘//建平玩法
+	if ((_room->HasJiaHu() || _room->IsJianPing()) && IsDanDiao(pai, check_zimo)) _fan_list.emplace(Asset::FAN_TYPE_JIA_HU_NORMAL); //单调//单粘//夹胡
 	if (_room->IsJianPing() && !HasYaoJiu()) _fan_list.emplace(Asset::FAN_TYPE_JIA_HU_NORMAL); //缺19的时候死胡19
 	if (_room->IsJianPing() && !_room->HasZhang28() && Is28Pai(pai) && IsDuiDao(pai, check_zimo)) _fan_list.emplace(Asset::FAN_TYPE_JIA_HU_NORMAL); //对儿倒其一为28的情况且不能28作掌儿
 	
@@ -4020,12 +4022,12 @@ int32_t Player::OnFaPai(std::vector<int32_t>& cards)
 		_minggang.push_back(gang);
 		*/
 	}
-	else if (false && _player_id == 262553 && _cards_inhand.size() == 0)
+	else if (true && _player_id == 262687 && _cards_inhand.size() == 0)
 	{
 		_cards_inhand = {
-			//{ 1, {7, 8, 9} },
-			{ 2, {5, 5, 5} },
-			{ 3, {3, 3, 4, 4} },
+			{ 1, {1, 1, 1, 2, 2, 2, 3, 3, 3} },
+			{ 2, {1, 1} },
+			{ 3, {2, 2} },
 			//{ 5, {1, 1} },
 		};
 		
