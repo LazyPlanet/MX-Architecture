@@ -335,9 +335,9 @@ public:
 	}
 
 	bool CanHuPai(std::vector<Card_t>& cards, bool use_pair = false);
-	bool CheckZiMo(); //胡牌检查-玩家手里现有牌检查
-	bool CheckZiMo(const Asset::PaiElement& pai); //胡牌检查-玩家手里现有牌检查
-	bool CheckHuPai(const Asset::PaiElement& pai, bool check_zimo = false); //胡牌//番数
+	bool CheckZiMo(bool calculate = true); //胡牌检查-玩家手里现有牌检查
+	bool CheckZiMo(const Asset::PaiElement& pai, bool calculate = true); //胡牌检查-玩家手里现有牌检查
+	bool CheckHuPai(const Asset::PaiElement& pai, bool check_zimo = false, bool calculate = true); //胡牌//番数
 	bool CheckHuPai(const std::map<int32_t, std::vector<int32_t>>& cards_inhand, //玩家手里的牌
 			const std::map<int32_t, std::vector<int32_t>>& cards_outhand, //玩家墙外牌
 			const std::vector<Asset::PaiElement>& minggang, //明杠

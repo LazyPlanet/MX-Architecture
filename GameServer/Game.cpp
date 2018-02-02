@@ -267,7 +267,7 @@ void Game::OnPlayerReEnter(std::shared_ptr<Player> player)
 	//
 	//注意：自摸和其他玩家点炮之间的检查顺序
 	//
-	if (player->CheckZiMo()) //自摸检查
+	if (player->CheckZiMo(false)) //自摸检查
 	{
 		auto pai_perator = alert.mutable_pais()->Add();
 		pai_perator->mutable_pai()->CopyFrom(player->GetZhuaPai());
@@ -436,7 +436,7 @@ void Game::OnPaiOperate(std::shared_ptr<Player> player, pb::Message* message)
 				Asset::PaiOperationAlert alert;
 
 				//胡牌检查
-				if (!player_next->IsJinbao() && player_next->CheckZiMo()) //自摸
+				if (!player_next->IsJinbao() && player_next->CheckZiMo(false)) //自摸
 				{
 					auto pai_perator = alert.mutable_pais()->Add();
 					pai_perator->mutable_pai()->CopyFrom(card);
@@ -664,7 +664,7 @@ void Game::OnPaiOperate(std::shared_ptr<Player> player, pb::Message* message)
 				//自摸检查
 				//
 				auto zhuapai = GameInstance.GetCard(cards[0]);
-				if (player->CheckZiMo() || player->CheckBaoHu(zhuapai))
+				if (player->CheckZiMo(false) || player->CheckBaoHu(zhuapai))
 				{
 					auto pai_perator = alert.mutable_pais()->Add();
 					pai_perator->mutable_pai()->CopyFrom(zhuapai);
@@ -901,7 +901,7 @@ void Game::OnPaiOperate(std::shared_ptr<Player> player, pb::Message* message)
 				//自摸检查
 				//
 				auto zhuapai = GameInstance.GetCard(cards[0]);
-				if (player->CheckZiMo() || player->CheckBaoHu(zhuapai))
+				if (player->CheckZiMo(false) || player->CheckBaoHu(zhuapai))
 				{
 					auto pai_perator = alert.mutable_pais()->Add();
 					pai_perator->mutable_pai()->CopyFrom(zhuapai);
@@ -971,7 +971,7 @@ void Game::OnPaiOperate(std::shared_ptr<Player> player, pb::Message* message)
 			//
 			//胡牌检查
 			//
-			if (player_next->CheckZiMo()) //自摸检查
+			if (player_next->CheckZiMo(false)) //自摸检查
 			{
 				auto pai_perator = alert.mutable_pais()->Add();
 				pai_perator->mutable_pai()->CopyFrom(card);
@@ -1798,7 +1798,7 @@ bool Game::CheckQiangGang(const Asset::PaiElement& pai, int64_t source_player_id
 		auto cur_index = i % MAX_PLAYER_COUNT;
 
 		auto player = GetPlayerByOrder(cur_index);
-		if (!player || !player->CheckHuPai(pai)) continue;
+		if (!player || !player->CheckHuPai(pai, false, false)) continue;
 
 		if (player->GetID() == source_player_id) continue;
 
@@ -1907,7 +1907,7 @@ bool Game::CheckLiuJu()
 		pai_operation.set_source_player_id(player->GetID());
 		pai_operation.mutable_pai()->CopyFrom(card);
 
-		if (player->CheckZiMo()/* || player->CheckHuPai(card)*/) 
+		if (player->CheckZiMo(false)/* || player->CheckHuPai(card)*/) 
 		{
 			pai_operation.mutable_oper_list()->Add(Asset::PAI_OPER_TYPE_HUPAI);
 			_oper_list.push_back(pai_operation);
