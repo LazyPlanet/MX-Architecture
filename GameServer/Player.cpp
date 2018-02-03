@@ -3178,6 +3178,7 @@ bool Player::CheckAllGangPai(::google::protobuf::RepeatedField<Asset::PaiOperati
 			Asset::PaiElement pai;
 			pai.set_card_type((Asset::CARD_TYPE)card_type);
 			pai.set_card_value(card_value);
+			pai.set_source_player_id(_player_id);
 
 			if (HasTingPai() && !CanTingIfGang(pai)) continue; //防止杠后听牌不一致
 			
@@ -4021,10 +4022,10 @@ int32_t Player::OnFaPai(std::vector<int32_t>& cards)
 		_minggang.push_back(gang);
 		*/
 	}
-	else if (false && _player_id == 262687 && _cards_inhand.size() == 0)
+	else if (true && _player_id == 262687 && _cards_inhand.size() == 0)
 	{
 		_cards_inhand = {
-			{ 1, {1, 1, 1, 2, 2, 2, 3, 3, 3} },
+			{ 1, {1, 1, 1, 1, 2, 2, 3, 3, 3} },
 			{ 2, {1, 1} },
 			{ 3, {2, 2} },
 			//{ 5, {1, 1} },

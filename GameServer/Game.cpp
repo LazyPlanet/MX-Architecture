@@ -657,6 +657,7 @@ void Game::OnPaiOperate(std::shared_ptr<Player> player, pb::Message* message)
 						pai_perator->CopyFrom(gang);
 					
 						_oper_cache.mutable_pai()->CopyFrom(gang.pai());
+						_oper_cache.set_source_player_id(gang.pai().source_player_id());
 						for (auto oper_type : gang.oper_list()) _oper_cache.mutable_oper_list()->Add(Asset::PAI_OPER_TYPE(oper_type));
 					}
 				}
