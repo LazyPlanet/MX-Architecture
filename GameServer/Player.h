@@ -139,7 +139,7 @@ public:
 	//进入房间
 	virtual int32_t CmdEnterRoom(pb::Message* message);
 	virtual int32_t EnterRoom(pb::Message* message);
-	virtual bool OnEnterRoom(int64_t room_id = 0);
+	virtual void OnEnterSuccess(int64_t room_id = 0); //成功回调
 	//玩家登录
 	virtual int32_t OnLogin();
 	//玩家登出

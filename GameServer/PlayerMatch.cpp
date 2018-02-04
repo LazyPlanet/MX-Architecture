@@ -50,53 +50,58 @@ void PlayerMatch::DoMatch()
 	
 			DEBUG("房间类型:{} 玩家数量:{}", it->first, it->second.size());
 		
-			//if (player_list.size() < 4) continue;
-				
-			auto room_id = RoomInstance.AllocRoom();
-			if (room_id <= 0) continue;
+			auto room_type = (Asset::ROOM_TYPE)it->first;
 
-			Asset::Room room;
-			room.set_room_id(room_id);
-			room.set_room_type((Asset::ROOM_TYPE)it->first);
-
-			auto local_room = RoomInstance.CreateRoom(room);
-			if (!local_room) continue;
+			auto room_ptr = RoomInstance.GetMatchingRoom(room_type);
+			if (!room_ptr) continue;
 
 			Asset::EnterRoom enter_room;
-			enter_room.mutable_room()->CopyFrom(room);
+			enter_room.mutable_room()->CopyFrom(room_ptr->Get());
 			enter_room.set_enter_type(Asset::EnterRoom_ENTER_TYPE_ENTER_TYPE_ENTER); //进入房间
 
-			DEBUG("预创建房间数据:{}", enter_room.ShortDebugString());
+			const auto& messages = AssetInstance.GetMessagesByType(Asset::ASSET_TYPE_ROOM);
 
-			bool match_success = true;
+			auto room_it = std::find_if(messages.begin(), messages.end(), [room_type](pb::Message* message){
+				 auto room_limit = dynamic_cast<Asset::RoomLimit*>(message);
+				 if (!room_limit) return false;
+
+				 return room_type == room_limit->room_type();
+			 });
+			if (room_it == messages.end()) return;
+
+			auto room_limit = dynamic_cast<Asset::RoomLimit*>(*room_it);
+			if (!room_limit) return;
+
+			room_ptr->SetOptions(room_limit->room_options()); //玩法
 
 			//
 			//检查是否满足创建房间条件
 			//
-			for (auto it = player_list.begin(); it != std::next(player_list.begin(), 4); ++it)
+			for (auto it = player_list.begin(); it != player_list.end(); )
 			{
-				auto ret = local_room->TryEnter(it->second); //玩家进入房间
+				auto player = it->second;
+				if (!player) continue;
 
-				enter_room.set_error_code(ret); //是否可以进入场景//房间
+				auto enter_status = room_ptr->TryEnter(player); //玩家尝试进入房间
+				enter_room.set_error_code(enter_status); 
 
-				it->second->SendProtocol(enter_room); //提示Client是否成功
-
-				if (Asset::ERROR_SUCCESS != ret) 
+				if (enter_status == Asset::ERROR_SUCCESS || enter_status == Asset::ERROR_ROOM_HAS_BEEN_IN) 
 				{
-					match_success = false; //理论上不应该出现，TODO：如果该玩家一直进不去，可能会导致后面玩家都进不去，需要处理
+					bool success = room_ptr->Enter(player); //玩家进入房间
+					if (success) player->OnEnterSuccess(room_ptr->GetID());
+					
+					enter_room.set_error_code(Asset::ERROR_SUCCESS); 
 
-					LOG(ERROR, "玩家:{} 加入房间:{} 失败，原因:{}", it->second->GetID(), room_id, ret);
+					it = player_list.erase(it);	//删除匹配玩家
 				}
-			}
+				else
+				{
+					ERROR("玩家:{} 加入房间{} 失败，原因:{}", it->first, enter_room.ShortDebugString(), enter_status);
 
-			//
-			//成功创建，删除匹配玩家
-			//
-			if (match_success)
-			{
-				auto erase_end_it = player_list.begin();
-				std::advance(erase_end_it, 4);
-				for (auto it = player_list.begin(); it != erase_end_it; ) it = player_list.erase(it); //删除队列中该几位玩家
+					++it; //持续匹配
+				}
+				
+				player->SendProtocol(enter_room); //提示Client是否成功
 			}
 		}
 		

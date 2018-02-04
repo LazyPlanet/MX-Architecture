@@ -863,7 +863,7 @@ void Room::SyncRoom()
 		}
 	}
 
-	//DEBUG("同步房间数据:{}", message.ShortDebugString());
+	DEBUG("同步房间数据:{}", message.ShortDebugString());
 
 	BroadCast(message);
 }
@@ -885,7 +885,7 @@ void Room::OnCreated(std::shared_ptr<Player> hoster)
 	
 bool Room::CanStarGame()
 {
-	if (!_hoster && !_gmt_opened) return false;
+	if (IsFriend() && !_hoster && !_gmt_opened) return false;
 
 	if (_players.size() != MAX_PLAYER_COUNT) return false;
 
@@ -1100,7 +1100,6 @@ bool RoomManager::CheckPassword(int64_t room_id, std::string password)
 
 int64_t RoomManager::AllocRoom()
 {
-	//auto redis = make_unique<Redis>();
 	return RedisInstance.CreateRoom();
 }
 	
@@ -1135,16 +1134,41 @@ bool RoomManager::OnCreateRoom(std::shared_ptr<Room> room)
 	return true;
 }
 
-std::shared_ptr<Room> RoomManager::GetAvailableRoom()
+std::shared_ptr<Room> RoomManager::GetMatchingRoom(Asset::ROOM_TYPE room_type)
 {
-	std::lock_guard<std::mutex> lock(_no_password_mutex);
+	std::lock_guard<std::mutex> lock(_match_mutex);
 
-	if (_no_password_rooms.size())
+	do 
 	{
-		return _no_password_rooms.begin()->second; //取一个未满的房间
-	}
+		auto it = _matching_rooms.find(room_type);
+		if (it == _matching_rooms.end()) break;
+	
+		if (it->second->IsFull()) 
+		{
+			_matching_rooms.erase(it); //删除匹配
+			break;
+		}
 
-	return nullptr;
+		return it->second;
+
+	} while (false);
+			
+	auto room_id = RoomInstance.AllocRoom();
+	if (room_id <= 0) return nullptr;
+
+	Asset::Room room;
+	room.set_room_id(room_id);
+	room.set_room_type(room_type);
+
+	auto room_ptr = std::make_shared<Room>(room);
+	room_ptr->SetID(room_id);
+	room_ptr->OnCreated();
+
+	OnCreateRoom(room_ptr);
+
+	_matching_rooms.emplace(room_type, room_ptr);
+
+	return room_ptr;
 }
 	
 void RoomManager::Update(int32_t diff)

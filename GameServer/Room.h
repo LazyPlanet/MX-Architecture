@@ -53,12 +53,12 @@ public:
 	virtual int64_t GetID() { return _stuff.room_id(); }
 	virtual void SetID(int64_t room_id) { return _stuff.set_room_id(room_id); }
 
-	virtual Asset::Room Get() { return _stuff; } //数据
+	virtual const Asset::Room& Get() { return _stuff; } //数据
 	virtual Asset::ROOM_TYPE GetType() { return _stuff.room_type(); } //数据
 	virtual bool IsFriend() { return Asset::ROOM_TYPE_FRIEND == _stuff.room_type(); } //是否是好友房
 	
 	const Asset::RoomOptions& GetOptions() { return _stuff.options(); } //额外番型
-	void SetOption(const Asset::RoomOptions& options) {	_stuff.mutable_options()->CopyFrom(options);}
+	void SetOptions(const Asset::RoomOptions& options) {	_stuff.mutable_options()->CopyFrom(options);}
 
 	const Asset::RoomFan* GetFan(); //获取番数数据
 	int32_t GetMultiple(int32_t fan_type);
@@ -161,19 +161,19 @@ public:
 class RoomManager
 {
 private:
-	std::mutex _no_password_mutex;
+	std::mutex _match_mutex;
 	std::mutex _room_lock;
-	//所有房间(包括已满、未满、要密码、不要密码)
+	//好友房//匹配房
 	std::unordered_map<int64_t, std::shared_ptr<Room>> _rooms;
 	//要输入密码，可入的房间
-	std::unordered_map<int64_t, std::shared_ptr<Room>> _password_rooms; 
+	//std::unordered_map<int64_t, std::shared_ptr<Room>> _password_rooms; 
 	//不要输入密码，可入的房间
 	std::unordered_map<int64_t, std::shared_ptr<Room>> _no_password_rooms;
-	//已满房间
-	std::unordered_map<int64_t, std::shared_ptr<Room>> _full_rooms;
-	
-	//房间池
-	std::unordered_map<int64_t, std::shared_ptr<Room>> _room_pool;
+
+	//匹配成功房间
+	std::unordered_map<int64_t, std::shared_ptr<Room>> _matched_rooms;
+	//匹配房间
+	std::unordered_map<int64_t/*房间类型*/, std::shared_ptr<Room>> _matching_rooms;
 	
 	int32_t _heart_count = 0; //心跳
 	int32_t _server_id = 0; //服务器ID
@@ -190,7 +190,7 @@ public:
 	std::shared_ptr<Room> CreateRoom(const Asset::Room& room); //通过配置创建房间
 	bool OnCreateRoom(std::shared_ptr<Room> room); //进入房间回调
 	std::shared_ptr<Room> Get(int64_t room_id); //获取房间
-	std::shared_ptr<Room> GetAvailableRoom(); //获取可入房间
+	std::shared_ptr<Room> GetMatchingRoom(Asset::ROOM_TYPE room_type); //获取可入房间
 	bool CheckPassword(int64_t room_id, std::string password); //密码检查
 	void Update(int32_t diff); //心跳
 

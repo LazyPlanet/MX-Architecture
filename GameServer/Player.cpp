@@ -1043,12 +1043,7 @@ int32_t Player::EnterRoom(pb::Message* message)
 					enter_room->set_error_code(Asset::ERROR_SUCCESS);
 					bool success = locate_room->Enter(shared_from_this()); //玩家进入房间
 
-					if (success) 
-					{
-						_stuff.set_room_id(room_id); //防止玩家进入房间后尚未加载场景，掉线
-
-						SetDirty();
-					}
+					if (success) OnEnterSuccess(room_id);
 				}
 			}
 			
@@ -1093,23 +1088,11 @@ int32_t Player::GetLocalRoomID()
 	return _room->GetID();
 }
 
-bool Player::OnEnterRoom(int64_t room_id)
+void Player::OnEnterSuccess(int64_t room_id)
 {
-	/*
-	_room = RoomInstance.Get(room_id);
+	_stuff.set_room_id(room_id); //防止玩家进入房间后尚未加载场景，掉线
 
-	if (!_room) 
-	{
-		DEBUG_ASSERT(false);
-		return false; //非法的房间 
-	}
-
-	_room->OnCreated();
-
-	_room->Enter(shared_from_this()); //玩家进入房间
-	*/
-
-	return true;
+	SetDirty();
 }
 
 bool Player::HandleMessage(const Asset::MsgItem& item)
@@ -1630,12 +1613,13 @@ int32_t Player::CmdLoadScene(pb::Message* message)
 				LOG(ERROR, "玩家:{}加载房间:{}和保存的房间:{}不一致", _player_id, room_id, _stuff.room_id());
 			
 				_stuff.set_room_id(room_id); 
-				_dirty = true;
+						
+				SetDirty();
 			}
 				
 			OnEnterScene(is_reenter); //进入房间//场景回调
 			
-			DEBUG("玩家:{} 加入房间:{}成功.", _player_id, room_id);
+			DEBUG("玩家:{} 进入房间:{}成功.", _player_id, room_id);
 		}
 		break;
 		
@@ -1662,7 +1646,7 @@ void Player::OnEnterScene(bool is_reenter)
 		if (is_reenter) _room->OnReEnter(shared_from_this()); //房间重入
 	}
 
-	DEBUG("玩家:{}进入房间,是否重入:{}", _player_id, is_reenter);
+	DEBUG("玩家:{} 进入房间, 是否重入:{}", _player_id, is_reenter);
 }
 
 int32_t Player::CmdLuckyPlate(pb::Message* message)
