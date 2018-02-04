@@ -62,9 +62,9 @@ void PlayerMatch::DoMatch()
 		for (auto it = _match_list.begin(); it != _match_list.end(); ++it)
 		{
 			auto& player_list = it->second; 
+
+			if (player_list.size()) break; //玩家尚未匹配
 	
-			DEBUG("房间类型:{} 玩家数量:{}", it->first, it->second.size());
-		
 			auto room_type = (Asset::ROOM_TYPE)it->first;
 
 			auto room_ptr = RoomInstance.GetMatchingRoom(room_type);

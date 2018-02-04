@@ -147,13 +147,11 @@ int32_t Player::Logout(pb::Message* message)
 		{
 			SetOffline(); //玩家状态
 
-			//auto room_id = _room->GetID();
-			//ERROR("玩家:{}从房间且牌局内退出游戏:{}", _player_id, room_id); //玩家逃跑
+			ERROR("玩家:{} 从房间且牌局内退出游戏:{},服务器进行托管", _player_id, _room->GetID()); //玩家逃跑
 
-			//_tuoguan_server = true; //服务器托管
+			_tuoguan_server = true; //服务器托管
 
-			/*
-			if (_tuoguan_server && _game->CanPaiOperate(shared_from_this())) //轮到该玩家操作
+			if (HasTuoGuan() && _game->CanPaiOperate(shared_from_this())) //轮到该玩家操作
 			{
 				Asset::PaiElement pai;
 
@@ -174,7 +172,6 @@ int32_t Player::Logout(pb::Message* message)
 
 				CmdPaiOperate(&pai_operation);
 			}
-			*/
 
 			return 2; //不能退出游戏
 		}
@@ -229,21 +226,15 @@ int32_t Player::OnLogout(Asset::KICK_OUT_REASON reason)
 	
 	return 0;
 }
-	
-/*
-void Player::OnCreatePlayer(int64_t player_id)
-{
-	Asset::CreatePlayer create_player;
-	create_player.set_player_id(player_id);
-	SendProtocol(create_player);
-}
 
-int32_t Player::CmdEnterGame(pb::Message* message)
+bool Player::HasTuoGuan()
 {
-	OnEnterGame();
-	return 0;
+	if (!_game || !_room) return false;
+
+	if (_room->IsFriend()) return false; //好友房不托管
+
+	return _tuoguan_server; 
 }
-*/
 	
 int64_t Player::ConsumeRoomCard(Asset::ROOM_CARD_CHANGED_TYPE changed_type, int64_t count)
 {
@@ -2506,7 +2497,7 @@ bool Player::CheckZiMo(const Asset::PaiElement& pai, bool calculate)
 {
 	if (!_room || !_game) return false;
 
-	if (_tuoguan_server) return false;
+	if (HasTuoGuan()) return false;
 
 	return CheckHuPai(pai, true, calculate);
 }
@@ -2820,7 +2811,7 @@ bool Player::CheckChiPai(const Asset::PaiElement& pai)
 {
 	if (!_room || !_game) return false;
 
-	if (_has_ting || _tuoguan_server) return false; //已经听牌，不再提示
+	if (_has_ting || HasTuoGuan()) return false; //已经听牌，不再提示
 
 	if (ShouldDaPai()) return false;
 
@@ -2928,7 +2919,7 @@ bool Player::CheckPengPai(const Asset::PaiElement& pai)
 {
 	if (!_room || !_game) return false;
 
-	if (_has_ting || _tuoguan_server) return false; //已经听牌，不再提示
+	if (_has_ting || HasTuoGuan()) return false; //已经听牌，不再提示
 	
 	if (ShouldDaPai()) return false;
 	
@@ -2980,10 +2971,8 @@ bool Player::CheckGangPai(const Asset::PaiElement& pai, int64_t source_player_id
 {
 	if (!_room || !_game) return false;
 
-	if (_tuoguan_server) return false;
+	if (HasTuoGuan()) return false;
 	
-	//if (ShouldDaPai()) return false;
-
 	auto cards_inhand = _cards_inhand; //玩家手里牌
 	auto cards_outhand = _cards_outhand; //玩家墙外牌
 	auto minggang = _minggang; //明杠
@@ -3061,7 +3050,7 @@ bool Player::CheckGangPai(const Asset::PaiElement& pai, int64_t source_player_id
 
 bool Player::CanTingIfGang(const Asset::PaiElement& pai)
 {
-	if (_tuoguan_server) return false;
+	if (HasTuoGuan()) return false;
 
 	if (!CheckMingPiao(Asset::PAI_OPER_TYPE_GANGPAI)) return false; //明飘检查
 	
@@ -3570,7 +3559,7 @@ bool Player::CheckTingPai(std::vector<Asset::PaiElement>& pais)
 {
 	if (!_room || !_game) return false;
 
-	if (_has_ting || _tuoguan_server) return false; //已经听牌，不再提示
+	if (_has_ting || HasTuoGuan()) return false; //已经听牌，不再提示
 
 	if (!_room->HasAnbao() && !_room->HasBaopai()) return false;
 
@@ -4176,7 +4165,6 @@ int32_t Player::OnFaPai(std::vector<int32_t>& cards)
 		//
 		//可能玩家掉线或者已经逃跑
 		//
-		/*
 		if (HasTuoGuan())
 		{
 			Asset::PaiOperation pai_operation; 
@@ -4186,11 +4174,6 @@ int32_t Player::OnFaPai(std::vector<int32_t>& cards)
 
 			CmdPaiOperate(&pai_operation);
 		}
-		else
-		{
-			NormalCheckAfterFaPai(card);
-		}
-		*/
 	}
 	
 	auto remain_count = _game->GetRemainCount();
@@ -4422,7 +4405,7 @@ void Player::OnGameOver()
 {
 	ClearCards();
 	
-	if (_tuoguan_server) OnLogout(Asset::KICK_OUT_REASON_LOGOUT);
+	if (HasTuoGuan()) OnLogout(Asset::KICK_OUT_REASON_LOGOUT);
 }
 
 int32_t Player::CmdSayHi(pb::Message* message)

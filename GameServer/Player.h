@@ -466,7 +466,7 @@ public:
 	void OnGameOver(); //游戏结束
 
 	//是否//设置服务器托管状态
-	bool HasTuoGuan() { return _tuoguan_server; }
+	bool HasTuoGuan();
 	void SetTuoGuan() { _tuoguan_server = true; }
 
 	bool IsGangOperation(); //上次牌是否杠操作
