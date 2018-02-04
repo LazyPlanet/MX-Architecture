@@ -40,7 +40,7 @@ void PlayerMatch::Join(std::shared_ptr<Player> player, pb::Message* message)
 	
 void PlayerMatch::DoMatch()
 {
-	DEBUG("Start match");
+	DEBUG("匹配房开始匹配...");
 
 	_scheduler.Schedule(std::chrono::seconds(3), [this](TaskContext task) {
 			
@@ -48,9 +48,9 @@ void PlayerMatch::DoMatch()
 		{
 			auto& player_list = it->second; 
 	
-			DEBUG("room_type:{} player_size:{}", it->first, it->second.size());
+			DEBUG("房间类型:{} 玩家数量:{}", it->first, it->second.size());
 		
-			if (player_list.size() < 4) continue;
+			//if (player_list.size() < 4) continue;
 				
 			auto room_id = RoomInstance.AllocRoom();
 			if (room_id <= 0) continue;
@@ -85,7 +85,7 @@ void PlayerMatch::DoMatch()
 				{
 					match_success = false; //理论上不应该出现，TODO：如果该玩家一直进不去，可能会导致后面玩家都进不去，需要处理
 
-					LOG(ERROR, "player_id:{} enter room:{} failed for ret:{}", it->second->GetID(), room_id, ret);
+					LOG(ERROR, "玩家:{} 加入房间:{} 失败，原因:{}", it->second->GetID(), room_id, ret);
 				}
 			}
 
