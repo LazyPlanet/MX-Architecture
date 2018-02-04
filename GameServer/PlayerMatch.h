@@ -21,7 +21,6 @@ class PlayerMatch : public std::enable_shared_from_this<PlayerMatch>
 
 	TaskScheduler _scheduler;
 
-	void OnStart();
 public:
 	static PlayerMatch& Instance()
 	{
@@ -33,6 +32,7 @@ public:
 
 	void Join(std::shared_ptr<Player> player, pb::Message* message);
 	void DoMatch();
+	void OnStart();
 };
 
 #define MatchInstance PlayerMatch::Instance()
