@@ -38,9 +38,24 @@ void PlayerMatch::Join(std::shared_ptr<Player> player, pb::Message* message)
 	}
 }
 	
+void PlayerMatch::OnStart()
+{
+	const auto& messages = AssetInstance.GetMessagesByType(Asset::ASSET_TYPE_ROOM);
+
+	for (const auto& message : messages)
+	{
+		auto room_limit = dynamic_cast<Asset::RoomLimit*>(message);
+		if (!room_limit) return;
+	
+		_options.emplace(room_limit->room_type(), room_limit->room_options());
+	}
+}
+	
 void PlayerMatch::DoMatch()
 {
 	DEBUG("匹配房开始匹配...");
+
+	OnStart(); //开始初始化
 
 	_scheduler.Schedule(std::chrono::seconds(3), [this](TaskContext task) {
 			
@@ -59,20 +74,7 @@ void PlayerMatch::DoMatch()
 			enter_room.mutable_room()->CopyFrom(room_ptr->Get());
 			enter_room.set_enter_type(Asset::EnterRoom_ENTER_TYPE_ENTER_TYPE_ENTER); //进入房间
 
-			const auto& messages = AssetInstance.GetMessagesByType(Asset::ASSET_TYPE_ROOM);
-
-			auto room_it = std::find_if(messages.begin(), messages.end(), [room_type](pb::Message* message){
-				 auto room_limit = dynamic_cast<Asset::RoomLimit*>(message);
-				 if (!room_limit) return false;
-
-				 return room_type == room_limit->room_type();
-			 });
-			if (room_it == messages.end()) return;
-
-			auto room_limit = dynamic_cast<Asset::RoomLimit*>(*room_it);
-			if (!room_limit) return;
-
-			room_ptr->SetOptions(room_limit->room_options()); //玩法
+			room_ptr->SetOptions(_options[room_type]); //玩法
 
 			//
 			//检查是否满足创建房间条件
