@@ -641,9 +641,9 @@ void Room::AddHupai(int64_t player_id)
 
 void Room::OnGameOver(int64_t player_id)
 {
-	//std::lock_guard<std::mutex> lock(_mutex);
-
 	if (_game) _game.reset();
+	
+	if (!IsFriend()) return; //非好友房没有总结算
 	
 	AddHupai(player_id); //记录
 
