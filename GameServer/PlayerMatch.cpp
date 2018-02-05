@@ -57,7 +57,7 @@ void PlayerMatch::DoMatch()
 
 	OnStart(); //开始初始化
 
-	_scheduler.Schedule(std::chrono::seconds(3), [this](TaskContext task) {
+	_scheduler.Schedule(std::chrono::milliseconds(500), [this](TaskContext task) {
 			
 		for (auto it = _match_list.begin(); it != _match_list.end(); ++it)
 		{
@@ -107,7 +107,7 @@ void PlayerMatch::DoMatch()
 			}
 		}
 		
-		task.Repeat(std::chrono::milliseconds(300)); //持续匹配
+		task.Repeat(std::chrono::milliseconds(500)); //持续匹配
 	});
 }
 

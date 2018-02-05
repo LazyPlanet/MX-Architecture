@@ -163,17 +163,15 @@ class RoomManager
 private:
 	std::mutex _match_mutex;
 	std::mutex _room_lock;
+
 	//好友房//匹配房
 	std::unordered_map<int64_t, std::shared_ptr<Room>> _rooms;
-	//要输入密码，可入的房间
-	//std::unordered_map<int64_t, std::shared_ptr<Room>> _password_rooms; 
-	//不要输入密码，可入的房间
-	std::unordered_map<int64_t, std::shared_ptr<Room>> _no_password_rooms;
-
-	//匹配成功房间
-	std::unordered_map<int64_t, std::shared_ptr<Room>> _matched_rooms;
+	//
 	//匹配房间
-	std::unordered_map<int64_t/*房间类型*/, std::shared_ptr<Room>> _matching_rooms;
+	//
+	//匹配的原理：如果有在匹配的房间，优先选择未满的房间；如果都是已满的房间，则创建一个；
+	//
+	std::unordered_map<int64_t/*房间类型*/, std::unordered_map<int64_t/*房间ID*/, std::shared_ptr<Room>>> _matching_rooms;
 	
 	int32_t _heart_count = 0; //心跳
 	int32_t _server_id = 0; //服务器ID

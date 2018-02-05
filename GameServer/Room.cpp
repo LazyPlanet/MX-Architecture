@@ -1138,23 +1138,17 @@ std::shared_ptr<Room> RoomManager::GetMatchingRoom(Asset::ROOM_TYPE room_type)
 {
 	std::lock_guard<std::mutex> lock(_match_mutex);
 
-	do 
+	auto& rooms = _matching_rooms[room_type];
+
+	for (auto it = rooms.begin(); it != rooms.end(); ++it)
 	{
-		auto it = _matching_rooms.find(room_type);
-		if (it == _matching_rooms.end()) break;
+		if (it->second->IsFull()) continue;
 	
-		if (it->second->IsFull()) 
-		{
-			_matching_rooms.erase(it); //删除匹配
-			break;
-		}
-
-		return it->second;
-
-	} while (false);
+		return it->second; //尚未满房间
+	}
 			
 	auto room_id = RoomInstance.AllocRoom();
-	if (room_id <= 0) return nullptr;
+	if (room_id <= 0) return nullptr; //创建
 
 	Asset::Room room;
 	room.set_room_id(room_id);
@@ -1166,7 +1160,7 @@ std::shared_ptr<Room> RoomManager::GetMatchingRoom(Asset::ROOM_TYPE room_type)
 
 	OnCreateRoom(room_ptr);
 
-	_matching_rooms.emplace(room_type, room_ptr);
+	rooms.emplace(room_id, room_ptr);
 
 	return room_ptr;
 }
