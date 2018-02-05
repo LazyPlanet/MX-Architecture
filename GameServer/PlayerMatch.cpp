@@ -98,7 +98,7 @@ void PlayerMatch::DoMatch()
 				}
 				else
 				{
-					ERROR("玩家:{} 加入房间{} 失败，原因:{}", it->first, enter_room.ShortDebugString(), enter_status);
+					ERROR("玩家:{} 加入房间:{} 失败，原因:{}", it->first, enter_room.ShortDebugString(), enter_status);
 
 					++it; //持续匹配
 				}
