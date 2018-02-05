@@ -63,9 +63,9 @@ void PlayerMatch::DoMatch()
 		{
 			auto& player_list = it->second; 
 
-			if (player_list.size()) break; //玩家尚未匹配
+			if (player_list.size() == 0) break; //尚未匹配
 	
-			auto room_type = (Asset::ROOM_TYPE)it->first;
+			auto room_type = (Asset::ROOM_TYPE)it->first; //房间类型
 
 			auto room_ptr = RoomInstance.GetMatchingRoom(room_type);
 			if (!room_ptr) continue;
