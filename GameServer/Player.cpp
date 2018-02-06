@@ -755,6 +755,8 @@ int32_t Player::CmdPaiOperate(pb::Message* message)
 			*/
 
 			--_oper_count;
+			
+			if (!CheckFengGangPai()) return 13;
 
 			OnGangFengPai();
 		}
@@ -770,6 +772,8 @@ int32_t Player::CmdPaiOperate(pb::Message* message)
 			*/
 			
 			--_oper_count;
+	
+			if (!CheckJianGangPai()) return 14;
 			
 			OnGangJianPai();
 		}
@@ -814,6 +818,7 @@ int32_t Player::CmdPaiOperate(pb::Message* message)
 
 		case Asset::PAI_OPER_TYPE_CANCEL:
 		{
+			WARN("玩家:{} 放弃操作:{}", _player_id, _game->GetOperCache().ShortDebugString());
 			return 0;
 		}
 		break;
@@ -3976,15 +3981,15 @@ int32_t Player::OnFaPai(std::vector<int32_t>& cards)
 	{
 		_cards_inhand = {
 			{ 1, {2, 2, 7, 7, 7} },
-			{ 2, {6, 6, 6} },
+			{ 2, {2, 2, 2} },
 			{ 3, {3, 3, 4} },
-			//{ 5, { 1, 2, 3 } },
+			{ 5, {1, 2} },
 		};
 		
 		_cards_outhand = {
 			//{ 1, { 7, 7, 7, 6, 7, 8} },
 			//{ 2, { 3, 4, 5 } },
-			{ 4, { 3, 3, 3 } },
+			//{ 4, { 3, 3, 3 } },
 		};
 
 		/*
@@ -3995,13 +4000,13 @@ int32_t Player::OnFaPai(std::vector<int32_t>& cards)
 		_minggang.push_back(gang);
 		*/
 	}
-	else if (true && _player_id == 262687 && _cards_inhand.size() == 0)
+	else if (false && _player_id == 262553 && _cards_inhand.size() == 0 && _game->GetID() == 1)
 	{
 		_cards_inhand = {
-			{ 1, {1, 1, 1, 1, 2, 2, 3, 3, 3} },
-			{ 2, {1, 1} },
-			{ 3, {2, 2} },
-			//{ 5, {1, 1} },
+			{ 1, {5, 7} },
+			{ 2, {2, 2, 3, 5, 5, 7} },
+			//{ 3, {2, 2} },
+			{ 5, {1, 1, 2, 2, 3, 3} },
 		};
 		
 		_cards_outhand = {
@@ -4383,6 +4388,7 @@ void Player::ClearCards()
 	_cards_pool.clear(); //牌池
 	_cards_hu.clear(); //胡牌
 	_hu_result.clear(); //胡牌数据
+	_xf_gang.clear(); //旋风杠
  
  	_minggang.clear(); //清理杠牌
 	_angang.clear(); //清理杠牌

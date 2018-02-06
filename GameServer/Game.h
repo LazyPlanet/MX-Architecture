@@ -73,6 +73,7 @@ public:
 	void OnOperateTimeOut();
 	void ClearOperation();
 	void SetPaiOperation(const Asset::PaiOperationCache& oper) { _oper_cache = oper; } //牌操作限制
+	const Asset::PaiOperationCache& GetOperCache() { return _oper_cache; }
 	void SetPaiOperation(int64_t player_id, int64_t source_player_id, Asset::PaiElement pai, Asset::PAI_OPER_TYPE oper_type = Asset::PAI_OPER_TYPE_HUPAI);
 	void SetZiMoCache(std::shared_ptr<Player> player, Asset::PaiElement pai);
 
