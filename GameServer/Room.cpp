@@ -763,6 +763,8 @@ void Room::OnRemove()
 {
 	std::lock_guard<std::mutex> lock(_mutex);
 
+	WARN("房间:{} 删除成功", _stuff.room_id());
+
 	for (auto& player : _players)
 	{
 		if (!player) continue;
@@ -1058,6 +1060,8 @@ void Room::ClearDisMiss()
 	
 bool Room::IsExpired()
 {
+	if (_gmt_opened) return false; //代开房不解散
+
 	auto curr_time = CommonTimerInstance.GetTime();
 	return _expired_time < curr_time;
 }
@@ -1085,8 +1089,12 @@ std::shared_ptr<Room> RoomManager::Get(int64_t room_id)
 	std::lock_guard<std::mutex> lock(_room_lock);
 
 	auto it = _rooms.find(room_id);
-	if (it == _rooms.end()) return nullptr;
-
+	if (it == _rooms.end()) 
+	{
+		ERROR("获取房间:{} 数据失败：未找到房间", room_id);
+		return nullptr;
+	}
+	
 	return it->second;
 }
 	
@@ -1159,7 +1167,6 @@ std::shared_ptr<Room> RoomManager::GetMatchingRoom(Asset::ROOM_TYPE room_type)
 	room_ptr->OnCreated();
 
 	OnCreateRoom(room_ptr);
-
 	rooms.emplace(room_id, room_ptr);
 
 	return room_ptr;
@@ -1182,7 +1189,7 @@ void RoomManager::Update(int32_t diff)
 		{
 			it->second->Update();
 
-			if ((it->second->IsExpired() && it->second->IsEmpty()) || it->second->HasDisMiss() || it->second->HasBeenOver())
+			if ((it->second->IsFriend() && it->second->IsExpired() && it->second->IsEmpty()) || it->second->HasDisMiss() || it->second->HasBeenOver())
 			{
 				it->second->OnRemove();
 				it = _rooms.erase(it); //删除房间
