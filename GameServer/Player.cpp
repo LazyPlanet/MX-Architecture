@@ -1093,22 +1093,67 @@ void Player::OnEnterSuccess(int64_t room_id)
 
 bool Player::HandleMessage(const Asset::MsgItem& item)
 {
-	switch (item.type())
+	DEBUG("玩家:{} 处理消息:{}", _player_id, item.ShortDebugString());
+
+	pb::Message* msg = ProtocolInstance.GetMessage(item.type_t());
+	if (!msg) return false;
+
+	auto message = msg->New();
+	auto result = message->ParseFromString(item.content());
+
+	if (!result) return false;      //非法协议
+
+	switch (item.type_t())
 	{
+		case Asset::META_TYPE_SHARE_PAI_OPERATION:
+		{
+			CmdPaiOperate(message);
+		}
+		break;
+
+		default:
+		{
+			WARN("玩家:{} 尚未消息:{}处理回调", _player_id, item.ShortDebugString());
+		}
+		break;
 	}
+		
+	delete message; //防止内存泄漏
+	message = nullptr;
 
 	return true;
 }
-
-void Player::SendMessage(Asset::MsgItem& item)
+	
+void Player::SendMessage(const Asset::MsgItem& item)
 {
 	DispatcherInstance.SendMessage(item);
 }	
+	
+void Player::SendMessage(int64_t receiver, const pb::Message* message)
+{
+	if (!message) return;
+	SendMessage(receiver, *message);
+}
+	
+void Player::SendMessage(int64_t receiver, const pb::Message& message)
+{
+	const pb::FieldDescriptor* field = message.GetDescriptor()->FindFieldByName("type_t");
+	if (!field) return;
+	
+	int type_t = field->default_value_enum()->number();
+	if (!Asset::META_TYPE_IsValid(type_t)) return;	//如果不合法，不检查会宕线
+	
+	Asset::MsgItem msg;
+	msg.set_receiver(receiver);
+	msg.set_type_t((Asset::META_TYPE)type_t);
+	msg.set_content(message.SerializeAsString());
+
+	SendMessage(msg);
+}
 
 void Player::SendProtocol(const pb::Message* message)
 {
 	if (!message) return;
-
 	SendProtocol(*message);
 }
 
@@ -1116,7 +1161,7 @@ void Player::SendProtocol(const pb::Message& message)
 {
 	if (!g_center_session) 
 	{
-		LOG(ERROR, "玩家{}尚未建立连接，目前所在服务器:{}", _player_id, _stuff.server_id());
+		LOG(ERROR, "玩家:{}尚未建立连接，目前所在服务器:{}", _player_id, _stuff.server_id());
 		return; //尚未建立网络连接
 	}
 
@@ -1327,7 +1372,7 @@ bool Player::PushBackItem(Asset::INVENTORY_TYPE inventory_type, Item* item)
 void Player::BroadCastCommonProp(Asset::MSG_TYPE type)       
 {
 	Asset::MsgItem item; //消息数据
-	item.set_type(type);
+	item.set_type_t(type);
 	item.set_sender(_player_id);
 	this->BroadCast(item); //通知给房间玩家
 }
@@ -4177,7 +4222,8 @@ int32_t Player::OnFaPai(std::vector<int32_t>& cards)
 			pai_operation.set_position(GetPosition());
 			pai_operation.mutable_pai()->CopyFrom(card);
 
-			CmdPaiOperate(&pai_operation);
+			//CmdPaiOperate(&pai_operation);
+			SendMessage(_player_id, pai_operation);
 		}
 	}
 	

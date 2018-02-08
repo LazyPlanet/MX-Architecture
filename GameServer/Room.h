@@ -114,7 +114,7 @@ public:
 	int32_t GetGamesCount() { return _games.size(); }
 	int32_t GetOpenRands() { return _stuff.options().open_rands(); }
 	bool HasStarted() { return _games.size() > 0; }
-	bool HasBeenOver() { return !_game && GetRemainCount() <= 0; }
+	bool HasBeenOver();
 	std::shared_ptr<Game> GetGame() { return _game; }
 
 	void OnPlayerOperate(std::shared_ptr<Player> player, pb::Message* message);

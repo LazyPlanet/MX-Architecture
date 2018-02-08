@@ -22,7 +22,7 @@ enum MSG_TYPE {
 //
 message MsgItem {
 	optional int64 message_id = 1; //消息ID
-	optional int32 type = 2; //消息类型
+	optional int32 type_t = 2; //消息类型
 	optional int32 priority = 3 [ default = 10 ]; //优先级，值0优先级最大
 	optional int64 sender = 4; //发送者
 	optional int64 receiver = 5; //接收者

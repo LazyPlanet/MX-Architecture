@@ -118,7 +118,9 @@ public:
 	virtual int32_t GetGender() { return _stuff.common_prop().gender(); }
 	//消息处理
 	virtual bool HandleMessage(const Asset::MsgItem& item); 
-	virtual void SendMessage(Asset::MsgItem& item);
+	virtual void SendMessage(const Asset::MsgItem& item);
+	virtual void SendMessage(int64_t receiver, const pb::Message& message);
+	virtual void SendMessage(int64_t receiver, const pb::Message* message);
 	virtual void BroadCastCommonProp(Asset::MSG_TYPE type); //向房间里的玩家发送公共数据       
 	//协议处理(Protocol Buffer)
 	virtual bool HandleProtocol(int32_t type_t, pb::Message* message);

@@ -19,6 +19,7 @@
 #include "MXLog.h"
 #include "Config.h"
 #include "CenterSession.h"
+#include "MessageDispatcher.h"
 
 const int const_world_sleep = 50;
 
@@ -105,6 +106,8 @@ int main(int argc, const char* argv[])
 		//游戏内相关逻辑均在此初始化
 		//
 		if (!WorldInstance.Load()) return 1;
+
+		DispatcherInstance.Dispatcher(); //消息分发
 
 		//网络初始化
 		_io_service_work = std::make_shared<boost::asio::io_service::work>(_io_service);

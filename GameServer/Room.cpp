@@ -417,6 +417,13 @@ int32_t Room::GetRemainCount()
 { 
 	return _stuff.options().open_rands() - _games.size(); 
 }
+	
+bool Room::HasBeenOver() 
+{ 
+	if (!IsFriend()) return false;
+
+	return !_game && GetRemainCount() <= 0; 
+}
 
 bool Room::HasLaw(Asset::ROOM_EXTEND_TYPE type)
 {
