@@ -107,8 +107,6 @@ int main(int argc, const char* argv[])
 		//
 		if (!WorldInstance.Load()) return 1;
 
-		DispatcherInstance.Dispatcher(); //消息分发
-
 		//网络初始化
 		_io_service_work = std::make_shared<boost::asio::io_service::work>(_io_service);
 
@@ -144,6 +142,8 @@ int main(int argc, const char* argv[])
 		boost::asio::ip::tcp::endpoint center_endpoint(boost::asio::ip::address::from_string(center_server_address), center_server_port);
 		g_center_session = std::make_shared<CenterSession>(_io_service, center_endpoint);
 		g_center_session->AsyncConnect();
+		
+		DispatcherInstance.StartWork(); //消息处理机制
 
 		//世界循环
 		WorldUpdateLoop();
