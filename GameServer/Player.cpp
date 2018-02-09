@@ -1056,6 +1056,8 @@ int32_t Player::EnterRoom(pb::Message* message)
 		case Asset::ROOM_TYPE_GAOSHOU:
 		case Asset::ROOM_TYPE_DASHI:
 		{
+			if (_room || _game) return 0; //已经在房间内
+
 			auto result = check();
 
 			if (result != Asset::ERROR_SUCCESS) //不允许进入
