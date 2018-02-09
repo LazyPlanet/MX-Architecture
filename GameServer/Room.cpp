@@ -324,7 +324,9 @@ void Room::OnPlayerOperate(std::shared_ptr<Player> player, pb::Message* message)
 
 		case Asset::GAME_OPER_TYPE_LEAVE: //离开游戏
 		{
-			if (!HasDisMiss() && HasStarted() && !HasBeenOver()) return; //没有开局，且没有对战完，则不允许退出
+			if (IsFriend() && !HasDisMiss() && HasStarted() && !HasBeenOver()) return; //好友房没有开局，且没有对战完，则不允许退出
+			
+			if (IsMatch() && IsGaming()) return; //非好友房结束可以直接退出
 			//
 			//如果房主离开房间，且此时尚未开局，则直接解散
 			//
