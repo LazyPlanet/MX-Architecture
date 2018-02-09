@@ -1187,10 +1187,8 @@ void RoomManager::Update(int32_t diff)
 	
 	std::lock_guard<std::mutex> lock(_room_lock);
 
-	if (_heart_count % 1200 == 0) //1分钟
-	{
-		DEBUG("服务器:{} 进行房间数量:{}", _server_id, _rooms.size());
-	}
+	if (_heart_count % 1200 == 0) { DEBUG("服务器:{} 进行房间数量:{}", _server_id, _rooms.size()); } //1分钟
+	if (_heart_count % 12000 == 0) UpdateMatching(); //10分钟
 
 	if (_heart_count % 100 == 0) //5秒
 	{
@@ -1209,6 +1207,46 @@ void RoomManager::Update(int32_t diff)
 			}
 		}
 	}
+}
+
+void RoomManager::UpdateMatching()
+{
+	std::lock_guard<std::mutex> lock(_match_mutex);
+
+	Asset::MatchStatistics stats;
+	RedisInstance.GetMatching(stats);
+
+	Asset::MatchStatistics_MatchingRoom* match_stats = nullptr;
+
+	if (stats.server_list().size() == 0)
+	{
+		match_stats = stats.mutable_server_list()->Add();
+		match_stats->set_server_id(_server_id);
+	}
+	else
+	{
+		for (int32_t i = 0; i < stats.server_list().size(); ++i)
+		{
+			if (_server_id == stats.server_list(i).server_id())	
+			{
+				match_stats = stats.mutable_server_list(i);
+				break;
+			}
+		}
+	}
+
+	if (!match_stats) return;
+
+	match_stats->mutable_room_list()->Clear();
+
+	for (auto room : _matching_rooms)
+	{
+		auto room_matching = match_stats->mutable_room_list()->Add();
+		room_matching->set_room_type((Asset::ROOM_TYPE)room.first);
+		room_matching->set_player_count(room.second.size());
+	}
+
+	RedisInstance.SaveMatching(stats); //存盘
 }
 	
 void RoomManager::Remove(int64_t room_id)

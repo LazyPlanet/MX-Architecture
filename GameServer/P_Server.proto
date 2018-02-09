@@ -1,3 +1,5 @@
+import "P_Asset.proto";
+
 package Adoter.Asset;
 
 /////////////////////////////////////////////////////
@@ -80,4 +82,17 @@ message WhiteList {
 message BlackList {
 	optional bool open = 1;
 	repeated bytes ip_address = 2;
+}
+	
+//匹配房统计数据
+message MatchStatistics {
+	message MatchingRoom {
+		optional int64 server_id = 1; //服务器ID
+		message MatchingElement {
+			optional ROOM_TYPE room_type = 2; //匹配房间类型	
+			optional int32 player_count = 3; //匹配玩家
+		}
+		repeated MatchingElement room_list = 2;
+	}
+	repeated MatchingRoom server_list = 1; //匹配房间信息
 }

@@ -80,22 +80,11 @@ public:
 	{
 		if (!Connect()) return false;
 
-		//auto has_auth = _client.auth(_password);
 		auto get = _client.get(key);
 		
-		if (async) {
-			_client.commit(); 
-		} else {
-			_client.sync_commit(std::chrono::milliseconds(100)); 
-		}
+		if (async) { _client.commit(); } 
+		else { _client.sync_commit(std::chrono::milliseconds(100)); }
 		
-		/*
-		if (has_auth.get().ko()) {
-			LOG(ERROR, "数据库获取:{}数据失败，原因:权限不足", key);
-			return false;
-		}
-		*/
-
 		auto reply = get.get();
 		if (!reply.is_string()) {
 			LOG(ERROR, "数据库获取:{}数据失败，原因:没有数据", key);
@@ -407,6 +396,22 @@ public:
 	bool SaveRoomHistory(int64_t room_id, const Asset::RoomHistory& history)
 	{
 		auto success = Save("room_history:" + std::to_string(room_id), history);
+		if (!success) return false;
+
+		return true;
+	}
+	
+	bool GetMatching(Asset::MatchStatistics& stats)
+	{
+		auto success = Get("match_stats:", stats);
+		if (!success) return false;
+
+		return true;
+	}
+	
+	bool SaveMatching(const Asset::MatchStatistics& stats)
+	{
+		auto success = Save("match_stats:", stats);
 		if (!success) return false;
 
 		return true;

@@ -173,7 +173,7 @@ private:
 	//
 	//匹配的原理：如果有在匹配的房间，优先选择未满的房间；如果都是已满的房间，则创建一个；
 	//
-	std::unordered_map<int64_t/*房间类型*/, std::unordered_map<int64_t/*房间ID*/, std::shared_ptr<Room>>> _matching_rooms;
+	std::unordered_map<int32_t/*房间类型*/, std::unordered_map<int64_t/*房间ID*/, std::shared_ptr<Room>>> _matching_rooms;
 	
 	int32_t _heart_count = 0; //心跳
 	int32_t _server_id = 0; //服务器ID
@@ -193,6 +193,7 @@ public:
 	std::shared_ptr<Room> GetMatchingRoom(Asset::ROOM_TYPE room_type); //获取可入房间
 	bool CheckPassword(int64_t room_id, std::string password); //密码检查
 	void Update(int32_t diff); //心跳
+	void UpdateMatching(); //匹配房数据
 
 	void Remove(int64_t room_id);
 };

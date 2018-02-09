@@ -47,6 +47,7 @@ Player::Player()
 	AddHandler(Asset::META_TYPE_SHARE_ROOM_HISTORY, std::bind(&Player::CmdGetBattleHistory, this, std::placeholders::_1));
 	AddHandler(Asset::META_TYPE_SHARE_RECHARGE, std::bind(&Player::CmdRecharge, this, std::placeholders::_1));
 	AddHandler(Asset::META_TYPE_SHARE_PLAY_BACK, std::bind(&Player::CmdPlayBack, this, std::placeholders::_1));
+	AddHandler(Asset::META_TYPE_SHARE_PLAY_BACK, std::bind(&Player::CmdGetMatchStatistics, this, std::placeholders::_1));
 
 	AddHandler(Asset::META_TYPE_C2S_GET_REWARD, std::bind(&Player::CmdGetReward, this, std::placeholders::_1));
 }
@@ -968,6 +969,40 @@ int32_t Player::CmdPlayBack(pb::Message* message)
 
 	SendProtocol(playback);
 	
+	return 0;
+}
+
+int32_t Player::CmdGetMatchStatistics(pb::Message* message)
+{
+	auto match_stats = dynamic_cast<Asset::MatchStats*>(message);
+	if (!match_stats) return 1;
+
+	std::unordered_map<int32_t, int32_t> room_list;
+	
+	Asset::MatchStatistics stats;
+	RedisInstance.GetMatching(stats);
+
+	for (const auto& server_element : stats.server_list())
+	{
+		//auto server_id = server_element.server_id();
+		for (const auto& room_element : server_element.room_list())
+		{
+			auto room_type = room_element.room_type();
+			auto player_count = room_element.player_count();
+
+			room_list[room_type] = room_list[room_type] + player_count;
+		}
+	}
+
+	for (auto room_match : room_list)
+	{
+		auto room = match_stats->mutable_room_list()->Add();
+		room->set_room_type((Asset::ROOM_TYPE)room_match.first);
+		room->set_player_count(room_match.second);
+	}
+
+	SendProtocol(match_stats);
+
 	return 0;
 }
 	
