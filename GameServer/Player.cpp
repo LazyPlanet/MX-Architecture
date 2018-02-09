@@ -1564,6 +1564,8 @@ int32_t Player::CmdGetRoomData(pb::Message* message)
 		if (!room)
 		{
 			AlertMessage(Asset::ERROR_ROOM_QUERY_NOT_FORBID);
+			
+			OnLogout(Asset::KICK_OUT_REASON_LOGOUT); //查询之后退出，否则会残留在此服务器
 			return 2;
 		}
 
