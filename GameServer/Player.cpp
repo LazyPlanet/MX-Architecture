@@ -1095,8 +1095,6 @@ void Player::OnEnterSuccess(int64_t room_id)
 
 bool Player::HandleMessage(const Asset::MsgItem& item)
 {
-	DEBUG("玩家:{} 处理消息:{}", _player_id, item.ShortDebugString());
-
 	pb::Message* msg = ProtocolInstance.GetMessage(item.type_t());
 	if (!msg) return false;
 
@@ -1104,6 +1102,8 @@ bool Player::HandleMessage(const Asset::MsgItem& item)
 	auto result = message->ParseFromString(item.content());
 
 	if (!result) return false;      //非法协议
+	
+	DEBUG("玩家:{} 处理消息:{}", _player_id, message->ShortDebugString());
 
 	switch (item.type_t())
 	{
