@@ -568,6 +568,8 @@ int32_t Player::CmdGameOperate(pb::Message* message)
 				OnLeaveRoom(); //防止玩家不在房间内进行解散操作,出现这种情况原因是C<->S状态不一致
 				return 0;
 			}
+
+			if (_room && _room->IsMatch()) return 5; //匹配房不允许解散
 		}
 		break;
 
