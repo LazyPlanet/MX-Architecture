@@ -6,8 +6,6 @@
 #include <memory>
 #include <chrono>
 
-#include "P_Header.h"
-
 namespace Adoter
 {
 
@@ -36,19 +34,21 @@ public:
 		_queue.emplace(item);
 	}
 	
-	const T& Peek()
+	const T Peek()
 	{
 		std::lock_guard<std::mutex> lock(_mutex);
 		return _queue.top();
 	}
 	
-	const T& GetNext()
+	const bool GetNext(T& item)
 	{
 		std::lock_guard<std::mutex> lock(_mutex);
-		const T& item = _queue.top();	
-		
+		if (_queue.empty()) return false;
+
+		item = _queue.top();	
 		_queue.pop();
-		return item;
+
+		return true; 
 	}
 	
 	void Pop()
