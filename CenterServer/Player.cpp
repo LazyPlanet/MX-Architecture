@@ -996,9 +996,11 @@ int32_t Player::CmdGetMatchStatistics(pb::Message* message)
 
 	for (auto room_match : room_list)
 	{
+		auto random_count = CommonUtil::Random(1, g_const->player_matching_random_count());
+
 		auto room = match_stats->mutable_room_list()->Add();
 		room->set_room_type((Asset::ROOM_TYPE)room_match.first);
-		room->set_player_count(room_match.second);
+		room->set_player_count(room_match.second + g_const->player_matching_base_count() + random_count);
 	}
 
 	SendProtocol(match_stats);
