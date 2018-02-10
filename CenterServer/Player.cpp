@@ -921,43 +921,7 @@ int32_t Player::CmdPlayBack(pb::Message* message)
 	auto play_back = dynamic_cast<const Asset::PlayBack*>(message);
 	if (!play_back) return 1;
 	
-	/*
-	cpp_redis::future_client client;
-	client.connect(ConfigInstance.GetString("Redis_ServerIP", "127.0.0.1"), ConfigInstance.GetInt("Redis_ServerPort", 6379));
-	if (!client.is_connected()) 
-	{
-		AlertMessage(Asset::ERROR_ROOM_PLAYBACK_NO_RECORD, Asset::ERROR_TYPE_NORMAL, Asset::ERROR_SHOW_TYPE_MESSAGE_BOX);
-		return 5;
-	}
-	
-	auto has_auth = client.auth(ConfigInstance.GetString("Redis_Password", "!QAZ%TGB&UJM9ol."));
-	if (has_auth.get().ko()) 
-	{
-		AlertMessage(Asset::ERROR_ROOM_PLAYBACK_NO_RECORD, Asset::ERROR_TYPE_NORMAL, Asset::ERROR_SHOW_TYPE_MESSAGE_BOX);
-		return 2;
-	}
-	*/
-
 	std::string key = "playback:" + std::to_string(play_back->room_id()) + "_" + std::to_string(play_back->game_index());
-	/*
-	auto get = client.get(key);
-	cpp_redis::reply reply = get.get();
-	client.commit();
-
-	if (!reply.is_string()) 
-	{
-		AlertMessage(Asset::ERROR_ROOM_PLAYBACK_NO_RECORD, Asset::ERROR_TYPE_NORMAL, Asset::ERROR_SHOW_TYPE_MESSAGE_BOX);
-		return 3;
-	}
-		
-	Asset::PlayBack playback;
-	auto success = playback.ParseFromString(reply.as_string());
-	if (!success) 
-	{
-		AlertMessage(Asset::ERROR_ROOM_PLAYBACK_NO_RECORD, Asset::ERROR_TYPE_NORMAL, Asset::ERROR_SHOW_TYPE_MESSAGE_BOX);
-		return 4;
-	}
-	*/
 	
 	Asset::PlayBack playback;
 	auto has_record = RedisInstance.Get(key, playback);
