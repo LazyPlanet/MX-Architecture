@@ -197,6 +197,12 @@ public:
 	bool IsCommonLimit(int64_t global_id);
 	bool CommonLimitUpdate();
 	void SyncCommonLimit();
+	//冷却
+	const Asset::PlayerCoolDown& GetCoolDown() { return _stuff.cool_down(); }
+	Asset::PlayerCoolDown* GetMutableCoolDown() {	return _stuff.mutable_cool_down(); }
+	
+	bool AddCoolDown(int64_t global_id);
+	bool IsCoolDown(int64_t global_id);
 	//通用奖励
 	Asset::ERROR_CODE DeliverReward(int64_t global_id);
 	void SyncCommonReward(int64_t common_reward_id, int32_t error_code);

@@ -58,6 +58,8 @@ void PlayerMatch::DoMatch()
 	OnStart(); //开始初始化
 
 	_scheduler.Schedule(std::chrono::milliseconds(500), [this](TaskContext task) {
+
+		DEBUG("匹配中,持续匹配...");
 			
 		for (auto it = _match_list.begin(); it != _match_list.end(); ++it)
 		{
@@ -83,6 +85,8 @@ void PlayerMatch::DoMatch()
 			{
 				auto player = it->second;
 				if (!player) continue;
+
+				DEBUG("玩家:{} 匹配成功,进入房间", it->first);
 
 				auto enter_status = room_ptr->TryEnter(player); //玩家尝试进入房间
 				enter_room.set_error_code(enter_status); 

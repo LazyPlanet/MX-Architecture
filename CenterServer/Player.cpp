@@ -13,6 +13,7 @@
 #include "PlayerName.h"
 #include "PlayerCommonReward.h"
 #include "PlayerCommonLimit.h"
+#include "PlayerCoolDown.h"
 
 #define MAX_PLAYER_COUNT 4
 
@@ -577,16 +578,14 @@ int32_t Player::DefaultMethod(pb::Message* message)
 	if (!message) return 0;
 
 	const pb::FieldDescriptor* field = message->GetDescriptor()->FindFieldByName("type_t");
-	if (!field) 
-	{
-		std::cout << __func__ << ":Could not found type_t of received message." << std::endl;
-		return 1;
-	}
+	if (!field) return 1;
+
 	const pb::EnumValueDescriptor* enum_value = message->GetReflection()->GetEnum(*message, field);
 	if (!enum_value) return 2;
 
 	const std::string& enum_name = enum_value->name();
-	std::cout << __func__ << ":Could not found call back, message type is: " << enum_name.c_str() << std::endl;
+	ERROR("尚未找到玩家:{} 处理协议:{}", _player_id, enum_name);
+
 	return 0;
 }
 
@@ -682,6 +681,18 @@ bool Player::CommonLimitUpdate()
 	if (updated) SyncCommonLimit();
 
 	return updated;
+}
+	
+bool Player::AddCoolDown(int64_t global_id)
+{
+	if (global_id <= 0) return false;
+	return CoolDownInstance.AddCoolDown(shared_from_this(), global_id);
+}
+
+bool Player::IsCoolDown(int64_t global_id)
+{
+	if (global_id <= 0) return false;
+	return CoolDownInstance.IsCoolDown(shared_from_this(), global_id);
 }
 
 void Player::SendPlayer()

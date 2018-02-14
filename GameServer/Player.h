@@ -142,6 +142,13 @@ public:
 	virtual int32_t CmdEnterRoom(pb::Message* message);
 	virtual int32_t EnterRoom(pb::Message* message);
 	virtual void OnEnterSuccess(int64_t room_id = 0); //成功回调
+
+	bool HasMatching(Asset::ROOM_TYPE room_type) { 
+		if (_stuff.matching_room_type() == room_type) return false; 
+		return _stuff.matching_room_type() == Asset::ROOM_TYPE_XINSHOU || _stuff.matching_room_type() == Asset::ROOM_TYPE_GAOSHOU || _stuff.matching_room_type() == Asset::ROOM_TYPE_DASHI; }
+	void SetMatchingRoom(Asset::ROOM_TYPE room_type) { _stuff.set_matching_room_type(room_type); }
+	void ClearMatching() { _stuff.clear_matching_room_type(); }
+
 	//玩家登录
 	virtual int32_t OnLogin();
 	//玩家登出

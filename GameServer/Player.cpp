@@ -1056,7 +1056,13 @@ int32_t Player::EnterRoom(pb::Message* message)
 		case Asset::ROOM_TYPE_GAOSHOU:
 		case Asset::ROOM_TYPE_DASHI:
 		{
-			if (_room || _game) return 0; //已经在房间内
+			if (_room || _game) return 1; //已经在房间内
+
+			if (HasMatching(room_type)) 
+			{
+				ERROR("玩家:{}已经匹配中,历史匹配房间类型:{},本次匹配房间类型:{} 无法再次匹配.", _player_id, _stuff.matching_room_type(), room_type);
+				return 2; //匹配中,防止多次点击匹配
+			}
 
 			auto result = check();
 
@@ -1065,6 +1071,10 @@ int32_t Player::EnterRoom(pb::Message* message)
 				AlertMessage(result);
 				return result;
 			}
+
+			SetMatchingRoom(room_type);
+
+			WARN("玩家:{}进入匹配, 匹配数据:{}", _player_id, message->ShortDebugString());
 
 			//进入匹配
 			MatchInstance.Join(shared_from_this(), message);
@@ -1090,8 +1100,9 @@ int32_t Player::GetLocalRoomID()
 
 void Player::OnEnterSuccess(int64_t room_id)
 {
-	_stuff.set_room_id(room_id); //防止玩家进入房间后尚未加载场景，掉线
-
+	_stuff.set_room_id(room_id); //避免玩家进入房间后尚未加载场景，掉线
+	_stuff.clear_matching_room_type(); //匹配
+	
 	SetDirty();
 }
 

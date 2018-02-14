@@ -105,6 +105,8 @@ void WorldSession::OnProcessMessage(const Asset::Meta& meta)
 		delete message;
 		message = nullptr;
 	};
+
+	if (meta.stuff().size() == 0) return;
 	
 	auto result = message->ParseFromArray(meta.stuff().c_str(), meta.stuff().size());
 	if (!result) 
@@ -474,8 +476,11 @@ void WorldSession::OnProcessMessage(const Asset::Meta& meta)
 			Asset::EnterRoom* enter_room = dynamic_cast<Asset::EnterRoom*>(message);
 			if (!enter_room) return; 
 
+			WARN("玩家:{} 当前所在服务器:{} 进入房间:{}", _player->GetID(), _player->GetLocalServer(), enter_room->ShortDebugString());
+
 			auto room_type = enter_room->room().room_type();
-			int64_t server_id = 0;
+			auto room_id = enter_room->room().room_id();
+			int64_t server_id = room_id >> 16;
 
 			if (Asset::ROOM_TYPE_FRIEND == room_type)
 			{
@@ -485,8 +490,8 @@ void WorldSession::OnProcessMessage(const Asset::Meta& meta)
 					return;
 				}
 
-				auto room_id = enter_room->room().room_id();
-				server_id = room_id >> 16;
+				//auto room_id = enter_room->room().room_id();
+				//server_id = room_id >> 16;
 
 				auto game_server = WorldSessionInstance.GetServerSession(server_id);
 				if (!game_server) 
@@ -500,31 +505,50 @@ void WorldSession::OnProcessMessage(const Asset::Meta& meta)
 			}
 			else
 			{
-				server_id = WorldSessionInstance.RandomServer(); //随机一个逻辑服务器
-				if (server_id == 0) 
+				if (_player->IsCoolDown(Asset::SYSTEM_COOLDOWN_TYPE_MATCHING))
 				{
-					LOG(ERROR, "玩家:{}进入匹配房未能分配到逻辑服务器", _player->GetID());
+					ERROR("玩家:{} 冷却中...", _player->GetID());
+					_player->AlertMessage(Asset::ERROR_COOLDOWN_MATCHING);
 					return;
 				}
+
+				do 
+				{
+					if (!_player->IsCenterServer()) 
+					{
+						WARN("玩家:{} 已经在逻辑服务器上,直接进行匹配.", _player->GetID());
+						break;
+					}
+
+					if (server_id == 0) server_id = WorldSessionInstance.RandomServer(); //随机一个逻辑服务器
+					
+					WARN("玩家:{} 逻辑服务器:{} 进入房间:{}", _player->GetID(), server_id, enter_room->ShortDebugString());
+
+					if (server_id == 0) 
+					{
+						ERROR("玩家:{} 进入匹配房,所在服务器:{} 玩家传入房间错误,错误信息:{}", _player->GetID(), _player->GetLocalServer(), enter_room->ShortDebugString());
+						return;
+					}
+
+				} while(false);
+				
+				_player->AddCoolDown(Asset::SYSTEM_COOLDOWN_TYPE_MATCHING);
 			}
 				
-			//auto curr_server = WorldSessionInstance.GetGameServerSession(_player->GetID());
-			//if (curr_server && curr_server->GetID() != server_id) //不是当前游戏逻辑服务器
-			if (!_player->IsCenterServer() && _player->GetLocalServer() != server_id)
+			if (!_player->IsCenterServer() && server_id > 0 && _player->GetLocalServer() != server_id)
 			{
-				//
-				//通知当前游戏逻辑服务器下线
-				//
-				Asset::KickOutPlayer kickout_player; 
+				Asset::KickOutPlayer kickout_player; //通知当前游戏逻辑服务器下线
 				kickout_player.set_player_id(_player->GetID());
 				kickout_player.set_reason(Asset::KICK_OUT_REASON_CHANGE_SERVER);
 
-				DEBUG("玩家:{}进入服务器:{}和当前缓存服务器:{}不同，发往原服踢出:{}", _player->GetID(), server_id, _player->GetLocalServer(), kickout_player.ShortDebugString());
+				WARN("玩家:{}进入服务器:{} 和当前缓存服务器:{} 不同，发往原服踢出:{}", _player->GetID(), server_id, _player->GetLocalServer(), kickout_player.ShortDebugString());
 
 				_player->SendProtocol2GameServer(kickout_player); 
 			}
 	
-			_player->SetLocalServer(server_id); //设置玩家当前所在服务器
+			WARN("玩家:{} 逻辑服务器:{} 进入房间:{}", _player->GetID(), server_id, enter_room->ShortDebugString());
+
+			if (server_id) _player->SetLocalServer(server_id); //设置玩家当前所在服务器
 			_player->SendProtocol2GameServer(enter_room); //转发
 		}
 		else if (Asset::META_TYPE_SHARE_UPDATE_CLIENT_DATA == meta.type_t()) //Client参数数据

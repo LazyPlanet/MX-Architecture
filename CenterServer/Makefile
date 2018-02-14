@@ -6,7 +6,7 @@ CXXFLAGS += $(OPT) -pipe -Wno-unused-local-typedefs -Wno-unused-but-set-variable
 LIBRARY=$(PROTOBUF_DIR)/lib/libprotobuf.a -L$(BOOST_ROOT)/stage/lib/ ../ThirdParty/cpp_redis/build/lib/libcpp_redis.a ../ThirdParty/cpp_redis/build/lib/libtacopie.a -L$(CHILKAT_DIR)/lib
 LDFLAGS = -lboost_system -lboost_thread -lboost_filesystem -lboost_date_time -lpthread
 
-PROTO_SRC=P_Command.proto P_Server.proto P_Asset.proto P_Protocol.proto
+PROTO_SRC=P_Command.proto P_Asset.proto P_Protocol.proto P_Server.proto
 PROTO_OBJ=$(patsubst %.proto,%.pb.o,$(PROTO_SRC))
 PROTO_OPTIONS=--proto_path=. --proto_path=$(PROTOBUF_DIR)/include
 
