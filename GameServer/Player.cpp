@@ -3543,45 +3543,6 @@ bool Player::CanTingPai(std::map<int32_t, std::vector<int32_t>> cards_inhand, //
 
 	std::vector<Asset::PaiElement> cards_hu;
 
-	/*
-	//能否胡万饼条
-	for (int card_type = Asset::CARD_TYPE_WANZI; card_type <= Asset::CARD_TYPE_TIAOZI; ++card_type)
-	{
-		for (int card_value = 1; card_value <= 9; ++card_value)
-		{
-			Asset::PaiElement pai;
-			pai.set_card_type((Asset::CARD_TYPE)card_type);
-			pai.set_card_value(card_value);
-
-			if (CheckHuPai(cards_inhand, cards_outhand, minggang, angang, jiangang, fenggang, pai)) 
-				cards_hu.push_back(pai);
-		}
-	}
-	
-	//能否胡风牌
-	for (int card_value = 1; card_value <= 4; ++card_value)
-	{
-		Asset::PaiElement pai;
-		pai.set_card_type(Asset::CARD_TYPE_FENG);
-		pai.set_card_value(card_value);
-
-		if (CheckHuPai(cards_inhand, cards_outhand, minggang, angang, jiangang, fenggang, pai))
-			cards_hu.push_back(pai);
-	}
-
-	//能否胡箭牌
-	for (int card_value = 1; card_value <= 3; ++card_value)
-	{
-		Asset::PaiElement pai;
-		pai.set_card_type(Asset::CARD_TYPE_JIAN);
-		pai.set_card_value(card_value);
-
-		if (CheckHuPai(cards_inhand, cards_outhand, minggang, angang, jiangang, fenggang, pai)) 
-			cards_hu.push_back(pai);
-	}
-	
-	*/
-
 	const auto& cards = GameInstance.GetPais();
 
 	for (const auto& pai : cards)
