@@ -219,6 +219,9 @@ public:
 	Asset::ACCOUNT_TYPE GetAccountType() { return _account_type; } //账号类型
 
 	void MultiplyRoomCard();
+
+	int32_t GetHosterCount() { return _stuff.clan_hosters().size(); } //拥有茶馆数量
+	int32_t GetMemberCount() { return _stuff.clan_joiners().size(); } //加入茶馆数量
 };
 
 class PlayerManager : public std::enable_shared_from_this<PlayerManager>

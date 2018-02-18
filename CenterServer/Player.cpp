@@ -5,6 +5,7 @@
 #include <cpp_redis/cpp_redis>
 
 #include "Player.h"
+#include "Clan.h"
 #include "Timer.h"
 #include "Mall.h"
 #include "Protocol.h"
@@ -989,88 +990,7 @@ int32_t Player::CmdClanOperate(pb::Message* message)
 	auto clan_oper = dynamic_cast<Asset::ClanOperation*>(message);
 	if (!clan_oper) return 1;
 	
-	auto clan_limit = dynamic_cast<Asset::ClanLimit*>(AssetInstance.Get(g_const->clan_id()));
-	if (!clan_limit) return 2;
-
-	defer {
-		SendProtocol(clan_oper); //返回结果
-	};
-
-	switch (clan_oper->oper_type())
-	{
-		case Asset::CLAN_OPER_TYPE_CREATE: //创建
-		{
-			const auto& trim_name = clan_oper->name();
-
-			if (trim_name.empty()) 
-			{
-				clan_oper->set_oper_result(Asset::ERROR_CLAN_NAME_EMPTY);
-				return 2;
-			}
-			if ((int32_t)trim_name.size() > clan_limit->name_limit())
-			{
-				clan_oper->set_oper_result(Asset::ERROR_CLAN_NAME_UPPER);
-				return 3;
-			}
-			if (_stuff.clan_hosters().size() > clan_limit->create_upper_limit())
-			{
-				clan_oper->set_oper_result(Asset::ERROR_CLAN_HOSTER_UPPER);
-				return 4;
-			}
-			auto clan_id = RedisInstance.CreateClan();
-			if (clan_id == 0)
-			{
-				clan_oper->set_oper_result(Asset::ERROR_CLAN_CREATE_INNER);
-				return 5;
-			}
-
-			clan_oper->set_oper_result(Asset::ERROR_SUCCESS);
-			clan_oper->set_clan_id(clan_id);
-		}
-		break;
-	
-		case Asset::CLAN_OPER_TYPE_JOIN: //加入
-		{
-		}
-		break;
-	
-		case Asset::CLAN_OPER_TYPE_EDIT: //修改
-		{
-		}
-		break;
-	
-		case Asset::CLAN_OPER_TYPE_DISMISS: //解散
-		{
-		}
-		break;
-		
-		case Asset::CLAN_OPER_TYPE_MEMEBER_AGEE: //同意加入
-		{
-		}
-		break;
-		
-		case Asset::CLAN_OPER_TYPE_MEMEBER_DISAGEE: //拒绝加入
-		{
-		}
-		break;
-		
-		case Asset::CLAN_OPER_TYPE_MEMEBER_DELETE: //删除成员
-		{
-		}
-		break;
-		
-		case Asset::CLAN_OPER_TYPE_MEMEBER_QUIT: //主动退出
-		{
-		}
-		break;
-	
-		default:
-		{
-			return 0;
-		}
-		break;
-	}
-
+	ClanInstance.OnOperate(shared_from_this(), clan_oper);
 	return 0;
 }
 	
