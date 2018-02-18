@@ -152,6 +152,8 @@ public:
 	virtual int32_t CmdPlayBack(pb::Message* message);
 	//匹配信息
 	virtual int32_t CmdGetMatchStatistics(pb::Message* message);
+	//茶馆
+	virtual int32_t CmdClanOperate(pb::Message* message);
 public:
 	//获取所有包裹
 	const Asset::Inventory& GetInventory() { return _stuff.inventory();	}

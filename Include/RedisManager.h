@@ -82,8 +82,12 @@ public:
 
 		auto get = _client.get(key);
 		
-		if (async) { _client.commit(); } 
-		else { _client.sync_commit(std::chrono::milliseconds(100)); }
+		if (async) { 
+			_client.commit(); 
+		} 
+		else { 
+			_client.sync_commit(std::chrono::milliseconds(100)); 
+		}
 		
 		auto reply = get.get();
 		if (!reply.is_string()) {
@@ -92,6 +96,8 @@ public:
 		}
 	
 		value = reply.as_string();
+		if (value == "") return false;
+
 		return true;
 	}
 	
@@ -415,6 +421,26 @@ public:
 		if (!success) return false;
 
 		return true;
+	}
+	
+	int64_t CreateClan()
+	{
+		if (!Connect()) return false;
+
+		auto incrby = _client.incrby("clan_counter", 1);
+		_client.commit();
+
+		int64_t clan_id = 0;
+
+		auto reply = incrby.get();
+		if (reply.is_integer()) clan_id = reply.as_integer();
+
+		if (clan_id == 0) return 0;
+
+		int64_t server_id = ConfigInstance.GetInt("ServerID", 1); //服务器ID
+		clan_id = (server_id << 32) + clan_id; 
+
+		return clan_id;
 	}
 };
 

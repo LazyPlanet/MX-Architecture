@@ -49,6 +49,7 @@ Player::Player()
 	AddHandler(Asset::META_TYPE_SHARE_RECHARGE, std::bind(&Player::CmdRecharge, this, std::placeholders::_1));
 	AddHandler(Asset::META_TYPE_SHARE_PLAY_BACK, std::bind(&Player::CmdPlayBack, this, std::placeholders::_1));
 	AddHandler(Asset::META_TYPE_SHARE_PLAY_BACK, std::bind(&Player::CmdGetMatchStatistics, this, std::placeholders::_1));
+	AddHandler(Asset::META_TYPE_SHARE_CLAN_OPERATION, std::bind(&Player::CmdClanOperate, this, std::placeholders::_1));
 
 	AddHandler(Asset::META_TYPE_C2S_GET_REWARD, std::bind(&Player::CmdGetReward, this, std::placeholders::_1));
 }
@@ -979,6 +980,96 @@ int32_t Player::CmdGetMatchStatistics(pb::Message* message)
 	}
 
 	SendProtocol(match_stats);
+
+	return 0;
+}
+
+int32_t Player::CmdClanOperate(pb::Message* message)
+{
+	auto clan_oper = dynamic_cast<Asset::ClanOperation*>(message);
+	if (!clan_oper) return 1;
+	
+	auto clan_limit = dynamic_cast<Asset::ClanLimit*>(AssetInstance.Get(g_const->clan_id()));
+	if (!clan_limit) return 2;
+
+	defer {
+		SendProtocol(clan_oper); //返回结果
+	};
+
+	switch (clan_oper->oper_type())
+	{
+		case Asset::CLAN_OPER_TYPE_CREATE: //创建
+		{
+			const auto& trim_name = clan_oper->name();
+
+			if (trim_name.empty()) 
+			{
+				clan_oper->set_oper_result(Asset::ERROR_CLAN_NAME_EMPTY);
+				return 2;
+			}
+			if ((int32_t)trim_name.size() > clan_limit->name_limit())
+			{
+				clan_oper->set_oper_result(Asset::ERROR_CLAN_NAME_UPPER);
+				return 3;
+			}
+			if (_stuff.clan_hosters().size() > clan_limit->create_upper_limit())
+			{
+				clan_oper->set_oper_result(Asset::ERROR_CLAN_HOSTER_UPPER);
+				return 4;
+			}
+			auto clan_id = RedisInstance.CreateClan();
+			if (clan_id == 0)
+			{
+				clan_oper->set_oper_result(Asset::ERROR_CLAN_CREATE_INNER);
+				return 5;
+			}
+
+			clan_oper->set_oper_result(Asset::ERROR_SUCCESS);
+			clan_oper->set_clan_id(clan_id);
+		}
+		break;
+	
+		case Asset::CLAN_OPER_TYPE_JOIN: //加入
+		{
+		}
+		break;
+	
+		case Asset::CLAN_OPER_TYPE_EDIT: //修改
+		{
+		}
+		break;
+	
+		case Asset::CLAN_OPER_TYPE_DISMISS: //解散
+		{
+		}
+		break;
+		
+		case Asset::CLAN_OPER_TYPE_MEMEBER_AGEE: //同意加入
+		{
+		}
+		break;
+		
+		case Asset::CLAN_OPER_TYPE_MEMEBER_DISAGEE: //拒绝加入
+		{
+		}
+		break;
+		
+		case Asset::CLAN_OPER_TYPE_MEMEBER_DELETE: //删除成员
+		{
+		}
+		break;
+		
+		case Asset::CLAN_OPER_TYPE_MEMEBER_QUIT: //主动退出
+		{
+		}
+		break;
+	
+		default:
+		{
+			return 0;
+		}
+		break;
+	}
 
 	return 0;
 }
