@@ -74,6 +74,7 @@ public:
 	
 	bool IsCenterServer(); //是否在中心服务器
 	void SetLocalServer(int32_t server_id);
+	void SetRoom(int64_t room_id) { _stuff.set_room_id(room_id); _dirty = true; }
 	int32_t GetLocalServer() { return _stuff.server_id(); } //玩家当前所在服务器
 
 	virtual int64_t GetID() { return _stuff.common_prop().player_id(); } //获取ID
@@ -244,8 +245,8 @@ public:
 	void Remove(std::shared_ptr<Player> player);
 	void Emplace(int64_t player_id, std::shared_ptr<Player> player);
 	bool Has(int64_t player_id);
-	std::shared_ptr<Player> GetPlayer(int64_t player_id);
-	std::shared_ptr<Player> Get(int64_t player_id);
+	std::shared_ptr<Player> GetPlayer(int64_t player_id, bool from_db = false);
+	std::shared_ptr<Player> Get(int64_t player_id, bool from_db = false);
 	int32_t GetOnlinePlayerCount(); //获取在线玩家数量//带缓存
 	
 	virtual void BroadCast(const pb::Message& message);

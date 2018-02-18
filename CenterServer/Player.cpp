@@ -72,25 +72,8 @@ int32_t Player::Load()
 {
 	if (_player_id == 0) return 1;
 
-	/*
-	cpp_redis::future_client client;
-	client.connect(ConfigInstance.GetString("Redis_ServerIP", "127.0.0.1"), ConfigInstance.GetInt("Redis_ServerPort", 6379));
-	if (!client.is_connected()) return 2;
-	
-	auto has_auth = client.auth(ConfigInstance.GetString("Redis_Password", "!QAZ%TGB&UJM9ol."));
-	if (has_auth.get().ko()) return 3;
-
-	auto get = client.get("player:" + std::to_string(_player_id));
-	cpp_redis::reply reply = get.get();
-	client.commit();
-
-	if (!reply.is_string()) return 4;
-
-	auto success = _stuff.ParseFromString(reply.as_string());
-	if (!success) return 5;
-	*/
-
 	auto key = "player:" + std::to_string(_player_id);
+
 	auto loaded = RedisInstance.Get(key, _stuff);
 	if (!loaded) return 2;
 
@@ -1185,31 +1168,25 @@ void PlayerManager::Emplace(int64_t player_id, std::shared_ptr<Player> player)
 	DEBUG("插入玩家:{}成功，当前在线玩家数量:{}", player_id, _players.size());
 }
 
-std::shared_ptr<Player> PlayerManager::GetPlayer(int64_t player_id)
+std::shared_ptr<Player> PlayerManager::GetPlayer(int64_t player_id, bool from_db)
 {
 	std::lock_guard<std::mutex> lock(_mutex);
 
-	for (auto it = _players.begin(); it != _players.end(); )
-	{
-		if (!it->second)
-		{
-			it = _players.erase(it);
-		}
-		else
-		{
-			++it;
-		}
-	}
-
 	auto it = _players.find(player_id);
-	if (it == _players.end()) return nullptr;
+	if (it != _players.end()) it->second;
 
-	return it->second;
+	if (!from_db) return nullptr; //无需从数据库读取,则直接返回
+
+	auto player = std::make_shared<Player>(player_id);
+	if (!player) return nullptr;
+
+	player->Load(); //加载数据
+	return player;
 }
 
-std::shared_ptr<Player> PlayerManager::Get(int64_t player_id)
+std::shared_ptr<Player> PlayerManager::Get(int64_t player_id, bool from_db)
 {
-	return GetPlayer(player_id);
+	return GetPlayer(player_id, from_db);
 }
 	
 bool PlayerManager::Has(int64_t player_id)

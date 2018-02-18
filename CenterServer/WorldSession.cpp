@@ -548,6 +548,7 @@ void WorldSession::OnProcessMessage(const Asset::Meta& meta)
 	
 			WARN("玩家:{} 逻辑服务器:{} 进入房间:{}", _player->GetID(), server_id, enter_room->ShortDebugString());
 
+			if (room_id) _player->SetRoom(room_id); //设置房间
 			if (server_id) _player->SetLocalServer(server_id); //设置玩家当前所在服务器
 			_player->SendProtocol2GameServer(enter_room); //转发
 		}

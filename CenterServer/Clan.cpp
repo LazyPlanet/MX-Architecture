@@ -1,8 +1,9 @@
 #include <string>
 
 #include "Clan.h"
-#include "RedisManager.h"
 #include "Timer.h"
+#include "Player.h"
+#include "RedisManager.h"
 
 namespace Adoter
 {
@@ -119,9 +120,6 @@ int32_t Clan::OnDisAgree(std::shared_ptr<Player> player, Asset::ClanOperation* m
 	it->set_oper_time(TimerInstance.GetTime());
 	it->set_oper_type(oper_type);
 
-	message->set_oper_result(Asset::ERROR_SUCCESS);
-	player->SendProtocol(message);
-
 	_dirty = true;
 	return 0;
 }
@@ -140,11 +138,37 @@ int32_t Clan::OnChangedInformation(std::shared_ptr<Player> player, Asset::ClanOp
 	if (name.size()) _stuff.set_name(name);
 	if (announcement.size()) _stuff.set_name(announcement);
 
-	message->set_oper_result(Asset::ERROR_SUCCESS);
-	player->SendProtocol(message);
-	
 	_dirty = true;
 	return 0;
+}
+
+void Clan::OnQuery(std::shared_ptr<Player> player, Asset::ClanOperation* message)
+{
+	if (!player || !message) return;
+
+	for (int32_t i = 0; i < _stuff.member_list().size(); ++i)
+	{
+		auto member_ptr = _stuff.mutable_member_list(i);
+		if (!member_ptr) continue;
+
+		member_ptr->set_status(Asset::CLAN_MEM_STATUS_TYPE_AVAILABLE);
+	
+		Asset::Player stuff;
+
+		auto loaded = RedisInstance.Get("player:" + std::to_string(member_ptr->player_id()), stuff);
+		if (!loaded) continue;
+
+		if (stuff.login_time()) //在线
+		{
+			if (stuff.room_id()) member_ptr->set_status(Asset::CLAN_MEM_STATUS_TYPE_GAMING); //游戏中
+		}
+		else if (stuff.logout_time())
+		{
+			member_ptr->set_status(Asset::CLAN_MEM_STATUS_TYPE_OFFLINE); //离线
+		}
+	}
+
+	message->mutable_clan()->CopyFrom(_stuff);
 }
 
 void Clan::Save(bool force)
@@ -180,6 +204,24 @@ void Clan::RemoveMember(int64_t player_id)
 	}
 
 	_dirty = true;
+}
+
+void Clan::BroadCast(const pb::Message* message)
+{
+	if (!message) return;
+
+	BroadCast(*message);
+}
+
+void Clan::BroadCast(const pb::Message& message)
+{
+	for (const auto& member : _stuff.member_list())
+	{
+		auto member_ptr = PlayerInstance.Get(member.player_id());
+		if (!member_ptr) continue;
+
+		member_ptr->SendProtocol(message);
+	}
 }
 
 void ClanManager::Update(int32_t diff)
@@ -258,6 +300,19 @@ int32_t ClanManager::OnOperate(std::shared_ptr<Player> player, Asset::ClanOperat
 	defer {
 		player->SendProtocol(message); //返回结果
 	};
+			
+	std::shared_ptr<Clan> clan = nullptr;
+	
+	if (message->oper_type() != Asset::CLAN_OPER_TYPE_CREATE) 
+	{
+		clan = ClanInstance.Get(message->clan_id());
+
+		if (!clan) //只有创建茶馆无需检查
+		{
+			message->set_oper_result(Asset::ERROR_CLAN_NOT_FOUND); //没找到茶馆
+			return 2;
+		}
+	}
 
 	switch (message->oper_type())
 	{
@@ -318,13 +373,6 @@ int32_t ClanManager::OnOperate(std::shared_ptr<Player> player, Asset::ClanOperat
 	
 		case Asset::CLAN_OPER_TYPE_JOIN: //申请加入
 		{
-			auto clan = ClanInstance.Get(message->clan_id());
-			if (!clan)
-			{
-				message->set_oper_result(Asset::ERROR_CLAN_NOT_FOUND); //没找到茶馆
-				return 8;
-			}
-
 			auto result = clan->OnApply(player, message); //申请成功
 			message->set_oper_result(result); 
 		}
@@ -332,9 +380,6 @@ int32_t ClanManager::OnOperate(std::shared_ptr<Player> player, Asset::ClanOperat
 	
 		case Asset::CLAN_OPER_TYPE_EDIT: //修改基本信息
 		{
-			auto clan = ClanInstance.Get(message->clan_id());
-			if (!clan) return 9;
-
 			auto result = clan->OnChangedInformation(player, message);
 			message->set_oper_result(result); 
 		}
@@ -342,9 +387,6 @@ int32_t ClanManager::OnOperate(std::shared_ptr<Player> player, Asset::ClanOperat
 	
 		case Asset::CLAN_OPER_TYPE_DISMISS: //解散
 		{
-			auto clan = ClanInstance.Get(message->clan_id());
-			if (!clan) return 9;
-
 			if (clan->GetHoster() != player->GetID())
 			{
 				message->set_oper_result(Asset::ERROR_CLAN_NO_PERMISSION);
@@ -357,13 +399,10 @@ int32_t ClanManager::OnOperate(std::shared_ptr<Player> player, Asset::ClanOperat
 		
 		case Asset::CLAN_OPER_TYPE_MEMEBER_AGEE: //同意加入
 		{
-			auto clan = ClanInstance.Get(message->clan_id());
-			if (!clan) return 9;
-			
 			if (clan->GetHoster() != player->GetID())
 			{
 				message->set_oper_result(Asset::ERROR_CLAN_NO_PERMISSION);
-				return 10;
+				return 11;
 			}
 			
 			auto result = clan->OnAgree(player, message);
@@ -373,9 +412,6 @@ int32_t ClanManager::OnOperate(std::shared_ptr<Player> player, Asset::ClanOperat
 		
 		case Asset::CLAN_OPER_TYPE_MEMEBER_DISAGEE: //拒绝加入
 		{
-			auto clan = ClanInstance.Get(message->clan_id());
-			if (!clan) return 9;
-			
 			if (clan->GetHoster() != player->GetID())
 			{
 				message->set_oper_result(Asset::ERROR_CLAN_NO_PERMISSION);
@@ -389,9 +425,6 @@ int32_t ClanManager::OnOperate(std::shared_ptr<Player> player, Asset::ClanOperat
 		
 		case Asset::CLAN_OPER_TYPE_MEMEBER_DELETE: //删除成员
 		{
-			auto clan = ClanInstance.Get(message->clan_id());
-			if (!clan) return 9;
-			
 			if (clan->GetHoster() != player->GetID())
 			{
 				message->set_oper_result(Asset::ERROR_CLAN_NO_PERMISSION);
@@ -404,21 +437,21 @@ int32_t ClanManager::OnOperate(std::shared_ptr<Player> player, Asset::ClanOperat
 		
 		case Asset::CLAN_OPER_TYPE_MEMEBER_QUIT: //主动退出
 		{
-			auto clan = ClanInstance.Get(message->clan_id());
-			if (!clan) return 11;
-
 			clan->RemoveMember(player->GetID());
 		}
 		break;
 		
 		case Asset::CLAN_OPER_TYPE_RECHARGE: //充值
 		{
-			auto clan = ClanInstance.Get(message->clan_id());
-			if (!clan) return 12;
-
 			auto result = clan->OnRecharge(player, message->recharge_count());
 			message->set_oper_result(result); 
 		}
+
+		case Asset::CLAN_OPER_TYPE_MEMEBER_QUERY: //成员状态查询
+		{
+			clan->OnQuery(player, message);
+		}
+		break;
 	
 		default:
 		{

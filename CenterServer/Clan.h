@@ -29,12 +29,15 @@ public:
 	void Save(bool force = true);
 	void OnDisMiss();
 	void RemoveMember(int64_t player_id);
+	void BroadCast(const pb::Message* message);
+	void BroadCast(const pb::Message& message);
 	
 	int32_t OnApply(std::shared_ptr<Player> player, Asset::ClanOperation* message);
 	int32_t OnChangedInformation(std::shared_ptr<Player> player, Asset::ClanOperation* message);
 	int32_t OnAgree(std::shared_ptr<Player> player, Asset::ClanOperation* message);
 	int32_t OnDisAgree(std::shared_ptr<Player> player, Asset::ClanOperation* message);
 	int32_t OnRecharge(std::shared_ptr<Player> player, int32_t count);
+	void OnQuery(std::shared_ptr<Player> player, Asset::ClanOperation* message);
 };
 
 class ClanManager : public std::enable_shared_from_this<ClanManager>
