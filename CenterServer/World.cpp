@@ -4,6 +4,7 @@
 #include "MXLog.h"
 #include "Activity.h"
 #include "WhiteBlackManager.h"
+#include "Clan.h"
 
 namespace Adoter
 {
@@ -73,6 +74,7 @@ void World::Update(int32_t diff)
 	if (_heart_count % 60 == 0) ActivityInstance.Update(diff);
 
 	PlayerInstance.Update(diff);
+	ClanInstance.Update(diff);
 
 	g_gmt_client->Update();
 }

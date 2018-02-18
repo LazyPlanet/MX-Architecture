@@ -1364,8 +1364,7 @@ void Game::Calculate(int64_t hupai_player_id/*胡牌玩家*/, int64_t dianpao_pl
 		{
 			const auto& fan_type = element.fan_type();
 
-			auto it_score = std::find_if(record->mutable_details()->begin(), record->mutable_details()->end(), 
-				[fan_type](const Asset::GameRecord_GameElement_DetailElement& detail_element){
+			auto it_score = std::find_if(record->mutable_details()->begin(), record->mutable_details()->end(), [fan_type](const Asset::GameRecord_GameElement_DetailElement& detail_element){
 					return detail_element.fan_type() == fan_type;
 			});
 			if (it_score == record->mutable_details()->end()) 

@@ -23,9 +23,16 @@ public:
 
 	const Asset::Clan& Get() { return _stuff; }
 	int64_t GetID() { return _stuff.clan_id(); }
+	int64_t GetHoster() { return _stuff.hoster_id(); }
 
 	void Update();
 	void Save(bool force = true);
+	void OnDisMiss();
+	
+	void OnApply(std::shared_ptr<Player> player, Asset::ClanOperation* message);
+	void OnChangedInformation(std::shared_ptr<Player> player, Asset::ClanOperation* message);
+	void OnAgree(std::shared_ptr<Player> player, Asset::ClanOperation* message);
+	void OnDisAgree(std::shared_ptr<Player> player, Asset::ClanOperation* message);
 };
 
 class ClanManager : public std::enable_shared_from_this<ClanManager>

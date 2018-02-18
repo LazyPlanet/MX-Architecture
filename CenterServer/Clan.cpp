@@ -14,6 +14,130 @@ void Clan::Update()
 	if (_dirty) Save();
 }
 
+void Clan::OnApply(std::shared_ptr<Player> player, Asset::ClanOperation* message)
+{
+	if (!player || !message) return;
+	
+	auto player_id = player->GetID();
+	auto oper_type = message->oper_type();
+
+	auto it = std::find_if(_stuff.mutable_message_list()->begin(), _stuff.mutable_message_list()->end(), [player_id](const Asset::SystemMessage& message){
+				return player_id == message.player_id();	
+			});
+
+	if (it == _stuff.mutable_message_list()->end())
+	{
+		auto system_message = _stuff.mutable_message_list()->Add();
+		system_message->set_player_id(player_id);
+		system_message->set_name(player->GetName());
+		system_message->set_oper_time(TimerInstance.GetTime());
+		system_message->set_oper_type(oper_type);
+	}
+	else
+	{
+		it->set_oper_time(TimerInstance.GetTime());
+		it->set_oper_type(oper_type);
+	}
+
+	message->set_oper_result(Asset::ERROR_SUCCESS);
+	player->SendProtocol(message);
+
+	_dirty = true;
+}
+
+void Clan::OnAgree(std::shared_ptr<Player> player, Asset::ClanOperation* message)
+{
+	if (!player || !message) return;
+	
+	auto member_id = message->dest_player_id();
+	auto oper_type = message->oper_type();
+
+	//
+	//申请列表状态更新
+	//
+	auto it = std::find_if(_stuff.mutable_message_list()->begin(), _stuff.mutable_message_list()->end(), [member_id](const Asset::SystemMessage& message){
+				return member_id == message.player_id();	
+			});
+
+	if (it == _stuff.mutable_message_list()->end()) return; //尚未申请记录
+	
+	if (oper_type == it->oper_type()) return; //状态一致
+
+	it->set_oper_time(TimerInstance.GetTime());
+	it->set_oper_type(oper_type);
+
+	//
+	//成员列表更新
+	//
+	auto it_ = std::find_if(_stuff.mutable_member_list()->begin(), _stuff.mutable_member_list()->end(), [member_id](const Asset::Clan_Member& member){
+				return member_id == member.player_id();
+			});
+
+	if (it_ != _stuff.mutable_member_list()->end()) return; //已经是成员
+
+	auto member_ptr = _stuff.mutable_member_list()->Add();
+	member_ptr->set_player_id(it->player_id());
+	member_ptr->set_name(it->name());
+	member_ptr->set_status(Asset::CLAN_MEM_STATUS_TYPE_AVAILABLE);
+
+	message->set_oper_result(Asset::ERROR_SUCCESS);
+	player->SendProtocol(message);
+
+	_dirty = true;
+}
+	
+void Clan::OnDisAgree(std::shared_ptr<Player> player, Asset::ClanOperation* message)
+{
+	if (!player || !message) return;
+	
+	auto member_id = message->dest_player_id();
+	auto oper_type = message->oper_type();
+
+	//
+	//申请列表状态更新
+	//
+	auto it = std::find_if(_stuff.mutable_message_list()->begin(), _stuff.mutable_message_list()->end(), [member_id](const Asset::SystemMessage& message){
+				return member_id == message.player_id();	
+			});
+
+	if (it == _stuff.mutable_message_list()->end()) return; //尚未申请记录
+	
+	if (oper_type == it->oper_type()) return; //状态一致
+
+	it->set_oper_time(TimerInstance.GetTime());
+	it->set_oper_type(oper_type);
+
+	message->set_oper_result(Asset::ERROR_SUCCESS);
+	player->SendProtocol(message);
+
+	_dirty = true;
+}
+
+void Clan::OnChangedInformation(std::shared_ptr<Player> player, Asset::ClanOperation* message)
+{
+	if (!player || !message) return;
+
+	auto hoster_id = _stuff.hoster_id();
+
+	if (hoster_id != player->GetID())
+	{
+		message->set_oper_result(Asset::ERROR_CLAN_NO_PERMISSION);
+		player->SendProtocol(message);
+		return;
+	}
+
+	auto name = message->name();
+	auto announcement = message->announcement();
+
+	if (name.size()) _stuff.set_name(name);
+	if (announcement.size()) _stuff.set_name(announcement);
+
+	message->set_oper_result(Asset::ERROR_SUCCESS);
+	player->SendProtocol(message);
+	
+	_dirty = true;
+}
+
 void Clan::Save(bool force)
 {
 	if (force)
@@ -28,16 +152,21 @@ void Clan::Save(bool force)
 	_dirty = false;
 }
 
+void Clan::OnDisMiss()
+{
+	_stuff.set_dismiss(true); //解散
+
+	_dirty = true;
+}
+
 void ClanManager::Update(int32_t diff)
 {
+	if (_heart_count % 60 != 0) return;  //3秒
+
 	++_heart_count;
 
 	std::lock_guard<std::mutex> lock(_mutex);
 	
-	if (_heart_count % (20 * 60 * 30) == 0) //30分钟
-	{
-	}
-
 	for (auto it = _clans.begin(); it != _clans.end();)
 	{
 		if (!it->second)
@@ -51,7 +180,6 @@ void ClanManager::Update(int32_t diff)
 			++it;
 		}
 	}
-
 }
 
 void ClanManager::Remove(int64_t clan_id)
@@ -65,6 +193,7 @@ void ClanManager::Remove(int64_t clan_id)
 		
 	if (it->second) 
 	{
+		it->second->OnDisMiss(); //解散
 		it->second->Save();
 		it->second.reset();
 	}
@@ -164,28 +293,70 @@ int32_t ClanManager::OnOperate(std::shared_ptr<Player> player, Asset::ClanOperat
 		}
 		break;
 	
-		case Asset::CLAN_OPER_TYPE_JOIN: //加入
+		case Asset::CLAN_OPER_TYPE_JOIN: //申请加入
 		{
+			auto clan = ClanInstance.Get(message->clan_id());
+			if (!clan)
+			{
+				message->set_oper_result(Asset::ERROR_CLAN_NOT_FOUND); //没找到茶馆
+				return 8;
+			}
+
+			clan->OnApply(player, message); //申请成功
 		}
 		break;
 	
-		case Asset::CLAN_OPER_TYPE_EDIT: //修改
+		case Asset::CLAN_OPER_TYPE_EDIT: //修改基本信息
 		{
+			auto clan = ClanInstance.Get(message->clan_id());
+			if (!clan) return 9;
+
+			clan->OnChangedInformation(player, message);
 		}
 		break;
 	
 		case Asset::CLAN_OPER_TYPE_DISMISS: //解散
 		{
+			auto clan = ClanInstance.Get(message->clan_id());
+			if (!clan) return 9;
+
+			if (clan->GetHoster() != player->GetID())
+			{
+				message->set_oper_result(Asset::ERROR_CLAN_NO_PERMISSION);
+				return 10;
+			}
+
+			Remove(message->clan_id());
 		}
 		break;
 		
 		case Asset::CLAN_OPER_TYPE_MEMEBER_AGEE: //同意加入
 		{
+			auto clan = ClanInstance.Get(message->clan_id());
+			if (!clan) return 9;
+			
+			if (clan->GetHoster() != player->GetID())
+			{
+				message->set_oper_result(Asset::ERROR_CLAN_NO_PERMISSION);
+				return 10;
+			}
+			
+			clan->OnAgree(player, message);
 		}
 		break;
 		
 		case Asset::CLAN_OPER_TYPE_MEMEBER_DISAGEE: //拒绝加入
 		{
+			auto clan = ClanInstance.Get(message->clan_id());
+			if (!clan) return 9;
+			
+			if (clan->GetHoster() != player->GetID())
+			{
+				message->set_oper_result(Asset::ERROR_CLAN_NO_PERMISSION);
+				return 10;
+			}
+			
+			clan->OnDisAgree(player, message);
 		}
 		break;
 		
