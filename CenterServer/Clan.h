@@ -28,11 +28,13 @@ public:
 	void Update();
 	void Save(bool force = true);
 	void OnDisMiss();
+	void RemoveMember(int64_t player_id);
 	
-	void OnApply(std::shared_ptr<Player> player, Asset::ClanOperation* message);
-	void OnChangedInformation(std::shared_ptr<Player> player, Asset::ClanOperation* message);
-	void OnAgree(std::shared_ptr<Player> player, Asset::ClanOperation* message);
-	void OnDisAgree(std::shared_ptr<Player> player, Asset::ClanOperation* message);
+	int32_t OnApply(std::shared_ptr<Player> player, Asset::ClanOperation* message);
+	int32_t OnChangedInformation(std::shared_ptr<Player> player, Asset::ClanOperation* message);
+	int32_t OnAgree(std::shared_ptr<Player> player, Asset::ClanOperation* message);
+	int32_t OnDisAgree(std::shared_ptr<Player> player, Asset::ClanOperation* message);
+	int32_t OnRecharge(std::shared_ptr<Player> player, int32_t count);
 };
 
 class ClanManager : public std::enable_shared_from_this<ClanManager>
