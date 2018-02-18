@@ -414,7 +414,7 @@ int32_t ClanManager::OnOperate(std::shared_ptr<Player> player, Asset::ClanOperat
 		case Asset::CLAN_OPER_TYPE_RECHARGE: //充值
 		{
 			auto clan = ClanInstance.Get(message->clan_id());
-			if (!clan) return 11;
+			if (!clan) return 12;
 
 			auto result = clan->OnRecharge(player, message->recharge_count());
 			message->set_oper_result(result); 
