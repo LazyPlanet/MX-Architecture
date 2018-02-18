@@ -223,6 +223,42 @@ void Clan::BroadCast(const pb::Message& message)
 		member_ptr->SendProtocol(message);
 	}
 }
+	
+bool Clan::CheckRoomCard(int32_t count)
+{
+	return _stuff.room_card_count() >= count;
+}
+
+void Clan::ConsumeRoomCard(int32_t count)
+{
+	if (count <= 0) return;
+
+	_stuff.set_room_card_count(_stuff.room_card_count() - count);
+	_dirty = true;
+}
+
+void Clan::AddRoomCard(int32_t count)
+{
+	if (count >= 0) return;
+
+	_stuff.set_room_card_count(_stuff.room_card_count() + count);
+	_dirty = true;
+}
+	
+void Clan::OnGameStart(const Asset::ClanRoomStart* message)
+{
+	if (!message) return;
+
+	const auto room_card = dynamic_cast<const Asset::Item_RoomCard*>(AssetInstance.Get(g_const->room_card_id()));
+	if (!room_card || room_card->rounds() <= 0) return;
+
+	auto consume_count = message->room().options().open_rands() / room_card->rounds(); //待消耗房卡数
+	if (consume_count <= 0) return;
+
+	if (!CheckRoomCard(consume_count)) return;
+
+	ConsumeRoomCard(consume_count);
+}
 
 void ClanManager::Update(int32_t diff)
 {

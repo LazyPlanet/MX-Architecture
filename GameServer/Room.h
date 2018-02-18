@@ -47,6 +47,10 @@ public:
 	void SetGmtOpened() { _gmt_opened = true; }
 	bool IsGmtOpened() { return _gmt_opened; }
 
+	bool IsClan() { return _stuff.clan_id() != 0; }
+	int64_t GetClan() { return _stuff.clan_id(); }
+	void OnClanCreated();
+
 	const std::vector<std::shared_ptr<Player>> GetPlayers() { return _players; } 
 	int32_t GetCreateTime() { return _created_time; } //创建时间
 

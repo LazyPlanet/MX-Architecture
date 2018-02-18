@@ -89,6 +89,7 @@ public:
 	}
 
 	Asset::Player& Get() { return _stuff; } //获取玩家数据
+	bool HasClan(int64_t clan_id);
 
 	//获取基础属性
 	const Asset::CommonProp& CommonProp() { return _stuff.common_prop(); }

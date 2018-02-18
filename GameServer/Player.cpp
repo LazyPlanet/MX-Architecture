@@ -370,6 +370,19 @@ bool Player::CheckDiamond(int64_t count)
 	int64_t curr_count = _stuff.common_prop().diamond();
 	return curr_count >= count;
 }
+	
+bool Player::HasClan(int64_t clan_id)
+{
+	if (clan_id <= 0) return true;
+
+	auto it = std::find(_stuff.clan_hosters().begin(), _stuff.clan_hosters().end(), clan_id);
+	if (it != _stuff.clan_hosters().end()) return true;
+
+	it = std::find(_stuff.clan_joiners().begin(), _stuff.clan_joiners().end(), clan_id);
+	if (it != _stuff.clan_joiners().end()) return true;
+
+	return false;
+}
 
 int32_t Player::OnEnterGame() 
 {
@@ -455,6 +468,8 @@ int32_t Player::CreateRoom(pb::Message* message)
 	}
 	else
 	{
+		if (!HasClan(create_room->room().clan_id())) return 10;
+
 		auto open_rands = create_room->room().options().open_rands(); //局数
 		auto pay_type = create_room->room().options().pay_type(); //付费方式
 
@@ -498,7 +513,7 @@ int32_t Player::CreateRoom(pb::Message* message)
 	}
 
 	int64_t room_id = RoomInstance.AllocRoom();
-	if (!room_id) return 2;
+	if (!room_id) return 9;
 
 	create_room->mutable_room()->set_room_id(room_id);
 	create_room->mutable_room()->set_room_type(Asset::ROOM_TYPE_FRIEND); //创建房间，其实是好友房

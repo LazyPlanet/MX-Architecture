@@ -31,6 +31,13 @@ public:
 	void RemoveMember(int64_t player_id);
 	void BroadCast(const pb::Message* message);
 	void BroadCast(const pb::Message& message);
+
+	bool CheckRoomCard(int32_t count);
+	void ConsumeRoomCard(int32_t count);
+	void AddRoomCard(int32_t count);
+	int32_t GetRoomCard() { return _stuff.room_card_count(); }
+
+	void OnGameStart(const Asset::ClanRoomStart* message);
 	
 	int32_t OnApply(std::shared_ptr<Player> player, Asset::ClanOperation* message);
 	int32_t OnChangedInformation(std::shared_ptr<Player> player, Asset::ClanOperation* message);

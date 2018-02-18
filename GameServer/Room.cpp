@@ -787,7 +787,7 @@ void Room::OnDisMiss(int64_t player_id, pb::Message* message)
 {
 	if (!message) return;
 
-	if (IsGmtOpened() && (!HasStarted() || HasBeenOver())) return; //代开房没开局不允许解散
+	if ((IsGmtOpened() || IsClan()) && (!HasStarted() || HasBeenOver())) return; //代开房//茶馆房没开局不允许解散
 
 	if (_dismiss_time == 0) 
 	{
@@ -923,22 +923,32 @@ bool Room::CanStarGame()
 		auto activity_id = g_const->room_card_limit_free_activity_id();
 		if (ActivityInstance.IsOpen(activity_id)) return true;
 
-		if (IsGmtOpened()) 
+		if (IsGmtOpened()) //代开房,直接开局
 		{
 			LOG(INFO, "GMT开房，不消耗房卡数据:{}", _stuff.ShortDebugString());
 			return true;
 		}
-		else if (!_hoster)
+			
+		const auto room_card = dynamic_cast<const Asset::Item_RoomCard*>(AssetInstance.Get(g_const->room_card_id()));
+		if (!room_card || room_card->rounds() <= 0) return false;
+
+		auto consume_count = GetOptions().open_rands() / room_card->rounds(); //待消耗房卡数
+
+		if (IsClan()) //茶馆:开局消耗,到中心服务器消耗
 		{
-			return false; //没有房主
+			Asset::Clan clan;
+			auto has_record = RedisInstance.Get("clan:" + std::to_string(_stuff.clan_id()), clan);
+
+			if (!has_record || clan.room_card_count() < consume_count) return false;
+
+			if (_games.size() == 0) OnClanCreated(); //茶馆房
+			return true;
 		}
+
+		if (!_hoster) return false; //没有房主,正常消耗
 
 		if (_hoster && _games.size() == 0) //开局消耗
 		{
-			const auto room_card = dynamic_cast<const Asset::Item_RoomCard*>(AssetInstance.Get(g_const->room_card_id()));
-			if (!room_card || room_card->rounds() <= 0) return false;
-
-			auto consume_count = GetOptions().open_rands() / room_card->rounds(); //待消耗房卡数
 			auto pay_type = GetOptions().pay_type(); //付费方式
 		
 			switch (pay_type)
@@ -1038,6 +1048,18 @@ bool Room::CanStarGame()
 	}
 	
 	return true;
+}
+
+void Room::OnClanCreated()
+{
+	if (!IsClan()) return;
+
+	if (!g_center_session) return;
+
+	Asset::ClanRoomStart message;
+	message.mutable_room()->CopyFrom(_stuff);
+
+	g_center_session->SendProtocol(message);
 }
 
 bool Room::CanDisMiss()

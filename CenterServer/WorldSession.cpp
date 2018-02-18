@@ -153,7 +153,7 @@ void WorldSession::OnProcessMessage(const Asset::Meta& meta)
 			ERROR("未能找到玩家:{}", meta.player_id());
 			return;
 		}
-		player->SendProtocol(message);
+		player->SendProtocol(message); //直接进行转发
 	}
 	else //if (meta.player_id() == 0)
 	{
