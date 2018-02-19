@@ -1106,6 +1106,41 @@ void Room::Update()
 		DoDisMiss(); //解散
 	}
 }
+
+void Room::UpdateClanStatus()
+{
+	if (!IsClan()) return; //非茶馆房间不同步
+
+	Asset::ClanRoomSync message;
+
+	Asset::RoomInformation room_information;
+	room_information.set_sync_type(Asset::ROOM_SYNC_TYPE_QUERY); //外服查询房间信息
+			
+	for (const auto player : _players)
+	{
+		if (!player) continue;
+
+		auto p = room_information.mutable_player_list()->Add();
+		p->set_position(player->GetPosition());
+		p->set_player_id(player->GetID());
+		p->set_oper_type(player->GetOperState());
+		p->mutable_common_prop()->CopyFrom(player->CommonProp());
+		p->mutable_wechat()->CopyFrom(player->GetWechat());
+		p->set_ip_address(player->GetIpAddress());
+		p->set_voice_member_id(player->GetVoiceMemberID());
+	}
+
+	Asset::RoomQueryResult room_info;
+	room_info.set_room_id(GetID());
+	room_info.set_clan_id(GetClan());
+	room_info.set_create_time(GetCreateTime());
+	room_info.mutable_options()->CopyFrom(GetOptions());
+	room_info.mutable_information()->CopyFrom(room_information);
+
+	message.set_room_status(room_info.SerializeAsString());
+
+	if (g_center_session) g_center_session->SendProtocol(message); //同步给CS
+}
 	
 /////////////////////////////////////////////////////
 //房间通用管理类

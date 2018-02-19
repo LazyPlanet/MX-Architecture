@@ -142,7 +142,7 @@ int32_t Clan::OnChangedInformation(std::shared_ptr<Player> player, Asset::ClanOp
 	return 0;
 }
 
-void Clan::OnQuery(std::shared_ptr<Player> player, Asset::ClanOperation* message)
+void Clan::OnQueryMemberStatus(std::shared_ptr<Player> player, Asset::ClanOperation* message)
 {
 	if (!player || !message) return;
 
@@ -169,6 +169,8 @@ void Clan::OnQuery(std::shared_ptr<Player> player, Asset::ClanOperation* message
 	}
 
 	message->mutable_clan()->CopyFrom(_stuff);
+
+	_dirty = true;
 }
 
 void Clan::Save(bool force)
@@ -258,6 +260,14 @@ void Clan::OnGameStart(const Asset::ClanRoomStart* message)
 	if (!CheckRoomCard(consume_count)) return;
 
 	ConsumeRoomCard(consume_count);
+}
+
+void Clan::OnRoomSync(const Asset::RoomQueryResult& room_query)
+{
+	auto room_id = room_query.room_id();
+	if (room_id <= 0) return;
+
+	_rooms[room_id] = room_query;
 }
 
 void ClanManager::Update(int32_t diff)
@@ -485,7 +495,7 @@ int32_t ClanManager::OnOperate(std::shared_ptr<Player> player, Asset::ClanOperat
 
 		case Asset::CLAN_OPER_TYPE_MEMEBER_QUERY: //成员状态查询
 		{
-			clan->OnQuery(player, message);
+			clan->OnQueryMemberStatus(player, message);
 		}
 		break;
 	

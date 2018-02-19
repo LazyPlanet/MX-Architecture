@@ -150,8 +150,10 @@ public:
 	//庄家信息
 	void SetBanker(int64_t player_id) { _banker = player_id; AddBanker(player_id); } //设置庄家
 	int64_t GetBanker() { return _banker; } //获取庄家
+
 	int32_t GetBankerIndex() { return _banker_index; } //庄家索引
 	bool IsBanker(int64_t player_id){ return _banker == player_id; } //是否是庄家
+
 	int32_t GetPlayerOrder(int32_t player_id); //获取玩家的顺序
 
 	bool IsExpired(); //是否过期
@@ -159,6 +161,8 @@ public:
 	bool HasDisMiss() { return _is_dismiss; } //是否解散状态
 	void ClearDisMiss(); //清除解散状态
 	void OnRemove();
+	//同步茶馆开房房间数据
+	void UpdateClanStatus();
 };
 
 /////////////////////////////////////////////////////

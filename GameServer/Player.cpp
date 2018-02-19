@@ -1615,6 +1615,7 @@ int32_t Player::CmdGetRoomData(pb::Message* message)
 
 		Asset::RoomQueryResult proto;
 		proto.set_room_id(room->GetID());
+		proto.set_clan_id(room->GetClan());
 		proto.set_create_time(room->GetCreateTime());
 		proto.mutable_options()->CopyFrom(room->GetOptions());
 		proto.mutable_information()->CopyFrom(room_information);

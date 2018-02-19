@@ -98,6 +98,21 @@ bool WorldSession::OnInnerProcess(const Asset::Meta& meta)
 		}
 		break;
 		
+		case Asset::META_TYPE_S2S_CLAN_ROOM_SYNC:
+		{
+			const auto room_sync = dynamic_cast<const Asset::ClanRoomSync*>(message);
+			if (!room_sync) return false;
+
+			Asset::RoomQueryResult room_query;
+			room_query.ParseFromString(room_sync->room_status());
+
+			auto clan = ClanInstance.Get(room_query.clan_id());
+			if (!clan) return false;
+
+			clan->OnRoomSync(room_query);
+		}
+		break;
+		
 		default:
 		{
 			auto player = PlayerInstance.Get(meta.player_id());
