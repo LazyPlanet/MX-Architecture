@@ -173,6 +173,11 @@ void Clan::OnQueryMemberStatus(std::shared_ptr<Player> player, Asset::ClanOperat
 	_dirty = true;
 }
 
+//
+//茶馆当前牌局列表查询
+//
+//Client根据列表查询详细数据
+//
 void Clan::OnQueryRoomList(std::shared_ptr<Player> player, Asset::ClanOperation* message)
 {
 	if (!player || !message) return;
