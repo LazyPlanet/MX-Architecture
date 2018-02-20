@@ -86,15 +86,15 @@ bool WorldSession::OnInnerProcess(const Asset::Meta& meta)
 		}
 		break;
 
-		case Asset::META_TYPE_S2S_CLAN_ROOM_START:
+		case Asset::CLAN_ROOM_STATUS_TYPE_OVER:
 		{
-			const auto clan_room = dynamic_cast<const Asset::ClanRoomStart*>(message);
+			const auto clan_room = dynamic_cast<const Asset::ClanRoomStatusChanged*>(message);
 			if (!clan_room) return false;
 
 			auto clan = ClanInstance.Get(clan_room->room().clan_id());
 			if (!clan) return false;
 
-			clan->OnGameStart(clan_room);
+			clan->OnRoomChanged(clan_room);
 		}
 		break;
 		

@@ -739,6 +739,12 @@ void Room::OnGameOver(int64_t player_id)
 	_streak_wins.clear();
 	_loubao_players.clear();
 	_jinbao_players.clear();
+	
+	Asset::ClanRoomStatusChanged proto;
+	proto.set_status(Asset::CLAN_ROOM_STATUS_TYPE_OVER);
+	//proto.mutable_room()->CopyFrom(_stuff);
+
+	if (g_center_session) g_center_session->SendProtocol(proto);
 }
 
 void Room::AddGameRecord(const Asset::GameRecord& record)
@@ -1056,7 +1062,8 @@ void Room::OnClanCreated()
 
 	if (!g_center_session) return;
 
-	Asset::ClanRoomStart message;
+	Asset::ClanRoomStatusChanged message;
+	message.set_status(Asset::CLAN_ROOM_STATUS_TYPE_START);
 	message.mutable_room()->CopyFrom(_stuff);
 
 	g_center_session->SendProtocol(message);

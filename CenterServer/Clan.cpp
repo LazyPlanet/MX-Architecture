@@ -247,19 +247,48 @@ void Clan::AddRoomCard(int32_t count)
 	_dirty = true;
 }
 	
-void Clan::OnGameStart(const Asset::ClanRoomStart* message)
+void Clan::OnRoomChanged(const Asset::ClanRoomStatusChanged* message)
 {
 	if (!message) return;
 
-	const auto room_card = dynamic_cast<const Asset::Item_RoomCard*>(AssetInstance.Get(g_const->room_card_id()));
-	if (!room_card || room_card->rounds() <= 0) return;
+	switch (message->status())
+	{
+		case Asset::CLAN_ROOM_STATUS_TYPE_START:
+		{
+			const auto room_card = dynamic_cast<const Asset::Item_RoomCard*>(AssetInstance.Get(g_const->room_card_id()));
+			if (!room_card || room_card->rounds() <= 0) return;
 
-	auto consume_count = message->room().options().open_rands() / room_card->rounds(); //待消耗房卡数
-	if (consume_count <= 0) return;
+			auto consume_count = message->room().options().open_rands() / room_card->rounds(); //待消耗房卡数
+			if (consume_count <= 0) return;
 
-	if (!CheckRoomCard(consume_count)) return;
+			if (!CheckRoomCard(consume_count)) 
+			{
+				LOG(ERROR, "茶馆房间消耗房卡失败,然而已经开局,数据:{}", message->ShortDebugString());
+				return;
+			}
 
-	ConsumeRoomCard(consume_count);
+			ConsumeRoomCard(consume_count);
+		}
+		break;
+		
+		case Asset::CLAN_ROOM_STATUS_TYPE_OVER:
+		{
+			_rooms.erase(message->room().room_id());
+
+			for (int32_t i = 0; i < _stuff.room_list().size(); ++i)
+			{
+				auto room_id = _stuff.room_list(i);
+				if (room_id != message->room().room_id()) continue;
+
+				_stuff.mutable_room_list()->SwapElements(i, _stuff.room_list().size() - 1);
+				_stuff.mutable_room_list()->RemoveLast();
+				break;
+			}
+		}
+		break;
+	}
+
+	_dirty = true;
 }
 
 void Clan::OnRoomSync(const Asset::RoomQueryResult& room_query)
@@ -268,6 +297,11 @@ void Clan::OnRoomSync(const Asset::RoomQueryResult& room_query)
 	if (room_id <= 0) return;
 
 	_rooms[room_id] = room_query;
+
+	auto it = std::find(_stuff.room_list().begin(), _stuff.room_list().end(), room_id);
+	if (it == _stuff.room_list().end()) _stuff.mutable_room_list()->Add(room_id);
+
+	_dirty = true;
 }
 
 void ClanManager::Update(int32_t diff)

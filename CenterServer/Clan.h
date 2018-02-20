@@ -38,7 +38,7 @@ public:
 	void AddRoomCard(int32_t count);
 	int32_t GetRoomCard() { return _stuff.room_card_count(); }
 
-	void OnGameStart(const Asset::ClanRoomStart* message);
+	void OnRoomChanged(const Asset::ClanRoomStatusChanged* message);
 	void OnRoomSync(const Asset::RoomQueryResult& room_query);
 	
 	int32_t OnApply(std::shared_ptr<Player> player, Asset::ClanOperation* message);
