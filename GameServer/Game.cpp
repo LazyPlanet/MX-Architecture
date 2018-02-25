@@ -1325,8 +1325,6 @@ void Game::Calculate(int64_t hupai_player_id/*胡牌玩家*/, int64_t dianpao_pl
 		//DEBUG("玩家:{} 因为牌型和位置输所有积分:{}", player_id, -score);
 	}
 
-	DEBUG("胡牌测试:{}", message.ShortDebugString());
-	
 	//
 	//2.胡牌玩家积分
 	//
@@ -1385,14 +1383,10 @@ void Game::Calculate(int64_t hupai_player_id/*胡牌玩家*/, int64_t dianpao_pl
 
 	record->set_score(total_score); //胡牌玩家赢的总积分
 	
-	DEBUG("胡牌测试:{}", message.ShortDebugString());
-	
 	//
 	//3.杠牌积分
 	//
 	CalculateGangScore(message);
-	
-	DEBUG("胡牌测试:{}", message.ShortDebugString());
 	
 	/*
 	for (int i = 0; i < MAX_PLAYER_COUNT; ++i)
@@ -1527,8 +1521,6 @@ void Game::Calculate(int64_t hupai_player_id/*胡牌玩家*/, int64_t dianpao_pl
 		it_dianpao->set_score(-baofen_total + it_dianpao->score()); //总积分
 	}
 	
-	DEBUG("胡牌测试:{}", message.ShortDebugString());
-	
 	//
 	//如果仅仅是平胡，则显示
 	//
@@ -1613,8 +1605,6 @@ void Game::Calculate(int64_t hupai_player_id/*胡牌玩家*/, int64_t dianpao_pl
 			if (consume_count != consume_real) continue;
 		}
 	}
-	
-	DEBUG("胡牌测试:{}", message.ShortDebugString());
 	
 	BroadCast(message);
 	OnGameOver(hupai_player_id); //结算之后才是真正结束
