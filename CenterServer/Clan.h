@@ -56,6 +56,7 @@ private:
 	std::mutex _mutex;
 	std::unordered_map<int64_t, std::shared_ptr<Clan>> _clans; 
 	int64_t _heart_count = 0;
+	bool _loaded = false;
 public:
 	static ClanManager& Instance()
 	{
@@ -64,6 +65,7 @@ public:
 	}
 
 	void Update(int32_t diff);
+	void Load();
 
 	void Remove(int64_t Clan_id);
 	void Remove(std::shared_ptr<Clan> clan);

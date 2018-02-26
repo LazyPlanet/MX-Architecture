@@ -101,6 +101,33 @@ public:
 		return true;
 	}
 	
+	bool GetArray(const std::string& key, std::vector<std::string>& values, bool async = true)
+	{
+		if (!Connect()) return false;
+
+		auto get = _client.get(key);
+		
+		if (async) {
+			_client.commit(); 
+		} else {
+			_client.sync_commit(std::chrono::milliseconds(100)); 
+		}
+		
+		auto reply = get.get();
+		if (!reply.is_array()) return false;
+
+		const auto& reply_list = reply.as_array();
+	
+		for (const auto& reply : reply_list)
+		{
+			if (!reply.is_string()) continue;
+
+			values.push_back(reply.as_string());
+		}
+
+		return true;
+	}
+	
 	bool Save(const std::string& key, const std::string& value, bool async = true)
 	{
 		if (!Connect()) return false;

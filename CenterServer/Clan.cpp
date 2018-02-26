@@ -350,6 +350,34 @@ void ClanManager::Update(int32_t diff)
 			++it;
 		}
 	}
+
+}
+	
+void ClanManager::Load()
+{
+	if (_loaded) return;
+
+	std::vector<std::string> clan_list;
+	bool has_record = RedisInstance.GetArray("clan:*", clan_list);	
+	if (!has_record)
+	{
+		ERROR("加载茶馆数据失败，加载成功数量:{}", clan_list.size());
+		return;
+	}
+
+	for (const auto& value : clan_list)
+	{
+		Asset::Clan clan;
+		auto success = clan.ParseFromString(value);
+		if (!success) continue;
+
+		auto clan_ptr = std::make_shared<Clan>(clan);
+		if (!clan_ptr) return;
+
+		Emplace(clan.clan_id(), clan_ptr);
+	}
+
+	_loaded = true;
 }
 
 void ClanManager::Remove(int64_t clan_id)
@@ -383,6 +411,8 @@ void ClanManager::Emplace(int64_t clan_id, std::shared_ptr<Clan> clan)
 	if (clan_id <= 0 || !clan) return;
 
 	_clans[clan_id] = clan;
+
+	DEBUG("添加茶馆:{}成功，当前茶馆数量:{}", clan_id, _clans.size());
 }
 
 std::shared_ptr<Clan> ClanManager::GetClan(int64_t clan_id)
