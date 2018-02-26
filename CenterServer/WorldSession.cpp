@@ -150,7 +150,7 @@ void WorldSession::OnProcessMessage(const Asset::Meta& meta)
 		auto player = PlayerInstance.Get(meta.player_id());
 		if (!player) 
 		{
-			ERROR("未能找到玩家:{}", meta.player_id());
+			ERROR("未能找到玩家:{} 协议数据:{}", meta.player_id(), message->ShortDebugString());
 			return;
 		}
 		player->SendProtocol(message); //直接进行转发

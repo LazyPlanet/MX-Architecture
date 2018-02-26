@@ -1168,25 +1168,19 @@ void PlayerManager::Emplace(int64_t player_id, std::shared_ptr<Player> player)
 	DEBUG("插入玩家:{}成功，当前在线玩家数量:{}", player_id, _players.size());
 }
 
-std::shared_ptr<Player> PlayerManager::GetPlayer(int64_t player_id, bool from_db)
+std::shared_ptr<Player> PlayerManager::GetPlayer(int64_t player_id)
 {
 	std::lock_guard<std::mutex> lock(_mutex);
 
 	auto it = _players.find(player_id);
-	if (it != _players.end()) it->second;
-
-	if (!from_db) return nullptr; //无需从数据库读取,则直接返回
-
-	auto player = std::make_shared<Player>(player_id);
-	if (!player) return nullptr;
-
-	player->Load(); //加载数据
-	return player;
+	if (it == _players.end()) return nullptr;
+		
+	return it->second;
 }
 
-std::shared_ptr<Player> PlayerManager::Get(int64_t player_id, bool from_db)
+std::shared_ptr<Player> PlayerManager::Get(int64_t player_id)
 {
-	return GetPlayer(player_id, from_db);
+	return GetPlayer(player_id);
 }
 	
 bool PlayerManager::Has(int64_t player_id)

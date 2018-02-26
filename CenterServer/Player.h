@@ -245,8 +245,8 @@ public:
 	void Remove(std::shared_ptr<Player> player);
 	void Emplace(int64_t player_id, std::shared_ptr<Player> player);
 	bool Has(int64_t player_id);
-	std::shared_ptr<Player> GetPlayer(int64_t player_id, bool from_db = false);
-	std::shared_ptr<Player> Get(int64_t player_id, bool from_db = false);
+	std::shared_ptr<Player> GetPlayer(int64_t player_id);
+	std::shared_ptr<Player> Get(int64_t player_id);
 	int32_t GetOnlinePlayerCount(); //获取在线玩家数量//带缓存
 	
 	virtual void BroadCast(const pb::Message& message);
