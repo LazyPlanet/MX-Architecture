@@ -106,7 +106,7 @@ void WorldSession::OnProcessMessage(const Asset::Meta& meta)
 		message = nullptr;
 	};
 
-	if (meta.stuff().size() == 0) return;
+	//if (meta.stuff().size() == 0) return; //可以发只包含type_t的协议
 	
 	auto result = message->ParseFromArray(meta.stuff().c_str(), meta.stuff().size());
 	if (!result) 
