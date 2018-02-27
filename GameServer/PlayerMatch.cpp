@@ -40,6 +40,8 @@ void PlayerMatch::Join(std::shared_ptr<Player> player, pb::Message* message)
 	
 void PlayerMatch::DoMatch()
 {
+	return; //朝阳关闭匹配
+
 	DEBUG("匹配房开始匹配...");
 
 	_scheduler.Schedule(std::chrono::seconds(3), [this](TaskContext task) {
@@ -50,7 +52,7 @@ void PlayerMatch::DoMatch()
 	
 			DEBUG("房间类型:{} 玩家数量:{}", it->first, it->second.size());
 		
-			//if (player_list.size() < 4) continue;
+			if (player_list.size() < 4) continue;
 				
 			auto room_id = RoomInstance.AllocRoom();
 			if (room_id <= 0) continue;

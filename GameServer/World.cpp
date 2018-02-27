@@ -58,7 +58,7 @@ bool World::Load()
 	g_const = dynamic_cast<const Asset::CommonConst*>(message); 
 	if (!g_const) return false; //如果没有起不来
 
-	MatchInstance.DoMatch(); //玩家匹配
+	//MatchInstance.DoMatch(); //玩家匹配
 	
 	if (!ActivityInstance.Load())
 	{
