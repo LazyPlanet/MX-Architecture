@@ -26,7 +26,7 @@ bool WorldSession::OnInnerProcess(const Asset::Meta& meta)
 		message = nullptr;
 	};
 
-	if (meta.stuff().size() == 0) return true;
+	//if (meta.stuff().size() == 0) return true;
 	
 	auto result = message->ParseFromArray(meta.stuff().c_str(), meta.stuff().size());
 	if (!result) return false; 
