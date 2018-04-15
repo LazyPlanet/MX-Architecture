@@ -93,7 +93,11 @@ bool CenterSession::OnMessageProcess(const Asset::Meta& meta)
 
 		auto message = msg->New();
 		auto result = message->ParseFromArray(meta.stuff().c_str(), meta.stuff().size());
-		if (!result) return false;		//非法协议
+		if (!result) 
+		{
+			delete message; //防止内存泄漏
+			return false;		//非法协议
+		}
 
 		player->HandleProtocol(meta.type_t(), message);
 

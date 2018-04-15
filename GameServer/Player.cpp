@@ -763,6 +763,8 @@ int32_t Player::CmdPaiOperate(pb::Message* message)
 			}
 			*/
 
+			if (!CheckFengGangPai(_cards_inhand)) return 21;
+
 			--_oper_count;
 
 			OnGangFengPai();
@@ -777,6 +779,8 @@ int32_t Player::CmdPaiOperate(pb::Message* message)
 				return 6;
 			}
 			*/
+	
+			if (!CheckJianGangPai(_cards_inhand)) return 20;
 			
 			--_oper_count;
 			
@@ -3720,43 +3724,8 @@ void Player::OnGangFengPai()
 {
 	PrintPai();
 
-	if (!CheckFengGangPai(_cards_inhand)) 
-	{
-		LOG(ERROR, "玩家:{}不满足风杠条件", _player_id);
-		return;
-	}
-	
 	auto it = _cards_inhand.find(Asset::CARD_TYPE_FENG);
 	if (it == _cards_inhand.end()) return;
-
-	/*
-	try {
-		std::unique_lock<std::mutex> lock(_card_lock, std::defer_lock);
-
-		if (lock.try_lock())
-		{
-			for (int32_t card_value = 1; card_value <= 4; ++card_value) //东南西北
-			{
-				auto it_if = std::find(it->second.begin(), it->second.end(), card_value);
-				if (it_if != it->second.end())  
-				{	
-					_game->Add2CardsPool(Asset::CARD_TYPE_FENG, card_value);
-					it->second.erase(it_if); //删除
-				}
-			}
-		}
-		else
-		{
-			ERROR("player_id:{} try locked failed.", _player_id);
-			return;
-		}
-	}
-	catch(const std::system_error& error)
-	{
-		ERROR("Delete card from player_id:{} error:{}.", _player_id, error.what());
-		return;
-	}
-	*/
 
 	for (int32_t card_value = 1; card_value <= 4; ++card_value) //东南西北
 	{
@@ -3850,40 +3819,6 @@ bool Player::CheckJianGangPai(std::map<int32_t/*麻将牌类型*/, std::vector<i
 
 void Player::OnGangJianPai()
 {
-	if (!CheckJianGangPai(_cards_inhand)) return;
-	
-	/*
-	try {
-		std::unique_lock<std::mutex> lock(_card_lock, std::defer_lock);
-
-		if (lock.try_lock())
-		{
-			auto it = _cards_inhand.find(Asset::CARD_TYPE_JIAN);
-			if (it == _cards_inhand.end()) return;
-
-			for (auto card_value = 1; card_value <= 3; ++card_value) //中发白
-			{
-				auto it_if = std::find(it->second.begin(), it->second.end(), card_value);
-				if (it_if != it->second.end())  
-				{
-					_game->Add2CardsPool(Asset::CARD_TYPE_JIAN, card_value);
-					it->second.erase(it_if); //删除
-				}
-			}
-		}
-		else
-		{
-			ERROR("player_id:{} try locked failed.", _player_id);
-			return;
-		}
-	}
-	catch(const std::system_error& error)
-	{
-		ERROR("Delete card from player_id:{} error:{}.", _player_id, error.what());
-		return;
-	}
-	*/
-
 	auto it = _cards_inhand.find(Asset::CARD_TYPE_JIAN);
 	if (it == _cards_inhand.end()) return;
 
