@@ -827,6 +827,7 @@ int32_t Player::CmdPaiOperate(pb::Message* message)
 
 		case Asset::PAI_OPER_TYPE_CANCEL:
 		{
+			WARN("玩家:{} 在房间:{} 第:{} 局中放弃操作:{}", _player_id, _room->GetID(), _game->GetID(), _game->GetOperCache().ShortDebugString());
 			return 0;
 		}
 		break;

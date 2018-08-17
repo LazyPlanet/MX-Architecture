@@ -75,6 +75,7 @@ public:
 	void SetPaiOperation(const Asset::PaiOperationCache& oper) { _oper_cache = oper; } //牌操作限制
 	void SetPaiOperation(int64_t player_id, int64_t source_player_id, Asset::PaiElement pai, Asset::PAI_OPER_TYPE oper_type = Asset::PAI_OPER_TYPE_HUPAI);
 	void SetZiMoCache(std::shared_ptr<Player> player, Asset::PaiElement pai);
+	const Asset::PaiOperationCache& GetOperCache() { return _oper_cache; }
 
 	bool SendCheckRtn(); //发送当前可以操作的牌数据
 	bool CheckPai(const Asset::PaiElement& pai, int64_t source_player_id); //检查玩家可以进行的牌操作,包括胡//杠//碰//吃

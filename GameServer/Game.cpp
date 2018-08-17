@@ -375,8 +375,10 @@ void Game::OnPaiOperate(std::shared_ptr<Player> player, pb::Message* message)
 	if (Asset::PAI_OPER_TYPE_GIVEUP != pai_operate->oper_type())
 	{
 		_curr_player_index = player_index; //上面检查过，就说明当前该玩家可操作
-		//BroadCast(message); //广播玩家操作，玩家放弃操作不能广播
+		BroadCast(message); //广播玩家操作，玩家放弃操作不能广播
 	}
+	
+	AddPlayerOperation(*pai_operate);  //回放记录
 
 	//const auto& pai = _oper_cache.pai(); //缓存的牌
 	const auto& pai = pai_operate->pai(); //玩家发上来的牌
@@ -1094,10 +1096,6 @@ void Game::OnPaiOperate(std::shared_ptr<Player> player, pb::Message* message)
 		}
 		break;
 	}
-	
-	AddPlayerOperation(*pai_operate);  //回放记录
-
-	if (Asset::PAI_OPER_TYPE_GIVEUP != pai_operate->oper_type()) BroadCast(message); //广播玩家操作，玩家放弃操作不能广播
 }
 
 void Game::ClearOperation()
