@@ -92,7 +92,9 @@ int32_t Player::Load()
 			if (!enum_value) break;
 		}
 	} while(false);
-	
+
+	//WARN("玩家:{} 加载数据:{} 成功", _player_id, _stuff.ShortDebugString());
+
 	return 0;
 }
 
@@ -216,6 +218,8 @@ int32_t Player::OnLogout(Asset::KICK_OUT_REASON reason)
 		auto room = RoomInstance.Get(_stuff.room_id());
 		if (room) room->Remove(_player_id);
 	}
+
+	//WARN("玩家:{} 退出数据:{}", _player_id, _stuff.ShortDebugString());
 
 	_stuff.clear_server_id(); //退出游戏逻辑服务器
 
@@ -1578,8 +1582,17 @@ int32_t Player::CmdGetRoomData(pb::Message* message)
 	{
 		DEBUG("玩家:{}由于房间:{}内断线，获取数据:{}", _player_id, message->ShortDebugString(), _stuff.ShortDebugString())
 
-		if (!_room || _room->HasDisMiss() || _room->GetID() != get_data->room_id() || _stuff.room_id() == 0) { SendRoomState(); } //估计房间已经解散
-		else { _room->OnReEnter(shared_from_this()); } //再次进入
+		if (!_room || _room->HasDisMiss() || _room->GetID() != get_data->room_id() || _stuff.room_id() == 0) 
+		{ 
+			SendRoomState(); //估计房间已经解散
+
+			//WARN("玩家:{} 获取房间数据:{} 成功", _player_id, _stuff.ShortDebugString());
+			OnLogout(Asset::KICK_OUT_REASON_LOGOUT); //已经不在这个房间了，则退出服务器，严重丢卡问题修复
+		} 
+		else 
+		{ 
+			_room->OnReEnter(shared_from_this());  //再次进入
+		} 
 	}
 
 	return 0;
@@ -4704,6 +4717,8 @@ void PlayerManager::Remove(int64_t player_id)
 	_players.erase(player_id);
 
 	if (g_center_session) g_center_session->RemovePlayer(player_id);
+
+	//WARN("删除玩家:{} 当前玩家数量:{}", player_id, _players.size());
 }
 
 void PlayerManager::Remove(std::shared_ptr<Player> player)
