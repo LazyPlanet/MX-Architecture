@@ -257,7 +257,7 @@ Asset::COMMAND_ERROR_CODE GmtManager::OnCommandProcess(const Asset::Command& com
 	}
 
 	//存盘
-	player_ptr->SetDirty();
+	player_ptr->Save(true);
 
 	RETURN(Asset::COMMAND_ERROR_CODE_SUCCESS); //执行成功
 }

@@ -93,7 +93,7 @@ int32_t Player::Load()
 		}
 	} while(false);
 
-	//WARN("玩家:{} 加载数据:{} 成功", _player_id, _stuff.ShortDebugString());
+	LOG(INFO, "玩家:{} 加载数据:{} 成功", _player_id, _stuff.ShortDebugString());
 
 	return 0;
 }
@@ -110,6 +110,8 @@ int32_t Player::Save(bool force)
 		LOG(ERROR, "保存玩家:{}数据:{}失败", _player_id, _stuff.ShortDebugString());
 		return 2;
 	}
+
+	DEBUG("保存玩家:{} 数据:{}", _player_id, _stuff.ShortDebugString());
 	
 	_dirty = false;
 
@@ -230,6 +232,8 @@ int32_t Player::OnLogout(Asset::KICK_OUT_REASON reason)
 	kickout_player.set_player_id(_player_id);
 	kickout_player.set_reason(reason);
 	SendProtocol(kickout_player);
+
+	WARN("玩家:{} 退出gs 数据:{}", _player_id, _stuff.ShortDebugString());
 	
 	return 0;
 }
@@ -1065,6 +1069,8 @@ int32_t Player::EnterRoom(pb::Message* message)
 				AlertMessage(enter_room->error_code(), Asset::ERROR_TYPE_NORMAL, Asset::ERROR_SHOW_TYPE_MESSAGE_BOX); //不能加入，错误提示
 
 			SendProtocol(enter_room);
+
+			return enter_room->error_code();
 		}
 		break;
 
@@ -1586,7 +1592,7 @@ int32_t Player::CmdGetRoomData(pb::Message* message)
 		{ 
 			SendRoomState(); //估计房间已经解散
 
-			//WARN("玩家:{} 获取房间数据:{} 成功", _player_id, _stuff.ShortDebugString());
+			WARN("玩家:{} 获取房间数据:{} 成功", _player_id, _stuff.ShortDebugString());
 			OnLogout(Asset::KICK_OUT_REASON_LOGOUT); //已经不在这个房间了，则退出服务器，严重丢卡问题修复
 		} 
 		else 
@@ -4681,17 +4687,13 @@ bool Player::Is28Pai(const Asset::PaiElement& pai)
 
 void PlayerManager::Emplace(int64_t player_id, std::shared_ptr<Player> player)
 {
-	if (!player) return;
-
 	std::lock_guard<std::mutex> lock(_player_lock);
-
 	_players[player_id] = player;
 }
 
 std::shared_ptr<Player> PlayerManager::GetPlayer(int64_t player_id)
 {
 	std::lock_guard<std::mutex> lock(_player_lock);
-
 	return _players[player_id];
 }
 
@@ -4703,7 +4705,6 @@ std::shared_ptr<Player> PlayerManager::Get(int64_t player_id)
 bool PlayerManager::Has(int64_t player_id)
 {
 	auto player = GetPlayer(player_id);
-
 	return player != nullptr;
 }
 

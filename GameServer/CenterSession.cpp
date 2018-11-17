@@ -54,14 +54,15 @@ bool CenterSession::OnMessageProcess(const Asset::Meta& meta)
 		if (!result) return false;
 
 		auto player = GetPlayer(meta.player_id());
-		if (!player) { player = std::make_shared<Player>(meta.player_id()); }
-		else { player->Load(); } //进入房间加载数据，防止数据错误，可能丢房卡情况
-		AddPlayer(meta.player_id(), player);
+		if (!player) 
+		{ 
+			player = std::make_shared<Player>(meta.player_id()); 
+			player->OnLogin(); 
 
-		if (player->OnLogin()) 
-		{
-			ERROR("玩家{}进入游戏失败", meta.player_id());
+			AddPlayer(meta.player_id(), player);
 		}
+		//else { player->Load(); } //进入房间加载数据，防止数据错误，可能丢房卡情况
+
 		player->CmdEnterRoom(&message);
 	}
 	else
@@ -79,8 +80,9 @@ bool CenterSession::OnMessageProcess(const Asset::Meta& meta)
 
 			AddPlayer(meta.player_id(), player);
 		}
-		else if (meta.type_t() == Asset::META_TYPE_SHARE_CREATE_ROOM)
+		else if (meta.type_t() == Asset::META_TYPE_SHARE_CREATE_ROOM || meta.type_t() == Asset::META_TYPE_C2S_GET_ROOM_DATA)
 		{
+			WARN("玩家:{} 当前接收协议:{}", meta.player_id(), Asset::META_TYPE_Name(meta.type_t()));
 			player->Load(); //创建房间加载数据，防止数据错误，可能丢房卡情况
 		}
 
@@ -298,6 +300,8 @@ void CenterSession::RemovePlayer(int64_t player_id)
 	if (it->second) it->second.reset();
 	
 	_players.erase(it); 
+	
+	WARN("删除玩家:{}", player_id);
 }
 	
 void CenterSession::AddPlayer(int64_t player_id, std::shared_ptr<Player> player)
@@ -310,6 +314,8 @@ void CenterSession::AddPlayer(int64_t player_id, std::shared_ptr<Player> player)
 	if (it != _players.end() && it->second) it->second.reset();
 
 	_players[player_id] = player;
+
+	WARN("增加玩家:{}", player_id);
 }
 	
 std::shared_ptr<Player> CenterSession::GetPlayer(int64_t player_id)
