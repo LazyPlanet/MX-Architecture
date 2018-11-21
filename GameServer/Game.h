@@ -24,11 +24,9 @@ extern const int32_t MAX_PLAYER_COUNT; //玩家总数：有些地方不是4人�
 /////////////////////////////////////////////////////
 class Game : public std::enable_shared_from_this<Game>
 {
-	std::shared_ptr<Room> _room = nullptr; //游戏在哪个房间开启
-
 private:
-	
 	std::list<int32_t> _cards; //随机牌,每次开局更新,索引为GameManager牌中索引
+	std::weak_ptr<Room> _room; //游戏在哪个房间开启
 
 	int32_t _curr_player_index = 0; //当前在操作的玩家索引
 	int64_t _banker_player_id = 0; //庄家
@@ -52,6 +50,7 @@ private:
 
 	Asset::PlayBack _playback; //回放数据
 public:
+	~Game();
 	virtual void Init(std::shared_ptr<Room> room); //初始化
 	virtual bool Start(std::vector<std::shared_ptr<Player>> players, int64_t room_id = 0, int32_t game_id = 0); //开始游戏
 	virtual void OnStart(); //开始游戏回调
@@ -130,6 +129,7 @@ public:
 
 	void SavePlayBack(); //回放存储
 	void AddPlayerOperation(const Asset::PaiOperation& pai_operate) { _playback.mutable_oper_list()->Add()->CopyFrom(pai_operate); } //回放记录
+	std::shared_ptr<Room> GetRoom() { return _room.lock(); } //游戏在哪个房间开启
 };
 
 /////////////////////////////////////////////////////

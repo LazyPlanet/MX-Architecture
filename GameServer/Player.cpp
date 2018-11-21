@@ -21,6 +21,11 @@ namespace Adoter
 
 namespace spd = spdlog;
 
+Player::~Player()
+{
+	//DEBUG("析构玩家:{}", _player_id);
+}
+
 Player::Player()
 {
 	//协议默认处理函数
@@ -145,6 +150,8 @@ int32_t Player::Logout(pb::Message* message)
 	//
 	//(2) 处理操作玩家退出的状态，即刚好轮到该玩家进行操作的时候，玩家逃跑;
 	//
+	auto _room = GetRoom();
+	auto _game = GetGame();
 	if (_room) 
 	{
 		if (_game || (_room->HasStarted() && !_room->HasBeenOver() && !_room->HasDisMiss())) //游戏中，或已经开局且尚未对局完成且不是解散，则不让退出房间
@@ -211,6 +218,8 @@ int32_t Player::Logout(pb::Message* message)
 	
 int32_t Player::OnLogout(Asset::KICK_OUT_REASON reason)
 {
+	auto _room = GetRoom();
+	auto _game = GetGame();
 	if (!_game && _room && (!_room->HasStarted() || _room->HasBeenOver() || _room->HasDisMiss())) 
 	{
 		ResetRoom();
@@ -448,6 +457,7 @@ int32_t Player::CreateRoom(pb::Message* message)
 	Asset::CreateRoom* create_room = dynamic_cast<Asset::CreateRoom*>(message);
 	if (!create_room) return 1;
 	
+	auto _room = GetRoom();
 	if (_room) 
 	{
 		auto room = RoomInstance.Get(_room->GetID());
@@ -552,6 +562,8 @@ int32_t Player::CmdGameOperate(pb::Message* message)
 	auto game_operate = dynamic_cast<Asset::GameOperation*>(message);
 	if (!game_operate) return 1;
 	
+	auto _room = GetRoom();
+	auto _game = GetGame();
 	game_operate->set_source_player_id(_player_id); //设置当前操作玩家
 
 	switch(game_operate->oper_type())
@@ -624,6 +636,8 @@ void Player::SetStreakWins(int32_t count)
 void Player::OnGameStart()
 {
 	AddTotalRounds(); //总对战局数
+	
+	auto _room = GetRoom();
 	if (_room && _room->IsFriend()) AddFriendRoomRounds(); //好友房对战局数
 
 	ClearCards();  //游戏数据
@@ -636,6 +650,8 @@ int32_t Player::CmdPaiOperate(pb::Message* message)
 	Asset::PaiOperation* pai_operate = dynamic_cast<Asset::PaiOperation*>(message);
 	if (!pai_operate) return 1; 
 	
+	auto _room = GetRoom();
+	auto _game = GetGame();
 	if (!_room || !_game) return 2; //还没加入房间或者还没开始游戏
 
 	if (!pai_operate->position()) pai_operate->set_position(GetPosition()); //设置玩家座位
@@ -927,9 +943,8 @@ int32_t Player::EnterRoom(pb::Message* message)
 	Asset::EnterRoom* enter_room = dynamic_cast<Asset::EnterRoom*>(message);
 	if (!enter_room) return Asset::ERROR_INNER; 
 
-	//
+	auto _room = GetRoom();
 	//房间重入检查
-	//
 	do 
 	{
 		if (_room) 
@@ -1103,6 +1118,8 @@ int32_t Player::EnterRoom(pb::Message* message)
 	
 int32_t Player::GetLocalRoomID() 
 { 
+	auto _room = GetRoom();
+
 	if (!_room) return 0; 
 
 	return _room->GetID();
@@ -1177,12 +1194,14 @@ void Player::SendProtocol(const pb::Message& message)
 
 void Player::Send2Roomers(pb::Message& message, int64_t exclude_player_id) 
 {
+	auto _room = GetRoom();
 	if (!_room) return;
 	_room->BroadCast(message, exclude_player_id);
 }
 
 void Player::Send2Roomers(pb::Message* message, int64_t exclude_player_id)
 {
+	auto _room = GetRoom();
 	if (!_room) return;
 	_room->BroadCast(message, exclude_player_id);
 }
@@ -1396,13 +1415,12 @@ void Player::OnLeaveRoom(Asset::GAME_OPER_TYPE reason)
 	
 void Player::BroadCast(Asset::MsgItem& item) 
 {
-	if (!_room) return;
 	
 }	
 	
 void Player::ResetRoom() 
 { 
-	if (_room) _room.reset(); //刷新房间信息
+	_room.reset(); //刷新房间信息
 
 	_stuff.clear_room_id(); //状态初始化
 	_player_prop.clear_voice_member_id(); //房间语音数据
@@ -1544,6 +1562,8 @@ int32_t Player::CmdGetRoomData(pb::Message* message)
 {
 	auto get_data = dynamic_cast<Asset::GetRoomData*>(message);
 	if (!get_data) return 1;
+	
+	auto _room = GetRoom();
 
 	if (get_data->reason() == Asset::ROOM_SYNC_TYPE_QUERY)
 	{
@@ -1609,6 +1629,7 @@ int32_t Player::CmdUpdateRoom(pb::Message* message)
 	auto update_data = dynamic_cast<Asset::UpdateRoom*>(message);
 	if (!update_data) return 1;
 	
+	auto _room = GetRoom();
 	if (!_room || !_room->IsVoiceOpen()) return 2;
 
 	if (update_data->voice_member_id() == GetVoiceMemberID()) return 3; //尚未发生变化
@@ -1625,6 +1646,8 @@ int32_t Player::CmdLoadScene(pb::Message* message)
 {
 	Asset::LoadScene* load_scene = dynamic_cast<Asset::LoadScene*>(message);
 	if (!load_scene) return 1;
+
+	auto _room = GetRoom();
 
 	switch (load_scene->load_type())
 	{
@@ -1681,6 +1704,7 @@ void Player::OnEnterScene(bool is_reenter)
 	
 	if (!is_reenter) ClearCards(); //第一次进房间初始化牌局状态
 
+	auto _room = GetRoom();
 	if (_room) 
 	{
 		_room->SyncRoom(); //同步当前房间内玩家数据
@@ -1982,6 +2006,8 @@ bool Player::CanHuPai(std::vector<Card_t>& cards, bool use_pair)
 
 void Player::AddZhang(const Asset::PaiElement& zhang)
 {
+	auto _room = GetRoom();
+	auto _game = GetGame();
 	if (!_game || !_room) return;
 
 	_zhang = zhang; //对儿
@@ -1991,6 +2017,8 @@ void Player::AddZhang(const Asset::PaiElement& zhang)
 	
 void Player::AddShunZi(const Asset::ShunZi& shunzi)
 {
+	auto _room = GetRoom();
+	auto _game = GetGame();
 	if (!_game || !_room) return;
 
 	_shunzis.push_back(shunzi);
@@ -2000,6 +2028,8 @@ void Player::AddShunZi(const Asset::ShunZi& shunzi)
 	
 bool Player::CheckBaoHu(const Asset::PaiElement& pai/*宝牌数据*/)
 {
+	auto _room = GetRoom();
+	auto _game = GetGame();
 	if (!_game || !_room) return false;
 
 	if (!IsTingPai()) return false; //没有听牌显然不能胡宝牌
@@ -2121,6 +2151,8 @@ bool Player::CheckHuPai(const std::map<int32_t, std::vector<int32_t>>& cards_inh
 		bool check_zimo, //是否自摸
 		bool calculate) //是否结算
 {
+	auto _room = GetRoom();
+	auto _game = GetGame();
 	if (!_room || !_game) return false;
 	
 	if (calculate) _fan_list.clear(); //番型数据
@@ -2546,6 +2578,8 @@ bool Player::CheckZiMo(bool calculate)
 
 bool Player::CheckZiMo(const Asset::PaiElement& pai, bool calculate)
 {
+	auto _room = GetRoom();
+	auto _game = GetGame();
 	if (!_room || !_game) return false;
 
 	if (_tuoguan_server) return false;
@@ -2555,6 +2589,8 @@ bool Player::CheckZiMo(const Asset::PaiElement& pai, bool calculate)
 	
 bool Player::CheckHuPai(const Asset::PaiElement& pai, bool check_zimo, bool calculate)
 {
+	auto _room = GetRoom();
+	auto _game = GetGame();
 	if (!_room || !_game) return false;
 
 	auto cards_inhand = _cards_inhand; //玩家手里牌
@@ -2805,6 +2841,8 @@ bool Player::IsGangOperation()
 //
 bool Player::CheckMingPiao(const Asset::PAI_OPER_TYPE& oper_type)
 {
+	auto _room = GetRoom();
+	auto _game = GetGame();
 	if (!_room || !_game) return false;
 
 	auto curr_count = GetCardCount();
@@ -2860,6 +2898,8 @@ bool Player::CheckMingPiao(const Asset::PAI_OPER_TYPE& oper_type)
 
 bool Player::CheckChiPai(const Asset::PaiElement& pai)
 {
+	auto _room = GetRoom();
+	auto _game = GetGame();
 	if (!_room || !_game) return false;
 
 	if (_has_ting || _tuoguan_server) return false; //已经听牌，不再提示
@@ -2956,6 +2996,7 @@ void Player::OnChiPai(const Asset::PaiElement& pai, pb::Message* message)
 
 	it->second.erase(second); //删除
 
+	auto _game = GetGame();
 	for (const auto& card : cards)
 	{
 		_cards_outhand[card.card_type()].push_back(card.card_value());
@@ -2968,6 +3009,8 @@ void Player::OnChiPai(const Asset::PaiElement& pai, pb::Message* message)
 
 bool Player::CheckPengPai(const Asset::PaiElement& pai)
 {
+	auto _room = GetRoom();
+	auto _game = GetGame();
 	if (!_room || !_game) return false;
 
 	if (_has_ting || _tuoguan_server) return false; //已经听牌，不再提示
@@ -2991,6 +3034,8 @@ bool Player::CheckPengPai(const Asset::PaiElement& pai)
 
 void Player::OnPengPai(const Asset::PaiElement& pai)
 {
+	auto _room = GetRoom();
+	auto _game = GetGame();
 	if (!_game || !_room) return;
 	
 	PrintPai(); //打印玩家当前手里的牌数据
@@ -3020,6 +3065,8 @@ void Player::OnPengPai(const Asset::PaiElement& pai)
 
 bool Player::CheckGangPai(const Asset::PaiElement& pai, int64_t source_player_id)
 {
+	auto _room = GetRoom();
+	auto _game = GetGame();
 	if (!_room || !_game) return false;
 
 	if (_tuoguan_server) return false;
@@ -3136,6 +3183,8 @@ bool Player::CanTingIfGang(const Asset::PaiElement& pai)
 //
 bool Player::CheckAllGangPai(::google::protobuf::RepeatedField<Asset::PaiOperationAlert_AlertElement>& gang_list)
 {
+	auto _room = GetRoom();
+	auto _game = GetGame();
 	if (!_room || !_game) return false;
 
 	if (!CheckMingPiao(Asset::PAI_OPER_TYPE_GANGPAI)) return false; //明飘检查
@@ -3226,6 +3275,9 @@ void Player::OnGangPai(const Asset::PaiElement& pai, int64_t source_player_id)
 		LOG(ERROR, "玩家:{} 无法杠牌:{} 牌来自:{}", _player_id, pai.ShortDebugString(), source_player_id);
 		return; //理论上不会如此
 	}
+
+	auto _room = GetRoom();
+	if (!_room) return;
 	
 	int32_t card_type = pai.card_type();
 	int32_t card_value = pai.card_value();
@@ -3282,6 +3334,8 @@ void Player::OnGangPai(const Asset::PaiElement& pai, int64_t source_player_id)
 		}
 	}
 					
+	auto _game = GetGame();
+	if (!_game) return;
 	for (int32_t i = 0; i < count; ++i) _game->Add2CardsPool(pai); //加入牌池
 }
 
@@ -3316,6 +3370,7 @@ void Player::OnBeenQiangGang(const Asset::PaiElement& pai, int64_t source_player
 		}
 	}
 					
+	auto _game = GetGame();
 	for (int32_t i = 0; i < count; ++i) _game->Add2CardsPool(pai); //加入牌池
 }
 	
@@ -3329,6 +3384,8 @@ void Player::OnBeenQiangGangWithGivingUp(const Asset::PaiElement& pai, int64_t s
 
 bool Player::CheckFengGangPai() 
 { 
+	auto _room = GetRoom();
+	auto _game = GetGame();
 	if (!_room || !_game) return false;
 
 	//if (_oper_count >= 1) return false;
@@ -3338,6 +3395,8 @@ bool Player::CheckFengGangPai()
 
 bool Player::CheckJianGangPai() 
 { 
+	auto _room = GetRoom();
+	auto _game = GetGame();
 	if (!_room || !_game) return false;
 
 	//if (_oper_count >= 1) return false;
@@ -3422,6 +3481,8 @@ void Player::CheckXuanFengGang()
 
 bool Player::CanTingPai(const Asset::PaiElement& pai)
 {
+	auto _room = GetRoom();
+	auto _game = GetGame();
 	if (!_room || !_game) return false;
 
 	if (!_room->HasAnbao() && !_room->HasBaopai()) return false;
@@ -3523,6 +3584,8 @@ bool Player::CanTingPai(std::map<int32_t, std::vector<int32_t>> cards_inhand, //
 		int32_t jiangang, //旋风杠，本质是明杠
 		int32_t fenggang) //旋风杠，本质是暗杠
 {
+	auto _room = GetRoom();
+	auto _game = GetGame();
 	if (!_room || !_game) return false;
 
 	if (!_room->HasAnbao() && !_room->HasBaopai()) return false;
@@ -3610,6 +3673,8 @@ bool Player::CanTingPai(std::map<int32_t, std::vector<int32_t>> cards_inhand, //
 	
 bool Player::CheckTingPai(std::vector<Asset::PaiElement>& pais)
 {
+	auto _room = GetRoom();
+	auto _game = GetGame();
 	if (!_room || !_game) return false;
 
 	if (_has_ting || _tuoguan_server) return false; //已经听牌，不再提示
@@ -3725,6 +3790,8 @@ bool Player::CheckTingPai(std::vector<Asset::PaiElement>& pais)
 
 bool Player::CheckFengGangPai(std::map<int32_t/*麻将牌类型*/, std::vector<int32_t>/*牌值*/>& cards)
 {
+	auto _room = GetRoom();
+	auto _game = GetGame();
 	if (!_room || !_game) return false;
 
 	if (!_room->HasXuanFengGang()) return false; //不支持旋风杠
@@ -3746,6 +3813,9 @@ void Player::OnGangFengPai()
 
 	auto it = _cards_inhand.find(Asset::CARD_TYPE_FENG);
 	if (it == _cards_inhand.end()) return;
+
+	auto _game = GetGame();
+	if (!_game) return;
 
 	for (int32_t card_value = 1; card_value <= 4; ++card_value) //东南西北
 	{
@@ -3822,6 +3892,8 @@ void Player::OnGangFengPai()
 
 bool Player::CheckJianGangPai(std::map<int32_t/*麻将牌类型*/, std::vector<int32_t>/*牌值*/>& cards)
 {
+	auto _room = GetRoom();
+	auto _game = GetGame();
 	if (!_room || !_game) return false;
 
 	if (!_room->HasXuanFengGang()) return false; //不支持旋风杠
@@ -3841,6 +3913,9 @@ void Player::OnGangJianPai()
 {
 	auto it = _cards_inhand.find(Asset::CARD_TYPE_JIAN);
 	if (it == _cards_inhand.end()) return;
+
+	auto _game = GetGame();
+	if (!_game) return;
 
 	for (auto card_value = 1; card_value <= 3; ++card_value) //中发白
 	{
@@ -3896,6 +3971,8 @@ void Player::OnGangJianPai()
 
 bool Player::LookAtBaopai()
 {
+	auto _room = GetRoom();
+	auto _game = GetGame();
 	if (!_room || !_game) return false;
 
 	if (!IsTingPai()) return false; 
@@ -3926,6 +4003,8 @@ int32_t Player::OnFaPai(const Asset::PaiElement& pai)
 {
 	//std::lock_guard<std::mutex> lock(_card_lock);
 
+	auto _room = GetRoom();
+	auto _game = GetGame();
 	if (!_room || !_game) return 1;
 
 	if (pai.card_type() == 0 || pai.card_value() == 0) return 2; //数据有误
@@ -3946,6 +4025,8 @@ int32_t Player::OnFaPai(std::vector<int32_t>& cards)
 {
 	//std::lock_guard<std::mutex> lock(_card_lock);
 
+	auto _room = GetRoom();
+	auto _game = GetGame();
 	if (!_room || !_game) return 1;
 
 	if (!ShouldZhuaPai()) 
@@ -4184,6 +4265,8 @@ int32_t Player::OnFaPai(std::vector<int32_t>& cards)
 //
 bool Player::LookAtBaopai(bool has_saizi)
 {
+	auto _room = GetRoom();
+	auto _game = GetGame();
 	if (!_room || !_game) return false;
 
 	auto baopai = _game->GetBaoPai();
@@ -4224,6 +4307,8 @@ bool Player::LookAtBaopai(bool has_saizi)
 
 bool Player::OnTingPai()
 {
+	auto _room = GetRoom();
+	auto _game = GetGame();
 	if (!_game || !_room) return false;
 
 	_has_ting = true;
@@ -4247,6 +4332,7 @@ bool Player::OnTingPai()
 //
 void Player::ResetBaopai()
 {
+	auto _game = GetGame();
 	if (!_game || !_has_ting) return;
 		
 	while(_game->HasBaopai())
@@ -4272,6 +4358,7 @@ void Player::ResetBaopai()
 	
 void Player::ResetLookAtBaopai() 
 { 
+	auto _game = GetGame();
 	if (!_game) return;
 
 	_baopai = _game->GetBaoPai();
@@ -4306,6 +4393,8 @@ void Player::SynchronizePai()
 
 void Player::PrintPai()
 {
+	auto _room = GetRoom();
+	auto _game = GetGame();
 	if (!_room || !_game) return;
 
 	std::stringstream card_value_list;
@@ -4354,6 +4443,7 @@ Asset::GAME_OPER_TYPE Player::GetOperState()
 	
 void Player::SetOffline(bool offline)
 { 
+	auto _room = GetRoom();
 	if (!_room/* || !_game*/) return; //房间状态
 
 	if (offline == _player_prop.offline()) return; //状态尚未发生变化
@@ -4389,7 +4479,7 @@ void Player::ClearCards()
 	_baopai.Clear();
 	_zhuapai.Clear();
 
-	if (_game) _game.reset();
+	_game.reset();
 }
 	
 void Player::OnGameOver()
@@ -4469,6 +4559,7 @@ int32_t Player::CmdSystemChat(pb::Message* message)
 	auto chat = dynamic_cast<Asset::SystemChat*>(message);
 	if (!chat) return 1;
 
+	auto _room = GetRoom();
 	if (!_room) return 2;
 
 	chat->set_position(GetPosition());
@@ -4567,6 +4658,7 @@ void Player::SendRoomState()
 {
 	Asset::RoomState proto;
 
+	auto _room = GetRoom();
 	if (_room && !_room->HasDisMiss()) 
 	{
 		proto.set_room_id(_room->GetID());

@@ -20,6 +20,10 @@ extern const Asset::CommonConst* g_const;
 //
 //房间
 //
+Room::~Room()
+{
+	//DEBUG("析构房间")
+}
 
 Asset::ERROR_CODE Room::TryEnter(std::shared_ptr<Player> player)
 {

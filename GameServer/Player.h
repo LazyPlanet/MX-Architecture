@@ -63,6 +63,7 @@ private:
 	bool _dirty = false; //脏数据
 	CallBack _method; //协议处理回调函数
 public:
+	~Player();
 	Player();
 	Player(int64_t player_id);
 	//Player(int64_t player_id, std::shared_ptr<WorldSession> session);
@@ -248,8 +249,8 @@ public:
 ///////游戏逻辑定义
 private:
 	std::mutex _card_lock;
-	std::shared_ptr<Room> _room = nullptr; //实体所在房间
-	std::shared_ptr<Game> _game = nullptr; //当前游戏
+	std::weak_ptr<Room> _room; //实体所在房间
+	std::weak_ptr<Game> _game; //当前游戏
 	std::unordered_set<int32_t> _fan_list = {}; //番型缓存
 	bool _debug_model = false;
 	bool _jinbao = false;
@@ -298,17 +299,18 @@ public:
 	//进入房间回调
 	void OnEnterScene(bool is_reenter);
 	//获取房间
-	virtual std::shared_ptr<Room> GetRoom() { return _room; }	//获取当前房间
+	virtual std::shared_ptr<Room> GetRoom() { return _room.lock(); }	//获取当前房间
 	virtual void SetRoomID(int64_t room_id) { _player_prop.set_room_id(room_id); }	
 	virtual int32_t GetLocalRoomID();
 
 	virtual int32_t GetRoomID() { return _player_prop.room_id(); }
-	virtual bool HasRoom() { return _room != nullptr; }
+	virtual bool HasRoom() { return _room.lock() != nullptr; }
 	virtual void SetRoom(std::shared_ptr<Room> room) { _room = room; }
 	virtual void ResetRoom();
 
 	void SetGame(std::shared_ptr<Game> game) { _game = game; }
-	bool IsInGame() { return _game != nullptr; }
+	bool IsInGame() { return _game.lock() != nullptr; }
+	std::shared_ptr<Game> GetGame() { return _game.lock(); }
 
 	virtual int32_t OnFaPai(std::vector<int32_t>& cards); //发牌
 	virtual int32_t OnFaPai(const Asset::PaiElement& pai); //纯粹发牌，没有逻辑

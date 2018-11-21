@@ -18,6 +18,12 @@ extern const Asset::CommonConst* g_const;
 /////////////////////////////////////////////////////
 //一场游戏
 /////////////////////////////////////////////////////
+	
+Game::~Game()
+{
+	//DEBUG("析构游戏");
+}
+
 void Game::Init(std::shared_ptr<Room> room)
 {
 	_cards.clear();
@@ -37,6 +43,7 @@ bool Game::Start(std::vector<std::shared_ptr<Player>> players, int64_t room_id, 
 {
 	if (MAX_PLAYER_COUNT != players.size()) return false; //做下检查，是否满足开局条件
 
+	auto _room = GetRoom();
 	if (!_room) return false;
 
 	_game_id = game_id + 1;
@@ -112,6 +119,7 @@ bool Game::Start(std::vector<std::shared_ptr<Player>> players, int64_t room_id, 
 	
 void Game::OnStart()
 {
+	auto _room = GetRoom();
 	if (!_room) return;
 
 	_room->SetBanker(_banker_player_id); //设置庄家
@@ -135,6 +143,7 @@ void Game::OnStart()
 
 bool Game::OnGameOver(int64_t player_id)
 {
+	auto _room = GetRoom();
 	if (!_room) return false;
 
 	SavePlayBack(); //回放
@@ -155,6 +164,7 @@ bool Game::OnGameOver(int64_t player_id)
 
 void Game::SavePlayBack()
 {
+	auto _room = GetRoom();
 	if (!_room) return;
 
 	std::string key = "playback:" + std::to_string(_room_id) + "_" + std::to_string(_game_id);
@@ -348,6 +358,7 @@ void Game::OnPlayerReEnter(std::shared_ptr<Player> player)
 
 void Game::OnPaiOperate(std::shared_ptr<Player> player, pb::Message* message)
 {
+	auto _room = GetRoom();
 	if (!player || !message || !_room) return;
 	
 	Asset::PaiOperation* pai_operate = dynamic_cast<Asset::PaiOperation*>(message);
@@ -1154,6 +1165,7 @@ void Game::PaiPushDown()
 	
 void Game::Calculate(int64_t hupai_player_id/*胡牌玩家*/, int64_t dianpao_player_id/*点炮玩家*/, std::unordered_set<int32_t>& fan_list)
 {
+	auto _room = GetRoom();
 	if (!_room) return;
 
 	//DEBUG("玩家胡牌, 胡牌玩家:{} 点炮玩家:{}", hupai_player_id, dianpao_player_id);
@@ -1621,6 +1633,7 @@ void Game::Calculate(int64_t hupai_player_id/*胡牌玩家*/, int64_t dianpao_pl
 	
 void Game::BroadCast(pb::Message* message, int64_t exclude_player_id)
 {
+	auto _room = GetRoom();
 	if (!_room) return;
 
 	_room->BroadCast(message, exclude_player_id);
@@ -1642,6 +1655,7 @@ void Game::Add2CardsPool(Asset::CARD_TYPE card_type, int32_t card_value)
 
 void Game::BroadCast(pb::Message& message, int64_t exclude_player_id)
 {
+	auto _room = GetRoom();
 	if (!_room) return;
 
 	_room->BroadCast(message, exclude_player_id);
@@ -1855,6 +1869,7 @@ std::vector<int32_t> Game::TailPai(size_t card_count)
 	
 bool Game::CheckLiuJu()
 {
+	auto _room = GetRoom();
 	if (!_room) return false;
 
 	if (GetRemainCount() > g_const->liuju_count() + 4) return false;
@@ -1919,6 +1934,9 @@ bool Game::CheckLiuJu()
 
 void Game::CalculateGangScore(Asset::GameCalculate& game_calculate)
 {
+	auto _room = GetRoom();
+	if (!_room) return;
+
 	for (int i = 0; i < MAX_PLAYER_COUNT; ++i)
 	{
 		auto player = _players[i];
@@ -2039,6 +2057,7 @@ void Game::CalculateGangScore(Asset::GameCalculate& game_calculate)
 	
 void Game::OnLiuJu()
 {
+	auto _room = GetRoom();
 	if (!_room) return;
 		
 	//
@@ -2096,6 +2115,7 @@ void Game::FaPaiAndCommonCheck()
 	
 std::shared_ptr<Player> Game::GetNextPlayer(int64_t player_id)
 {
+	auto _room = GetRoom();
 	if (!_room) return nullptr;
 
 	int32_t order = GetPlayerOrder(player_id);
@@ -2106,6 +2126,7 @@ std::shared_ptr<Player> Game::GetNextPlayer(int64_t player_id)
 
 int32_t Game::GetPlayerOrder(int32_t player_id)
 {
+	auto _room = GetRoom();
 	if (!_room) return -1;
 
 	return _room->GetPlayerOrder(player_id);
@@ -2113,6 +2134,7 @@ int32_t Game::GetPlayerOrder(int32_t player_id)
 
 std::shared_ptr<Player> Game::GetPlayerByOrder(int32_t player_index)
 {
+	auto _room = GetRoom();
 	if (!_room) return nullptr;
 
 	if (player_index < 0 || player_index >= MAX_PLAYER_COUNT) return nullptr;
@@ -2134,6 +2156,7 @@ std::shared_ptr<Player> Game::GetPlayer(int64_t player_id)
 
 bool Game::IsBanker(int64_t player_id) 
 { 
+	auto _room = GetRoom();
 	if (!_room) return false;
 	return _room->IsBanker(player_id); 
 }
@@ -2173,6 +2196,7 @@ int32_t Game::GetRemainBaopai()
 //
 void Game::OnRefreshBaopai(int64_t player_id, int32_t random_result)
 {
+	auto _room = GetRoom();
 	if (!_room) return;
 
 	Asset::RandomSaizi proto;
@@ -2217,6 +2241,7 @@ void Game::OnTingPai(std::shared_ptr<Player> player)
 	
 int32_t Game::GetMultiple(int32_t fan_type)
 {
+	auto _room = GetRoom();
 	if (!_room) return 0;
 	
 	return _room->GetMultiple(fan_type);

@@ -43,6 +43,7 @@ private:
 	int32_t _created_time = 0; //创建时间
 	int32_t _dismiss_cooldown = 0; //解散冷却时间
 public:
+	~Room();
 	explicit Room(Asset::Room room) {  _stuff = room; }
 	void SetGmtOpened() { _gmt_opened = true; }
 	bool IsGmtOpened() { return _gmt_opened; }
