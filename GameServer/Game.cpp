@@ -958,15 +958,28 @@ void Game::OnPaiOperate(std::shared_ptr<Player> player, pb::Message* message)
 				OnLiuJu();
 				return;
 			}
-	
+
 			auto next_player_index = (_curr_player_index + 1) % MAX_PLAYER_COUNT; //如果有玩家放弃操作，则继续下个玩家
+
+			/* 修复玩家进宝不胡，不发牌的严重问题
+			 * https://www.teambition.com/project/592ad0fd66e46f0dd7503429/tasks/scrum/592ad0fe4e2b442b01e8753d
+			if (player->IsJinbao()) //玩家进宝不胡，发牌
+			{
+				LOG(ERROR, "玩家:{} 进宝不胡, 胡牌缓存:{}", player->GetID(), _oper_cache.ShortDebugString());
+
+				player->ClearJinbao(); //必须清除状态
+
+				next_player_index = _curr_player_index; //还是该玩家进行操作
+			}
+			*
+			*/
 
 			auto player_next = GetPlayerByOrder(next_player_index);
 			if (!player_next) return; 
 			
 			if (player->GetID() == player_next->GetID() && !player_next->CheckCardsInhand()) 
 			{
-				ERROR("玩家:{}放弃操作，当前牌数量不能再次发牌", player->GetID());
+				ERROR("玩家:{} 放弃操作，当前牌数量不能再次发牌", player->GetID());
 
 				_curr_player_index = next_player_index;
 				return;

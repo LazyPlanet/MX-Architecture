@@ -328,6 +328,7 @@ public:
 
 	bool IsJinbao() { return _jinbao; }
 	void Jinbao() { _jinbao = true; }
+	void ClearJinbao() { _jinbao = false; }
 	
 	const Asset::PaiElement& GetZhuaPai() { return _zhuapai; }
 	bool HasPai(const Asset::PaiElement& pai);
